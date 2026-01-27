@@ -183,6 +183,80 @@ const insights = [
   "Onde políticas industriais podem induzir cooperação e catching-up",
 ];
 
+// Regional data with universities
+const regionalData = [
+  { 
+    region: 'Sudeste', 
+    states: 'SP, RJ, MG, ES', 
+    groups: 156, 
+    patents: 89, 
+    percentage: 58,
+    universities: [
+      { name: 'USP', state: 'SP', type: 'Federal', groups: 40, patents: 22, ictObj: 78.5 },
+      { name: 'Unicamp', state: 'SP', type: 'Estadual', groups: 30, patents: 18, ictObj: 68.7 },
+      { name: 'UFRJ', state: 'RJ', type: 'Federal', groups: 25, patents: 14, ictObj: 53.0 },
+      { name: 'UFMG', state: 'MG', type: 'Federal', groups: 18, patents: 12, ictObj: 44.1 },
+      { name: 'UNESP', state: 'SP', type: 'Estadual', groups: 15, patents: 8, ictObj: 35.3 },
+      { name: 'UFSCar', state: 'SP', type: 'Federal', groups: 12, patents: 7, ictObj: 29.6 },
+      { name: 'UFES', state: 'ES', type: 'Federal', groups: 8, patents: 4, ictObj: 18.9 },
+      { name: 'UERJ', state: 'RJ', type: 'Estadual', groups: 8, patents: 4, ictObj: 18.5 },
+    ]
+  },
+  { 
+    region: 'Sul', 
+    states: 'PR, SC, RS', 
+    groups: 52, 
+    patents: 28, 
+    percentage: 19,
+    universities: [
+      { name: 'UFRGS', state: 'RS', type: 'Federal', groups: 14, patents: 6, ictObj: 31.5 },
+      { name: 'UFSC', state: 'SC', type: 'Federal', groups: 15, patents: 8, ictObj: 35.7 },
+      { name: 'UFPR', state: 'PR', type: 'Federal', groups: 12, patents: 5, ictObj: 26.3 },
+      { name: 'UEM', state: 'PR', type: 'Estadual', groups: 6, patents: 4, ictObj: 16.8 },
+      { name: 'UEL', state: 'PR', type: 'Estadual', groups: 5, patents: 5, ictObj: 17.2 },
+    ]
+  },
+  { 
+    region: 'Nordeste', 
+    states: 'BA, PE, CE, outros', 
+    groups: 34, 
+    patents: 12, 
+    percentage: 13,
+    universities: [
+      { name: 'UFPE', state: 'PE', type: 'Federal', groups: 10, patents: 4, ictObj: 21.3 },
+      { name: 'UFBA', state: 'BA', type: 'Federal', groups: 8, patents: 3, ictObj: 16.7 },
+      { name: 'UFC', state: 'CE', type: 'Federal', groups: 9, patents: 3, ictObj: 18.0 },
+      { name: 'UFRN', state: 'RN', type: 'Federal', groups: 4, patents: 1, ictObj: 8.2 },
+      { name: 'UFPB', state: 'PB', type: 'Federal', groups: 3, patents: 1, ictObj: 6.5 },
+    ]
+  },
+  { 
+    region: 'Centro-Oeste', 
+    states: 'DF, GO, MT, MS', 
+    groups: 18, 
+    patents: 8, 
+    percentage: 7,
+    universities: [
+      { name: 'UnB', state: 'DF', type: 'Federal', groups: 8, patents: 4, ictObj: 18.9 },
+      { name: 'UFG', state: 'GO', type: 'Federal', groups: 5, patents: 2, ictObj: 11.0 },
+      { name: 'UFMT', state: 'MT', type: 'Federal', groups: 3, patents: 1, ictObj: 6.3 },
+      { name: 'UFMS', state: 'MS', type: 'Federal', groups: 2, patents: 1, ictObj: 5.0 },
+    ]
+  },
+  { 
+    region: 'Norte', 
+    states: 'AM, PA, outros', 
+    groups: 8, 
+    patents: 3, 
+    percentage: 3,
+    universities: [
+      { name: 'UFAM', state: 'AM', type: 'Federal', groups: 3, patents: 1, ictObj: 6.5 },
+      { name: 'UFPA', state: 'PA', type: 'Federal', groups: 4, patents: 2, ictObj: 9.8 },
+      { name: 'UFT', state: 'TO', type: 'Federal', groups: 1, patents: 0, ictObj: 1.6 },
+    ]
+  },
+];
+
 interface AtlasContentProps {
   initialQuery?: string;
 }
@@ -191,12 +265,21 @@ const AtlasContent = ({ initialQuery = "" }: AtlasContentProps) => {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [hasSearched, setHasSearched] = useState(!!initialQuery);
   const [expandedInstitutions, setExpandedInstitutions] = useState<number[]>([]);
+  const [expandedRegions, setExpandedRegions] = useState<string[]>([]);
 
   const toggleInstitution = (rank: number) => {
     setExpandedInstitutions(prev => 
       prev.includes(rank) 
         ? prev.filter(r => r !== rank)
         : [...prev, rank]
+    );
+  };
+
+  const toggleRegion = (region: string) => {
+    setExpandedRegions(prev => 
+      prev.includes(region) 
+        ? prev.filter(r => r !== region)
+        : [...prev, region]
     );
   };
 
@@ -280,41 +363,113 @@ const AtlasContent = ({ initialQuery = "" }: AtlasContentProps) => {
         {/* Regional Distribution Cards */}
         <div className="bg-card border border-border rounded-2xl overflow-hidden">
           {hasSearched ? (
-            <div className="p-6 space-y-6">
-              {/* Region bars */}
-              {[
-                { region: 'Sudeste', states: 'SP, RJ, MG, ES', groups: 156, patents: 89, percentage: 58 },
-                { region: 'Sul', states: 'PR, SC, RS', groups: 52, patents: 28, percentage: 19 },
-                { region: 'Nordeste', states: 'BA, PE, CE, outros', groups: 34, patents: 12, percentage: 13 },
-                { region: 'Centro-Oeste', states: 'DF, GO, MT, MS', groups: 18, patents: 8, percentage: 7 },
-                { region: 'Norte', states: 'AM, PA, outros', groups: 8, patents: 3, percentage: 3 },
-              ].map((item, index) => (
-                <div key={item.region} className="group">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <span className="font-semibold text-foreground">{item.region}</span>
-                      <span className="text-xs text-muted-foreground">({item.states})</span>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm">
-                      <span className="text-muted-foreground">
-                        <strong className="text-foreground">{item.groups}</strong> grupos
-                      </span>
-                      <span className="text-muted-foreground">
-                        <strong className="text-foreground">{item.patents}</strong> patentes
-                      </span>
-                      <span className="font-bold text-primary">{item.percentage}%</span>
-                    </div>
+            <div className="p-6 space-y-4">
+              {/* Region bars with expansion */}
+              {regionalData.map((item, index) => (
+                <Collapsible
+                  key={item.region}
+                  open={expandedRegions.includes(item.region)}
+                  onOpenChange={() => toggleRegion(item.region)}
+                >
+                  <div className="border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-colors">
+                    <CollapsibleTrigger className="w-full">
+                      <div className="p-4 cursor-pointer hover:bg-muted/30 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
+                              expandedRegions.includes(item.region) ? 'rotate-180' : ''
+                            }`} />
+                            <span className="font-semibold text-foreground">{item.region}</span>
+                            <span className="text-xs text-muted-foreground">({item.states})</span>
+                            <span className="text-xs px-2 py-0.5 bg-muted rounded-full text-muted-foreground">
+                              {item.universities.length} instituições
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm">
+                            <span className="text-muted-foreground hidden sm:inline">
+                              <strong className="text-foreground">{item.groups}</strong> grupos
+                            </span>
+                            <span className="text-muted-foreground hidden sm:inline">
+                              <strong className="text-foreground">{item.patents}</strong> patentes
+                            </span>
+                            <span className="font-bold text-primary">{item.percentage}%</span>
+                          </div>
+                        </div>
+                        <div className="h-6 bg-muted rounded-lg overflow-hidden">
+                          <div 
+                            className={`h-full rounded-lg transition-all duration-700 ease-out ${
+                              expandedRegions.includes(item.region) 
+                                ? 'bg-gradient-to-r from-accent to-accent/70' 
+                                : 'bg-gradient-to-r from-primary to-primary/70'
+                            }`}
+                            style={{ width: `${item.percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    </CollapsibleTrigger>
+
+                    <CollapsibleContent>
+                      <div className="border-t border-border bg-muted/20 p-4 animate-accordion-down">
+                        {/* Universities table */}
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground px-2 pb-2 border-b border-border">
+                            <div className="col-span-4">Instituição</div>
+                            <div className="col-span-2 text-center">Estado</div>
+                            <div className="col-span-2 text-center">Grupos</div>
+                            <div className="col-span-2 text-center">Patentes</div>
+                            <div className="col-span-2 text-center">ICT-Obj</div>
+                          </div>
+                          {item.universities.map((uni, uniIndex) => (
+                            <div 
+                              key={uni.name}
+                              className="grid grid-cols-12 gap-2 items-center p-2 rounded-lg hover:bg-card transition-colors"
+                            >
+                              <div className="col-span-4 flex items-center gap-2">
+                                <div className={`w-2 h-2 rounded-full ${
+                                  uni.type === 'Federal' ? 'bg-primary' : 'bg-accent'
+                                }`} />
+                                <span className="font-medium text-foreground text-sm">{uni.name}</span>
+                                <span className="text-[10px] px-1.5 py-0.5 bg-muted rounded text-muted-foreground">
+                                  {uni.type}
+                                </span>
+                              </div>
+                              <div className="col-span-2 text-center text-sm text-muted-foreground">{uni.state}</div>
+                              <div className="col-span-2 text-center">
+                                <span className="text-sm font-medium text-foreground">{uni.groups}</span>
+                              </div>
+                              <div className="col-span-2 text-center">
+                                <span className="text-sm font-medium text-foreground">{uni.patents}</span>
+                              </div>
+                              <div className="col-span-2 text-center">
+                                <span className={`inline-flex px-2 py-1 rounded-full text-xs font-bold ${
+                                  uni.ictObj >= 50 
+                                    ? 'bg-accent/10 text-accent' 
+                                    : uni.ictObj >= 25 
+                                      ? 'bg-primary/10 text-primary'
+                                      : 'bg-muted text-muted-foreground'
+                                }`}>
+                                  {uni.ictObj}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {/* Regional summary */}
+                        <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">
+                            Total da região: <strong className="text-foreground">{item.groups}</strong> grupos, <strong className="text-foreground">{item.patents}</strong> patentes
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            Média ICT-Obj: <strong className="text-primary">
+                              {(item.universities.reduce((acc, u) => acc + u.ictObj, 0) / item.universities.length).toFixed(1)}
+                            </strong>
+                          </span>
+                        </div>
+                      </div>
+                    </CollapsibleContent>
                   </div>
-                  <div className="h-8 bg-muted rounded-lg overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-lg transition-all duration-700 ease-out group-hover:from-accent group-hover:to-accent/70"
-                      style={{ 
-                        width: `${item.percentage}%`,
-                        animationDelay: `${index * 100}ms`
-                      }}
-                    />
-                  </div>
-                </div>
+                </Collapsible>
               ))}
 
               {/* Summary stats */}
