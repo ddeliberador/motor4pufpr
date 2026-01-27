@@ -8,10 +8,36 @@ import {
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import CollaborationNetwork from "./CollaborationNetwork";
+
+// ICT-Obj calculation function
+const calculateICTObj = (groups: number, patents: number, projects: number, cooperation: number): number => {
+  // Normalize values (max values for reference)
+  const maxGroups = 50;
+  const maxPatents = 30;
+  const maxProjects = 15;
+  const maxCoop = 10;
+  
+  const normalizedGroups = Math.min(groups / maxGroups, 1);
+  const normalizedPatents = Math.min(patents / maxPatents, 1);
+  const normalizedProjects = Math.min(projects / maxProjects, 1);
+  const normalizedCoop = Math.min(cooperation / maxCoop, 1);
+  
+  // Apply ICT-Obj formula
+  const score = (
+    0.4 * normalizedGroups +
+    0.3 * normalizedPatents +
+    0.2 * normalizedProjects +
+    0.1 * normalizedCoop
+  ) * 100;
+  
+  return Math.round(score * 10) / 10;
+};
+
 // Extended mock data for ranking with details
 const mockRankingData = [
   { 
-    rank: 1, name: "USP", fullName: "Universidade de São Paulo", type: "Federal", state: "SP", groups: 40, patents: 22, projects: 12, score: 87,
+    rank: 1, name: "USP", fullName: "Universidade de São Paulo", type: "Federal", state: "SP", 
+    groups: 40, patents: 22, projects: 12, cooperation: 8,
     details: {
       researchers: 156,
       doctorates: 89,
@@ -25,7 +51,8 @@ const mockRankingData = [
     }
   },
   { 
-    rank: 2, name: "Unicamp", fullName: "Universidade Estadual de Campinas", type: "Estadual", state: "SP", groups: 30, patents: 18, projects: 10, score: 78,
+    rank: 2, name: "Unicamp", fullName: "Universidade Estadual de Campinas", type: "Estadual", state: "SP", 
+    groups: 30, patents: 18, projects: 10, cooperation: 7,
     details: {
       researchers: 112,
       doctorates: 67,
@@ -39,7 +66,8 @@ const mockRankingData = [
     }
   },
   { 
-    rank: 3, name: "UFRJ", fullName: "Universidade Federal do Rio de Janeiro", type: "Federal", state: "RJ", groups: 25, patents: 14, projects: 6, score: 65,
+    rank: 3, name: "UFRJ", fullName: "Universidade Federal do Rio de Janeiro", type: "Federal", state: "RJ", 
+    groups: 25, patents: 14, projects: 6, cooperation: 5,
     details: {
       researchers: 98,
       doctorates: 54,
@@ -53,7 +81,8 @@ const mockRankingData = [
     }
   },
   { 
-    rank: 4, name: "Fiocruz", fullName: "Fundação Oswaldo Cruz", type: "ICT", state: "RJ", groups: 20, patents: 9, projects: 8, score: 58,
+    rank: 4, name: "Fiocruz", fullName: "Fundação Oswaldo Cruz", type: "ICT", state: "RJ", 
+    groups: 20, patents: 9, projects: 8, cooperation: 6,
     details: {
       researchers: 145,
       doctorates: 78,
@@ -67,7 +96,8 @@ const mockRankingData = [
     }
   },
   { 
-    rank: 5, name: "UFMG", fullName: "Universidade Federal de Minas Gerais", type: "Federal", state: "MG", groups: 18, patents: 12, projects: 5, score: 52,
+    rank: 5, name: "UFMG", fullName: "Universidade Federal de Minas Gerais", type: "Federal", state: "MG", 
+    groups: 18, patents: 12, projects: 5, cooperation: 4,
     details: {
       researchers: 76,
       doctorates: 42,
@@ -81,7 +111,8 @@ const mockRankingData = [
     }
   },
   { 
-    rank: 6, name: "UFSC", fullName: "Universidade Federal de Santa Catarina", type: "Federal", state: "SC", groups: 15, patents: 8, projects: 7, score: 48,
+    rank: 6, name: "UFSC", fullName: "Universidade Federal de Santa Catarina", type: "Federal", state: "SC", 
+    groups: 15, patents: 8, projects: 7, cooperation: 5,
     details: {
       researchers: 62,
       doctorates: 35,
@@ -95,7 +126,8 @@ const mockRankingData = [
     }
   },
   { 
-    rank: 7, name: "UFPR", fullName: "Universidade Federal do Paraná", type: "Federal", state: "PR", groups: 12, patents: 5, projects: 4, score: 38,
+    rank: 7, name: "UFPR", fullName: "Universidade Federal do Paraná", type: "Federal", state: "PR", 
+    groups: 12, patents: 5, projects: 4, cooperation: 3,
     details: {
       researchers: 48,
       doctorates: 28,
@@ -109,7 +141,8 @@ const mockRankingData = [
     }
   },
   { 
-    rank: 8, name: "UFRGS", fullName: "Universidade Federal do Rio Grande do Sul", type: "Federal", state: "RS", groups: 14, patents: 6, projects: 3, score: 36,
+    rank: 8, name: "UFRGS", fullName: "Universidade Federal do Rio Grande do Sul", type: "Federal", state: "RS", 
+    groups: 14, patents: 6, projects: 3, cooperation: 4,
     details: {
       researchers: 54,
       doctorates: 31,
@@ -381,25 +414,32 @@ const AtlasContent = ({ initialQuery = "" }: AtlasContentProps) => {
                     </div>
 
                     {/* Stats - Hidden on mobile */}
-                    <div className="hidden md:flex items-center gap-6">
-                      <div className="text-center">
-                        <p className="text-lg font-bold text-foreground">{item.groups}</p>
-                        <p className="text-xs text-muted-foreground">Grupos</p>
+                    <div className="hidden md:flex items-center gap-4">
+                      <div className="text-center px-2">
+                        <p className="text-sm font-bold text-foreground">{item.groups}</p>
+                        <p className="text-[10px] text-muted-foreground">Grupos</p>
                       </div>
-                      <div className="text-center">
-                        <p className="text-lg font-bold text-foreground">{item.patents}</p>
-                        <p className="text-xs text-muted-foreground">Patentes</p>
+                      <div className="text-center px-2">
+                        <p className="text-sm font-bold text-foreground">{item.patents}</p>
+                        <p className="text-[10px] text-muted-foreground">Patentes</p>
                       </div>
-                      <div className="text-center">
-                        <p className="text-lg font-bold text-foreground">{item.projects}</p>
-                        <p className="text-xs text-muted-foreground">Projetos</p>
+                      <div className="text-center px-2">
+                        <p className="text-sm font-bold text-foreground">{item.projects}</p>
+                        <p className="text-[10px] text-muted-foreground">Projetos</p>
+                      </div>
+                      <div className="text-center px-2">
+                        <p className="text-sm font-bold text-foreground">{item.cooperation}</p>
+                        <p className="text-[10px] text-muted-foreground">Coop.</p>
                       </div>
                     </div>
 
-                    {/* Score */}
+                    {/* ICT-Obj Score */}
                     <div className="flex items-center gap-3 flex-shrink-0">
-                      <span className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-accent/10 text-accent font-bold">
-                        {item.score}
+                      <div className="text-right hidden lg:block">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">ICT-Obj</p>
+                      </div>
+                      <span className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold text-lg min-w-[70px]">
+                        {calculateICTObj(item.groups, item.patents, item.projects, item.cooperation)}
                       </span>
                       <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${
                         expandedInstitutions.includes(item.rank) ? 'rotate-180' : ''
@@ -410,19 +450,71 @@ const AtlasContent = ({ initialQuery = "" }: AtlasContentProps) => {
 
                 <CollapsibleContent>
                   <div className="border-t border-border bg-muted/20 p-6 animate-accordion-down">
+                    {/* ICT-Obj Formula Breakdown */}
+                    <div className="bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 rounded-xl p-4 mb-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Calculator className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-semibold text-foreground">Cálculo do ICT-Obj</span>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="bg-card rounded-lg p-3 border border-border">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-muted-foreground">Grupos</span>
+                            <span className="text-xs font-bold text-primary">×0.4</span>
+                          </div>
+                          <p className="text-lg font-bold text-foreground">{item.groups}</p>
+                          <p className="text-xs text-muted-foreground">= {(item.groups / 50 * 0.4 * 100).toFixed(1)} pts</p>
+                        </div>
+                        <div className="bg-card rounded-lg p-3 border border-border">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-muted-foreground">Patentes</span>
+                            <span className="text-xs font-bold text-primary">×0.3</span>
+                          </div>
+                          <p className="text-lg font-bold text-foreground">{item.patents}</p>
+                          <p className="text-xs text-muted-foreground">= {(item.patents / 30 * 0.3 * 100).toFixed(1)} pts</p>
+                        </div>
+                        <div className="bg-card rounded-lg p-3 border border-border">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-muted-foreground">Projetos</span>
+                            <span className="text-xs font-bold text-accent">×0.2</span>
+                          </div>
+                          <p className="text-lg font-bold text-foreground">{item.projects}</p>
+                          <p className="text-xs text-muted-foreground">= {(item.projects / 15 * 0.2 * 100).toFixed(1)} pts</p>
+                        </div>
+                        <div className="bg-card rounded-lg p-3 border border-border">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-muted-foreground">Cooperação</span>
+                            <span className="text-xs font-bold text-accent">×0.1</span>
+                          </div>
+                          <p className="text-lg font-bold text-foreground">{item.cooperation}</p>
+                          <p className="text-xs text-muted-foreground">= {(item.cooperation / 10 * 0.1 * 100).toFixed(1)} pts</p>
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Índice Total ICT-Obj</span>
+                        <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                          {calculateICTObj(item.groups, item.patents, item.projects, item.cooperation)}
+                        </span>
+                      </div>
+                    </div>
+
                     {/* Mobile Stats */}
-                    <div className="grid grid-cols-3 gap-4 mb-6 md:hidden">
-                      <div className="text-center p-3 bg-card rounded-lg border border-border">
-                        <p className="text-xl font-bold text-foreground">{item.groups}</p>
-                        <p className="text-xs text-muted-foreground">Grupos</p>
+                    <div className="grid grid-cols-4 gap-3 mb-6 md:hidden">
+                      <div className="text-center p-2 bg-card rounded-lg border border-border">
+                        <p className="text-lg font-bold text-foreground">{item.groups}</p>
+                        <p className="text-[10px] text-muted-foreground">Grupos</p>
                       </div>
-                      <div className="text-center p-3 bg-card rounded-lg border border-border">
-                        <p className="text-xl font-bold text-foreground">{item.patents}</p>
-                        <p className="text-xs text-muted-foreground">Patentes</p>
+                      <div className="text-center p-2 bg-card rounded-lg border border-border">
+                        <p className="text-lg font-bold text-foreground">{item.patents}</p>
+                        <p className="text-[10px] text-muted-foreground">Patentes</p>
                       </div>
-                      <div className="text-center p-3 bg-card rounded-lg border border-border">
-                        <p className="text-xl font-bold text-foreground">{item.projects}</p>
-                        <p className="text-xs text-muted-foreground">Projetos</p>
+                      <div className="text-center p-2 bg-card rounded-lg border border-border">
+                        <p className="text-lg font-bold text-foreground">{item.projects}</p>
+                        <p className="text-[10px] text-muted-foreground">Projetos</p>
+                      </div>
+                      <div className="text-center p-2 bg-card rounded-lg border border-border">
+                        <p className="text-lg font-bold text-foreground">{item.cooperation}</p>
+                        <p className="text-[10px] text-muted-foreground">Coop.</p>
                       </div>
                     </div>
 
