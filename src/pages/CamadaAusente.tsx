@@ -221,9 +221,23 @@ const CamadaAusente = () => {
           <div className="mt-10 text-center">
             <p className="text-muted-foreground text-sm mb-2">Doutorado em Políticas Públicas — UFPR</p>
             <div className="w-16 h-px bg-border mx-auto my-4" />
-            <p className="text-foreground font-medium">Decio Dalton Deliberador Filho</p>
+            <a 
+              href="https://buscatextual.cnpq.br/buscatextual/visualizacv.do?metodo=apresentar&id=K1161031Z9" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-foreground font-medium hover:text-accent transition-colors underline underline-offset-2"
+            >
+              Decio Dalton Deliberador Filho
+            </a>
             <p className="text-muted-foreground text-sm mt-1">Doutorando</p>
-            <p className="text-foreground font-medium mt-4">Walter Tadahiro Shima</p>
+            <a 
+              href="https://buscatextual.cnpq.br/buscatextual/visualizacv.do?metodo=apresentar&id=K4785464Y2" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-foreground font-medium mt-4 block hover:text-accent transition-colors underline underline-offset-2"
+            >
+              Walter Tadahiro Shima
+            </a>
             <p className="text-muted-foreground text-sm mt-1">Orientador</p>
           </div>
         </div>
