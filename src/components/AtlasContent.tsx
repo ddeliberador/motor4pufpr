@@ -3,10 +3,11 @@ import {
   Search, MapPin, Trophy, Network, Calculator, Building2, 
   Lightbulb, Users, FileText, Briefcase, 
   Target, Layers,
-  Leaf, Cpu, Heart, Atom, Factory, ChevronDown, ExternalLink, Globe, GraduationCap, Award, TrendingUp, BookOpen
+  Leaf, Cpu, Heart, Atom, Factory, ChevronDown, ExternalLink, Globe, GraduationCap, Award, TrendingUp, BookOpen,
+  BarChart3
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-
+import CollaborationNetwork from "./CollaborationNetwork";
 // Extended mock data for ranking with details
 const mockRankingData = [
   { 
@@ -227,11 +228,11 @@ const AtlasContent = ({ initialQuery = "" }: AtlasContentProps) => {
         </div>
       </div>
 
-      {/* Section 1 - Map */}
+      {/* Section 1 - Regional Distribution */}
       <div>
         <div className="flex items-center gap-4 mb-8">
           <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center">
-            <MapPin className="w-7 h-7 text-primary-foreground" />
+            <BarChart3 className="w-7 h-7 text-primary-foreground" />
           </div>
           <div>
             <h3 className="text-2xl md:text-3xl font-bold text-foreground font-serif">
@@ -243,54 +244,92 @@ const AtlasContent = ({ initialQuery = "" }: AtlasContentProps) => {
           </div>
         </div>
 
-        {/* Map Placeholder */}
+        {/* Regional Distribution Cards */}
         <div className="bg-card border border-border rounded-2xl overflow-hidden">
-          <div className="aspect-[16/9] bg-gradient-to-br from-muted/50 to-muted flex items-center justify-center relative">
-            {/* Simplified Brazil Map SVG Placeholder */}
-            <svg viewBox="0 0 800 700" className="w-full h-full max-w-3xl opacity-20">
-              <path
-                d="M400,50 L550,100 L650,150 L700,250 L720,350 L700,450 L650,550 L550,620 L450,650 L350,650 L250,600 L150,500 L100,400 L100,300 L150,200 L250,120 L350,80 Z"
-                fill="currentColor"
-                className="text-primary"
-              />
-            </svg>
-            
-            {/* Sample Points */}
-            {hasSearched && (
-              <>
-                <div className="absolute top-[35%] left-[55%] w-8 h-8 bg-primary rounded-full opacity-80 animate-pulse" title="SP" />
-                <div className="absolute top-[40%] left-[60%] w-6 h-6 bg-primary rounded-full opacity-70" title="RJ" />
-                <div className="absolute top-[38%] left-[50%] w-5 h-5 bg-accent rounded-full opacity-70" title="MG" />
-                <div className="absolute top-[50%] left-[48%] w-4 h-4 bg-primary rounded-full opacity-60" title="PR" />
-                <div className="absolute top-[55%] left-[45%] w-4 h-4 bg-accent rounded-full opacity-60" title="SC" />
-                <div className="absolute top-[60%] left-[42%] w-3 h-3 bg-primary rounded-full opacity-50" title="RS" />
-              </>
-            )}
-            
-            {!hasSearched && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <MapPin className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-                  <p className="text-muted-foreground">Pesquise um objeto tecnológico para visualizar o mapa</p>
+          {hasSearched ? (
+            <div className="p-6 space-y-6">
+              {/* Region bars */}
+              {[
+                { region: 'Sudeste', states: 'SP, RJ, MG, ES', groups: 156, patents: 89, percentage: 58 },
+                { region: 'Sul', states: 'PR, SC, RS', groups: 52, patents: 28, percentage: 19 },
+                { region: 'Nordeste', states: 'BA, PE, CE, outros', groups: 34, patents: 12, percentage: 13 },
+                { region: 'Centro-Oeste', states: 'DF, GO, MT, MS', groups: 18, patents: 8, percentage: 7 },
+                { region: 'Norte', states: 'AM, PA, outros', groups: 8, patents: 3, percentage: 3 },
+              ].map((item, index) => (
+                <div key={item.region} className="group">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold text-foreground">{item.region}</span>
+                      <span className="text-xs text-muted-foreground">({item.states})</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-sm">
+                      <span className="text-muted-foreground">
+                        <strong className="text-foreground">{item.groups}</strong> grupos
+                      </span>
+                      <span className="text-muted-foreground">
+                        <strong className="text-foreground">{item.patents}</strong> patentes
+                      </span>
+                      <span className="font-bold text-primary">{item.percentage}%</span>
+                    </div>
+                  </div>
+                  <div className="h-8 bg-muted rounded-lg overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-lg transition-all duration-700 ease-out group-hover:from-accent group-hover:to-accent/70"
+                      style={{ 
+                        width: `${item.percentage}%`,
+                        animationDelay: `${index * 100}ms`
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+
+              {/* Summary stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-border mt-6">
+                <div className="text-center p-4 bg-muted/50 rounded-xl">
+                  <p className="text-3xl font-bold text-primary">268</p>
+                  <p className="text-sm text-muted-foreground">Grupos Ativos</p>
+                </div>
+                <div className="text-center p-4 bg-muted/50 rounded-xl">
+                  <p className="text-3xl font-bold text-primary">140</p>
+                  <p className="text-sm text-muted-foreground">Patentes</p>
+                </div>
+                <div className="text-center p-4 bg-muted/50 rounded-xl">
+                  <p className="text-3xl font-bold text-accent">27</p>
+                  <p className="text-sm text-muted-foreground">Estados</p>
+                </div>
+                <div className="text-center p-4 bg-muted/50 rounded-xl">
+                  <p className="text-3xl font-bold text-accent">89</p>
+                  <p className="text-sm text-muted-foreground">Instituições</p>
                 </div>
               </div>
-            )}
-          </div>
-          
-          {/* Legend */}
-          <div className="p-6 border-t border-border bg-muted/30">
-            <div className="flex flex-wrap gap-6 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-primary" />
-                <span className="text-muted-foreground">Tamanho = nº de grupos/projetos</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-accent" />
-                <span className="text-muted-foreground">Cor = intensidade tecnológica e patentes</span>
+
+              {/* Concentration alert */}
+              <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                  <Target className="w-4 h-4 text-accent" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground text-sm">Alta concentração detectada</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    58% das capacidades concentradas no Sudeste. Oportunidade para políticas de descentralização e fortalecimento de polos regionais.
+                  </p>
+                </div>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground/70 mt-4">
-              Fontes: CNPq (DGP), Capes, INPI, Finep
+          ) : (
+            <div className="aspect-[16/9] flex items-center justify-center">
+              <div className="text-center">
+                <BarChart3 className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                <p className="text-muted-foreground">Pesquise um objeto tecnológico para visualizar a distribuição</p>
+              </div>
+            </div>
+          )}
+          
+          {/* Footer */}
+          <div className="p-4 border-t border-border bg-muted/30">
+            <p className="text-xs text-muted-foreground">
+              Fontes: CNPq (Diretório de Grupos de Pesquisa), Capes, INPI, Finep
             </p>
           </div>
         </div>
@@ -544,7 +583,7 @@ const AtlasContent = ({ initialQuery = "" }: AtlasContentProps) => {
         </p>
       </div>
 
-      {/* Section 3 - Clusters */}
+      {/* Section 3 - Collaboration Network */}
       <div>
         <div className="flex items-center gap-4 mb-8">
           <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center">
@@ -552,48 +591,19 @@ const AtlasContent = ({ initialQuery = "" }: AtlasContentProps) => {
           </div>
           <div>
             <h3 className="text-2xl md:text-3xl font-bold text-foreground font-serif">
-              Clusters Tecnocientíficos do Brasil
+              Rede de Colaboração Interinstitucional
             </h3>
-            <p className="text-muted-foreground">Polos nacionais de especialização</p>
+            <p className="text-muted-foreground">
+              {hasSearched ? `Colaborações para: "${searchQuery}"` : "Relações entre universidades em projetos de pesquisa"}
+            </p>
           </div>
         </div>
 
-        {/* Cluster Network Placeholder */}
-        <div className="bg-card border border-border rounded-2xl p-8 mb-8">
-          <div className="aspect-[16/9] bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl flex items-center justify-center relative overflow-hidden">
-            {/* Network visualization placeholder */}
-            <div className="absolute inset-0">
-              {/* Central node */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shadow-lg">
-                Brasil
-              </div>
-              
-              {/* Cluster nodes */}
-              <div className="absolute top-[20%] left-[30%] w-14 h-14 rounded-full bg-accent/80 flex items-center justify-center text-accent-foreground text-xs font-medium shadow">USP</div>
-              <div className="absolute top-[25%] left-[60%] w-12 h-12 rounded-full bg-primary/70 flex items-center justify-center text-primary-foreground text-xs font-medium shadow">Unicamp</div>
-              <div className="absolute top-[60%] left-[25%] w-11 h-11 rounded-full bg-accent/60 flex items-center justify-center text-accent-foreground text-xs font-medium shadow">UFMG</div>
-              <div className="absolute top-[70%] left-[55%] w-10 h-10 rounded-full bg-primary/60 flex items-center justify-center text-primary-foreground text-xs font-medium shadow">UFRJ</div>
-              <div className="absolute top-[40%] left-[75%] w-10 h-10 rounded-full bg-accent/50 flex items-center justify-center text-accent-foreground text-xs font-medium shadow">Fiocruz</div>
-              <div className="absolute top-[75%] left-[35%] w-9 h-9 rounded-full bg-primary/50 flex items-center justify-center text-primary-foreground text-xs font-medium shadow">UFPR</div>
-              <div className="absolute top-[30%] left-[20%] w-9 h-9 rounded-full bg-accent/40 flex items-center justify-center text-accent-foreground text-xs font-medium shadow">Embrapa</div>
-              
-              {/* Connection lines (simplified) */}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-30">
-                <line x1="50%" y1="50%" x2="30%" y2="20%" stroke="currentColor" strokeWidth="1" className="text-primary" />
-                <line x1="50%" y1="50%" x2="60%" y2="25%" stroke="currentColor" strokeWidth="1" className="text-primary" />
-                <line x1="50%" y1="50%" x2="25%" y2="60%" stroke="currentColor" strokeWidth="1" className="text-accent" />
-                <line x1="50%" y1="50%" x2="55%" y2="70%" stroke="currentColor" strokeWidth="1" className="text-primary" />
-                <line x1="50%" y1="50%" x2="75%" y2="40%" stroke="currentColor" strokeWidth="1" className="text-accent" />
-                <line x1="50%" y1="50%" x2="35%" y2="75%" stroke="currentColor" strokeWidth="1" className="text-primary" />
-                <line x1="30%" y1="20%" x2="60%" y2="25%" stroke="currentColor" strokeWidth="0.5" className="text-muted-foreground" />
-                <line x1="25%" y1="60%" x2="35%" y2="75%" stroke="currentColor" strokeWidth="0.5" className="text-muted-foreground" />
-              </svg>
-            </div>
-          </div>
-        </div>
+        {/* Interactive Collaboration Network */}
+        <CollaborationNetwork hasSearched={hasSearched} />
 
         {/* Cluster Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
           {clusters.map((cluster) => (
             <div 
               key={cluster.name}
@@ -617,7 +627,7 @@ const AtlasContent = ({ initialQuery = "" }: AtlasContentProps) => {
         </div>
 
         <p className="text-xs text-muted-foreground/70 mt-6 text-center">
-          Clusterização baseada em coocorrência temática e redes de cooperação científica.
+          Rede baseada em coautorias, projetos conjuntos e cooperações formais entre instituições.
         </p>
       </div>
 
