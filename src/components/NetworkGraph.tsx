@@ -26,6 +26,7 @@ interface NetworkGraphProps {
     companies: { name: string; country: string; sector: string; type: string }[];
     international: { country: string; institutions: number; patents: number; relevance: string }[];
   };
+  onNodeSelect?: (nodeData: { type: string; data: Record<string, unknown> } | null) => void;
 }
 
 const nodeColors: Record<string, string> = {
@@ -37,7 +38,7 @@ const nodeColors: Record<string, string> = {
   international: '#ef4444',
 };
 
-export default function NetworkGraph({ searchResults }: NetworkGraphProps) {
+export default function NetworkGraph({ searchResults, onNodeSelect }: NetworkGraphProps) {
   const fgRef = useRef<ForceGraphMethods | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 450 });
@@ -145,7 +146,46 @@ export default function NetworkGraph({ searchResults }: NetworkGraphProps) {
       fgRef.current.centerAt(node.x, node.y, 800);
       fgRef.current.zoom(1.5, 800);
     }
-  }, []);
+    
+    // Get full data for the selected node
+    if (onNodeSelect) {
+      const nodeId = node.id;
+      
+      if (node.type === 'center') {
+        onNodeSelect({ type: 'center', data: { query: searchResults.query } });
+      } else if (nodeId.startsWith('sci-')) {
+        const index = parseInt(nodeId.split('-')[1]);
+        const sciData = searchResults.scientific[index];
+        if (sciData) {
+          onNodeSelect({ type: 'scientific', data: sciData });
+        }
+      } else if (nodeId.startsWith('tech-')) {
+        const index = parseInt(nodeId.split('-')[1]);
+        const techData = searchResults.technological[index];
+        if (techData) {
+          onNodeSelect({ type: 'technological', data: techData });
+        }
+      } else if (nodeId.startsWith('inst-')) {
+        const index = parseInt(nodeId.split('-')[1]);
+        const instData = searchResults.institutional[index];
+        if (instData) {
+          onNodeSelect({ type: 'institutional', data: instData });
+        }
+      } else if (nodeId.startsWith('comp-')) {
+        const index = parseInt(nodeId.split('-')[1]);
+        const compData = searchResults.companies[index];
+        if (compData) {
+          onNodeSelect({ type: 'company', data: { ...compData, companyType: compData.type } });
+        }
+      } else if (nodeId.startsWith('int-')) {
+        const index = parseInt(nodeId.split('-')[1]);
+        const intData = searchResults.international[index];
+        if (intData) {
+          onNodeSelect({ type: 'international', data: { ...intData, name: intData.country } });
+        }
+      }
+    }
+  }, [onNodeSelect, searchResults]);
 
   const nodeCanvasObject = useCallback((node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
     if (node.x === undefined || node.y === undefined) return;

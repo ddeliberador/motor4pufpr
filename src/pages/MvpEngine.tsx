@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Search, Microscope, Cpu, Building2, CheckCircle, Database, FileText, Landmark, Users, FlaskConical, Briefcase, ChevronRight, Globe, Factory, Download, Network, TrendingUp, AlertTriangle, Target, Link2, Info } from "lucide-react";
 import Header from "@/components/Header";
@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import UfprLogo from "@/components/UfprLogo";
 import { generateNewspaperPDF } from "@/lib/generatePdf";
 import NetworkGraph from "@/components/NetworkGraph";
+import NodeDetailPanel, { type NodeDetailData } from "@/components/NodeDetailPanel";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Extended mock data with companies and international incidences
@@ -175,6 +176,15 @@ const MvpEngine = () => {
   const [searchResults, setSearchResults] = useState<typeof mockSearchResults["baterias de sódio"] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<NodeDetailData | null>(null);
+  const [detailPanelOpen, setDetailPanelOpen] = useState(false);
+
+  const handleNodeSelect = useCallback((nodeData: { type: string; data: Record<string, unknown> } | null) => {
+    if (nodeData) {
+      setSelectedNode(nodeData as NodeDetailData);
+      setDetailPanelOpen(true);
+    }
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -684,8 +694,7 @@ const MvpEngine = () => {
                       <p className="text-muted-foreground">Visualização interativa das conexões</p>
                     </div>
                   </div>
-                  
-                  <NetworkGraph searchResults={searchResults} />
+                  <NetworkGraph searchResults={searchResults} onNodeSelect={handleNodeSelect} />
                 </div>
 
                 {/* Flow Visualization */}
@@ -1098,6 +1107,13 @@ const MvpEngine = () => {
       </section>
 
       <Footer />
+      
+      {/* Node Detail Panel */}
+      <NodeDetailPanel 
+        open={detailPanelOpen} 
+        onClose={() => setDetailPanelOpen(false)} 
+        nodeData={selectedNode} 
+      />
     </div>
   );
 };
