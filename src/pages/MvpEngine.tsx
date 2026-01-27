@@ -1,13 +1,15 @@
 import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Search, Microscope, Cpu, Building2, CheckCircle, Database, FileText, Landmark, Users, FlaskConical, Briefcase, ChevronRight, Globe, Factory, Download, Network, TrendingUp, AlertTriangle, Target, Link2, Info } from "lucide-react";
+import { ArrowLeft, Search, Microscope, Cpu, Building2, CheckCircle, Database, FileText, Landmark, Users, FlaskConical, Briefcase, ChevronRight, Globe, Factory, Download, Network, TrendingUp, AlertTriangle, Target, Link2, Info, MapPin } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import UfprLogo from "@/components/UfprLogo";
 import { generateNewspaperPDF } from "@/lib/generatePdf";
 import NetworkGraph from "@/components/NetworkGraph";
 import NodeDetailPanel, { type NodeDetailData } from "@/components/NodeDetailPanel";
+import AtlasContent from "@/components/AtlasContent";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Extended mock data with companies and international incidences
 // Indicator types
@@ -178,6 +180,7 @@ const MvpEngine = () => {
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedNode, setSelectedNode] = useState<NodeDetailData | null>(null);
   const [detailPanelOpen, setDetailPanelOpen] = useState(false);
+  const [activeView, setActiveView] = useState<"incidencia" | "atlas">("incidencia");
 
   const handleNodeSelect = useCallback((nodeData: { type: string; data: Record<string, unknown> } | null) => {
     if (nodeData) {
@@ -312,55 +315,86 @@ const MvpEngine = () => {
         </div>
       </section>
 
-      {/* Input do Motor - Interactive Search */}
+      {/* View Mode Selector */}
       <section className="section-spacing section-alt">
-        <div className="container-narrow">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-8 text-center">
-            Input do Motor
-          </h2>
-          <div className="bg-card rounded-xl border border-border p-8 max-w-xl mx-auto shadow-lg">
-            <label className="block text-sm font-medium text-muted-foreground mb-3">
-              Entrada do pesquisador
-            </label>
-            <form onSubmit={handleSearch}>
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Digite seu objeto de pesquisa"
-                  className="w-full pl-12 pr-4 py-4 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={isSearching || !searchQuery.trim()}
-                className="w-full mt-4 bg-primary text-primary-foreground py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSearching ? "Processando..." : "Buscar no Motor"}
-              </button>
-            </form>
-            <div className="mt-6">
-              <p className="text-xs text-muted-foreground mb-2">Exemplos de pesquisa:</p>
-              <div className="flex flex-wrap gap-2">
-                {["Baterias de sódio", "IA industrial", "Biomateriais"].map((example) => (
-                  <button
-                    key={example}
-                    onClick={() => handleExampleClick(example.toLowerCase())}
-                    className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded-full text-sm hover:bg-secondary/80 transition-colors cursor-pointer"
-                  >
-                    {example}
-                  </button>
-                ))}
-              </div>
+        <div className="container-wide">
+          <Tabs value={activeView} onValueChange={(v) => setActiveView(v as "incidencia" | "atlas")} className="w-full">
+            <div className="flex flex-col items-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6 text-center">
+                Escolha o Modo de Análise
+              </h2>
+              <TabsList className="grid w-full max-w-md grid-cols-2 h-14 bg-muted/50">
+                <TabsTrigger 
+                  value="incidencia" 
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-base font-medium"
+                >
+                  <Network className="w-4 h-4 mr-2" />
+                  Incidência
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="atlas" 
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-base font-medium"
+                >
+                  <MapPin className="w-4 h-4 mr-2" />
+                  Atlas Nacional
+                </TabsTrigger>
+              </TabsList>
             </div>
-          </div>
+
+            {/* Incidência Tab Content */}
+            <TabsContent value="incidencia" className="mt-0">
+              <div className="container-narrow mx-auto">
+                <div className="bg-card rounded-xl border border-border p-8 max-w-xl mx-auto shadow-lg">
+                  <label className="block text-sm font-medium text-muted-foreground mb-3">
+                    Entrada do pesquisador
+                  </label>
+                  <form onSubmit={handleSearch}>
+                    <div className="relative">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Digite seu objeto de pesquisa"
+                        className="w-full pl-12 pr-4 py-4 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={isSearching || !searchQuery.trim()}
+                      className="w-full mt-4 bg-primary text-primary-foreground py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSearching ? "Processando..." : "Buscar no Motor"}
+                    </button>
+                  </form>
+                  <div className="mt-6">
+                    <p className="text-xs text-muted-foreground mb-2">Exemplos de pesquisa:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {["Baterias de sódio", "IA industrial", "Biomateriais"].map((example) => (
+                        <button
+                          key={example}
+                          onClick={() => handleExampleClick(example.toLowerCase())}
+                          className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded-full text-sm hover:bg-secondary/80 transition-colors cursor-pointer"
+                        >
+                          {example}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Atlas Tab Content */}
+            <TabsContent value="atlas" className="mt-0">
+              <AtlasContent initialQuery={searchQuery} />
+            </TabsContent>
+          </Tabs>
         </div>
       </section>
 
-      {/* Search Results - Visual Output */}
-      {hasSearched && (
+      {/* Search Results - Visual Output (only show for Incidência view) */}
+      {hasSearched && activeView === "incidencia" && (
         <section className="section-spacing">
           <div className="container-wide">
             {isSearching ? (
