@@ -3,6 +3,10 @@ import { ArrowRight, Database, Network, BarChart3, Lightbulb, Target, TrendingUp
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import UfprLogo from "@/components/UfprLogo";
+import Motor4PDiagram from "@/components/Motor4PDiagram";
+import ChallengeCards from "@/components/ChallengeCards";
+import SystemViews from "@/components/SystemViews";
+import infografico from "@/assets/infografico-motor4p.png";
 const CamadaAusente = () => {
   return (
     <div className="min-h-screen bg-background">
@@ -35,26 +39,19 @@ const CamadaAusente = () => {
         </div>
       </section>
 
-      {/* O Problema Estrutural */}
+      {/* O Desafio Estrutural - com cards interativos */}
       <section className="section-spacing">
         <div className="container-wide">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12 text-center">
-            O Brasil tem dados. Mas não tem coordenação.
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4 text-center">
+            O Desafio Estrutural do Brasil
           </h2>
-          <div className="grid md:grid-cols-2 gap-6 mb-12">
-            {[
-              "Universidades produzem conhecimento, mas não enxergam demandas produtivas claras",
-              "Empresas não acessam instrumentos públicos por falha informacional",
-              "Políticas industriais operam sem memória computacional do sistema",
-              "Ciência, patentes, indústria e fomento permanecem fragmentados"
-            ].map((item, index) => (
-              <div key={index} className="card-institutional flex items-start gap-4">
-                <div className="w-2 h-2 rounded-full bg-accent mt-2 flex-shrink-0" />
-                <p className="text-muted-foreground">{item}</p>
-              </div>
-            ))}
-          </div>
-          <div className="highlight-box max-w-3xl mx-auto">
+          <p className="text-lg text-muted-foreground text-center max-w-2xl mx-auto mb-12">
+            O Brasil tem dados. Mas não tem coordenação.
+          </p>
+          
+          <ChallengeCards />
+          
+          <div className="highlight-box max-w-3xl mx-auto mt-12">
             <p className="text-lg text-foreground font-medium text-center">
               O problema central não é ausência de política.<br />
               <span className="text-accent">É ausência de uma infraestrutura de tradução e coordenação.</span>
@@ -88,24 +85,36 @@ const CamadaAusente = () => {
         </div>
       </section>
 
-      {/* A Proposta */}
+      {/* A Proposta - com diagrama 4P interativo */}
       <section className="section-spacing">
-        <div className="container-narrow text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-8">
-            Uma Engine Pública de Tradução Tecnológica
+        <div className="container-wide">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4 text-center">
+            A Proposta: MOTOR 4P UFPR
           </h2>
-          <p className="text-lg text-muted-foreground mb-10 leading-relaxed">
-            O MOTOR 4P UFPR é uma infraestrutura computacional que, dado um objeto científico 
-            ou tecnológico, constrói automaticamente sua trajetória no sistema de inovação:
+          <p className="text-xl md:text-2xl text-accent font-serif text-center mb-12">
+            Conectando Pesquisa, Produção, Política e Patentes
           </p>
-          <div className="diagram-flow py-8 bg-primary/5 rounded-xl border border-primary/20 px-6">
-            <span className="diagram-node bg-primary text-primary-foreground">Ciência</span>
-            <span className="diagram-arrow text-primary">→</span>
-            <span className="diagram-node bg-primary text-primary-foreground">Tecnologia</span>
-            <span className="diagram-arrow text-primary">→</span>
-            <span className="diagram-node bg-primary text-primary-foreground">Produção</span>
-            <span className="diagram-arrow text-primary">→</span>
-            <span className="diagram-node bg-primary text-primary-foreground">Política</span>
+          
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            {/* Diagrama interativo */}
+            <Motor4PDiagram />
+            
+            {/* Descrição */}
+            <div className="space-y-6">
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                O MOTOR 4P UFPR é uma infraestrutura computacional que, dado um objeto científico 
+                ou tecnológico, constrói automaticamente sua trajetória no sistema de inovação.
+              </p>
+              <div className="diagram-flow py-6 bg-primary/5 rounded-xl border border-primary/20 px-4">
+                <span className="diagram-node bg-primary text-primary-foreground text-sm">Ciência</span>
+                <span className="diagram-arrow text-primary">→</span>
+                <span className="diagram-node bg-primary text-primary-foreground text-sm">Tecnologia</span>
+                <span className="diagram-arrow text-primary">→</span>
+                <span className="diagram-node bg-primary text-primary-foreground text-sm">Produção</span>
+                <span className="diagram-arrow text-primary">→</span>
+                <span className="diagram-node bg-primary text-primary-foreground text-sm">Política</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -153,6 +162,16 @@ const CamadaAusente = () => {
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* As 3 Views do Sistema */}
+      <section className="section-spacing">
+        <div className="container-wide">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12 text-center">
+            As 3 Views do Sistema
+          </h2>
+          <SystemViews />
         </div>
       </section>
 
@@ -206,6 +225,22 @@ const CamadaAusente = () => {
           <p className="text-center text-lg text-foreground font-medium">
             O MOTOR 4P operacionaliza teoria econômica como infraestrutura pública.
           </p>
+        </div>
+      </section>
+
+      {/* Infográfico Completo */}
+      <section className="section-spacing">
+        <div className="container-wide">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-8 text-center">
+            Visão Geral da Infraestrutura
+          </h2>
+          <div className="flex justify-center">
+            <img 
+              src={infografico} 
+              alt="Infográfico MOTOR 4P UFPR - Infraestrutura Computacional para Política Industrial" 
+              className="max-w-full md:max-w-4xl rounded-xl shadow-lg border border-border"
+            />
+          </div>
         </div>
       </section>
 
