@@ -18,18 +18,24 @@ const Header = () => {
             </span>
           </Link>
 
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-6 md:gap-8">
             <Link
               to="/"
               className={`nav-link ${isActive("/") ? "active" : ""}`}
             >
-              A Camada Ausente
+              Conceito
             </Link>
             <Link
               to="/mvp"
               className={`nav-link ${isActive("/mvp") ? "active" : ""}`}
             >
               MVP Engine
+            </Link>
+            <Link
+              to="/atlas"
+              className={`nav-link ${isActive("/atlas") ? "active" : ""}`}
+            >
+              Atlas Nacional
             </Link>
           </div>
         </nav>
