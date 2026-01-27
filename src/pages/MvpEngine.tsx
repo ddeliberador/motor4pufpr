@@ -720,32 +720,33 @@ const MvpEngine = () => {
                     {searchResults.scientific.map((group, index) => (
                       <div 
                         key={index} 
-                        className="group bg-card border border-border rounded-xl p-5 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 opacity-0 animate-fade-in"
+                        className="group bg-card border border-border rounded-xl p-5 hover:border-primary/30 hover:shadow-lg transition-all duration-300 opacity-0 animate-fade-in cursor-pointer"
                         style={{ animationDelay: `${0.6 + index * 0.1}s` }}
+                        onClick={() => handleNodeSelect({ type: 'scientific', data: group })}
                       >
                         <div className="flex items-start justify-between mb-3">
-                          <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                            <Users className="w-5 h-5 text-blue-600" />
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Users className="w-5 h-5 text-primary" />
                           </div>
-                          <span className="text-xs font-medium px-2 py-1 bg-blue-50 text-blue-700 rounded-full">
+                          <span className="text-xs font-medium px-2 py-1 bg-secondary text-secondary-foreground rounded-full">
                             {group.state}
                           </span>
                         </div>
-                        <h4 className="font-semibold text-foreground mb-1 group-hover:text-blue-600 transition-colors">
+                        <h4 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
                           {group.name}
                         </h4>
                         <p className="text-sm text-muted-foreground mb-2">{group.institution}</p>
                         <p className="text-xs text-muted-foreground/70 mb-2">{group.area}</p>
                         {group.international && (
-                          <div className="flex items-center gap-1 text-xs text-rose-600 bg-rose-50 px-2 py-1 rounded-full">
+                          <div className="flex items-center gap-1 text-xs text-accent bg-accent/10 px-2 py-1 rounded-full">
                             <Globe className="w-3 h-3" />
                             <span>{group.international}</span>
                           </div>
                         )}
                       </div>
                     ))}
-                    <div className="bg-blue-50 border border-blue-200 border-dashed rounded-xl p-5 flex items-center justify-center">
-                      <p className="text-sm text-blue-600 font-medium">
+                    <div className="bg-muted/50 border border-border border-dashed rounded-xl p-5 flex items-center justify-center">
+                      <p className="text-sm text-muted-foreground font-medium">
                         + {searchResults.stats.groups - searchResults.scientific.length} grupos
                       </p>
                     </div>
@@ -777,19 +778,20 @@ const MvpEngine = () => {
                     {searchResults.technological.map((patent, index) => (
                       <div 
                         key={index} 
-                        className="group bg-card border border-border rounded-xl p-5 hover:border-purple-300 hover:shadow-lg hover:shadow-purple-500/10 transition-all duration-300 opacity-0 animate-fade-in"
+                        className="group bg-card border border-border rounded-xl p-5 hover:border-primary/30 hover:shadow-lg transition-all duration-300 opacity-0 animate-fade-in cursor-pointer"
                         style={{ animationDelay: `${1.2 + index * 0.1}s` }}
+                        onClick={() => handleNodeSelect({ type: 'technological', data: patent })}
                       >
                         <div className="flex items-start gap-4">
-                          <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
-                            <FlaskConical className="w-6 h-6 text-purple-600" />
+                          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <FlaskConical className="w-6 h-6 text-primary" />
                           </div>
                           <div className="flex-grow min-w-0">
                             <div className="flex items-start justify-between gap-4">
-                              <h4 className="font-semibold text-foreground group-hover:text-purple-600 transition-colors">
+                              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">
                                 {patent.title}
                               </h4>
-                              <span className="text-xs font-mono bg-purple-50 text-purple-700 px-2 py-1 rounded flex-shrink-0">
+                              <span className="text-xs font-mono bg-secondary text-secondary-foreground px-2 py-1 rounded flex-shrink-0">
                                 {patent.year}
                               </span>
                             </div>
@@ -797,7 +799,7 @@ const MvpEngine = () => {
                             <div className="flex items-center gap-3 mt-2">
                               <p className="text-xs text-muted-foreground/70 font-mono">{patent.code}</p>
                               {patent.international && (
-                                <span className="flex items-center gap-1 text-xs text-rose-600 bg-rose-50 px-2 py-1 rounded-full">
+                                <span className="flex items-center gap-1 text-xs text-accent bg-accent/10 px-2 py-1 rounded-full">
                                   <Globe className="w-3 h-3" />
                                   {patent.international}
                                 </span>
@@ -807,8 +809,8 @@ const MvpEngine = () => {
                         </div>
                       </div>
                     ))}
-                    <div className="bg-purple-50 border border-purple-200 border-dashed rounded-xl p-5 text-center">
-                      <p className="text-sm text-purple-600 font-medium">
+                    <div className="bg-muted/50 border border-border border-dashed rounded-xl p-5 text-center">
+                      <p className="text-sm text-muted-foreground font-medium">
                         + {searchResults.stats.patents - searchResults.technological.length} patentes relacionadas
                       </p>
                     </div>
@@ -846,11 +848,12 @@ const MvpEngine = () => {
                         {searchResults.companies.filter(c => c.country === "Brasil").map((company, index) => (
                           <div 
                             key={index}
-                            className="flex items-center gap-3 bg-card border border-border rounded-lg p-4 hover:border-amber-300 transition-all opacity-0 animate-fade-in"
+                            className="flex items-center gap-3 bg-card border border-border rounded-lg p-4 hover:border-primary/30 transition-all opacity-0 animate-fade-in cursor-pointer"
                             style={{ animationDelay: `${1.8 + index * 0.1}s` }}
+                            onClick={() => handleNodeSelect({ type: 'company', data: { ...company, companyType: company.type } })}
                           >
-                            <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
-                              <Building2 className="w-5 h-5 text-amber-600" />
+                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <Building2 className="w-5 h-5 text-primary" />
                             </div>
                             <div className="flex-grow">
                               <h5 className="font-medium text-foreground">{company.name}</h5>
@@ -870,11 +873,12 @@ const MvpEngine = () => {
                         {searchResults.companies.filter(c => c.country !== "Brasil").slice(0, 5).map((company, index) => (
                           <div 
                             key={index}
-                            className="flex items-center gap-3 bg-card border border-border rounded-lg p-4 hover:border-rose-300 transition-all opacity-0 animate-fade-in"
+                            className="flex items-center gap-3 bg-card border border-border rounded-lg p-4 hover:border-primary/30 transition-all opacity-0 animate-fade-in cursor-pointer"
                             style={{ animationDelay: `${2.2 + index * 0.1}s` }}
+                            onClick={() => handleNodeSelect({ type: 'company', data: { ...company, companyType: company.type } })}
                           >
-                            <div className="w-10 h-10 rounded-lg bg-rose-100 flex items-center justify-center">
-                              <Globe className="w-5 h-5 text-rose-600" />
+                            <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                              <Globe className="w-5 h-5 text-accent" />
                             </div>
                             <div className="flex-grow">
                               <h5 className="font-medium text-foreground">{company.name}</h5>
@@ -912,21 +916,22 @@ const MvpEngine = () => {
                     {searchResults.international.map((item, index) => (
                       <div 
                         key={index}
-                        className="bg-gradient-to-br from-card to-rose-50/30 border border-border rounded-xl p-5 hover:shadow-lg transition-all opacity-0 animate-fade-in"
+                        className="bg-card border border-border rounded-xl p-5 hover:border-primary/30 hover:shadow-lg transition-all opacity-0 animate-fade-in cursor-pointer"
                         style={{ animationDelay: `${2.8 + index * 0.1}s` }}
+                        onClick={() => handleNodeSelect({ type: 'international', data: { ...item, name: item.country } })}
                       >
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-lg font-medium">{item.country}</span>
-                          <span className="text-xs font-medium px-2 py-1 bg-rose-100 text-rose-700 rounded-full">
+                          <span className="text-xs font-medium px-2 py-1 bg-secondary text-secondary-foreground rounded-full">
                             {item.relevance}
                           </span>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                          <div className="text-center p-2 bg-white/50 rounded-lg">
+                          <div className="text-center p-2 bg-muted/50 rounded-lg">
                             <p className="text-2xl font-bold text-foreground">{item.institutions}</p>
                             <p className="text-xs text-muted-foreground">Instituições</p>
                           </div>
-                          <div className="text-center p-2 bg-white/50 rounded-lg">
+                          <div className="text-center p-2 bg-muted/50 rounded-lg">
                             <p className="text-2xl font-bold text-foreground">{item.patents}</p>
                             <p className="text-xs text-muted-foreground">Patentes</p>
                           </div>
@@ -961,32 +966,33 @@ const MvpEngine = () => {
                     {searchResults.institutional.map((inst, index) => (
                       <div 
                         key={index} 
-                        className="group bg-card border border-border rounded-xl p-6 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 opacity-0 animate-fade-in"
+                        className="group bg-card border border-border rounded-xl p-6 hover:border-accent/30 hover:shadow-lg transition-all duration-300 opacity-0 animate-fade-in cursor-pointer"
                         style={{ animationDelay: `${3.4 + index * 0.1}s` }}
+                        onClick={() => handleNodeSelect({ type: 'institutional', data: inst })}
                       >
                         <div className="flex items-start justify-between mb-4">
-                          <div className="w-12 h-12 rounded-lg bg-emerald-100 flex items-center justify-center">
-                            <Briefcase className="w-6 h-6 text-emerald-600" />
+                          <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
+                            <Briefcase className="w-6 h-6 text-accent" />
                           </div>
                           <span className={`text-xs font-medium px-3 py-1 rounded-full ${
                             inst.status === 'Aberto' 
-                              ? 'bg-green-100 text-green-700' 
+                              ? 'bg-accent/10 text-accent' 
                               : inst.status === 'Contínuo'
-                              ? 'bg-blue-100 text-blue-700'
+                              ? 'bg-primary/10 text-primary'
                               : inst.status === 'Ativo'
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : 'bg-gray-100 text-gray-700'
+                              ? 'bg-accent/10 text-accent'
+                              : 'bg-muted text-muted-foreground'
                           }`}>
                             {inst.status}
                           </span>
                         </div>
-                        <h4 className="font-semibold text-foreground mb-2 group-hover:text-emerald-600 transition-colors">
+                        <h4 className="font-semibold text-foreground mb-2 group-hover:text-accent transition-colors">
                           {inst.name}
                         </h4>
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">{inst.type}</span>
                           {inst.value && (
-                            <span className="text-sm font-semibold text-emerald-600">{inst.value}</span>
+                            <span className="text-sm font-semibold text-accent">{inst.value}</span>
                           )}
                         </div>
                       </div>
