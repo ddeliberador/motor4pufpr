@@ -401,6 +401,7 @@ const MvpEngine = () => {
                   </div>
 
                   {/* New Indicators Section */}
+                  {searchResults.indicators && (
                   <div className="mt-12">
                     <h4 className="text-lg font-semibold text-foreground mb-6 text-center">Indicadores de Tradução Tecnológica</h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -525,6 +526,7 @@ const MvpEngine = () => {
                       </div>
                     </div>
                   </div>
+                  )}
                 </div>
 
                 {/* Network Graph Visualization */}
