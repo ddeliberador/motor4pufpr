@@ -31,12 +31,6 @@ const Header = () => {
             >
               MVP Engine
             </Link>
-            <Link
-              to="/atlas"
-              className={`nav-link ${isActive("/atlas") ? "active" : ""}`}
-            >
-              Atlas Nacional
-            </Link>
           </div>
         </nav>
       </div>

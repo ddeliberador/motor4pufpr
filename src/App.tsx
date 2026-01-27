@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import CamadaAusente from "./pages/CamadaAusente";
 import MvpEngine from "./pages/MvpEngine";
-import AtlasNacional from "./pages/AtlasNacional";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -19,7 +18,6 @@ const App = () => (
         <Routes>
           <Route path="/" element={<CamadaAusente />} />
           <Route path="/mvp" element={<MvpEngine />} />
-          <Route path="/atlas" element={<AtlasNacional />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
