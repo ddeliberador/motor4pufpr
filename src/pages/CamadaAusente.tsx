@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Database, Network, BarChart3, Lightbulb, Target, TrendingUp, AlertTriangle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-
+import UfprLogo from "@/components/UfprLogo";
 const CamadaAusente = () => {
   return (
     <div className="min-h-screen bg-background">
@@ -11,6 +11,9 @@ const CamadaAusente = () => {
       {/* Hero Section */}
       <section className="hero-section pt-32 pb-24 md:pt-40 md:pb-32">
         <div className="container-narrow text-center">
+          <div className="flex justify-center mb-6">
+            <UfprLogo className="w-24 h-24 opacity-90" />
+          </div>
           <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground mb-6 animate-fade-in">
             MOTOR 4P UFPR
           </h1>
