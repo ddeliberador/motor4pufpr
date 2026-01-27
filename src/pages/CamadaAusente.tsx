@@ -210,14 +210,19 @@ const CamadaAusente = () => {
       <section className="section-spacing">
         <div className="container-narrow">
           <div className="bg-primary rounded-2xl p-10 md:p-16 text-center">
-            <p className="text-xl md:text-2xl text-primary-foreground leading-relaxed font-serif">
+            <p className="text-xl md:text-2xl text-primary-foreground leading-relaxed font-serif italic">
               "Como infraestruturas computacionais públicas podem ampliar a capacidade do Brasil 
               de coordenar ciência, tecnologia e política industrial?"
             </p>
           </div>
-          <p className="text-center text-muted-foreground mt-8">
-            Doutorado em Políticas Públicas — UFPR
-          </p>
+          <div className="mt-10 text-center">
+            <p className="text-muted-foreground text-sm mb-2">Doutorado em Políticas Públicas — UFPR</p>
+            <div className="w-16 h-px bg-border mx-auto my-4" />
+            <p className="text-foreground font-medium">Decio Dalton Deliberador Filho</p>
+            <p className="text-muted-foreground text-sm mt-1">Doutorando</p>
+            <p className="text-foreground font-medium mt-4">Walter Tadahiro Shima</p>
+            <p className="text-muted-foreground text-sm mt-1">Orientador</p>
+          </div>
         </div>
       </section>
 
