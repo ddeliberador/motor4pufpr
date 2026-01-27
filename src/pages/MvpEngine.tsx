@@ -1146,6 +1146,21 @@ const MvpEngine = () => {
         </div>
       </section>
 
+      {/* Academic Credits */}
+      <section className="py-12 border-t border-border bg-muted/30">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <p className="text-sm text-muted-foreground mb-2">
+            Doutorado em Políticas Públicas — Universidade Federal do Paraná
+          </p>
+          <p className="text-base text-foreground font-medium">
+            Decio Dalton Deliberador Filho <span className="text-muted-foreground font-normal">(Doutorando)</span>
+          </p>
+          <p className="text-base text-foreground font-medium">
+            Walter Tadahiro Shima <span className="text-muted-foreground font-normal">(Orientador)</span>
+          </p>
+        </div>
+      </section>
+
       <Footer />
       
       {/* Node Detail Panel */}
