@@ -1,73 +1,50 @@
 import { motion } from "framer-motion";
 
 const Motor4PDiagram = () => {
+  // Posições fixas para os 4 pilares (em coordenadas SVG 400x400)
   const pillars = [
-    { label: "PESQUISA", angle: 135, color: "hsl(var(--primary))" },
-    { label: "PRODUÇÃO", angle: 45, color: "hsl(215 45% 35%)" },
-    { label: "POLÍTICA", angle: 225, color: "hsl(25 70% 50%)" },
-    { label: "PATENTES", angle: 315, color: "hsl(25 60% 45%)" },
+    { label: "PESQUISA", x: 80, y: 80, color: "hsl(var(--primary))" },
+    { label: "PRODUÇÃO", x: 320, y: 80, color: "hsl(215 45% 35%)" },
+    { label: "POLÍTICA", x: 80, y: 320, color: "hsl(25 70% 50%)" },
+    { label: "PATENTES", x: 320, y: 320, color: "hsl(25 60% 45%)" },
   ];
 
-  return (
-    <div className="relative w-full max-w-lg mx-auto aspect-square">
-      {/* Central circle */}
-      <motion.div 
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 md:w-40 md:h-40 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 border-2 border-primary/30 flex items-center justify-center z-10"
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-      >
-        <div className="text-center">
-          <p className="text-xs md:text-sm font-semibold text-primary">COORDENAÇÃO</p>
-          <p className="text-xs md:text-sm font-semibold text-primary">INTELIGENTE</p>
-        </div>
-      </motion.div>
+  const centerX = 200;
+  const centerY = 200;
 
-      {/* Network lines SVG */}
-      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 400">
-        {/* Connection lines between pillars and center */}
-        {pillars.map((_, i) => {
-          const angle1 = (pillars[i].angle * Math.PI) / 180;
-          const x1 = 200 + 120 * Math.cos(angle1);
-          const y1 = 200 - 120 * Math.sin(angle1);
-          
-          return (
-            <motion.line
-              key={`center-${i}`}
-              x1={200}
-              y1={200}
-              x2={x1}
-              y2={y1}
-              stroke="hsl(var(--primary))"
-              strokeWidth="2"
-              strokeOpacity="0.3"
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 0.8, delay: 0.3 + i * 0.1 }}
-            />
-          );
-        })}
+  return (
+    <div className="relative w-full max-w-md mx-auto aspect-square">
+      <svg className="w-full h-full" viewBox="0 0 400 400">
+        {/* Connection lines from center to pillars */}
+        {pillars.map((pillar, i) => (
+          <motion.line
+            key={`center-${i}`}
+            x1={centerX}
+            y1={centerY}
+            x2={pillar.x}
+            y2={pillar.y}
+            stroke="hsl(var(--primary))"
+            strokeWidth="2"
+            strokeOpacity="0.3"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 0.8, delay: 0.3 + i * 0.1 }}
+          />
+        ))}
         
-        {/* Connection lines between adjacent pillars */}
-        {pillars.map((_, i) => {
-          const angle1 = (pillars[i].angle * Math.PI) / 180;
-          const angle2 = (pillars[(i + 1) % 4].angle * Math.PI) / 180;
-          const x1 = 200 + 120 * Math.cos(angle1);
-          const y1 = 200 - 120 * Math.sin(angle1);
-          const x2 = 200 + 120 * Math.cos(angle2);
-          const y2 = 200 - 120 * Math.sin(angle2);
-          
+        {/* Connection lines between adjacent pillars (square) */}
+        {pillars.map((pillar, i) => {
+          const nextPillar = pillars[(i + 1) % 4];
           return (
             <motion.line
               key={`connect-${i}`}
-              x1={x1}
-              y1={y1}
-              x2={x2}
-              y2={y2}
-              stroke="hsl(var(--accent))"
-              strokeWidth="2"
+              x1={pillar.x}
+              y1={pillar.y}
+              x2={nextPillar.x}
+              y2={nextPillar.y}
+              stroke="hsl(var(--muted-foreground))"
+              strokeWidth="1.5"
               strokeOpacity="0.4"
-              strokeDasharray="6 4"
               initial={{ pathLength: 0 }}
               animate={{ pathLength: 1 }}
               transition={{ duration: 0.6, delay: 0.6 + i * 0.1 }}
@@ -75,52 +52,90 @@ const Motor4PDiagram = () => {
           );
         })}
 
-        {/* Small network nodes */}
-        {[...Array(8)].map((_, i) => {
-          const angle = (i * 45 * Math.PI) / 180;
-          const radius = 80 + (i % 2) * 30;
-          const cx = 200 + radius * Math.cos(angle);
-          const cy = 200 - radius * Math.sin(angle);
-          
-          return (
-            <motion.circle
-              key={`node-${i}`}
-              cx={cx}
-              cy={cy}
-              r="4"
-              fill="hsl(var(--primary))"
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 0.6 }}
-              transition={{ duration: 0.3, delay: 0.8 + i * 0.05 }}
-            />
-          );
-        })}
-      </svg>
+        {/* Central circle */}
+        <motion.circle
+          cx={centerX}
+          cy={centerY}
+          r="60"
+          fill="hsl(var(--muted))"
+          stroke="hsl(var(--primary))"
+          strokeWidth="2"
+          strokeOpacity="0.3"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        />
 
-      {/* Pillar circles */}
-      {pillars.map((pillar, index) => {
-        const angle = (pillar.angle * Math.PI) / 180;
-        const x = 50 + 35 * Math.cos(angle);
-        const y = 50 - 35 * Math.sin(angle);
-        
-        return (
-          <motion.div
+        {/* Central text */}
+        <motion.text
+          x={centerX}
+          y={centerY - 8}
+          textAnchor="middle"
+          className="fill-primary text-[11px] font-semibold"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
+          COORDENAÇÃO
+        </motion.text>
+        <motion.text
+          x={centerX}
+          y={centerY + 10}
+          textAnchor="middle"
+          className="fill-primary text-[11px] font-semibold"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
+          INTELIGENTE
+        </motion.text>
+
+        {/* Pillar circles */}
+        {pillars.map((pillar, index) => (
+          <motion.g
             key={pillar.label}
-            className="absolute w-20 h-20 md:w-24 md:h-24 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm shadow-lg"
-            style={{ 
-              left: `${x}%`, 
-              top: `${y}%`,
-              backgroundColor: pillar.color
-            }}
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
-            whileHover={{ scale: 1.1 }}
           >
-            {pillar.label}
-          </motion.div>
-        );
-      })}
+            <circle
+              cx={pillar.x}
+              cy={pillar.y}
+              r="45"
+              fill={pillar.color}
+              className="cursor-pointer transition-transform hover:scale-110"
+              style={{ transformOrigin: `${pillar.x}px ${pillar.y}px` }}
+            />
+            <text
+              x={pillar.x}
+              y={pillar.y + 4}
+              textAnchor="middle"
+              className="fill-white text-[11px] font-bold pointer-events-none"
+            >
+              {pillar.label}
+            </text>
+          </motion.g>
+        ))}
+
+        {/* Small decorative nodes */}
+        {[
+          { x: 140, y: 140 },
+          { x: 260, y: 140 },
+          { x: 140, y: 260 },
+          { x: 260, y: 260 },
+        ].map((node, i) => (
+          <motion.circle
+            key={`node-${i}`}
+            cx={node.x}
+            cy={node.y}
+            r="4"
+            fill="hsl(var(--primary))"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 0.5 }}
+            transition={{ duration: 0.3, delay: 0.8 + i * 0.05 }}
+          />
+        ))}
+      </svg>
     </div>
   );
 };
