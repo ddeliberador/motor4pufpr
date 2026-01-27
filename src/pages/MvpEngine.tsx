@@ -374,30 +374,30 @@ const MvpEngine = () => {
                   
                   {/* Stats Overview - 5 columns now */}
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4 max-w-5xl mx-auto">
-                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-5 text-white opacity-0 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-                      <Microscope className="w-7 h-7 mx-auto mb-2 opacity-80" />
-                      <p className="text-3xl md:text-4xl font-bold mb-1">{searchResults.stats.groups}</p>
-                      <p className="text-xs opacity-80">Grupos de Pesquisa</p>
+                    <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+                      <Microscope className="w-7 h-7 mx-auto mb-2 text-primary" />
+                      <p className="text-3xl md:text-4xl font-bold mb-1 text-foreground">{searchResults.stats.groups}</p>
+                      <p className="text-xs text-muted-foreground">Grupos de Pesquisa</p>
                     </div>
-                    <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-5 text-white opacity-0 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-                      <FileText className="w-7 h-7 mx-auto mb-2 opacity-80" />
-                      <p className="text-3xl md:text-4xl font-bold mb-1">{searchResults.stats.patents}</p>
-                      <p className="text-xs opacity-80">Patentes</p>
+                    <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+                      <FileText className="w-7 h-7 mx-auto mb-2 text-primary" />
+                      <p className="text-3xl md:text-4xl font-bold mb-1 text-foreground">{searchResults.stats.patents}</p>
+                      <p className="text-xs text-muted-foreground">Patentes</p>
                     </div>
-                    <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-5 text-white opacity-0 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-                      <Landmark className="w-7 h-7 mx-auto mb-2 opacity-80" />
-                      <p className="text-3xl md:text-4xl font-bold mb-1">{searchResults.stats.instruments}</p>
-                      <p className="text-xs opacity-80">Instrumentos</p>
+                    <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.3s" }}>
+                      <Landmark className="w-7 h-7 mx-auto mb-2 text-accent" />
+                      <p className="text-3xl md:text-4xl font-bold mb-1 text-foreground">{searchResults.stats.instruments}</p>
+                      <p className="text-xs text-muted-foreground">Instrumentos</p>
                     </div>
-                    <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-5 text-white opacity-0 animate-fade-in" style={{ animationDelay: "0.4s" }}>
-                      <Factory className="w-7 h-7 mx-auto mb-2 opacity-80" />
-                      <p className="text-3xl md:text-4xl font-bold mb-1">{searchResults.stats.companies}</p>
-                      <p className="text-xs opacity-80">Empresas</p>
+                    <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.4s" }}>
+                      <Factory className="w-7 h-7 mx-auto mb-2 text-primary" />
+                      <p className="text-3xl md:text-4xl font-bold mb-1 text-foreground">{searchResults.stats.companies}</p>
+                      <p className="text-xs text-muted-foreground">Empresas</p>
                     </div>
-                    <div className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl p-5 text-white col-span-2 md:col-span-1 opacity-0 animate-fade-in" style={{ animationDelay: "0.5s" }}>
-                      <Globe className="w-7 h-7 mx-auto mb-2 opacity-80" />
-                      <p className="text-3xl md:text-4xl font-bold mb-1">{searchResults.stats.international}</p>
-                      <p className="text-xs opacity-80">Países</p>
+                    <div className="bg-card border border-border rounded-2xl p-5 col-span-2 md:col-span-1 opacity-0 animate-fade-in" style={{ animationDelay: "0.5s" }}>
+                      <Globe className="w-7 h-7 mx-auto mb-2 text-primary" />
+                      <p className="text-3xl md:text-4xl font-bold mb-1 text-foreground">{searchResults.stats.international}</p>
+                      <p className="text-xs text-muted-foreground">Países</p>
                     </div>
                   </div>
 
