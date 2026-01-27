@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Search, Microscope, Cpu, Building2, CheckCircle, Database, FileText, Landmark, Users, FlaskConical, Briefcase, ChevronRight, Globe, Factory, Download, Network } from "lucide-react";
+import { ArrowLeft, Search, Microscope, Cpu, Building2, CheckCircle, Database, FileText, Landmark, Users, FlaskConical, Briefcase, ChevronRight, Globe, Factory, Download, Network, TrendingUp, AlertTriangle, Target, Link2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import UfprLogo from "@/components/UfprLogo";
@@ -8,6 +8,14 @@ import { generateNewspaperPDF } from "@/lib/generatePdf";
 import NetworkGraph from "@/components/NetworkGraph";
 
 // Extended mock data with companies and international incidences
+// Indicator types
+interface Indicators {
+  c2t: { value: number; label: string; description: string };
+  gt: { value: number; label: string; description: string };
+  p2c: { value: number; label: string; description: string };
+  cd: { value: number; label: string; description: string };
+}
+
 const mockSearchResults: Record<string, {
   query: string;
   scientific: { name: string; institution: string; state: string; area: string; international?: string }[];
@@ -16,6 +24,7 @@ const mockSearchResults: Record<string, {
   companies: { name: string; country: string; sector: string; type: string }[];
   international: { country: string; institutions: number; patents: number; relevance: string }[];
   stats: { groups: number; patents: number; instruments: number; companies: number; international: number };
+  indicators: Indicators;
 }> = {
   "baterias de sódio": {
     query: "Baterias de sódio",
@@ -58,6 +67,12 @@ const mockSearchResults: Record<string, {
       { country: "🇩🇪 Alemanha", institutions: 43, patents: 234, relevance: "Pesquisa avançada" },
       { country: "🇫🇷 França", institutions: 28, patents: 187, relevance: "TIAMAT líder" },
     ],
+    indicators: {
+      c2t: { value: 72, label: "C2T", description: "Alta maturidade científica, tradução tecnológica em progresso" },
+      gt: { value: 45, label: "GT", description: "Gargalo moderado: escala produtiva e integração com indústria" },
+      p2c: { value: 58, label: "P2C", description: "Boa aderência dos instrumentos à capacidade instalada" },
+      cd: { value: 78, label: "CD", description: "Alta dependência de insumos e tecnologia externa (China, Coreia)" },
+    },
   },
   "ia industrial": {
     query: "IA Industrial",
@@ -100,6 +115,12 @@ const mockSearchResults: Record<string, {
       { country: "🇰🇷 Coreia do Sul", institutions: 98, patents: 1234, relevance: "Smart factories" },
       { country: "🇬🇧 Reino Unido", institutions: 87, patents: 876, relevance: "P&D intensivo" },
     ],
+    indicators: {
+      c2t: { value: 85, label: "C2T", description: "Excelente maturidade científica e forte conversão tecnológica" },
+      gt: { value: 32, label: "GT", description: "Gargalo baixo: ecossistema bem integrado, falta de escala" },
+      p2c: { value: 75, label: "P2C", description: "Alta aderência: políticas de IA alinhadas com capacidades" },
+      cd: { value: 65, label: "CD", description: "Dependência moderada em hardware especializado (GPUs, chips)" },
+    },
   },
   "biomateriais": {
     query: "Biomateriais",
@@ -139,6 +160,12 @@ const mockSearchResults: Record<string, {
       { country: "🇨🇭 Suíça", institutions: 67, patents: 654, relevance: "Implantes premium" },
       { country: "🇬🇧 Reino Unido", institutions: 54, patents: 432, relevance: "Biotech inovador" },
     ],
+    indicators: {
+      c2t: { value: 68, label: "C2T", description: "Boa maturidade científica, tradução em desenvolvimento" },
+      gt: { value: 55, label: "GT", description: "Gargalo significativo: regulação ANVISA e escala produtiva" },
+      p2c: { value: 62, label: "P2C", description: "Aderência moderada: falta alinhamento entre BNDES e Finep" },
+      cd: { value: 48, label: "CD", description: "Dependência média em insumos e equipamentos de teste" },
+    },
   },
 };
 
@@ -200,6 +227,12 @@ const MvpEngine = () => {
             { country: "🇩🇪 Alemanha", institutions: Math.floor(80 * baseMultiplier), patents: Math.floor(900 * baseMultiplier), relevance: "Alta qualidade" },
             { country: "🇯🇵 Japão", institutions: Math.floor(70 * baseMultiplier), patents: Math.floor(700 * baseMultiplier), relevance: "Tradicional" },
           ],
+          indicators: {
+            c2t: { value: Math.floor(50 + Math.random() * 40), label: "C2T", description: "Maturidade científica em análise" },
+            gt: { value: Math.floor(30 + Math.random() * 50), label: "GT", description: "Gargalo de tradução identificado" },
+            p2c: { value: Math.floor(40 + Math.random() * 40), label: "P2C", description: "Aderência política sendo avaliada" },
+            cd: { value: Math.floor(35 + Math.random() * 50), label: "CD", description: "Concentração e dependência variável" },
+          },
         });
       }
       setIsSearching(false);
@@ -364,6 +397,132 @@ const MvpEngine = () => {
                       <Globe className="w-7 h-7 mx-auto mb-2 opacity-80" />
                       <p className="text-3xl md:text-4xl font-bold mb-1">{searchResults.stats.international}</p>
                       <p className="text-xs opacity-80">Países</p>
+                    </div>
+                  </div>
+
+                  {/* New Indicators Section */}
+                  <div className="mt-12">
+                    <h4 className="text-lg font-semibold text-foreground mb-6 text-center">Indicadores de Tradução Tecnológica</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {/* C2T - Maturidade Ciência → Tecnologia */}
+                      <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.6s" }}>
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                            <TrendingUp className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Maturidade</p>
+                            <p className="font-bold text-foreground">C2T</p>
+                          </div>
+                        </div>
+                        <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-3">
+                          <div 
+                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full transition-all duration-1000"
+                            style={{ width: `${searchResults.indicators.c2t.value}%` }}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-2xl font-bold text-foreground">{searchResults.indicators.c2t.value}%</span>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            searchResults.indicators.c2t.value >= 70 ? 'bg-green-100 text-green-700' :
+                            searchResults.indicators.c2t.value >= 50 ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {searchResults.indicators.c2t.value >= 70 ? 'Alto' : searchResults.indicators.c2t.value >= 50 ? 'Médio' : 'Baixo'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{searchResults.indicators.c2t.description}</p>
+                      </div>
+
+                      {/* GT - Gargalo de Tradução */}
+                      <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.7s" }}>
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
+                            <AlertTriangle className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Gargalo</p>
+                            <p className="font-bold text-foreground">GT</p>
+                          </div>
+                        </div>
+                        <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-3">
+                          <div 
+                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-orange-500 to-red-600 rounded-full transition-all duration-1000"
+                            style={{ width: `${searchResults.indicators.gt.value}%` }}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-2xl font-bold text-foreground">{searchResults.indicators.gt.value}%</span>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            searchResults.indicators.gt.value <= 30 ? 'bg-green-100 text-green-700' :
+                            searchResults.indicators.gt.value <= 50 ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {searchResults.indicators.gt.value <= 30 ? 'Baixo' : searchResults.indicators.gt.value <= 50 ? 'Médio' : 'Alto'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{searchResults.indicators.gt.description}</p>
+                      </div>
+
+                      {/* P2C - Aderência Política → Capacidade */}
+                      <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.8s" }}>
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                            <Target className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Aderência</p>
+                            <p className="font-bold text-foreground">P2C</p>
+                          </div>
+                        </div>
+                        <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-3">
+                          <div 
+                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full transition-all duration-1000"
+                            style={{ width: `${searchResults.indicators.p2c.value}%` }}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-2xl font-bold text-foreground">{searchResults.indicators.p2c.value}%</span>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            searchResults.indicators.p2c.value >= 70 ? 'bg-green-100 text-green-700' :
+                            searchResults.indicators.p2c.value >= 50 ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {searchResults.indicators.p2c.value >= 70 ? 'Alto' : searchResults.indicators.p2c.value >= 50 ? 'Médio' : 'Baixo'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{searchResults.indicators.p2c.description}</p>
+                      </div>
+
+                      {/* CD - Concentração e Dependência */}
+                      <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.9s" }}>
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                            <Link2 className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Dependência</p>
+                            <p className="font-bold text-foreground">CD</p>
+                          </div>
+                        </div>
+                        <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-3">
+                          <div 
+                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full transition-all duration-1000"
+                            style={{ width: `${searchResults.indicators.cd.value}%` }}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-2xl font-bold text-foreground">{searchResults.indicators.cd.value}%</span>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            searchResults.indicators.cd.value <= 40 ? 'bg-green-100 text-green-700' :
+                            searchResults.indicators.cd.value <= 60 ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {searchResults.indicators.cd.value <= 40 ? 'Baixa' : searchResults.indicators.cd.value <= 60 ? 'Média' : 'Alta'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{searchResults.indicators.cd.description}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
