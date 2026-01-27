@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Search, Microscope, Cpu, Building2, CheckCircle, Database, FileText, Landmark, Users, FlaskConical, Briefcase, ChevronRight, Globe, Factory, Download, Network, TrendingUp, AlertTriangle, Target, Link2 } from "lucide-react";
+import { ArrowLeft, Search, Microscope, Cpu, Building2, CheckCircle, Database, FileText, Landmark, Users, FlaskConical, Briefcase, ChevronRight, Globe, Factory, Download, Network, TrendingUp, AlertTriangle, Target, Link2, Info } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import UfprLogo from "@/components/UfprLogo";
 import { generateNewspaperPDF } from "@/lib/generatePdf";
 import NetworkGraph from "@/components/NetworkGraph";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Extended mock data with companies and international incidences
 // Indicator types
@@ -467,124 +468,204 @@ const MvpEngine = () => {
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {/* C2T - Maturidade Ciência → Tecnologia */}
-                      <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.6s" }}>
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-                            <TrendingUp className="w-5 h-5 text-white" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Maturidade</p>
-                            <p className="font-bold text-foreground">C2T</p>
-                          </div>
-                        </div>
-                        <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-3">
-                          <div 
-                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full transition-all duration-1000"
-                            style={{ width: `${searchResults.indicators.c2t.value}%` }}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-2xl font-bold text-foreground">{searchResults.indicators.c2t.value}%</span>
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            searchResults.indicators.c2t.value >= 70 ? 'bg-green-100 text-green-700' :
-                            searchResults.indicators.c2t.value >= 50 ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>
-                            {searchResults.indicators.c2t.value >= 70 ? 'Alto' : searchResults.indicators.c2t.value >= 50 ? 'Médio' : 'Baixo'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">{searchResults.indicators.c2t.description}</p>
-                      </div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in cursor-help hover:border-cyan-300 transition-colors" style={{ animationDelay: "0.6s" }}>
+                              <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                                  <TrendingUp className="w-5 h-5 text-white" />
+                                </div>
+                                <div className="flex-grow">
+                                  <p className="text-xs text-muted-foreground">Maturidade</p>
+                                  <p className="font-bold text-foreground">C2T</p>
+                                </div>
+                                <Info className="w-4 h-4 text-muted-foreground/50" />
+                              </div>
+                              <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-3">
+                                <div 
+                                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full transition-all duration-1000"
+                                  style={{ width: `${searchResults.indicators.c2t.value}%` }}
+                                />
+                              </div>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-2xl font-bold text-foreground">{searchResults.indicators.c2t.value}%</span>
+                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                  searchResults.indicators.c2t.value >= 70 ? 'bg-green-100 text-green-700' :
+                                  searchResults.indicators.c2t.value >= 50 ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-red-100 text-red-700'
+                                }`}>
+                                  {searchResults.indicators.c2t.value >= 70 ? 'Alto' : searchResults.indicators.c2t.value >= 50 ? 'Médio' : 'Baixo'}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">{searchResults.indicators.c2t.description}</p>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="max-w-xs p-4">
+                            <p className="font-semibold text-sm mb-2">Metodologia C2T</p>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              <strong>Fórmula:</strong> C2T = (Patentes / Grupos de Pesquisa) × Fator de Citação
+                            </p>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              <strong>Variáveis:</strong> Nº de patentes depositadas, Nº de grupos ativos no DGP/CNPq, 
+                              citações internacionais das patentes.
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              <strong>Interpretação:</strong> Valores &gt;70% indicam forte conversão de ciência em tecnologia aplicada.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
 
                       {/* GT - Gargalo de Tradução */}
-                      <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.7s" }}>
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-                            <AlertTriangle className="w-5 h-5 text-white" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Gargalo</p>
-                            <p className="font-bold text-foreground">GT</p>
-                          </div>
-                        </div>
-                        <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-3">
-                          <div 
-                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-orange-500 to-red-600 rounded-full transition-all duration-1000"
-                            style={{ width: `${searchResults.indicators.gt.value}%` }}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-2xl font-bold text-foreground">{searchResults.indicators.gt.value}%</span>
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            searchResults.indicators.gt.value <= 30 ? 'bg-green-100 text-green-700' :
-                            searchResults.indicators.gt.value <= 50 ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>
-                            {searchResults.indicators.gt.value <= 30 ? 'Baixo' : searchResults.indicators.gt.value <= 50 ? 'Médio' : 'Alto'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">{searchResults.indicators.gt.description}</p>
-                      </div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in cursor-help hover:border-orange-300 transition-colors" style={{ animationDelay: "0.7s" }}>
+                              <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
+                                  <AlertTriangle className="w-5 h-5 text-white" />
+                                </div>
+                                <div className="flex-grow">
+                                  <p className="text-xs text-muted-foreground">Gargalo</p>
+                                  <p className="font-bold text-foreground">GT</p>
+                                </div>
+                                <Info className="w-4 h-4 text-muted-foreground/50" />
+                              </div>
+                              <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-3">
+                                <div 
+                                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-orange-500 to-red-600 rounded-full transition-all duration-1000"
+                                  style={{ width: `${searchResults.indicators.gt.value}%` }}
+                                />
+                              </div>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-2xl font-bold text-foreground">{searchResults.indicators.gt.value}%</span>
+                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                  searchResults.indicators.gt.value <= 30 ? 'bg-green-100 text-green-700' :
+                                  searchResults.indicators.gt.value <= 50 ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-red-100 text-red-700'
+                                }`}>
+                                  {searchResults.indicators.gt.value <= 30 ? 'Baixo' : searchResults.indicators.gt.value <= 50 ? 'Médio' : 'Alto'}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">{searchResults.indicators.gt.description}</p>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="max-w-xs p-4">
+                            <p className="font-semibold text-sm mb-2">Metodologia GT</p>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              <strong>Fórmula:</strong> GT = 100 - [(Licenças Ativas / Patentes) × (Empresas / Grupos)]
+                            </p>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              <strong>Variáveis:</strong> Nº de licenciamentos, patentes sem exploração comercial, 
+                              densidade de empresas por área de pesquisa.
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              <strong>Interpretação:</strong> Valores &gt;50% indicam gargalos severos na tradução tecnológica.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
 
                       {/* P2C - Aderência Política → Capacidade */}
-                      <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.8s" }}>
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                            <Target className="w-5 h-5 text-white" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Aderência</p>
-                            <p className="font-bold text-foreground">P2C</p>
-                          </div>
-                        </div>
-                        <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-3">
-                          <div 
-                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full transition-all duration-1000"
-                            style={{ width: `${searchResults.indicators.p2c.value}%` }}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-2xl font-bold text-foreground">{searchResults.indicators.p2c.value}%</span>
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            searchResults.indicators.p2c.value >= 70 ? 'bg-green-100 text-green-700' :
-                            searchResults.indicators.p2c.value >= 50 ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>
-                            {searchResults.indicators.p2c.value >= 70 ? 'Alto' : searchResults.indicators.p2c.value >= 50 ? 'Médio' : 'Baixo'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">{searchResults.indicators.p2c.description}</p>
-                      </div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in cursor-help hover:border-emerald-300 transition-colors" style={{ animationDelay: "0.8s" }}>
+                              <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                                  <Target className="w-5 h-5 text-white" />
+                                </div>
+                                <div className="flex-grow">
+                                  <p className="text-xs text-muted-foreground">Aderência</p>
+                                  <p className="font-bold text-foreground">P2C</p>
+                                </div>
+                                <Info className="w-4 h-4 text-muted-foreground/50" />
+                              </div>
+                              <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-3">
+                                <div 
+                                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full transition-all duration-1000"
+                                  style={{ width: `${searchResults.indicators.p2c.value}%` }}
+                                />
+                              </div>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-2xl font-bold text-foreground">{searchResults.indicators.p2c.value}%</span>
+                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                  searchResults.indicators.p2c.value >= 70 ? 'bg-green-100 text-green-700' :
+                                  searchResults.indicators.p2c.value >= 50 ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-red-100 text-red-700'
+                                }`}>
+                                  {searchResults.indicators.p2c.value >= 70 ? 'Alto' : searchResults.indicators.p2c.value >= 50 ? 'Médio' : 'Baixo'}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">{searchResults.indicators.p2c.description}</p>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="max-w-xs p-4">
+                            <p className="font-semibold text-sm mb-2">Metodologia P2C</p>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              <strong>Fórmula:</strong> P2C = Σ(Instrumentos Aderentes × Peso) / Total de Instrumentos
+                            </p>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              <strong>Variáveis:</strong> Nº de instrumentos (Finep, BNDES, Embrapii) com editais ativos 
+                              para o objeto, compatibilidade de TRL/MRL.
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              <strong>Interpretação:</strong> Valores &gt;70% indicam políticas bem alinhadas com capacidades existentes.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
 
                       {/* CD - Concentração e Dependência */}
-                      <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.9s" }}>
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                            <Link2 className="w-5 h-5 text-white" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Dependência</p>
-                            <p className="font-bold text-foreground">CD</p>
-                          </div>
-                        </div>
-                        <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-3">
-                          <div 
-                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full transition-all duration-1000"
-                            style={{ width: `${searchResults.indicators.cd.value}%` }}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-2xl font-bold text-foreground">{searchResults.indicators.cd.value}%</span>
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            searchResults.indicators.cd.value <= 40 ? 'bg-green-100 text-green-700' :
-                            searchResults.indicators.cd.value <= 60 ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>
-                            {searchResults.indicators.cd.value <= 40 ? 'Baixa' : searchResults.indicators.cd.value <= 60 ? 'Média' : 'Alta'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">{searchResults.indicators.cd.description}</p>
-                      </div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in cursor-help hover:border-violet-300 transition-colors" style={{ animationDelay: "0.9s" }}>
+                              <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                                  <Link2 className="w-5 h-5 text-white" />
+                                </div>
+                                <div className="flex-grow">
+                                  <p className="text-xs text-muted-foreground">Dependência</p>
+                                  <p className="font-bold text-foreground">CD</p>
+                                </div>
+                                <Info className="w-4 h-4 text-muted-foreground/50" />
+                              </div>
+                              <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-3">
+                                <div 
+                                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full transition-all duration-1000"
+                                  style={{ width: `${searchResults.indicators.cd.value}%` }}
+                                />
+                              </div>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-2xl font-bold text-foreground">{searchResults.indicators.cd.value}%</span>
+                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                  searchResults.indicators.cd.value <= 40 ? 'bg-green-100 text-green-700' :
+                                  searchResults.indicators.cd.value <= 60 ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-red-100 text-red-700'
+                                }`}>
+                                  {searchResults.indicators.cd.value <= 40 ? 'Baixa' : searchResults.indicators.cd.value <= 60 ? 'Média' : 'Alta'}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">{searchResults.indicators.cd.description}</p>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="max-w-xs p-4">
+                            <p className="font-semibold text-sm mb-2">Metodologia CD</p>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              <strong>Fórmula:</strong> CD = (Patentes Estrangeiras / Total) + (Importações Críticas / Consumo)
+                            </p>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              <strong>Variáveis:</strong> % de patentes de titulares estrangeiros, dependência de insumos 
+                              importados, concentração de fornecedores por país.
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              <strong>Interpretação:</strong> Valores &gt;60% indicam alta vulnerabilidade e risco estratégico.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </div>
                   )}
