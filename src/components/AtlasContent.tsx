@@ -3,20 +3,127 @@ import {
   Search, MapPin, Trophy, Network, Calculator, Building2, 
   Lightbulb, Users, FileText, Briefcase, 
   Target, Layers,
-  Leaf, Cpu, Heart, Atom, Factory
+  Leaf, Cpu, Heart, Atom, Factory, ChevronDown, ExternalLink, Globe, GraduationCap, Award, TrendingUp, BookOpen
 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-// Mock data for ranking
+// Extended mock data for ranking with details
 const mockRankingData = [
-  { rank: 1, name: "USP", type: "Federal", state: "SP", groups: 40, patents: 22, projects: 12, score: 87 },
-  { rank: 2, name: "Unicamp", type: "Estadual", state: "SP", groups: 30, patents: 18, projects: 10, score: 78 },
-  { rank: 3, name: "UFRJ", type: "Federal", state: "RJ", groups: 25, patents: 14, projects: 6, score: 65 },
-  { rank: 4, name: "Fiocruz", type: "ICT", state: "RJ", groups: 20, patents: 9, projects: 8, score: 58 },
-  { rank: 5, name: "UFMG", type: "Federal", state: "MG", groups: 18, patents: 12, projects: 5, score: 52 },
-  { rank: 6, name: "UFSC", type: "Federal", state: "SC", groups: 15, patents: 8, projects: 7, score: 48 },
-  { rank: 7, name: "UFPR", type: "Federal", state: "PR", groups: 12, patents: 5, projects: 4, score: 38 },
-  { rank: 8, name: "UFRGS", type: "Federal", state: "RS", groups: 14, patents: 6, projects: 3, score: 36 },
+  { 
+    rank: 1, name: "USP", fullName: "Universidade de São Paulo", type: "Federal", state: "SP", groups: 40, patents: 22, projects: 12, score: 87,
+    details: {
+      researchers: 156,
+      doctorates: 89,
+      masters: 234,
+      partnerships: ["MIT", "Stanford", "Fraunhofer"],
+      topAreas: ["Materiais Avançados", "IA Aplicada", "Biotecnologia"],
+      fundingMM: 45.2,
+      publications: 342,
+      trl: { low: 15, medium: 18, high: 7 },
+      links: { lattes: "http://dgp.cnpq.br", patents: "https://busca.inpi.gov.br" }
+    }
+  },
+  { 
+    rank: 2, name: "Unicamp", fullName: "Universidade Estadual de Campinas", type: "Estadual", state: "SP", groups: 30, patents: 18, projects: 10, score: 78,
+    details: {
+      researchers: 112,
+      doctorates: 67,
+      masters: 189,
+      partnerships: ["CNRS", "Max Planck", "ETH Zurich"],
+      topAreas: ["Química Avançada", "Engenharia de Materiais", "Fotônica"],
+      fundingMM: 32.8,
+      publications: 278,
+      trl: { low: 12, medium: 14, high: 4 },
+      links: { lattes: "http://dgp.cnpq.br", patents: "https://busca.inpi.gov.br" }
+    }
+  },
+  { 
+    rank: 3, name: "UFRJ", fullName: "Universidade Federal do Rio de Janeiro", type: "Federal", state: "RJ", groups: 25, patents: 14, projects: 6, score: 65,
+    details: {
+      researchers: 98,
+      doctorates: 54,
+      masters: 156,
+      partnerships: ["Harvard", "Oxford", "Sorbonne"],
+      topAreas: ["Energia", "Petroquímica", "Nanotecnologia"],
+      fundingMM: 28.4,
+      publications: 198,
+      trl: { low: 10, medium: 11, high: 4 },
+      links: { lattes: "http://dgp.cnpq.br", patents: "https://busca.inpi.gov.br" }
+    }
+  },
+  { 
+    rank: 4, name: "Fiocruz", fullName: "Fundação Oswaldo Cruz", type: "ICT", state: "RJ", groups: 20, patents: 9, projects: 8, score: 58,
+    details: {
+      researchers: 145,
+      doctorates: 78,
+      masters: 112,
+      partnerships: ["WHO", "CDC", "Pasteur Institute"],
+      topAreas: ["Vacinas", "Biotecnologia", "Saúde Pública"],
+      fundingMM: 56.7,
+      publications: 456,
+      trl: { low: 8, medium: 9, high: 3 },
+      links: { lattes: "http://dgp.cnpq.br", patents: "https://busca.inpi.gov.br" }
+    }
+  },
+  { 
+    rank: 5, name: "UFMG", fullName: "Universidade Federal de Minas Gerais", type: "Federal", state: "MG", groups: 18, patents: 12, projects: 5, score: 52,
+    details: {
+      researchers: 76,
+      doctorates: 42,
+      masters: 98,
+      partnerships: ["TU Munich", "Politecnico di Milano"],
+      topAreas: ["Metalurgia", "Engenharia Química", "Mineração"],
+      fundingMM: 21.3,
+      publications: 167,
+      trl: { low: 8, medium: 8, high: 2 },
+      links: { lattes: "http://dgp.cnpq.br", patents: "https://busca.inpi.gov.br" }
+    }
+  },
+  { 
+    rank: 6, name: "UFSC", fullName: "Universidade Federal de Santa Catarina", type: "Federal", state: "SC", groups: 15, patents: 8, projects: 7, score: 48,
+    details: {
+      researchers: 62,
+      doctorates: 35,
+      masters: 87,
+      partnerships: ["TU Delft", "KTH Stockholm"],
+      topAreas: ["Automação", "Sistemas Embarcados", "Refrigeração"],
+      fundingMM: 18.9,
+      publications: 134,
+      trl: { low: 6, medium: 7, high: 2 },
+      links: { lattes: "http://dgp.cnpq.br", patents: "https://busca.inpi.gov.br" }
+    }
+  },
+  { 
+    rank: 7, name: "UFPR", fullName: "Universidade Federal do Paraná", type: "Federal", state: "PR", groups: 12, patents: 5, projects: 4, score: 38,
+    details: {
+      researchers: 48,
+      doctorates: 28,
+      masters: 67,
+      partnerships: ["University of Waterloo", "INRIA"],
+      topAreas: ["Bioprocessos", "Engenharia Florestal", "Polímeros"],
+      fundingMM: 12.4,
+      publications: 98,
+      trl: { low: 5, medium: 5, high: 2 },
+      links: { lattes: "http://dgp.cnpq.br", patents: "https://busca.inpi.gov.br" }
+    }
+  },
+  { 
+    rank: 8, name: "UFRGS", fullName: "Universidade Federal do Rio Grande do Sul", type: "Federal", state: "RS", groups: 14, patents: 6, projects: 3, score: 36,
+    details: {
+      researchers: 54,
+      doctorates: 31,
+      masters: 78,
+      partnerships: ["Université de Lyon", "University of Melbourne"],
+      topAreas: ["Microeletrônica", "Agronegócio", "IA"],
+      fundingMM: 14.7,
+      publications: 112,
+      trl: { low: 6, medium: 6, high: 2 },
+      links: { lattes: "http://dgp.cnpq.br", patents: "https://busca.inpi.gov.br" }
+    }
+  },
 ];
+
+type InstitutionData = typeof mockRankingData[0];
 
 const clusters = [
   { name: "IA e Computação Avançada", icon: Cpu, institutions: ["USP", "Unicamp", "UFPE", "PUC-Rio"], color: "from-primary to-primary/70" },
@@ -49,6 +156,15 @@ interface AtlasContentProps {
 const AtlasContent = ({ initialQuery = "" }: AtlasContentProps) => {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [hasSearched, setHasSearched] = useState(!!initialQuery);
+  const [expandedInstitutions, setExpandedInstitutions] = useState<number[]>([]);
+
+  const toggleInstitution = (rank: number) => {
+    setExpandedInstitutions(prev => 
+      prev.includes(rank) 
+        ? prev.filter(r => r !== rank)
+        : [...prev, rank]
+    );
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,88 +312,236 @@ const AtlasContent = ({ initialQuery = "" }: AtlasContentProps) => {
           </div>
         </div>
 
-        {/* Ranking Table */}
-        <div className="bg-card border border-border rounded-2xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  <th className="text-left p-4 font-semibold text-foreground">#</th>
-                  <th className="text-left p-4 font-semibold text-foreground">Instituição</th>
-                  <th className="text-left p-4 font-semibold text-foreground hidden md:table-cell">Tipo</th>
-                  <th className="text-center p-4 font-semibold text-foreground">
-                    <div className="flex items-center justify-center gap-1">
-                      <Users className="w-4 h-4" />
-                      <span className="hidden sm:inline">Grupos</span>
-                    </div>
-                  </th>
-                  <th className="text-center p-4 font-semibold text-foreground">
-                    <div className="flex items-center justify-center gap-1">
-                      <FileText className="w-4 h-4" />
-                      <span className="hidden sm:inline">Patentes</span>
-                    </div>
-                  </th>
-                  <th className="text-center p-4 font-semibold text-foreground">
-                    <div className="flex items-center justify-center gap-1">
-                      <Briefcase className="w-4 h-4" />
-                      <span className="hidden sm:inline">Projetos</span>
-                    </div>
-                  </th>
-                  <th className="text-center p-4 font-semibold text-foreground">ICT-Obj</th>
-                </tr>
-              </thead>
-              <tbody>
-                {mockRankingData.map((item) => (
-                  <tr 
-                    key={item.rank} 
-                    className="border-b border-border hover:bg-muted/30 transition-colors cursor-pointer"
-                  >
-                    <td className="p-4">
-                      <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
-                        item.rank <= 3 ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'
-                      }`}>
-                        {item.rank}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Building2 className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-foreground">{item.name}</p>
-                          <p className="text-xs text-muted-foreground">{item.state}</p>
-                        </div>
+        {/* Ranking Cards with Expansion */}
+        <div className="space-y-3">
+          {mockRankingData.map((item) => (
+            <Collapsible
+              key={item.rank}
+              open={expandedInstitutions.includes(item.rank)}
+              onOpenChange={() => toggleInstitution(item.rank)}
+            >
+              <div className="bg-card border border-border rounded-2xl overflow-hidden hover:border-primary/30 transition-all">
+                <CollapsibleTrigger className="w-full">
+                  <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-muted/30 transition-colors">
+                    {/* Rank */}
+                    <span className={`inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold flex-shrink-0 ${
+                      item.rank <= 3 ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {item.rank}
+                    </span>
+                    
+                    {/* Institution Info */}
+                    <div className="flex items-center gap-3 flex-grow min-w-0">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Building2 className="w-6 h-6 text-primary" />
                       </div>
-                    </td>
-                    <td className="p-4 hidden md:table-cell">
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        item.type === 'Federal' ? 'bg-primary/10 text-primary' :
-                        item.type === 'Estadual' ? 'bg-accent/10 text-accent' :
-                        'bg-muted text-muted-foreground'
-                      }`}>
-                        {item.type}
-                      </span>
-                    </td>
-                    <td className="p-4 text-center font-medium text-foreground">{item.groups}</td>
-                    <td className="p-4 text-center font-medium text-foreground">{item.patents}</td>
-                    <td className="p-4 text-center font-medium text-foreground">{item.projects}</td>
-                    <td className="p-4 text-center">
-                      <span className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-accent/10 text-accent font-bold text-sm">
+                      <div className="text-left min-w-0">
+                        <p className="font-semibold text-foreground">{item.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{item.fullName}</p>
+                      </div>
+                    </div>
+
+                    {/* Stats - Hidden on mobile */}
+                    <div className="hidden md:flex items-center gap-6">
+                      <div className="text-center">
+                        <p className="text-lg font-bold text-foreground">{item.groups}</p>
+                        <p className="text-xs text-muted-foreground">Grupos</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-lg font-bold text-foreground">{item.patents}</p>
+                        <p className="text-xs text-muted-foreground">Patentes</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-lg font-bold text-foreground">{item.projects}</p>
+                        <p className="text-xs text-muted-foreground">Projetos</p>
+                      </div>
+                    </div>
+
+                    {/* Score */}
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <span className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-accent/10 text-accent font-bold">
                         {item.score}
                       </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="p-4 border-t border-border bg-muted/30">
-            <p className="text-sm text-muted-foreground">
-              Cada instituição pode ser expandida para visualizar evidências e registros públicos.
-            </p>
-          </div>
+                      <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${
+                        expandedInstitutions.includes(item.rank) ? 'rotate-180' : ''
+                      }`} />
+                    </div>
+                  </div>
+                </CollapsibleTrigger>
+
+                <CollapsibleContent>
+                  <div className="border-t border-border bg-muted/20 p-6 animate-accordion-down">
+                    {/* Mobile Stats */}
+                    <div className="grid grid-cols-3 gap-4 mb-6 md:hidden">
+                      <div className="text-center p-3 bg-card rounded-lg border border-border">
+                        <p className="text-xl font-bold text-foreground">{item.groups}</p>
+                        <p className="text-xs text-muted-foreground">Grupos</p>
+                      </div>
+                      <div className="text-center p-3 bg-card rounded-lg border border-border">
+                        <p className="text-xl font-bold text-foreground">{item.patents}</p>
+                        <p className="text-xs text-muted-foreground">Patentes</p>
+                      </div>
+                      <div className="text-center p-3 bg-card rounded-lg border border-border">
+                        <p className="text-xl font-bold text-foreground">{item.projects}</p>
+                        <p className="text-xs text-muted-foreground">Projetos</p>
+                      </div>
+                    </div>
+
+                    {/* Detailed Info Grid */}
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      {/* Researchers */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                          <Users className="w-4 h-4 text-primary" />
+                          Pesquisadores
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center p-2 bg-card rounded-lg border border-border">
+                            <span className="text-sm text-muted-foreground">Total</span>
+                            <span className="font-bold text-foreground">{item.details.researchers}</span>
+                          </div>
+                          <div className="flex justify-between items-center p-2 bg-card rounded-lg border border-border">
+                            <span className="text-sm text-muted-foreground">Doutores</span>
+                            <span className="font-bold text-foreground">{item.details.doctorates}</span>
+                          </div>
+                          <div className="flex justify-between items-center p-2 bg-card rounded-lg border border-border">
+                            <span className="text-sm text-muted-foreground">Mestres</span>
+                            <span className="font-bold text-foreground">{item.details.masters}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Production */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                          <BookOpen className="w-4 h-4 text-primary" />
+                          Produção
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center p-2 bg-card rounded-lg border border-border">
+                            <span className="text-sm text-muted-foreground">Publicações</span>
+                            <span className="font-bold text-foreground">{item.details.publications}</span>
+                          </div>
+                          <div className="flex justify-between items-center p-2 bg-card rounded-lg border border-border">
+                            <span className="text-sm text-muted-foreground">Financiamento</span>
+                            <span className="font-bold text-accent">R$ {item.details.fundingMM}M</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* TRL Distribution */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                          <TrendingUp className="w-4 h-4 text-primary" />
+                          Maturidade (TRL)
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-grow">
+                              <div className="flex justify-between text-xs mb-1">
+                                <span className="text-muted-foreground">Básica (1-3)</span>
+                                <span className="text-foreground">{item.details.trl.low}</span>
+                              </div>
+                              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-primary/60 rounded-full transition-all"
+                                  style={{ width: `${(item.details.trl.low / item.groups) * 100}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-grow">
+                              <div className="flex justify-between text-xs mb-1">
+                                <span className="text-muted-foreground">Aplicada (4-6)</span>
+                                <span className="text-foreground">{item.details.trl.medium}</span>
+                              </div>
+                              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-primary/80 rounded-full transition-all"
+                                  style={{ width: `${(item.details.trl.medium / item.groups) * 100}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-grow">
+                              <div className="flex justify-between text-xs mb-1">
+                                <span className="text-muted-foreground">Madura (7-9)</span>
+                                <span className="text-foreground">{item.details.trl.high}</span>
+                              </div>
+                              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-accent rounded-full transition-all"
+                                  style={{ width: `${(item.details.trl.high / item.groups) * 100}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Partnerships & Areas */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                          <Globe className="w-4 h-4 text-primary" />
+                          Parcerias Internacionais
+                        </div>
+                        <div className="flex flex-wrap gap-1 mb-4">
+                          {item.details.partnerships.map((partner) => (
+                            <span key={partner} className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">
+                              {partner}
+                            </span>
+                          ))}
+                        </div>
+                        
+                        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                          <Award className="w-4 h-4 text-accent" />
+                          Áreas de Destaque
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {item.details.topAreas.map((area) => (
+                            <span key={area} className="text-xs px-2 py-1 bg-accent/10 text-accent rounded-full">
+                              {area}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t border-border">
+                      <a 
+                        href={item.details.links.lattes}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                      >
+                        <GraduationCap className="w-4 h-4" />
+                        Ver Grupos no CNPq
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                      <a 
+                        href={item.details.links.patents}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Ver Patentes no INPI
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </div>
+            </Collapsible>
+          ))}
         </div>
+
+        <p className="text-sm text-muted-foreground mt-6 text-center">
+          Clique em qualquer instituição para visualizar evidências e registros públicos.
+        </p>
       </div>
 
       {/* Section 3 - Clusters */}
