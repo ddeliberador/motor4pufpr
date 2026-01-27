@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Search, Microscope, Cpu, Building2, CheckCircle, Database, FileText, Landmark, Users, FlaskConical, Briefcase, ChevronRight, Globe, Factory, Download } from "lucide-react";
+import { ArrowLeft, Search, Microscope, Cpu, Building2, CheckCircle, Database, FileText, Landmark, Users, FlaskConical, Briefcase, ChevronRight, Globe, Factory, Download, Network } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import UfprLogo from "@/components/UfprLogo";
 import { generateNewspaperPDF } from "@/lib/generatePdf";
+import NetworkGraph from "@/components/NetworkGraph";
 
 // Extended mock data with companies and international incidences
 const mockSearchResults: Record<string, {
@@ -365,6 +366,23 @@ const MvpEngine = () => {
                       <p className="text-xs opacity-80">Países</p>
                     </div>
                   </div>
+                </div>
+
+                {/* Network Graph Visualization */}
+                <div>
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                      <Network className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl md:text-3xl font-bold text-foreground font-serif">
+                        Grafo de Incidência
+                      </h3>
+                      <p className="text-muted-foreground">Visualização interativa das conexões</p>
+                    </div>
+                  </div>
+                  
+                  <NetworkGraph searchResults={searchResults} />
                 </div>
 
                 {/* Flow Visualization */}
