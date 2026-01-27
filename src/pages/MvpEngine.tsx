@@ -403,7 +403,68 @@ const MvpEngine = () => {
                   {/* New Indicators Section */}
                   {searchResults.indicators && (
                   <div className="mt-12">
-                    <h4 className="text-lg font-semibold text-foreground mb-6 text-center">Indicadores de Tradução Tecnológica</h4>
+                    <div className="text-center mb-8">
+                      <h4 className="text-xl font-bold text-foreground mb-2">Indicadores de Tradução Tecnológica</h4>
+                      <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
+                        Métricas propostas para avaliar a maturidade, gargalos e dependências na tradução de conhecimento científico em capacidade produtiva.
+                      </p>
+                    </div>
+                    
+                    {/* Conceptual Explanation */}
+                    <div className="bg-accent/5 border border-accent/20 rounded-xl p-6 mb-8 opacity-0 animate-fade-in" style={{ animationDelay: "0.55s" }}>
+                      <h5 className="font-semibold text-foreground mb-4">Conceituação dos Indicadores</h5>
+                      <div className="grid md:grid-cols-2 gap-4 text-sm">
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                            <TrendingUp className="w-4 h-4 text-white" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground">C2T — Maturidade Ciência → Tecnologia</p>
+                            <p className="text-muted-foreground text-xs mt-1">
+                              Mede a conversão de produção científica (artigos, grupos de pesquisa) em outputs tecnológicos (patentes, protótipos). 
+                              Valores altos indicam forte transferência de conhecimento para aplicações práticas.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center flex-shrink-0">
+                            <AlertTriangle className="w-4 h-4 text-white" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground">GT — Gargalo de Tradução</p>
+                            <p className="text-muted-foreground text-xs mt-1">
+                              Identifica obstáculos na cadeia de tradução: escala produtiva, integração indústria-academia, 
+                              regulação ou financiamento. Valores altos indicam gargalos severos que impedem a tradução.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
+                            <Target className="w-4 h-4 text-white" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground">P2C — Aderência Política → Capacidade</p>
+                            <p className="text-muted-foreground text-xs mt-1">
+                              Avalia o alinhamento entre instrumentos públicos disponíveis (Finep, BNDES, Embrapii) e a 
+                              capacidade instalada no país. Valores altos indicam políticas bem direcionadas.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                            <Link2 className="w-4 h-4 text-white" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground">CD — Concentração e Dependência</p>
+                            <p className="text-muted-foreground text-xs mt-1">
+                              Mede a dependência de insumos, tecnologia e conhecimento de fontes externas. 
+                              Valores altos indicam vulnerabilidade estratégica e necessidade de internalização.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {/* C2T - Maturidade Ciência → Tecnologia */}
                       <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.6s" }}>
