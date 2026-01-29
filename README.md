@@ -1,73 +1,165 @@
-# Welcome to your Lovable project
+# MOTOR 4P UFPR
 
-## Project info
+> A Camada Ausente da Política Industrial Brasileira
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+Infraestrutura computacional para conectar **P**esquisa, **P**rodução, **P**olítica e **P**atentes no sistema de inovação brasileiro.
 
-## How can I edit this code?
+## Sobre o Projeto
 
-There are several ways of editing your application.
+O MOTOR 4P UFPR é uma proposta de infraestrutura computacional pública que, dado um objeto tecnológico, constrói automaticamente sua trajetória no sistema de inovação, identificando:
 
-**Use Lovable**
+- **Incidência Científica**: Grupos de pesquisa, artigos, instituições
+- **Incidência Tecnológica**: Patentes nacionais e internacionais
+- **Incidência Produtiva**: Dados de comércio exterior (importação/exportação)
+- **Incidência Institucional**: Instrumentos públicos de fomento disponíveis
+- **Indicadores Estruturais**: C2T, GT, P2C, CD, ILT
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### Indicadores Propostos
 
-Changes made via Lovable will be committed automatically to this repo.
+| Código | Nome | Descrição |
+|--------|------|-----------|
+| **C2T** | Maturidade Ciência → Tecnologia | Mede conversão de produção científica em outputs tecnológicos |
+| **GT** | Gargalo de Tradução | Identifica obstáculos na cadeia de tradução tecnológica |
+| **P2C** | Aderência Política → Capacidade | Avalia alinhamento entre políticas e capacidade instalada |
+| **CD** | Concentração e Dependência | Mede dependência de tecnologia e insumos externos |
+| **ILT** | Índice de Lacuna de Tradução | Índice composto da situação de tradução tecnológica |
 
-**Use your preferred IDE**
+## Estrutura do Projeto
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+```
+MOTOR 4P UFPR/
+├── backend/                    # API FastAPI (Python)
+│   ├── app/
+│   │   ├── api/routes/        # Endpoints REST
+│   │   ├── connectors/        # Conectores de APIs públicas
+│   │   ├── core/              # Configurações
+│   │   ├── models/            # Schemas Pydantic
+│   │   ├── services/          # Motores (ontologia, incidência, indicadores)
+│   │   └── main.py            # Ponto de entrada
+│   ├── requirements.txt
+│   └── run.py
+│
+├── src/                        # Frontend React (TypeScript)
+│   ├── components/            # Componentes React
+│   ├── hooks/                 # Hooks customizados
+│   ├── lib/                   # Utilitários e API client
+│   ├── pages/                 # Páginas da aplicação
+│   └── App.tsx
+│
+└── README.md
+```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Fontes de Dados
 
-Follow these steps:
+| Fonte | API | O que oferece |
+|-------|-----|---------------|
+| CNPq | Dados Abertos | Grupos de pesquisa, bolsas |
+| INPI | API Patentes | Patentes brasileiras |
+| OpenAlex | REST API | 240M+ artigos científicos |
+| COMEX Stat | REST API | Importação/exportação por NCM |
+| BNDES | CKAN API | Financiamentos aprovados |
+| IBGE | REST API | Classificações CNAE |
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## Como Executar
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Pré-requisitos
 
-# Step 3: Install the necessary dependencies.
-npm i
+- Python 3.11+
+- Node.js 18+
+- npm ou yarn
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### Backend (FastAPI)
+
+```bash
+# Entre na pasta do backend
+cd backend
+
+# Crie ambiente virtual
+python -m venv venv
+
+# Ative o ambiente virtual
+# Windows:
+venv\Scripts\activate
+# Linux/Mac:
+source venv/bin/activate
+
+# Instale dependências
+pip install -r requirements.txt
+
+# Copie e configure variáveis de ambiente
+cp .env.example .env
+
+# Execute o servidor
+python run.py
+# ou
+uvicorn app.main:app --reload --port 8000
+```
+
+O backend estará disponível em: http://localhost:8000
+
+- Documentação Swagger: http://localhost:8000/docs
+- Documentação ReDoc: http://localhost:8000/redoc
+
+### Frontend (React)
+
+```bash
+# Na pasta raiz do projeto
+npm install
+
+# Copie e configure variáveis de ambiente
+cp .env.example .env
+
+# Execute o servidor de desenvolvimento
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+O frontend estará disponível em: http://localhost:5173
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Endpoints da API
 
-**Use GitHub Codespaces**
+### Principais
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/api/v1/health` | Health check |
+| GET/POST | `/api/v1/incidence/search` | Busca incidência completa |
+| GET | `/api/v1/incidence/ontology` | Apenas tradução ontológica |
+| GET | `/api/v1/incidence/examples` | Exemplos de busca |
+| GET | `/api/v1/incidence/indicators/methodology` | Metodologia dos indicadores |
 
-## What technologies are used for this project?
+### Exemplo de Uso
 
-This project is built with:
+```bash
+# Busca incidência para "baterias de sódio"
+curl "http://localhost:8000/api/v1/incidence/search?query=baterias%20de%20s%C3%B3dio"
 
-- Vite
+# Apenas tradução ontológica
+curl "http://localhost:8000/api/v1/incidence/ontology?query=inteligencia%20artificial"
+```
+
+## Tecnologias
+
+### Backend
+- FastAPI
+- Pydantic
+- httpx (async HTTP)
+- Python 3.11+
+
+### Frontend
+- React 18
 - TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- Vite
+- TailwindCSS
+- Shadcn/ui
+- Framer Motion
 
-## How can I deploy this project?
+## Autores
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+- **Decio Dalton Deliberador Filho** - Doutorando
+- **Walter Tadahiro Shima** - Orientador
 
-## Can I connect a custom domain to my Lovable project?
+Doutorado em Políticas Públicas - Universidade Federal do Paraná (UFPR)
 
-Yes, you can!
+## Licença
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Este projeto é desenvolvido como parte de pesquisa acadêmica na UFPR.
