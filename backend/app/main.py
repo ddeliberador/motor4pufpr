@@ -54,16 +54,22 @@ API para análise de incidência de objetos tecnológicos no sistema de inovaç�
     redoc_url="/redoc",
 )
 
-# Configuração CORS
+# Configuração CORS - permite origens do Lovable e desenvolvimento
+cors_origins = [
+    "http://localhost:5173",      # Vite dev
+    "http://localhost:3000",      # React dev
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+    "https://motor4pufpr.lovable.app",  # Produção Lovable
+    "https://*.lovable.app",      # Outros subdomínios Lovable
+    "https://lovable.dev",        # Lovable editor
+    "https://*.lovable.dev",      # Lovable subdomínios
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",      # Vite dev
-        "http://localhost:3000",      # React dev
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:3000",
-        "https://motor4pufpr.lovable.app",  # Produção Lovable
-    ],
+    allow_origins=cors_origins,
+    allow_origin_regex=r"https://.*\.lovable\.(app|dev)",  # Regex para Lovable
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
