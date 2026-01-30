@@ -110,165 +110,171 @@ const MvpEngine = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      {/* Hero Section with Search */}
-      <section className="hero-section pt-32 pb-16 md:pt-40 md:pb-20">
-        <div className="container-narrow">
-          <div className="text-center mb-10">
-            <div className="flex justify-center mb-6">
-              <UfprLogo className="w-20 h-20 opacity-90" />
+      {/* Main Layout: Sidebar + Content */}
+      <div className="flex-1 flex pt-16">
+        {/* Fixed Sidebar */}
+        <aside className="w-80 fixed left-0 top-16 bottom-0 bg-card border-r border-border overflow-y-auto">
+          <div className="p-6 space-y-6">
+            {/* Logo and Title */}
+            <div className="text-center pb-6 border-b border-border">
+              <UfprLogo className="w-16 h-16 mx-auto mb-3 opacity-90" />
+              <h1 className="text-2xl font-bold text-foreground mb-1">
+                MVP Engine
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Primeira Camada da Tradução
+              </p>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-primary-foreground mb-4 animate-fade-in">
-              MVP Engine
-            </h1>
-            <p className="text-xl text-primary-foreground/90 font-serif mb-2 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-              Primeira Camada da Tradução
-            </p>
-            <p className="text-base text-primary-foreground/75 mb-6 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-              Protótipo auditável baseado em dados públicos reais
-            </p>
+
+            {/* Back Link */}
             <Link
               to="/"
-              className="inline-flex items-center gap-2 bg-primary-foreground/10 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-foreground/20 transition-colors border border-primary-foreground/20 animate-fade-in"
-              style={{ animationDelay: "0.3s" }}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Voltar para Conceito
             </Link>
-          </div>
 
-          {/* Search Box - Now at the top */}
-          <div className="bg-card/95 backdrop-blur-sm rounded-xl border border-border p-8 max-w-2xl mx-auto shadow-2xl animate-fade-in" style={{ animationDelay: "0.4s" }}>
-            <div className="flex items-center justify-between mb-4">
-              <label className="block text-sm font-medium text-foreground">
-                Digite seu objeto de pesquisa
-              </label>
-              <ApiStatusIndicator 
-                isUsingMock={isUsingMock}
-                backendAvailable={backendAvailable}
-              />
-            </div>
-            
-            <form onSubmit={handleSearch}>
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Ex: Inteligência Artificial, Energia Solar, Nanotecnologia..."
-                  className="w-full pl-14 pr-4 py-4 text-lg rounded-lg border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+            {/* Search Box */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-foreground">
+                  Buscar Objeto Tecnológico
+                </label>
+                <ApiStatusIndicator 
+                  isUsingMock={isUsingMock}
+                  backendAvailable={backendAvailable}
                 />
               </div>
-              <button
-                type="submit"
-                disabled={isSearching || !searchQuery.trim()}
-                className="w-full mt-4 bg-primary text-primary-foreground py-4 rounded-lg font-semibold text-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
-              >
-                {isSearching ? "Processando..." : "Buscar no Motor"}
-              </button>
-            </form>
+              
+              <form onSubmit={handleSearch}>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Digite aqui..."
+                    className="w-full pl-10 pr-3 py-3 text-sm rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isSearching || !searchQuery.trim()}
+                  className="w-full mt-3 bg-primary text-primary-foreground py-3 rounded-lg font-semibold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSearching ? "Processando..." : "Buscar"}
+                </button>
+              </form>
+            </div>
 
-            {/* API Status Toggle */}
-            <div className="mt-6 text-center">
+            {/* API Status Section */}
+            <div className="space-y-3">
               <button
                 onClick={() => setShowApiStatus(!showApiStatus)}
-                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="w-full flex items-center justify-between px-4 py-3 bg-muted hover:bg-muted/80 rounded-lg text-sm font-medium transition-colors"
               >
-                <Activity className="w-4 h-4" />
-                {showApiStatus ? "Ocultar" : "Ver"} Status das APIs
+                <span className="flex items-center gap-2">
+                  <Activity className="w-4 h-4" />
+                  Status das APIs
+                </span>
+                <ChevronRight className={`w-4 h-4 transition-transform ${showApiStatus ? 'rotate-90' : ''}`} />
               </button>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* API Status Section */}
-      {showApiStatus && (
-        <section className="section-spacing section-alt">
-          <div className="container-wide">
-            <ApiStatusView />
+            {/* Info */}
+            <div className="pt-6 border-t border-border text-xs text-muted-foreground">
+              <p className="mb-2">
+                <strong className="text-foreground">Protótipo auditável</strong>
+              </p>
+              <p>
+                Baseado em dados públicos reais: CNPq, INPI, Finep, OpenAlex, Comex Stat
+              </p>
+            </div>
           </div>
-        </section>
-      )}
+        </aside>
 
-      {/* Search Results - Visual Output */}
-      {hasSearched && (
-        <section className="section-spacing">
-          <div className="container-wide">
-            {isSearching ? (
-              <div className="flex flex-col items-center justify-center py-20">
-                <div className="relative w-24 h-24 mb-8">
-                  <div className="absolute inset-0 border-4 border-primary/20 rounded-full" />
-                  <div className="absolute inset-0 border-4 border-transparent border-t-primary rounded-full animate-spin" />
-                  <div className="absolute inset-4 border-4 border-transparent border-t-accent rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
-                </div>
-                <p className="text-xl font-serif text-foreground mb-2">Traduzindo objeto tecnológico...</p>
-                <p className="text-muted-foreground">Consultando CNPq, INPI, Finep e bases internacionais</p>
+        {/* Main Content Area */}
+        <main className="flex-1 ml-80 overflow-y-auto bg-muted/20">
+          {showApiStatus && (
+            <div className="bg-card border-b border-border p-6">
+              <div className="max-w-6xl mx-auto">
+                <ApiStatusView />
               </div>
-            ) : searchResults ? (
-              <div className="space-y-16 animate-fade-in">
-                {/* Results Header */}
-                <div className="text-center">
-                  <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">Resultados para</p>
-                  <h2 className="text-4xl md:text-5xl font-bold text-foreground font-serif mb-4">
-                    "{searchResults.query}"
-                  </h2>
-                  
-                  {/* API Status Indicator */}
-                  <div className="flex justify-center mb-8">
-                    <ApiStatusIndicator
-                      isUsingMock={isUsingMock}
-                      backendAvailable={backendAvailable}
-                      processingTimeMs={searchResults._processingTimeMs}
-                      dataSources={searchResults._dataSources}
-                    />
-                  </div>
-                  
-                  {/* Stats Overview - 5 columns now */}
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 max-w-5xl mx-auto">
-                    <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-                      <Microscope className="w-7 h-7 mx-auto mb-2 text-primary" />
-                      <p className="text-3xl md:text-4xl font-bold mb-1 text-foreground">{searchResults.stats.groups}</p>
-                      <p className="text-xs text-muted-foreground">Grupos de Pesquisa</p>
+            </div>
+          )}
+
+          {/* Results Container */}
+          <div className="max-w-6xl mx-auto p-6">
+            {/* Search Results */}
+            {hasSearched && (
+              <div className="space-y-8">
+                {isSearching ? (
+                  <div className="flex flex-col items-center justify-center py-20">
+                    <div className="relative w-24 h-24 mb-8">
+                      <div className="absolute inset-0 border-4 border-primary/20 rounded-full" />
+                      <div className="absolute inset-0 border-4 border-transparent border-t-primary rounded-full animate-spin" />
+                      <div className="absolute inset-4 border-4 border-transparent border-t-accent rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
                     </div>
+                    <p className="text-xl font-serif text-foreground mb-2">Traduzindo objeto tecnológico...</p>
+                    <p className="text-muted-foreground">Consultando CNPq, INPI, Finep e bases internacionais</p>
+                  </div>
+                ) : searchResults ? (
+                  <div className="space-y-8 animate-fade-in">
+                    {/* Results Header */}
+                    <div className="bg-card border border-border rounded-xl p-6">
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Resultados para</p>
+                      <h2 className="text-3xl font-bold text-foreground font-serif mb-4">
+                        "{searchResults.query}"
+                      </h2>
+                      
+                      {/* Stats Overview - 5 columns now */}
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                        <div className="bg-muted rounded-lg p-4">
+                          <Microscope className="w-6 h-6 mx-auto mb-2 text-primary" />
+                          <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.groups}</p>
+                          <p className="text-xs text-muted-foreground">Grupos de Pesquisa</p>
+                        </div>
                     <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.2s" }}>
                       <FileText className="w-7 h-7 mx-auto mb-2 text-primary" />
                       <p className="text-3xl md:text-4xl font-bold mb-1 text-foreground">{searchResults.stats.patents}</p>
                       <p className="text-xs text-muted-foreground">Patentes</p>
+                        </div>
+                        <div className="bg-muted rounded-lg p-4">
+                          <FlaskConical className="w-6 h-6 mx-auto mb-2 text-primary" />
+                          <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.patents}</p>
+                          <p className="text-xs text-muted-foreground">Patentes</p>
+                        </div>
+                        <div className="bg-muted rounded-lg p-4">
+                          <Landmark className="w-6 h-6 mx-auto mb-2 text-accent" />
+                          <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.instruments}</p>
+                          <p className="text-xs text-muted-foreground">Instrumentos</p>
+                        </div>
+                        <div className="bg-muted rounded-lg p-4">
+                          <Factory className="w-6 h-6 mx-auto mb-2 text-primary" />
+                          <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.companies}</p>
+                          <p className="text-xs text-muted-foreground">Empresas</p>
+                        </div>
+                        <div className="bg-muted rounded-lg p-4">
+                          <Globe className="w-6 h-6 mx-auto mb-2 text-primary" />
+                          <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.international}</p>
+                          <p className="text-xs text-muted-foreground">Países</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-                      <Landmark className="w-7 h-7 mx-auto mb-2 text-accent" />
-                      <p className="text-3xl md:text-4xl font-bold mb-1 text-foreground">{searchResults.stats.instruments}</p>
-                      <p className="text-xs text-muted-foreground">Instrumentos</p>
-                    </div>
-                    <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.4s" }}>
-                      <Factory className="w-7 h-7 mx-auto mb-2 text-primary" />
-                      <p className="text-3xl md:text-4xl font-bold mb-1 text-foreground">{searchResults.stats.companies}</p>
-                      <p className="text-xs text-muted-foreground">Empresas</p>
-                    </div>
-                    <div className="bg-card border border-border rounded-2xl p-5 col-span-2 md:col-span-1 opacity-0 animate-fade-in" style={{ animationDelay: "0.5s" }}>
-                      <Globe className="w-7 h-7 mx-auto mb-2 text-primary" />
-                      <p className="text-3xl md:text-4xl font-bold mb-1 text-foreground">{searchResults.stats.international}</p>
-                      <p className="text-xs text-muted-foreground">Países</p>
-                    </div>
-                  </div>
 
-                  {/* New Indicators Section */}
-                  {searchResults.indicators && (
-                  <div className="mt-12">
-                    <div className="text-center mb-8">
-                      <h4 className="text-xl font-bold text-foreground mb-2">Indicadores de Tradução Tecnológica</h4>
-                      <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-                        Métricas propostas para avaliar a maturidade, gargalos e dependências na tradução de conhecimento científico em capacidade produtiva.
-                      </p>
-                    </div>
-                    
-                    {/* Conceptual Explanation */}
-                    <div className="bg-accent/5 border border-accent/20 rounded-xl p-6 mb-8 opacity-0 animate-fade-in" style={{ animationDelay: "0.55s" }}>
-                      <h5 className="font-semibold text-foreground mb-4">Conceituação dos Indicadores</h5>
+                    {/* New Indicators Section */}
+                    {searchResults.indicators && (
+                      <div className="bg-card border border-border rounded-xl p-6 mb-8">
+                        <div className="mb-6">
+                          <h4 className="text-lg font-bold text-foreground mb-2">Indicadores de Tradução Tecnológica</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Métricas propostas para avaliar a maturidade, gargalos e dependências na tradução de conhecimento científico em capacidade produtiva.
+                          </p>
+                        </div>
                       <div className="grid md:grid-cols-2 gap-4 text-sm">
                         <div className="flex gap-3">
                           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
@@ -279,49 +285,64 @@ const MvpEngine = () => {
                             <p className="text-muted-foreground text-xs mt-1">
                               Mede a conversão de produção científica (artigos, grupos de pesquisa) em outputs tecnológicos (patentes, protótipos). 
                               Valores altos indicam forte transferência de conhecimento para aplicações práticas.
-                            </p>
+                        </div>
+                        
+                        {/* Conceptual Explanation */}
+                        <div className="bg-accent/5 border border-accent/20 rounded-lg p-5 mb-6">
+                          <h5 className="font-semibold text-foreground mb-3 text-sm">Conceituação dos Indicadores</h5>
+                          <div className="grid md:grid-cols-2 gap-3 text-xs">
+                            <div className="flex gap-2">
+                              <div className="w-6 h-6 rounded bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                                <TrendingUp className="w-3 h-3 text-white" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-foreground">C2T — Maturidade Ciência → Tecnologia</p>
+                                <p className="text-muted-foreground mt-0.5">
+                                  Mede a conversão de produção científica (artigos, grupos de pesquisa) em outputs tecnológicos (patentes, protótipos). 
+                                  Valores altos indicam forte transferência de conhecimento para aplicações práticas.
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <div className="w-6 h-6 rounded bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center flex-shrink-0">
+                                <AlertTriangle className="w-3 h-3 text-white" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-foreground">GT — Gargalo de Tradução</p>
+                                <p className="text-muted-foreground mt-0.5">
+                                  Identifica obstáculos na cadeia de tradução: escala produtiva, integração indústria-academia, 
+                                  regulação ou financiamento. Valores altos indicam gargalos severos que impedem a tradução.
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <div className="w-6 h-6 rounded bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
+                                <Target className="w-3 h-3 text-white" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-foreground">P2C — Aderência Política → Capacidade</p>
+                                <p className="text-muted-foreground mt-0.5">
+                                  Avalia o alinhamento entre instrumentos públicos disponíveis (Finep, BNDES, Embrapii) e a 
+                                  capacidade instalada no país. Valores altos indicam políticas bem direcionadas.
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <div className="w-6 h-6 rounded bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                                <Link2 className="w-3 h-3 text-white" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-foreground">CD — Concentração e Dependência</p>
+                                <p className="text-muted-foreground mt-0.5">
+                                  Mede a dependência de insumos, tecnologia e conhecimento de fontes externas. 
+                                  Valores altos indicam vulnerabilidade estratégica e necessidade de internalização.
+                                </p>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center flex-shrink-0">
-                            <AlertTriangle className="w-4 h-4 text-white" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-foreground">GT — Gargalo de Tradução</p>
-                            <p className="text-muted-foreground text-xs mt-1">
-                              Identifica obstáculos na cadeia de tradução: escala produtiva, integração indústria-academia, 
-                              regulação ou financiamento. Valores altos indicam gargalos severos que impedem a tradução.
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
-                            <Target className="w-4 h-4 text-white" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-foreground">P2C — Aderência Política → Capacidade</p>
-                            <p className="text-muted-foreground text-xs mt-1">
-                              Avalia o alinhamento entre instrumentos públicos disponíveis (Finep, BNDES, Embrapii) e a 
-                              capacidade instalada no país. Valores altos indicam políticas bem direcionadas.
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                            <Link2 className="w-4 h-4 text-white" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-foreground">CD — Concentração e Dependência</p>
-                            <p className="text-muted-foreground text-xs mt-1">
-                              Mede a dependência de insumos, tecnologia e conhecimento de fontes externas. 
-                              Valores altos indicam vulnerabilidade estratégica e necessidade de internalização.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {/* C2T - Maturidade Ciência → Tecnologia */}
                       <TooltipProvider>
                         <Tooltip>
@@ -895,24 +916,26 @@ const MvpEngine = () => {
               </div>
             ) : null}
           </div>
-        </section>
-      )}
+            )}
+          </div>
+        </main>
+      </div>
 
       {/* Verificabilidade */}
-      <section className="section-spacing section-alt">
-        <div className="container-narrow">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-8 text-center">
+      <section className="py-12 bg-muted/30 border-t border-border">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 text-center">
             Infraestrutura pública, explicável e auditável
           </h2>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-4">
             {[
               "Cada resultado aponta a fonte pública original",
               "Cada vínculo possui critério explícito",
               "Dados reprodutíveis e transparentes"
             ].map((item, index) => (
-              <div key={index} className="flex items-start gap-3 p-5 bg-card rounded-lg border border-border">
-                <CheckCircle className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                <p className="text-muted-foreground">{item}</p>
+              <div key={index} className="flex items-start gap-3 p-4 bg-card rounded-lg border border-border">
+                <CheckCircle className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-muted-foreground">{item}</p>
               </div>
             ))}
           </div>
@@ -920,9 +943,9 @@ const MvpEngine = () => {
       </section>
 
       {/* Bases Públicas Integradas */}
-      <section className="section-spacing">
-        <div className="container-wide">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12 text-center">
+      <section className="py-12">
+        <div className="max-w-6xl mx-auto px-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
             Bases Públicas Integradas no MVP
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
@@ -958,9 +981,9 @@ const MvpEngine = () => {
       </section>
 
       {/* Roadmap */}
-      <section className="section-spacing section-alt">
-        <div className="container-narrow">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12 text-center">
+      <section className="py-12 bg-muted/30 border-t border-border">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
             Roadmap
           </h2>
           <div className="max-w-md mx-auto">
