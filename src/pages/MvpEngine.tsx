@@ -162,6 +162,7 @@ const MvpEngine = () => {
               >
                 {isSearching ? "Processando..." : "Buscar no Motor"}
               </button>
+            </form>
 
             {/* API Status Toggle */}
             <div className="mt-6 text-center">
