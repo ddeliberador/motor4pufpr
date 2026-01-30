@@ -15,6 +15,9 @@ const Footer = () => {
       { label: "INPI", href: "https://www.gov.br/inpi/", external: true },
       { label: "OpenAlex", href: "https://openalex.org/", external: true },
       { label: "COMEX Stat", href: "https://comexstat.mdic.gov.br/", external: true },
+      { label: "Finep", href: "https://www.finep.gov.br/", external: true },
+      { label: "BNDES", href: "https://www.bndes.gov.br/", external: true },
+      { label: "Embrapii", href: "https://embrapii.org.br/", external: true },
     ],
     contato: [
       { label: "GitHub", href: "https://github.com/ddeliberador/motor4pufpr", external: true, icon: Github },
