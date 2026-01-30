@@ -9,13 +9,18 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 
-from .core.config import settings
-from .api.routes import incidence_router, health_router
-
 from fastapi import FastAPI
 
 app = FastAPI()
-app.include_router(router)
+
+@app.get("/")
+def root():
+    return {"status": "ok"}
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 
 @app.get("/api/v1/health")
 def healthcheck():
