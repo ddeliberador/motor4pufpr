@@ -165,6 +165,69 @@ export interface InstitutionalIncidence {
   instruments_by_organization: Record<string, number>;
 }
 
+export interface Scholarship {
+  id: string;
+  title: string;
+  organization: string;
+  country: string;
+  level: string;
+  value?: number;
+  deadline?: string;
+  description?: string;
+  url?: string;
+  is_international?: boolean;
+}
+
+export interface ScholarshipsData {
+  source: string;
+  brazil: Scholarship[];
+  international: Scholarship[];
+  all: Scholarship[];
+  total: number;
+  by_country: Record<string, number>;
+  by_level: Record<string, number>;
+}
+
+export interface EducationInstitution {
+  id: string;
+  name: string;
+  acronym?: string;
+  city: string;
+  state: string;
+  category: string;
+  courses_count: number;
+  relevant_courses: string[];
+  website?: string;
+}
+
+export interface EducationData {
+  source: string;
+  institutions: EducationInstitution[];
+  courses: Array<Record<string, unknown>>;
+  total_institutions: number;
+  total_courses: number;
+}
+
+export interface GitHubProject {
+  id: number;
+  name: string;
+  full_name: string;
+  description?: string;
+  stars: number;
+  forks: number;
+  language?: string;
+  topics: string[];
+  url: string;
+  last_updated: string;
+}
+
+export interface GitHubProjectsData {
+  source: string;
+  projects: GitHubProject[];
+  total: number;
+  showing: number;
+}
+
 export interface IncidenceResult {
   query: string;
   ontology: OntologyMapping;
@@ -174,6 +237,9 @@ export interface IncidenceResult {
   institutional: InstitutionalIncidence;
   international: InternationalIncidence[];
   indicators: StructuralIndicators;
+  scholarships?: ScholarshipsData;
+  education?: EducationData;
+  github_projects?: GitHubProjectsData;
   stats: {
     groups: number;
     papers: number;
@@ -181,6 +247,9 @@ export interface IncidenceResult {
     instruments: number;
     companies: number;
     international: number;
+    scholarships?: number;
+    education_institutions?: number;
+    github_projects?: number;
   };
   generated_at: string;
   processing_time_ms?: number;
