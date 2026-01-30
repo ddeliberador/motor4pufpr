@@ -55,9 +55,9 @@ const MvpEngine = () => {
       area: g.area,
       international: g.international_collaboration,
     })),
-    technological: apiResults.technological.patents.slice(0, 5).map(p => ({
+    technological: apiResults.technological.patents.map(p => ({
       title: p.title,
-      applicant: p.applicants[0] || 'N/A',
+      applicant: Array.isArray(p.applicants) ? p.applicants[0] : p.applicants || 'N/A',
       year: p.filing_date?.split('-')[0] || 'N/A',
       code: p.id,
       international: p.cited_by_count > 0 ? `Citada ${p.cited_by_count}x` : undefined,
@@ -66,11 +66,16 @@ const MvpEngine = () => {
       name: i.name,
       type: i.type,
       status: i.status,
-      value: i.total_value ? `R$ ${(i.total_value / 1000000).toFixed(0)}M` : undefined,
+      value: i.total_value ? `R$ ${(i.total_value / 1000000).toFixed(1)}M` : undefined,
     })),
-    companies: [] as { name: string; country: string; sector: string; type: string }[],
-    international: apiResults.international.slice(0, 6).map(i => ({
-      country: `${i.flag_emoji} ${i.country.replace('https://openalex.org/countries/', '')}`,
+    companies: apiResults.productive?.companies?.map(c => ({
+      name: c.name,
+      country: c.country || 'Brasil',
+      sector: c.sector || 'N/A',
+      type: c.type || 'Empresa',
+    })) || [],
+    international: apiResults.international.map(i => ({
+      country: i.country_name || i.country.replace('https://openalex.org/countries/', ''),
       institutions: i.institutions_count,
       patents: i.patents_count,
       relevance: i.global_relevance,
