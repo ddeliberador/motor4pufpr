@@ -80,7 +80,7 @@ export default function ApiStatusView() {
     // Check health endpoint
     const startTime = Date.now();
     try {
-      await api.health();
+      await api.healthCheck();
       const responseTime = Date.now() - startTime;
       
       // Se health funciona, marca todos como online
