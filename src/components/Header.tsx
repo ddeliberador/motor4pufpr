@@ -10,7 +10,6 @@ const Header = () => {
 
   const navItems = [
     { path: "/", label: "Conceito" },
-    { path: "/mvp", label: "MVP Engine" },
   ];
 
   return (
