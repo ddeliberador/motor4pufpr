@@ -575,39 +575,43 @@ const MvpEngine = () => {
                     </button>
                   </div>
                   
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {(expandedSections.scientific ? searchResults.scientific : searchResults.scientific.slice(0, 6)).map((group, index) => (
+                  <div className="space-y-2">
+                    {(expandedSections.scientific ? searchResults.scientific : searchResults.scientific.slice(0, 10)).map((group, index) => (
                       <div 
                         key={index} 
-                        className="group bg-card border border-border rounded-xl p-5 hover:border-primary/30 hover:shadow-lg transition-all duration-300 opacity-0 animate-fade-in cursor-pointer"
-                        style={{ animationDelay: `${0.6 + index * 0.1}s` }}
+                        className="group bg-card border border-border rounded-lg p-4 hover:border-primary hover:bg-accent/5 transition-all duration-200 cursor-pointer flex items-center gap-4"
                         onClick={() => handleNodeSelect({ type: 'scientific', data: group })}
                       >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <Users className="w-5 h-5 text-primary" />
-                          </div>
-                          <span className="text-xs font-medium px-2 py-1 bg-secondary text-secondary-foreground rounded-full">
-                            {group.state}
-                          </span>
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Users className="w-5 h-5 text-primary" />
                         </div>
-                        <h4 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
-                          {group.name}
-                        </h4>
-                        <p className="text-sm text-muted-foreground mb-2">{group.institution}</p>
-                        <p className="text-xs text-muted-foreground/70 mb-2">{group.area}</p>
-                        {group.international && (
-                          <div className="flex items-center gap-1 text-xs text-accent bg-accent/10 px-2 py-1 rounded-full">
-                            <Globe className="w-3 h-3" />
-                            <span>{group.international}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                              {group.name}
+                            </h4>
+                            <span className="text-xs font-medium px-2 py-1 bg-secondary text-secondary-foreground rounded-full flex-shrink-0">
+                              {group.state}
+                            </span>
                           </div>
-                        )}
+                          <p className="text-sm text-muted-foreground line-clamp-1">{group.institution}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-xs text-muted-foreground/70 line-clamp-1 flex-1">{group.area}</p>
+                            {group.international && (
+                              <div className="flex items-center gap-1 text-xs text-accent bg-accent/10 px-2 py-0.5 rounded-full flex-shrink-0">
+                                <Globe className="w-3 h-3" />
+                                <span>{group.international}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
                       </div>
                     ))}
-                    {!expandedSections.scientific && searchResults.scientific.length > 6 && (
-                      <div className="bg-muted/50 border border-border border-dashed rounded-xl p-5 flex items-center justify-center">
+                    {!expandedSections.scientific && searchResults.scientific.length > 10 && (
+                      <div className="bg-muted/50 border border-border border-dashed rounded-lg p-3 text-center">
                         <p className="text-sm text-muted-foreground font-medium">
-                          + {searchResults.scientific.length - 6} grupos
+                          + {searchResults.scientific.length - 10} grupos restantes
                         </p>
                       </div>
                     )}
@@ -641,45 +645,43 @@ const MvpEngine = () => {
                     </button>
                   </div>
                   
-                  <div className="space-y-3">
-                    {(expandedSections.technological ? searchResults.technological : searchResults.technological.slice(0, 5)).map((patent, index) => (
+                  <div className="space-y-2">
+                    {(expandedSections.technological ? searchResults.technological : searchResults.technological.slice(0, 10)).map((patent, index) => (
                       <div 
                         key={index} 
-                        className="group bg-card border border-border rounded-xl p-5 hover:border-primary/30 hover:shadow-lg transition-all duration-300 opacity-0 animate-fade-in cursor-pointer"
-                        style={{ animationDelay: `${1.2 + index * 0.1}s` }}
+                        className="group bg-card border border-border rounded-lg p-4 hover:border-primary hover:bg-accent/5 transition-all duration-200 cursor-pointer flex items-center gap-4"
                         onClick={() => handleNodeSelect({ type: 'technological', data: patent })}
                       >
-                        <div className="flex items-start gap-4">
-                          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <FlaskConical className="w-6 h-6 text-primary" />
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <FlaskConical className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                              {patent.title}
+                            </h4>
+                            <span className="text-xs font-mono bg-secondary text-secondary-foreground px-2 py-1 rounded flex-shrink-0">
+                              {patent.year}
+                            </span>
                           </div>
-                          <div className="flex-grow min-w-0">
-                            <div className="flex items-start justify-between gap-4">
-                              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                                {patent.title}
-                              </h4>
-                              <span className="text-xs font-mono bg-secondary text-secondary-foreground px-2 py-1 rounded flex-shrink-0">
-                                {patent.year}
-                              </span>
-                            </div>
-                            <p className="text-sm text-muted-foreground mt-1">{patent.applicant}</p>
-                            <div className="flex items-center gap-3 mt-2">
-                              <p className="text-xs text-muted-foreground/70 font-mono">{patent.code}</p>
-                              {patent.international && (
-                                <span className="flex items-center gap-1 text-xs text-accent bg-accent/10 px-2 py-1 rounded-full">
-                                  <Globe className="w-3 h-3" />
-                                  {patent.international}
-                                </span>
-                              )}
-                            </div>
+                          <p className="text-sm text-muted-foreground line-clamp-1">{patent.applicant}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-xs text-muted-foreground/70 font-mono line-clamp-1 flex-1">{patent.code}</p>
+                            {patent.international && (
+                              <div className="flex items-center gap-1 text-xs text-accent bg-accent/10 px-2 py-0.5 rounded-full flex-shrink-0">
+                                <Globe className="w-3 h-3" />
+                                <span>{patent.international}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
                       </div>
                     ))}
-                    {!expandedSections.technological && searchResults.technological.length > 5 && (
-                      <div className="bg-muted/50 border border-border border-dashed rounded-xl p-5 text-center">
+                    {!expandedSections.technological && searchResults.technological.length > 10 && (
+                      <div className="bg-muted/50 border border-border border-dashed rounded-lg p-3 text-center">
                         <p className="text-sm text-muted-foreground font-medium">
-                          + {searchResults.technological.length - 5} patentes relacionadas
+                          + {searchResults.technological.length - 10} patentes restantes
                         </p>
                       </div>
                     )}
@@ -707,27 +709,27 @@ const MvpEngine = () => {
                     </div>
                   </div>
                   
-                  <div className="grid md:grid-cols-2 gap-8">
+                  <div className="grid md:grid-cols-2 gap-6">
                     {/* Brazilian Companies */}
                     <div>
                       <h4 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-4">
                         <span className="text-2xl">🇧🇷</span> Brasil
                       </h4>
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         {searchResults.companies.filter(c => c.country === "Brasil").map((company, index) => (
                           <div 
                             key={index}
-                            className="flex items-center gap-3 bg-card border border-border rounded-lg p-4 hover:border-primary/30 transition-all opacity-0 animate-fade-in cursor-pointer"
-                            style={{ animationDelay: `${1.8 + index * 0.1}s` }}
+                            className="group bg-card border border-border rounded-lg p-4 hover:border-primary hover:bg-accent/5 transition-all duration-200 cursor-pointer flex items-center gap-4"
                             onClick={() => handleNodeSelect({ type: 'company', data: { ...company, companyType: company.type } })}
                           >
-                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                               <Building2 className="w-5 h-5 text-primary" />
                             </div>
-                            <div className="flex-grow">
-                              <h5 className="font-medium text-foreground">{company.name}</h5>
-                              <p className="text-xs text-muted-foreground">{company.sector} • {company.type}</p>
+                            <div className="flex-1 min-w-0">
+                              <h5 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">{company.name}</h5>
+                              <p className="text-sm text-muted-foreground line-clamp-1">{company.sector} • {company.type}</p>
                             </div>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
                           </div>
                         ))}
                       </div>
@@ -738,21 +740,21 @@ const MvpEngine = () => {
                       <h4 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-4">
                         <span className="text-2xl">🌍</span> Internacional
                       </h4>
-                      <div className="space-y-3">
-                        {searchResults.companies.filter(c => c.country !== "Brasil").slice(0, 5).map((company, index) => (
+                      <div className="space-y-2">
+                        {searchResults.companies.filter(c => c.country !== "Brasil").slice(0, 10).map((company, index) => (
                           <div 
                             key={index}
-                            className="flex items-center gap-3 bg-card border border-border rounded-lg p-4 hover:border-primary/30 transition-all opacity-0 animate-fade-in cursor-pointer"
-                            style={{ animationDelay: `${2.2 + index * 0.1}s` }}
+                            className="group bg-card border border-border rounded-lg p-4 hover:border-accent hover:bg-accent/5 transition-all duration-200 cursor-pointer flex items-center gap-4"
                             onClick={() => handleNodeSelect({ type: 'company', data: { ...company, companyType: company.type } })}
                           >
-                            <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
                               <Globe className="w-5 h-5 text-accent" />
                             </div>
-                            <div className="flex-grow">
-                              <h5 className="font-medium text-foreground">{company.name}</h5>
-                              <p className="text-xs text-muted-foreground">{company.country} • {company.sector}</p>
+                            <div className="flex-1 min-w-0">
+                              <h5 className="font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-1">{company.name}</h5>
+                              <p className="text-sm text-muted-foreground line-clamp-1">{company.country} • {company.sector}</p>
                             </div>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-accent transition-colors flex-shrink-0" />
                           </div>
                         ))}
                       </div>
@@ -781,30 +783,35 @@ const MvpEngine = () => {
                     </div>
                   </div>
                   
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="space-y-2">
                     {searchResults.international.map((item, index) => (
                       <div 
                         key={index}
-                        className="bg-card border border-border rounded-xl p-5 hover:border-primary/30 hover:shadow-lg transition-all opacity-0 animate-fade-in cursor-pointer"
-                        style={{ animationDelay: `${2.8 + index * 0.1}s` }}
+                        className="group bg-card border border-border rounded-lg p-4 hover:border-primary hover:bg-accent/5 transition-all duration-200 cursor-pointer flex items-center gap-4"
                         onClick={() => handleNodeSelect({ type: 'international', data: { ...item, name: item.country } })}
                       >
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-lg font-medium">{item.country}</span>
-                          <span className="text-xs font-medium px-2 py-1 bg-secondary text-secondary-foreground rounded-full">
-                            {item.relevance}
-                          </span>
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Globe className="w-5 h-5 text-primary" />
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="text-center p-2 bg-muted/50 rounded-lg">
-                            <p className="text-2xl font-bold text-foreground">{item.institutions}</p>
-                            <p className="text-xs text-muted-foreground">Instituições</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                              {item.country}
+                            </h4>
+                            <span className="text-xs font-medium px-2 py-1 bg-secondary text-secondary-foreground rounded-full flex-shrink-0">
+                              {item.relevance}
+                            </span>
                           </div>
-                          <div className="text-center p-2 bg-muted/50 rounded-lg">
-                            <p className="text-2xl font-bold text-foreground">{item.patents}</p>
-                            <p className="text-xs text-muted-foreground">Patentes</p>
+                          <div className="flex items-center gap-4">
+                            <p className="text-sm text-muted-foreground">
+                              <span className="font-semibold text-foreground">{item.institutions}</span> instituições
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              <span className="font-semibold text-foreground">{item.patents}</span> patentes
+                            </p>
                           </div>
                         </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
                       </div>
                     ))}
                   </div>
@@ -837,45 +844,47 @@ const MvpEngine = () => {
                     </button>
                   </div>
                   
-                  <div className="grid md:grid-cols-3 gap-4">
-                    {(expandedSections.institutional ? searchResults.institutional : searchResults.institutional.slice(0, 6)).map((inst, index) => (
+                  <div className="space-y-2">
+                    {(expandedSections.institutional ? searchResults.institutional : searchResults.institutional.slice(0, 10)).map((inst, index) => (
                       <div 
                         key={index} 
-                        className="group bg-card border border-border rounded-xl p-6 hover:border-accent/30 hover:shadow-lg transition-all duration-300 opacity-0 animate-fade-in cursor-pointer"
-                        style={{ animationDelay: `${3.4 + index * 0.1}s` }}
+                        className="group bg-card border border-border rounded-lg p-4 hover:border-accent hover:bg-accent/5 transition-all duration-200 cursor-pointer flex items-center gap-4"
                         onClick={() => handleNodeSelect({ type: 'institutional', data: inst })}
                       >
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
-                            <Briefcase className="w-6 h-6 text-accent" />
+                        <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
+                          <Briefcase className="w-5 h-5 text-accent" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <h4 className="font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-1">
+                              {inst.name}
+                            </h4>
+                            <span className={`text-xs font-medium px-2 py-1 rounded-full flex-shrink-0 ${
+                              inst.status === 'Aberto' 
+                                ? 'bg-accent/10 text-accent' 
+                                : inst.status === 'Contínuo'
+                                ? 'bg-primary/10 text-primary'
+                                : inst.status === 'Ativo'
+                                ? 'bg-accent/10 text-accent'
+                                : 'bg-muted text-muted-foreground'
+                            }`}>
+                              {inst.status}
+                            </span>
                           </div>
-                          <span className={`text-xs font-medium px-3 py-1 rounded-full ${
-                            inst.status === 'Aberto' 
-                              ? 'bg-accent/10 text-accent' 
-                              : inst.status === 'Contínuo'
-                              ? 'bg-primary/10 text-primary'
-                              : inst.status === 'Ativo'
-                              ? 'bg-accent/10 text-accent'
-                              : 'bg-muted text-muted-foreground'
-                          }`}>
-                            {inst.status}
-                          </span>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm text-muted-foreground line-clamp-1">{inst.type}</span>
+                            {inst.value && (
+                              <span className="text-sm font-semibold text-accent flex-shrink-0">{inst.value}</span>
+                            )}
+                          </div>
                         </div>
-                        <h4 className="font-semibold text-foreground mb-2 group-hover:text-accent transition-colors">
-                          {inst.name}
-                        </h4>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">{inst.type}</span>
-                          {inst.value && (
-                            <span className="text-sm font-semibold text-accent">{inst.value}</span>
-                          )}
-                        </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-accent transition-colors flex-shrink-0" />
                       </div>
                     ))}
-                    {!expandedSections.institutional && searchResults.institutional.length > 6 && (
-                      <div className="bg-muted/50 border border-border border-dashed rounded-xl p-5 flex items-center justify-center">
+                    {!expandedSections.institutional && searchResults.institutional.length > 10 && (
+                      <div className="bg-muted/50 border border-border border-dashed rounded-lg p-3 text-center">
                         <p className="text-sm text-muted-foreground font-medium">
-                          + {searchResults.institutional.length - 6} instrumentos
+                          + {searchResults.institutional.length - 10} instrumentos restantes
                         </p>
                       </div>
                     )}
