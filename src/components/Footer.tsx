@@ -46,7 +46,7 @@ const Footer = () => {
               Infraestrutura computacional para conectar Pesquisa, Produção, Política e Patentes.
             </p>
             <div className="text-xs text-primary-foreground/60 space-y-1">
-              <p className="font-medium text-primary-foreground/70">Doutorado em Políticas Públicas — UFPR</p>
+              <p className="font-medium text-primary-foreground/70">Doutorado em Políticas Públicas — UFPR (2025-2028)</p>
               <p><span className="text-primary-foreground/50">Doutorando:</span> Decio Dalton Deliberador Filho</p>
               <p><span className="text-primary-foreground/50">Orientador:</span> Walter Tadahiro Shima</p>
             </div>
