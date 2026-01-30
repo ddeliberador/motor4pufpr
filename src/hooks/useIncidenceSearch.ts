@@ -1,9 +1,10 @@
 /**
  * MOTOR 4P UFPR - useIncidenceSearch Hook
- * Hook personalizado para busca de incidência com fallback para dados mock
+ * Hook com sistema profissional de integração, cache e fallback
  */
 import { useState, useCallback } from 'react';
-import { api, SearchResponse, IncidenceResult, isBackendAvailable } from '@/lib/api';
+import { IncidenceResult } from '@/lib/api';
+import { apiIntegrator } from '@/lib/apiIntegrator';
 
 interface UseIncidenceSearchOptions {
   includeInternational?: boolean;
@@ -29,6 +30,7 @@ export function useIncidenceSearch(
   const [error, setError] = useState<string | null>(null);
   const [isUsingMock, setIsUsingMock] = useState(false);
   const [backendAvailable, setBackendAvailable] = useState(true);
+  const [dataSource, setDataSource] = useState<'api' | 'cache' | 'mock'>('api');
 
   const {
     includeInternational = true,
@@ -42,52 +44,37 @@ export function useIncidenceSearch(
 
     setIsLoading(true);
     setError(null);
-    setIsUsingMock(false);
 
     try {
-      // Verifica se o backend está disponível
-      const available = await isBackendAvailable();
-      setBackendAvailable(available);
+      // Usa o integrador profissional com cache e retry
+      const result = await apiIntegrator.searchWithFallback(query, {
+        includeInternational,
+        includePapers,
+        limit,
+      });
 
-      if (available) {
-        // Usa API real
-        const response: SearchResponse = await api.searchIncidence(query, {
-          includeInternational,
-          includePapers,
-          limit,
-        });
+      setResults(result.data);
+      setDataSource(result.source);
+      setIsUsingMock(result.source === 'mock');
+      setBackendAvailable(result.source !== 'mock');
 
-        if (response.success && response.data) {
-          setResults(response.data);
-        } else {
-          throw new Error(response.error || 'Erro desconhecido');
-        }
-      } else if (useMockOnError) {
-        // Fallback para dados mock
-        console.warn('Backend não disponível, usando dados simulados');
-        setIsUsingMock(true);
-        const mockData = generateMockResults(query);
-        setResults(mockData);
+      if (result.fromCache) {
+        console.info('✅ Dados carregados do cache');
+      } else if (result.source === 'api') {
+        console.info('✅ Dados carregados da API real');
       } else {
-        throw new Error('Backend não disponível');
+        console.warn('⚠️ Usando dados simulados');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar dados';
       console.error('Search error:', errorMessage);
-
-      if (useMockOnError) {
-        // Fallback para dados mock em caso de erro
-        console.warn('Erro na API, usando dados simulados');
-        setIsUsingMock(true);
-        const mockData = generateMockResults(query);
-        setResults(mockData);
-      } else {
-        setError(errorMessage);
-      }
+      setError(errorMessage);
+      setIsUsingMock(true);
+      setBackendAvailable(false);
     } finally {
       setIsLoading(false);
     }
-  }, [includeInternational, includePapers, limit, useMockOnError]);
+  }, [includeInternational, includePapers, limit]);
 
   return {
     search,
@@ -96,6 +83,7 @@ export function useIncidenceSearch(
     error,
     isUsingMock,
     backendAvailable,
+    dataSource,
   };
 }
 
