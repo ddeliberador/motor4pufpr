@@ -12,6 +12,15 @@ import logging
 from .core.config import settings
 from .api.routes import incidence_router, health_router
 
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/api/v1/health")
+def healthcheck():
+    return {"status": "ok"}
+
+
 # Configura logging
 logging.basicConfig(
     level=logging.INFO,
