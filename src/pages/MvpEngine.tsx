@@ -113,11 +113,9 @@ const MvpEngine = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Main Layout: Sidebar + Content */}
-      <div className="flex" style={{ height: 'calc(100vh - 64px)', marginTop: '64px' }}>
-        {/* Sidebar */}
-        <aside className="w-80 bg-card border-r border-border overflow-y-auto flex-shrink-0">
-          <div className="p-6 space-y-6">
+      {/* Sidebar */}
+      <aside className="fixed left-0 top-16 bottom-0 w-80 bg-card border-r border-border overflow-y-auto z-10">
+        <div className="p-6 space-y-6">
             {/* Logo and Title */}
             <div className="text-center pb-6 border-b border-border">
               <UfprLogo className="w-16 h-16 mx-auto mb-3 opacity-90" />
@@ -197,10 +195,10 @@ const MvpEngine = () => {
           </div>
         </aside>
 
-        {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto bg-muted/20 min-w-0">
-          {showApiStatus && (
-            <div className="bg-card border-b border-border p-6">
+      {/* Main Content Area */}
+      <main className="pt-16 pl-80 min-h-screen overflow-y-auto bg-muted/20">
+        {showApiStatus && (
+          <div className="bg-card border-b border-border p-6">
               <div className="max-w-6xl mx-auto">
                 <ApiStatusView />
               </div>
@@ -906,11 +904,9 @@ const MvpEngine = () => {
           </div>
             )}
           </div>
-        </main>
-      </div>
 
-      {/* Verificabilidade */}
-      <section className="py-12 bg-muted/30 border-t border-border">
+        {/* Verificabilidade */}
+        <section className="py-12 bg-muted/30 border-t border-border">
         <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 text-center">
             Infraestrutura pública, explicável e auditável
@@ -1011,6 +1007,7 @@ const MvpEngine = () => {
           </p>
         </div>
       </section>
+      </main>
 
       <Footer />
       
