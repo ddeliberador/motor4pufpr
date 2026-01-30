@@ -579,7 +579,11 @@ const MvpEngine = () => {
                       <div 
                         key={index} 
                         className="group bg-card border border-border rounded-lg p-4 hover:border-primary hover:bg-accent/5 transition-all duration-200 cursor-pointer flex items-center gap-4"
-                        onClick={() => handleNodeSelect({ type: 'scientific', data: group })}
+                        onClick={() => {
+                          console.log('Card clicado!', group);
+                          alert('Card clicado: ' + group.name);
+                          handleNodeSelect({ type: 'scientific', data: group });
+                        }}
                       >
                         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                           <Users className="w-5 h-5 text-primary" />
