@@ -58,8 +58,10 @@ API para análise de incidência de objetos tecnológicos no sistema de inovaç�
 cors_origins = [
     "http://localhost:5173",      # Vite dev
     "http://localhost:3000",      # React dev
+    "http://localhost:8080",      # Vite dev custom port
     "http://127.0.0.1:5173",
     "http://127.0.0.1:3000",
+    "http://127.0.0.1:8080",
     "https://motor4pufpr.lovable.app",  # Produção Lovable
     "https://*.lovable.app",      # Outros subdomínios Lovable
     "https://lovable.dev",        # Lovable editor
