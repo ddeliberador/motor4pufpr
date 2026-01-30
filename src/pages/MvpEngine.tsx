@@ -28,11 +28,11 @@ const MvpEngine = () => {
   const [detailPanelOpen, setDetailPanelOpen] = useState(false);
   const [showApiStatus, setShowApiStatus] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
-    scientific: true,
-    technological: true,
-    institutional: true,
-    companies: true,
-    international: true,
+    scientific: false,
+    technological: false,
+    institutional: false,
+    companies: false,
+    international: false,
   });
 
   // Hook para busca com API real
@@ -568,7 +568,7 @@ const MvpEngine = () => {
                       onClick={() => setExpandedSections(prev => ({ ...prev, scientific: !prev.scientific }))}
                       className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                     >
-                      {expandedSections.scientific ? 'Recolher' : `Ver ${searchResults.stats.groups} Grupos`}
+                      {expandedSections.scientific ? `Ver ${searchResults.stats.groups} Grupos` : 'Recolher'}
                     </button>
                   </div>
                   
@@ -638,7 +638,7 @@ const MvpEngine = () => {
                       onClick={() => setExpandedSections(prev => ({ ...prev, technological: !prev.technological }))}
                       className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                     >
-                      {expandedSections.technological ? 'Recolher' : `Ver ${searchResults.stats.patents} Patentes`}
+                      {expandedSections.technological ? `Ver ${searchResults.stats.patents} Patentes` : 'Recolher'}
                     </button>
                   </div>
                   
@@ -837,7 +837,7 @@ const MvpEngine = () => {
                       onClick={() => setExpandedSections(prev => ({ ...prev, institutional: !prev.institutional }))}
                       className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                     >
-                      {expandedSections.institutional ? 'Recolher' : `Ver ${searchResults.stats.instruments} Instrumentos`}
+                      {expandedSections.institutional ? `Ver ${searchResults.stats.instruments} Instrumentos` : 'Recolher'}
                     </button>
                   </div>
                   
