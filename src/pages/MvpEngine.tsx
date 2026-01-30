@@ -105,11 +105,7 @@ const MvpEngine = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Hero Section */}
-      <section className="hero-section pt-32 pb-24 md:pt-40 md:pb-32">
-        <div className="container-narrow text-center">
-          <div className="flex justify-center mb-6">
-            <UfprLogo cwith Search */}
+      {/* Hero Section with Search */}
       <section className="hero-section pt-32 pb-16 md:pt-40 md:pb-20">
         <div className="container-narrow">
           <div className="text-center mb-10">
@@ -169,13 +165,17 @@ const MvpEngine = () => {
             
             {/* Preview de Ontologia */}
             <OntologyPreview query={searchQuery} />
-          </divxuto e Poderoso */}
+          </div>
+        </div>
+      </section>
+
+      {/* MVP Enxuto e Poderoso */}
       <section className="section-spacing">
         <div className="container-narrow">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-8 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6 text-center">
             MVP Enxuto e Poderoso
           </h2>
-          <p className="text-lg text-muted-foreground text-center mb-10">
+          <p className="text-lg text-muted-foreground text-center mb-8">
             O MVP inicial não tenta mapear tudo.<br />
             Ele implementa a <strong className="text-foreground">camada ausente</strong>:
           </p>
