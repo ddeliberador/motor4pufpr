@@ -35,14 +35,14 @@ const MvpEngine = () => {
     international: false,
   });
 
-  // Hook para busca com API real
+  // Hook para busca com API real (com fallback para mock se API estiver offline)
   const {
     search: apiSearch,
     results: apiResults,
     isLoading: isSearching,
     isUsingMock,
     backendAvailable,
-  } = useIncidenceSearch({ useMockOnError: false });
+  } = useIncidenceSearch({ useMockOnError: true });
   
   // Transforma resultados da API para o formato local
   const searchResults = apiResults ? {
