@@ -33,6 +33,9 @@ const MvpEngine = () => {
     institutional: false,
     companies: false,
     international: false,
+    scholarships: false,
+    education: false,
+    github: false,
   });
 
   // Hook para busca com API real
@@ -723,6 +726,190 @@ const MvpEngine = () => {
                     )}
                   </div>
                 </div>
+
+                {/* Divider Arrow */}
+                <div className="flex justify-center">
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                    <ChevronRight className="w-6 h-6 text-muted-foreground rotate-90" />
+                  </div>
+                </div>
+
+                {/* Scholarships Section - NEW */}
+                {searchResults.scholarships && searchResults.scholarships.total > 0 && (
+                  <div>
+                    <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
+                      <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/25">
+                        <Briefcase className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                      </div>
+                      <div className="flex-grow">
+                        <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground font-serif">
+                          Bolsas de Estudo
+                        </h3>
+                        <p className="text-xs md:text-sm text-muted-foreground">Brasil e Internacional</p>
+                      </div>
+                      <button
+                        onClick={() => setExpandedSections(prev => ({ ...prev, scholarships: !prev.scholarships }))}
+                        className="px-3 py-1.5 md:px-4 md:py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-xs md:text-sm"
+                      >
+                        {expandedSections.scholarships ? 'Recolher' : `Ver ${searchResults.scholarships.total} Bolsas`}
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                      {(expandedSections.scholarships ? searchResults.scholarships.all : searchResults.scholarships.all.slice(0, 6)).map((scholarship, index) => (
+                        <div 
+                          key={index} 
+                          className="group bg-card border border-border rounded-xl p-4 md:p-5 hover:border-green-300 hover:shadow-lg transition-all duration-300"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              scholarship.country === 'Brasil' 
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-blue-100 text-blue-700'
+                            }`}>
+                              {scholarship.country}
+                            </span>
+                            <span className="text-xs text-muted-foreground">{scholarship.type || scholarship.level}</span>
+                          </div>
+                          <h4 className="font-semibold text-foreground mb-2 group-hover:text-green-600 transition-colors">
+                            {scholarship.institution || scholarship.name}
+                          </h4>
+                          <p className="text-sm text-muted-foreground mb-2">{scholarship.program || scholarship.field}</p>
+                          {scholarship.value_monthly && (
+                            <p className="text-xs font-semibold text-green-600">
+                              {typeof scholarship.value_monthly === 'number' 
+                                ? `R$ ${scholarship.value_monthly.toLocaleString()}/mês`
+                                : scholarship.value_monthly}
+                            </p>
+                          )}
+                          {scholarship.value_yearly && (
+                            <p className="text-xs font-semibold text-green-600">{scholarship.value_yearly}</p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Duração: {scholarship.duration_months} meses
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Divider Arrow */}
+                <div className="flex justify-center">
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                    <ChevronRight className="w-6 h-6 text-muted-foreground rotate-90" />
+                  </div>
+                </div>
+
+                {/* Education Institutions Section - NEW */}
+                {searchResults.education && searchResults.education.total_institutions > 0 && (
+                  <div>
+                    <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
+                      <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                        <Building2 className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                      </div>
+                      <div className="flex-grow">
+                        <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground font-serif">
+                          Instituições de Ensino
+                        </h3>
+                        <p className="text-xs md:text-sm text-muted-foreground">INEP — Censo da Educação Superior</p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                      {searchResults.education.institutions.map((inst, index) => (
+                        <div 
+                          key={index} 
+                          className="group bg-card border border-border rounded-xl p-4 md:p-5 hover:border-indigo-300 hover:shadow-lg transition-all duration-300"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
+                              <Building2 className="w-5 h-5 text-indigo-600" />
+                            </div>
+                            <span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
+                              {inst.state}
+                            </span>
+                          </div>
+                          <h4 className="font-semibold text-foreground mb-1 group-hover:text-indigo-600 transition-colors">
+                            {inst.acronym || inst.name}
+                          </h4>
+                          <p className="text-sm text-muted-foreground mb-2">{inst.name}</p>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">{inst.type}</span>
+                            {inst.grade_enade && (
+                              <span className="font-semibold text-indigo-600">
+                                ENADE: {inst.grade_enade}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Divider Arrow */}
+                <div className="flex justify-center">
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                    <ChevronRight className="w-6 h-6 text-muted-foreground rotate-90" />
+                  </div>
+                </div>
+
+                {/* GitHub Projects Section - NEW */}
+                {searchResults.github_projects && searchResults.github_projects.total > 0 && (
+                  <div>
+                    <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
+                      <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-gray-800 flex items-center justify-center shadow-lg shadow-gray-500/25">
+                        <Cpu className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                      </div>
+                      <div className="flex-grow">
+                        <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground font-serif">
+                          Projetos Open Source
+                        </h3>
+                        <p className="text-xs md:text-sm text-muted-foreground">GitHub — Repositórios Relacionados</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 md:space-y-3">
+                      {searchResults.github_projects.projects.slice(0, 10).map((project, index) => (
+                        <div 
+                          key={index} 
+                          className="group bg-card border border-border rounded-xl p-4 md:p-5 hover:border-gray-400 hover:shadow-lg transition-all duration-300"
+                        >
+                          <div className="flex items-start gap-3 md:gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                              <Cpu className="w-5 h-5 text-gray-700" />
+                            </div>
+                            <div className="flex-grow min-w-0">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <h4 className="font-semibold text-foreground group-hover:text-gray-700 transition-colors">
+                                    {project.full_name}
+                                  </h4>
+                                  <p className="text-sm text-muted-foreground mt-1">{project.description}</p>
+                                </div>
+                                <a 
+                                  href={project.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs px-2 py-1 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors flex-shrink-0"
+                                >
+                                  Ver no GitHub
+                                </a>
+                              </div>
+                              <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+                                <span>{project.language}</span>
+                                <span>⭐ {project.stars}</span>
+                                <span>🍴 {project.forks}</span>
+                                {project.license && <span>📄 {project.license}</span>}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Call to Action with PDF Download */}
                 <div className="bg-primary rounded-2xl p-10 text-center">

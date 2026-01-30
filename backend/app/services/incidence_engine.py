@@ -16,6 +16,10 @@ from ..connectors.cnpq import CNPqConnector
 from ..connectors.openalex import OpenAlexConnector
 from ..connectors.comex import ComexStatConnector
 from ..connectors.ibge import IBGEConnector
+from ..connectors.capes import CAPESConnector
+from ..connectors.scholarships import InternationalScholarshipsConnector
+from ..connectors.inep import INEPConnector
+from ..connectors.github import GitHubConnector
 from ..models.schemas import (
     IncidenceResult,
     OntologyMapping,
@@ -75,14 +79,19 @@ class IncidenceEngine:
         ontology = self.ontology.translate(query)
         logger.info(f"Ontology mapping confidence: {ontology.confidence:.2f}")
 
-        # 2. Busca paralela em todas as fontes
-        scientific, technological, productive, institutional, international = await asyncio.gather(
+        # 2. Busca paralela em todas as fontes (incluindo novas APIs)
+        results = await asyncio.gather(
             self._get_scientific_incidence(query, ontology, include_papers, limit),
             self._get_technological_incidence(query, ontology, limit),
             self._get_productive_incidence(ontology),
             self._get_institutional_incidence(query, ontology),
             self._get_international_incidence(query) if include_international else self._empty_international(),
+            self._get_scholarships_data(query, ontology),
+            self._get_education_data(query),
+            self._get_github_projects(query),
         )
+        
+        scientific, technological, productive, institutional, international, scholarships, education, github = results
 
         # 3. Calcula indicadores
         indicators = self.indicators.calculate(
@@ -93,20 +102,23 @@ class IncidenceEngine:
             international=international
         )
 
-        # 4. Estatísticas gerais
+        # 4. Estatísticas gerais (incluindo novas fontes)
         stats = {
             "groups": scientific.total_groups,
             "papers": scientific.total_papers,
             "patents": technological.total_patents,
             "instruments": len(institutional.instruments),
             "companies": len(productive.main_import_origins) + len(productive.main_export_destinations),
-            "international": len(international)
+            "international": len(international),
+            "scholarships": scholarships.get("total", 0),
+            "institutions": education.get("total_institutions", 0),
+            "github_projects": github.get("total", 0)
         }
 
         # 5. Tempo de processamento
         processing_time = int((datetime.now() - start_time).total_seconds() * 1000)
 
-        return IncidenceResult(
+        result = IncidenceResult(
             query=query,
             ontology=ontology,
             scientific=scientific,
@@ -117,8 +129,15 @@ class IncidenceEngine:
             indicators=indicators,
             stats=stats,
             processing_time_ms=processing_time,
-            data_sources=["CNPq", "OpenAlex", "INPI", "COMEX Stat", "BNDES", "Finep"]
+            data_sources=["CNPq", "OpenAlex", "INPI", "COMEX Stat", "BNDES", "Finep", "CAPES", "INEP", "GitHub"]
         )
+        
+        # Adiciona dados extras
+        result.scholarships = scholarships
+        result.education = education
+        result.github_projects = github
+        
+        return result
 
     async def _get_scientific_incidence(
         self,
@@ -453,3 +472,90 @@ class IncidenceEngine:
     async def _empty_international(self) -> List[InternationalIncidence]:
         """Retorna lista vazia para quando internacional não é requisitado"""
         return []
+
+    async def _get_scholarships_data(self, query: str, ontology: OntologyMapping) -> Dict[str, Any]:
+        """Busca dados de bolsas de estudo (CAPES + Internacional)"""
+        try:
+            # Busca paralela em CAPES e bolsas internacionais
+            capes_conn = CAPESConnector()
+            intl_conn = InternationalScholarshipsConnector()
+            
+            field = ontology.cnpq_areas[0]["name"] if ontology.cnpq_areas else query
+            
+            capes_data, intl_data = await asyncio.gather(
+                capes_conn.search_scholarships(query),
+                intl_conn.search_international_scholarships(query, field)
+            )
+            
+            # Combina dados
+            all_scholarships = []
+            
+            # Bolsas CAPES (Brasil)
+            if capes_data.get("scholarships"):
+                all_scholarships.extend(capes_data["scholarships"])
+            
+            # Bolsas internacionais
+            if intl_data.get("scholarships"):
+                all_scholarships.extend(intl_data["scholarships"])
+            
+            return {
+                "source": "CAPES + International",
+                "brazil": capes_data.get("scholarships", []),
+                "international": intl_data.get("scholarships", []),
+                "all": all_scholarships,
+                "total": len(all_scholarships),
+                "by_country": self._group_scholarships_by_country(all_scholarships),
+                "by_level": self._group_scholarships_by_level(all_scholarships)
+            }
+        except Exception as e:
+            logger.error(f"Error fetching scholarships: {e}")
+            return {"source": "CAPES + International", "all": [], "total": 0}
+    
+    async def _get_education_data(self, query: str) -> Dict[str, Any]:
+        """Busca dados de instituições de ensino (INEP)"""
+        try:
+            inep = INEPConnector()
+            data = await inep.search_institutions(query)
+            
+            return {
+                "source": "INEP",
+                "institutions": data.get("institutions", []),
+                "courses": data.get("courses", []),
+                "total_institutions": data.get("total_institutions", 0),
+                "total_courses": data.get("total_courses", 0)
+            }
+        except Exception as e:
+            logger.error(f"Error fetching education data: {e}")
+            return {"source": "INEP", "institutions": [], "courses": [], "total_institutions": 0, "total_courses": 0}
+    
+    async def _get_github_projects(self, query: str) -> Dict[str, Any]:
+        """Busca projetos GitHub relacionados"""
+        try:
+            github = GitHubConnector()
+            data = await github.search_projects(query)
+            
+            return {
+                "source": "GitHub",
+                "projects": data.get("projects", []),
+                "total": data.get("total", 0),
+                "showing": data.get("showing", 0)
+            }
+        except Exception as e:
+            logger.error(f"Error fetching GitHub projects: {e}")
+            return {"source": "GitHub", "projects": [], "total": 0, "showing": 0}
+    
+    def _group_scholarships_by_country(self, scholarships: List[Dict]) -> Dict[str, int]:
+        """Agrupa bolsas por país"""
+        by_country = {}
+        for scholarship in scholarships:
+            country = scholarship.get("country", "Unknown")
+            by_country[country] = by_country.get(country, 0) + 1
+        return by_country
+    
+    def _group_scholarships_by_level(self, scholarships: List[Dict]) -> Dict[str, int]:
+        """Agrupa bolsas por nível (Mestrado/Doutorado/etc)"""
+        by_level = {}
+        for scholarship in scholarships:
+            level = scholarship.get("type") or scholarship.get("level", "Unknown")
+            by_level[level] = by_level.get(level, 0) + 1
+        return by_level
