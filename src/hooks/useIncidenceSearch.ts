@@ -172,6 +172,7 @@ function generateMockResults(query: string): IncidenceResult {
           inventors: ['Inventor 1', 'Inventor 2'],
           filing_date: '2024-03-15',
           ipc_codes: ['H01M'],
+          cpc_codes: [],
           status: 'Publicado',
           citations_count: 5,
           cited_by_count: 3,
