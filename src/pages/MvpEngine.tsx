@@ -84,10 +84,10 @@ const MvpEngine = () => {
       p2c: { value: apiResults.indicators.p2c.value, label: "P2C", description: apiResults.indicators.p2c.description },
       cd: { value: apiResults.indicators.cd.value, label: "CD", description: apiResults.indicators.cd.description },
     },
-    // New API data
-    scholarships: apiResults.scholarships,
-    education: apiResults.education,
-    github_projects: apiResults.github_projects,
+    // New API data (with safe defaults)
+    scholarships: apiResults.scholarships || undefined,
+    education: apiResults.education || undefined,
+    github_projects: apiResults.github_projects || undefined,
     // Metadata from API
     _processingTimeMs: apiResults.processing_time_ms,
     _dataSources: apiResults.data_sources,
