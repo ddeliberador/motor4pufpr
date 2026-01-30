@@ -50,11 +50,18 @@ const typeConfig = {
 };
 
 export default function NodeDetailPanel({ open, onClose, nodeData }: NodeDetailPanelProps) {
-  console.log('NodeDetailPanel render:', { open, nodeData: nodeData?.type });
+  console.log('NodeDetailPanel renderizado:', { open, hasNodeData: !!nodeData, nodeType: nodeData?.type });
   
-  if (!nodeData) return null;
+  if (!nodeData) {
+    console.log('NodeDetailPanel: nodeData é null, retornando null');
+    return null;
+  }
 
   const config = typeConfig[nodeData.type];
+  if (!config) {
+    console.error('NodeDetailPanel: tipo não encontrado:', nodeData.type);
+    return null;
+  }
   const Icon = config.icon;
 
   const renderContent = () => {

@@ -88,14 +88,12 @@ const MvpEngine = () => {
 
   const handleNodeSelect = useCallback((nodeData: { type: string; data: Record<string, unknown> } | null) => {
     if (nodeData) {
-      console.log('Nó selecionado:', nodeData);
-      alert(`Clicou em: ${nodeData.type}`);
+      console.log('handleNodeSelect chamado:', nodeData);
       setSelectedNode(nodeData as NodeDetailData);
       setDetailPanelOpen(true);
-      console.log('Painel aberto:', true);
-      console.log('Estado detailPanelOpen:', detailPanelOpen);
+      console.log('Estado atualizado - detailPanelOpen: true');
     }
-  }, [detailPanelOpen]);
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -579,11 +577,7 @@ const MvpEngine = () => {
                       <div 
                         key={index} 
                         className="group bg-card border border-border rounded-lg p-4 hover:border-primary hover:bg-accent/5 transition-all duration-200 cursor-pointer flex items-center gap-4"
-                        onClick={() => {
-                          console.log('Card clicado!', group);
-                          alert('Card clicado: ' + group.name);
-                          handleNodeSelect({ type: 'scientific', data: group });
-                        }}
+                        onClick={() => handleNodeSelect({ type: 'scientific', data: group })}
                       >
                         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                           <Users className="w-5 h-5 text-primary" />
