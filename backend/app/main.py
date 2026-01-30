@@ -9,23 +9,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 
-from fastapi import FastAPI
-
-app = FastAPI()
-
-@app.get("/")
-def root():
-    return {"status": "ok"}
-
-@app.get("/health")
-def health():
-    return {"status": "ok"}
-
-
-@app.get("/api/v1/health")
-def healthcheck():
-    return {"status": "ok"}
-
+from app.core.config import settings
+from app.api.routes import health_router, incidence_router
 
 # Configura logging
 logging.basicConfig(
