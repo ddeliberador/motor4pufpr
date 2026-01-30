@@ -573,7 +573,7 @@ const MvpEngine = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    {(expandedSections.scientific ? searchResults.scientific : searchResults.scientific.slice(0, 10)).map((group, index) => (
+                    {(expandedSections.scientific ? searchResults.scientific.slice(0, 5) : searchResults.scientific).map((group, index) => (
                       <div 
                         key={index} 
                         className="group bg-card border border-border rounded-lg p-4 hover:border-primary hover:bg-accent/5 transition-all duration-200 cursor-pointer flex items-center gap-4"
@@ -605,10 +605,10 @@ const MvpEngine = () => {
                         <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
                       </div>
                     ))}
-                    {!expandedSections.scientific && searchResults.scientific.length > 10 && (
+                    {expandedSections.scientific && searchResults.scientific.length > 5 && (
                       <div className="bg-muted/50 border border-border border-dashed rounded-lg p-3 text-center">
                         <p className="text-sm text-muted-foreground font-medium">
-                          + {searchResults.scientific.length - 10} grupos restantes
+                          + {searchResults.scientific.length - 5} grupos ocultados
                         </p>
                       </div>
                     )}
@@ -643,7 +643,7 @@ const MvpEngine = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    {(expandedSections.technological ? searchResults.technological : searchResults.technological.slice(0, 10)).map((patent, index) => (
+                    {(expandedSections.technological ? searchResults.technological.slice(0, 5) : searchResults.technological).map((patent, index) => (
                       <div 
                         key={index} 
                         className="group bg-card border border-border rounded-lg p-4 hover:border-primary hover:bg-accent/5 transition-all duration-200 cursor-pointer flex items-center gap-4"
@@ -675,10 +675,10 @@ const MvpEngine = () => {
                         <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
                       </div>
                     ))}
-                    {!expandedSections.technological && searchResults.technological.length > 10 && (
+                    {expandedSections.technological && searchResults.technological.length > 5 && (
                       <div className="bg-muted/50 border border-border border-dashed rounded-lg p-3 text-center">
                         <p className="text-sm text-muted-foreground font-medium">
-                          + {searchResults.technological.length - 10} patentes restantes
+                          + {searchResults.technological.length - 5} patentes ocultadas
                         </p>
                       </div>
                     )}
@@ -842,7 +842,7 @@ const MvpEngine = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    {(expandedSections.institutional ? searchResults.institutional : searchResults.institutional.slice(0, 10)).map((inst, index) => (
+                    {(expandedSections.institutional ? searchResults.institutional.slice(0, 5) : searchResults.institutional).map((inst, index) => (
                       <div 
                         key={index} 
                         className="group bg-card border border-border rounded-lg p-4 hover:border-accent hover:bg-accent/5 transition-all duration-200 cursor-pointer flex items-center gap-4"
@@ -878,10 +878,10 @@ const MvpEngine = () => {
                         <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-accent transition-colors flex-shrink-0" />
                       </div>
                     ))}
-                    {!expandedSections.institutional && searchResults.institutional.length > 10 && (
+                    {expandedSections.institutional && searchResults.institutional.length > 5 && (
                       <div className="bg-muted/50 border border-border border-dashed rounded-lg p-3 text-center">
                         <p className="text-sm text-muted-foreground font-medium">
-                          + {searchResults.institutional.length - 10} instrumentos restantes
+                          + {searchResults.institutional.length - 5} instrumentos ocultados
                         </p>
                       </div>
                     )}
