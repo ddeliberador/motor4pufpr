@@ -40,9 +40,6 @@ const CamadaAusente = () => {
         </div>
       </section>
 
-      {/* Bases Públicas Integradas - dinâmico */}
-      <IntegratedBasesPanel />
-
       {/* O Desafio Estrutural - com cards interativos */}
       <section className="section-spacing">
         <div className="container-wide">
@@ -120,6 +117,9 @@ const CamadaAusente = () => {
           </div>
         </div>
       </section>
+
+      {/* Bases Públicas Integradas - dinâmico */}
+      <IntegratedBasesPanel />
 
       {/* As 3 Funções Revolucionárias */}
       <section className="section-spacing section-alt">
