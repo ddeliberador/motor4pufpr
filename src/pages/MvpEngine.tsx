@@ -183,15 +183,23 @@ const MvpEngine = () => {
                 <ChevronRight className={`w-4 h-4 transition-transform ${showApiStatus ? 'rotate-90' : ''}`} />
               </button>
 
-              {/* Indicadores e Conceituação - Aparecem quando API Status está expandido */}
-              {showApiStatus && searchResults?.indicators && (
-                <div className="pt-4 border-t border-border space-y-3 md:space-y-4">
-                  <h3 className="text-xs md:text-sm font-bold text-foreground">Indicadores de Tradução</h3>
-                  
-                  {/* C2T - Maturidade */}
-                  <div className="bg-card/50 border border-border rounded-lg p-2 md:p-3 hover:border-cyan-300 transition-colors">
-                    <div className="flex items-center gap-2 mb-1.5 md:mb-2">
-                      <div className="w-6 h-6 md:w-7 md:h-7 rounded bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+              {/* API Status expandido */}
+              {showApiStatus && (
+                <div className="bg-card border border-border rounded-lg p-3 max-h-96 overflow-y-auto">
+                  <ApiStatusView />
+                </div>
+              )}
+            </div>
+
+            {/* Indicadores e Conceituação */}
+            {searchResults?.indicators && (
+              <div className="pt-4 md:pt-6 border-t border-border space-y-3 md:space-y-4">
+                <h3 className="text-xs md:text-sm font-bold text-foreground">Indicadores de Tradução</h3>
+                
+                {/* C2T - Maturidade */}
+                <div className="bg-card/50 border border-border rounded-lg p-2 md:p-3 hover:border-cyan-300 transition-colors">
+                  <div className="flex items-center gap-2 mb-1.5 md:mb-2">
+                    <div className="w-6 h-6 md:w-7 md:h-7 rounded bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
                       <TrendingUp className="w-3 h-3 md:w-3.5 md:h-3.5 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -298,8 +306,7 @@ const MvpEngine = () => {
                   </div>
                 </div>
               </div>
-              )}
-            </div>
+            )}
 
             {/* Info */}
             <div className="pt-6 border-t border-border text-xs text-muted-foreground">
@@ -315,14 +322,6 @@ const MvpEngine = () => {
 
         {/* Main Content Area */}
         <main className="flex-1 min-w-0 overflow-y-auto bg-muted/20">
-          {showApiStatus && (
-            <div className="bg-card border-b border-border p-6">
-              <div className="max-w-6xl mx-auto">
-                <ApiStatusView />
-              </div>
-            </div>
-          )}
-
           {/* Results Container */}
           <div className="max-w-6xl mx-auto p-3 md:p-6">
             {/* Search Results */}
