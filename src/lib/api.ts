@@ -190,12 +190,6 @@ export interface SearchResponse {
   cached?: boolean;
 }
 
-export interface Example {
-  query: string;
-  description: string;
-  areas: string[];
-}
-
 // Cliente da API
 class Motor4PApi {
   private baseUrl: string;
@@ -260,20 +254,6 @@ class Motor4PApi {
   async getOntology(query: string): Promise<{ success: boolean; data: OntologyMapping }> {
     return this.request(`/incidence/ontology?query=${encodeURIComponent(query)}`);
   }
-
-  /**
-   * Retorna exemplos de busca
-   */
-  async getExamples(): Promise<{ examples: Example[] }> {
-    return this.request('/incidence/examples');
-  }
-
-  /**
-   * Retorna metodologia dos indicadores
-   */
-  async getIndicatorsMethodology(): Promise<{ indicators: Record<string, unknown> }> {
-    return this.request('/incidence/indicators/methodology');
-  }
 }
 
 // Instância singleton
@@ -294,6 +274,4 @@ export const queryKeys = {
   health: ['health'],
   incidence: (query: string) => ['incidence', query],
   ontology: (query: string) => ['ontology', query],
-  examples: ['examples'],
-  methodology: ['methodology'],
 };

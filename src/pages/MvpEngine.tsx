@@ -1,20 +1,16 @@
 import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Search, Microscope, Cpu, Building2, CheckCircle, Database, FileText, Landmark, Users, FlaskConical, Briefcase, ChevronRight, Globe, Factory, Download, Network, TrendingUp, AlertTriangle, Target, Link2, Info, MapPin, BookOpen } from "lucide-react";
+import { ArrowLeft, Search, Microscope, FileText, Landmark, Globe, Factory, Download, Network, TrendingUp, AlertTriangle, Target, Link2, Info } from "lucide-react";
 import { useIncidenceSearch } from "@/hooks/useIncidenceSearch";
 import ApiStatusIndicator from "@/components/ApiStatusIndicator";
 import OntologyPreview from "@/components/OntologyPreview";
-import MethodologyModal from "@/components/MethodologyModal";
-import ExamplesSection from "@/components/ExamplesSection";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import UfprLogo from "@/components/UfprLogo";
 import { generateNewspaperPDF } from "@/lib/generatePdf";
 import NetworkGraph from "@/components/NetworkGraph";
 import NodeDetailPanel, { type NodeDetailData } from "@/components/NodeDetailPanel";
-import AtlasContent from "@/components/AtlasContent";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Extended mock data with companies and international incidences
 // Indicator types
@@ -30,8 +26,6 @@ const MvpEngine = () => {
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedNode, setSelectedNode] = useState<NodeDetailData | null>(null);
   const [detailPanelOpen, setDetailPanelOpen] = useState(false);
-  const [activeView, setActiveView] = useState<"incidencia" | "atlas">("incidencia");
-  const [methodologyModalOpen, setMethodologyModalOpen] = useState(false);
 
   // Hook para busca com API real
   const {
@@ -101,10 +95,6 @@ const MvpEngine = () => {
     await apiSearch(searchQuery);
   };
 
-  const handleExampleClick = (example: string) => {
-    setSearchQuery(example);
-  };
-
   const handleDownloadPDF = () => {
     if (searchResults) {
       generateNewspaperPDF(searchResults);
@@ -119,29 +109,67 @@ const MvpEngine = () => {
       <section className="hero-section pt-32 pb-24 md:pt-40 md:pb-32">
         <div className="container-narrow text-center">
           <div className="flex justify-center mb-6">
-            <UfprLogo className="w-20 h-20 opacity-90" />
+            <UfprLogo cwith Search */}
+      <section className="hero-section pt-32 pb-16 md:pt-40 md:pb-20">
+        <div className="container-narrow">
+          <div className="text-center mb-10">
+            <div className="flex justify-center mb-6">
+              <UfprLogo className="w-20 h-20 opacity-90" />
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold text-primary-foreground mb-4 animate-fade-in">
+              MVP Engine
+            </h1>
+            <p className="text-xl text-primary-foreground/90 font-serif mb-2 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+              Primeira Camada da Tradução
+            </p>
+            <p className="text-base text-primary-foreground/75 mb-6 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+              Protótipo auditável baseado em dados públicos reais
+            </p>
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 bg-primary-foreground/10 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-foreground/20 transition-colors border border-primary-foreground/20 animate-fade-in"
+              style={{ animationDelay: "0.3s" }}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Voltar para Conceito
+            </Link>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-primary-foreground mb-6 animate-fade-in">
-            MVP Engine
-          </h1>
-          <p className="text-xl md:text-2xl text-primary-foreground/90 font-serif mb-4 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-            Primeira Camada da Tradução
-          </p>
-          <p className="text-lg text-primary-foreground/75 mb-10 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            Protótipo auditável baseado em dados públicos reais
-          </p>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 bg-primary-foreground/10 text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary-foreground/20 transition-colors border border-primary-foreground/20 animate-fade-in"
-            style={{ animationDelay: "0.3s" }}
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Voltar para Conceito
-          </Link>
-        </div>
-      </section>
 
-      {/* MVP Enxuto e Poderoso */}
+          {/* Search Box - Now at the top */}
+          <div className="bg-card/95 backdrop-blur-sm rounded-xl border border-border p-8 max-w-2xl mx-auto shadow-2xl animate-fade-in" style={{ animationDelay: "0.4s" }}>
+            <div className="flex items-center justify-between mb-4">
+              <label className="block text-sm font-medium text-foreground">
+                Digite seu objeto de pesquisa
+              </label>
+              <ApiStatusIndicator 
+                isUsingMock={isUsingMock}
+                backendAvailable={backendAvailable}
+              />
+            </div>
+            
+            <form onSubmit={handleSearch}>
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Ex: Inteligência Artificial, Energia Solar, Nanotecnologia..."
+                  className="w-full pl-14 pr-4 py-4 text-lg rounded-lg border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isSearching || !searchQuery.trim()}
+                className="w-full mt-4 bg-primary text-primary-foreground py-4 rounded-lg font-semibold text-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+              >
+                {isSearching ? "Processando..." : "Buscar no Motor"}
+              </button>
+            </form>
+            
+            {/* Preview de Ontologia */}
+            <OntologyPreview query={searchQuery} />
+          </divxuto e Poderoso */}
       <section className="section-spacing">
         <div className="container-narrow">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-8 text-center">
@@ -163,97 +191,8 @@ const MvpEngine = () => {
         </div>
       </section>
 
-      {/* View Mode Selector */}
-      <section className="section-spacing section-alt">
-        <div className="container-wide">
-          <Tabs value={activeView} onValueChange={(v) => setActiveView(v as "incidencia" | "atlas")} className="w-full">
-            <div className="flex flex-col items-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6 text-center">
-                Escolha o Modo de Análise
-              </h2>
-              <TabsList className="grid w-full max-w-md grid-cols-2 h-14 bg-muted/50">
-                <TabsTrigger 
-                  value="incidencia" 
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-base font-medium"
-                >
-                  <Network className="w-4 h-4 mr-2" />
-                  Incidência
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="atlas" 
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-base font-medium"
-                >
-                  <MapPin className="w-4 h-4 mr-2" />
-                  Atlas Nacional
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            {/* Incidência Tab Content */}
-            <TabsContent value="incidencia" className="mt-0">
-              <div className="container-narrow mx-auto">
-                <div className="bg-card rounded-xl border border-border p-8 max-w-xl mx-auto shadow-lg">
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="block text-sm font-medium text-muted-foreground">
-                      Entrada do pesquisador
-                    </label>
-                    <ApiStatusIndicator 
-                      isUsingMock={isUsingMock}
-                      backendAvailable={backendAvailable}
-                    />
-                  </div>
-                  
-                  <form onSubmit={handleSearch}>
-                    <div className="relative">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                      <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Digite seu objeto de pesquisa"
-                        className="w-full pl-12 pr-4 py-4 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={isSearching || !searchQuery.trim()}
-                      className="w-full mt-4 bg-primary text-primary-foreground py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isSearching ? "Processando..." : "Buscar no Motor"}
-                    </button>
-                  </form>
-                  
-                  {/* Preview de Ontologia */}
-                  <OntologyPreview query={searchQuery} />
-                  
-                  {/* Seção de Exemplos Dinâmica */}
-                  <ExamplesSection 
-                    onExampleClick={handleExampleClick} 
-                    disabled={isSearching}
-                  />
-                  
-                  {/* Link para Metodologia */}
-                  <button
-                    onClick={() => setMethodologyModalOpen(true)}
-                    className="w-full mt-4 flex items-center justify-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
-                  >
-                    <BookOpen className="w-4 h-4" />
-                    Ver Metodologia dos Indicadores
-                  </button>
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* Atlas Tab Content */}
-            <TabsContent value="atlas" className="mt-0">
-              <AtlasContent initialQuery={searchQuery} />
-            </TabsContent>
-          </Tabs>
-        </div>
-      </section>
-
-      {/* Search Results - Visual Output (only show for Incidência view) */}
-      {hasSearched && activeView === "incidencia" && (
+      {/* Search Results - Visual Output */}
+      {hasSearched && (
         <section className="section-spacing">
           <div className="container-wide">
             {isSearching ? (
@@ -1037,12 +976,6 @@ const MvpEngine = () => {
         open={detailPanelOpen} 
         onClose={() => setDetailPanelOpen(false)} 
         nodeData={selectedNode} 
-      />
-      
-      {/* Methodology Modal */}
-      <MethodologyModal 
-        open={methodologyModalOpen} 
-        onClose={() => setMethodologyModalOpen(false)} 
       />
     </div>
   );
