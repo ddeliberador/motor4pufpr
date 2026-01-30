@@ -42,7 +42,7 @@ const MvpEngine = () => {
     isLoading: isSearching,
     isUsingMock,
     backendAvailable,
-  } = useIncidenceSearch();
+  } = useIncidenceSearch({ useMockOnError: false });
   
   // Transforma resultados da API para o formato local
   const searchResults = apiResults ? {
