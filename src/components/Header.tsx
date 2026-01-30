@@ -1,38 +1,105 @@
 import { Link, useLocation } from "react-router-dom";
+import { Menu, X, Zap } from "lucide-react";
+import { useState } from "react";
 
 const Header = () => {
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
 
+  const navItems = [
+    { path: "/", label: "Conceito" },
+    { path: "/mvp", label: "MVP Engine" },
+  ];
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
+    <header className="fixed top-0 left-0 right-0 z-50 glass-card">
       <div className="container-wide">
         <nav className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg font-serif">4P</span>
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/30 transition-shadow">
+              <Zap className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="font-serif font-semibold text-lg text-foreground hidden sm:block">
-              MOTOR 4P UFPR
-            </span>
+            <div className="hidden sm:block">
+              <span className="font-semibold text-lg text-foreground tracking-tight">
+                MOTOR 4P
+              </span>
+              <span className="text-xs text-muted-foreground block -mt-0.5">UFPR</span>
+            </div>
           </Link>
 
-          <div className="flex items-center gap-6 md:gap-8">
-            <Link
-              to="/"
-              className={`nav-link ${isActive("/") ? "active" : ""}`}
-            >
-              Conceito
-            </Link>
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-1">
+            {navItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  isActive(item.path)
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* CTA Button */}
+          <div className="hidden md:flex items-center gap-4">
             <Link
               to="/mvp"
-              className={`nav-link ${isActive("/mvp") ? "active" : ""}`}
+              className="btn-primary flex items-center gap-2 text-sm py-2 px-4"
             >
-              MVP Engine
+              <Zap className="w-4 h-4" />
+              Iniciar Busca
             </Link>
           </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
+          >
+            {mobileMenuOpen ? (
+              <X className="w-5 h-5 text-foreground" />
+            ) : (
+              <Menu className="w-5 h-5 text-foreground" />
+            )}
+          </button>
         </nav>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden py-4 border-t border-border">
+            <div className="flex flex-col gap-2">
+              {navItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    isActive(item.path)
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+              <Link
+                to="/mvp"
+                onClick={() => setMobileMenuOpen(false)}
+                className="btn-primary flex items-center justify-center gap-2 mt-2"
+              >
+                <Zap className="w-4 h-4" />
+                Iniciar Busca
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );

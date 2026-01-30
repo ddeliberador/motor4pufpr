@@ -1,16 +1,16 @@
 import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Search, Microscope, FileText, Landmark, Globe, Factory, Download, Network, TrendingUp, AlertTriangle, Target, Link2, Info, CheckCircle, Database, Users, FlaskConical, Briefcase, ChevronRight, Cpu, Building2, Activity } from "lucide-react";
+import { ArrowLeft, Search, Microscope, FileText, Landmark, Globe, Factory, Download, Network, TrendingUp, AlertTriangle, Target, Link2, Info, CheckCircle, Database, Users, FlaskConical, Briefcase, ChevronRight, ChevronDown, Cpu, Building2, Activity, Zap, ExternalLink, GraduationCap, BookOpen, Code2 } from "lucide-react";
 import { useIncidenceSearch } from "@/hooks/useIncidenceSearch";
 import ApiStatusIndicator from "@/components/ApiStatusIndicator";
 import ApiStatusView from "@/components/ApiStatusView";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import UfprLogo from "@/components/UfprLogo";
 import { generateNewspaperPDF } from "@/lib/generatePdf";
 import NetworkGraph from "@/components/NetworkGraph";
 import NodeDetailPanel, { type NodeDetailData } from "@/components/NodeDetailPanel";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Sidebar, StatCard, IndicatorsCard } from "@/components/mvp";
 
 // Extended mock data with companies and international incidences
 // Indicator types
@@ -122,296 +122,97 @@ const MvpEngine = () => {
 
       <div className="flex flex-col md:flex-row pt-16">
         {/* Sidebar */}
-        <aside className="w-full md:w-80 flex-shrink-0 bg-gradient-to-br from-blue-50 via-slate-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950 border-r-4 md:border-r-4 border-b-4 md:border-b-0 border-blue-200 dark:border-blue-900 shadow-2xl overflow-y-auto md:sticky md:top-16 h-auto md:h-[calc(100vh-4rem)]">
-          <div className="p-4 md:p-6 space-y-4 md:space-y-6">
-            {/* Logo and Title */}
-            <div className="text-center pb-4 md:pb-6 border-b border-border">
-              <UfprLogo className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-2 md:mb-3 opacity-90" />
-              <h1 className="text-xl md:text-2xl font-bold text-foreground mb-1">
-                MVP Engine
-              </h1>
-              <p className="text-xs md:text-sm text-muted-foreground">
-                Primeira Camada da Tradução
-              </p>
-            </div>
-
-            {/* Back Link */}
-            <Link
-              to="/"
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Voltar para Conceito
-            </Link>
-
-            {/* Search Box */}
-            <div className="space-y-3 md:space-y-4">
-              <div className="flex items-center justify-between">
-                <label className="text-xs md:text-sm font-semibold text-foreground">
-                  Buscar Objeto Tecnológico
-                </label>
-                <ApiStatusIndicator 
-                  isUsingMock={isUsingMock}
-                  backendAvailable={backendAvailable}
-                />
-              </div>
-              
-              <form onSubmit={handleSearch}>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Digite aqui..."
-                    className="w-full pl-9 md:pl-10 pr-3 py-2 md:py-3 text-xs md:text-sm rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={isSearching || !searchQuery.trim()}
-                  className="w-full mt-2 md:mt-3 bg-primary text-primary-foreground py-2 md:py-3 rounded-lg font-semibold text-xs md:text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSearching ? "Processando..." : "Buscar"}
-                </button>
-              </form>
-            </div>
-
-            {/* API Status Section */}
-            <div className="space-y-3">
-              <button
-                onClick={() => setShowApiStatus(!showApiStatus)}
-                className="w-full flex items-center justify-between px-4 py-3 bg-muted hover:bg-muted/80 rounded-lg text-sm font-medium transition-colors"
-              >
-                <span className="flex items-center gap-2">
-                  <Activity className="w-4 h-4" />
-                  Status das APIs
-                </span>
-                <ChevronRight className={`w-4 h-4 transition-transform ${showApiStatus ? 'rotate-90' : ''}`} />
-              </button>
-
-              {/* API Status expandido */}
-              {showApiStatus && (
-                <div className="bg-card border border-border rounded-lg p-3 max-h-96 overflow-y-auto">
-                  <ApiStatusView />
-                </div>
-              )}
-            </div>
-
-            {/* Indicadores e Conceituação */}
-            {searchResults?.indicators && (
-              <div className="pt-4 md:pt-6 border-t border-border space-y-3 md:space-y-4">
-                <h3 className="text-xs md:text-sm font-bold text-foreground">Indicadores de Tradução</h3>
-                
-                {/* C2T - Maturidade */}
-                <div className="bg-card/50 border border-border rounded-lg p-2 md:p-3 hover:border-cyan-300 transition-colors">
-                  <div className="flex items-center gap-2 mb-1.5 md:mb-2">
-                    <div className="w-6 h-6 md:w-7 md:h-7 rounded bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
-                      <TrendingUp className="w-3 h-3 md:w-3.5 md:h-3.5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] text-muted-foreground leading-tight">Maturidade</p>
-                      <p className="text-xs font-bold text-foreground">C2T</p>
-                    </div>
-                    <span className="text-sm font-bold text-foreground">{searchResults.indicators.c2t.value}%</span>
-                  </div>
-                  <div className="relative h-1.5 bg-muted rounded-full overflow-hidden mb-2">
-                    <div 
-                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"
-                      style={{ width: `${searchResults.indicators.c2t.value}%` }}
-                    />
-                  </div>
-                  <p className="text-[10px] text-muted-foreground leading-tight">{searchResults.indicators.c2t.description}</p>
-                </div>
-
-                {/* GT - Gargalo */}
-                <div className="bg-card/50 border border-border rounded-lg p-2 md:p-3 hover:border-orange-300 transition-colors">
-                  <div className="flex items-center gap-2 mb-1.5 md:mb-2">
-                    <div className="w-6 h-6 md:w-7 md:h-7 rounded bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center flex-shrink-0">
-                      <AlertTriangle className="w-3 h-3 md:w-3.5 md:h-3.5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] text-muted-foreground leading-tight">Gargalo</p>
-                      <p className="text-xs font-bold text-foreground">GT</p>
-                    </div>
-                    <span className="text-sm font-bold text-foreground">{searchResults.indicators.gt.value}%</span>
-                  </div>
-                  <div className="relative h-1.5 bg-muted rounded-full overflow-hidden mb-2">
-                    <div 
-                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-orange-500 to-red-600 rounded-full"
-                      style={{ width: `${searchResults.indicators.gt.value}%` }}
-                    />
-                  </div>
-                  <p className="text-[10px] text-muted-foreground leading-tight">{searchResults.indicators.gt.description}</p>
-                </div>
-
-                {/* P2C - Aderência */}
-                <div className="bg-card/50 border border-border rounded-lg p-2 md:p-3 hover:border-emerald-300 transition-colors">
-                  <div className="flex items-center gap-2 mb-1.5 md:mb-2">
-                    <div className="w-6 h-6 md:w-7 md:h-7 rounded bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
-                      <Target className="w-3 h-3 md:w-3.5 md:h-3.5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] text-muted-foreground leading-tight">Aderência</p>
-                      <p className="text-xs font-bold text-foreground">P2C</p>
-                    </div>
-                    <span className="text-sm font-bold text-foreground">{searchResults.indicators.p2c.value}%</span>
-                  </div>
-                  <div className="relative h-1.5 bg-muted rounded-full overflow-hidden mb-2">
-                    <div 
-                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full"
-                      style={{ width: `${searchResults.indicators.p2c.value}%` }}
-                    />
-                  </div>
-                  <p className="text-[10px] text-muted-foreground leading-tight">{searchResults.indicators.p2c.description}</p>
-                </div>
-
-                {/* CD - Dependência */}
-                <div className="bg-card/50 border border-border rounded-lg p-2 md:p-3 hover:border-violet-300 transition-colors">
-                  <div className="flex items-center gap-2 mb-1.5 md:mb-2">
-                    <div className="w-6 h-6 md:w-7 md:h-7 rounded bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                      <Link2 className="w-3 h-3 md:w-3.5 md:h-3.5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] text-muted-foreground leading-tight">Dependência</p>
-                      <p className="text-xs font-bold text-foreground">CD</p>
-                    </div>
-                    <span className="text-sm font-bold text-foreground">{searchResults.indicators.cd.value}%</span>
-                  </div>
-                  <div className="relative h-1.5 bg-muted rounded-full overflow-hidden mb-2">
-                    <div 
-                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full"
-                      style={{ width: `${searchResults.indicators.cd.value}%` }}
-                    />
-                  </div>
-                  <p className="text-[10px] text-muted-foreground leading-tight">{searchResults.indicators.cd.description}</p>
-                </div>
-
-                {/* Conceituação Expandida */}
-                <div className="bg-accent/5 border border-accent/20 rounded-lg p-2.5 md:p-3 mt-3 md:mt-4">
-                  <h4 className="text-[10px] md:text-xs font-semibold text-foreground mb-1.5 md:mb-2 flex items-center gap-1.5">
-                    <Info className="w-2.5 h-2.5 md:w-3 md:h-3" />
-                    Conceituação
-                  </h4>
-                  <div className="space-y-1.5 md:space-y-2 text-[9px] md:text-[10px] leading-relaxed">
-                    <div>
-                      <p className="font-medium text-foreground mb-0.5">C2T — Maturidade Ciência → Tecnologia</p>
-                      <p className="text-muted-foreground">Mede a conversão de produção científica em outputs tecnológicos. Valores altos indicam forte transferência de conhecimento.</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground mb-0.5">GT — Gargalo de Tradução</p>
-                      <p className="text-muted-foreground">Identifica obstáculos na cadeia de tradução. Valores altos indicam gargalos severos que impedem a tradução.</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground mb-0.5">P2C — Aderência Política → Capacidade</p>
-                      <p className="text-muted-foreground">Avalia o alinhamento entre instrumentos públicos e capacidade instalada. Valores altos indicam políticas bem direcionadas.</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground mb-0.5">CD — Concentração e Dependência</p>
-                      <p className="text-muted-foreground">Mede a dependência de fontes externas. Valores altos indicam vulnerabilidade estratégica.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Info */}
-            <div className="pt-6 border-t border-border text-xs text-muted-foreground">
-              <p className="mb-2">
-                <strong className="text-foreground">Protótipo auditável</strong>
-              </p>
-              <p>
-                Baseado em dados públicos reais: CNPq, INPI, Finep, OpenAlex, Comex Stat
-              </p>
-            </div>
-          </div>
-        </aside>
+        <Sidebar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onSearch={handleSearch}
+          isSearching={isSearching}
+          isUsingMock={isUsingMock}
+          backendAvailable={backendAvailable}
+          showApiStatus={showApiStatus}
+          setShowApiStatus={setShowApiStatus}
+          indicators={searchResults?.indicators}
+        />
 
         {/* Main Content Area */}
         <main className="flex-1 min-w-0 overflow-y-auto bg-muted/20">
           {/* Results Container */}
-          <div className="max-w-6xl mx-auto p-3 md:p-6">
+          <div className="max-w-6xl mx-auto p-4 md:p-8">
             {/* Search Results */}
             {hasSearched && (
               <div className="space-y-8">
                 {isSearching ? (
-                  <div className="flex flex-col items-center justify-center py-20">
-                    <div className="relative w-24 h-24 mb-8">
+                  <div className="flex flex-col items-center justify-center py-24">
+                    <div className="relative w-20 h-20 mb-6">
                       <div className="absolute inset-0 border-4 border-primary/20 rounded-full" />
                       <div className="absolute inset-0 border-4 border-transparent border-t-primary rounded-full animate-spin" />
-                      <div className="absolute inset-4 border-4 border-transparent border-t-accent rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
+                      <div className="absolute inset-3 border-4 border-transparent border-t-accent rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
+                      <Zap className="absolute inset-0 m-auto w-6 h-6 text-primary/60" />
                     </div>
-                    <p className="text-xl font-serif text-foreground mb-2">Traduzindo objeto tecnológico...</p>
-                    <p className="text-muted-foreground">Consultando CNPq, INPI, Finep e bases internacionais</p>
+                    <p className="text-lg font-semibold text-foreground mb-2">Traduzindo objeto tecnológico...</p>
+                    <p className="text-sm text-muted-foreground">Consultando CNPq, INPI, Finep e bases internacionais</p>
                   </div>
                 ) : searchResults ? (
-                  <div className="space-y-6 md:space-y-8 animate-fade-in">
+                  <div className="space-y-8 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
                     {/* Results Header */}
-                    <div className="bg-card border border-border rounded-xl p-4 md:p-6">
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Resultados para</p>
-                      <h2 className="text-xl md:text-3xl font-bold text-foreground font-serif mb-3 md:mb-4">
-                        "{searchResults.query}"
-                      </h2>
+                    <div className="card-modern p-6 md:p-8">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                        <div>
+                          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Resultados para</p>
+                          <h2 className="text-2xl md:text-3xl font-semibold text-foreground">
+                            "{searchResults.query}"
+                          </h2>
+                        </div>
+                        <button
+                          onClick={handleDownloadPDF}
+                          className="btn-secondary flex items-center gap-2 text-sm"
+                        >
+                          <Download className="w-4 h-4" />
+                          Exportar PDF
+                        </button>
+                      </div>
                       
-                      {/* Stats Overview - 5 columns now */}
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
-                        <div className="bg-muted rounded-lg p-3 md:p-4">
-                          <Microscope className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1.5 md:mb-2 text-primary" />
-                          <p className="text-lg md:text-2xl font-bold mb-0.5 md:mb-1 text-foreground">{searchResults.stats.groups}</p>
-                          <p className="text-[10px] md:text-xs text-muted-foreground">Grupos de Pesquisa</p>
-                        </div>
-                        <div className="bg-muted rounded-lg p-3 md:p-4">
-                          <FlaskConical className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1.5 md:mb-2 text-primary" />
-                          <p className="text-lg md:text-2xl font-bold mb-0.5 md:mb-1 text-foreground">{searchResults.stats.patents}</p>
-                          <p className="text-[10px] md:text-xs text-muted-foreground">Patentes</p>
-                        </div>
-                        <div className="bg-muted rounded-lg p-3 md:p-4">
-                          <Landmark className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1.5 md:mb-2 text-accent" />
-                          <p className="text-lg md:text-2xl font-bold mb-0.5 md:mb-1 text-foreground">{searchResults.stats.instruments}</p>
-                          <p className="text-[10px] md:text-xs text-muted-foreground">Instrumentos</p>
-                        </div>
-                        <div className="bg-muted rounded-lg p-3 md:p-4">
-                          <Factory className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1.5 md:mb-2 text-primary" />
-                          <p className="text-lg md:text-2xl font-bold mb-0.5 md:mb-1 text-foreground">{searchResults.stats.companies}</p>
-                          <p className="text-[10px] md:text-xs text-muted-foreground">Empresas</p>
-                        </div>
-                        <div className="bg-muted rounded-lg p-3 md:p-4 col-span-2 md:col-span-1">
-                          <Globe className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1.5 md:mb-2 text-primary" />
-                          <p className="text-lg md:text-2xl font-bold mb-0.5 md:mb-1 text-foreground">{searchResults.stats.international}</p>
-                          <p className="text-[10px] md:text-xs text-muted-foreground">Países</p>
-                        </div>
+                      {/* Stats Overview */}
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                        <StatCard icon={Microscope} value={searchResults.stats.groups} label="Grupos de Pesquisa" />
+                        <StatCard icon={FlaskConical} value={searchResults.stats.patents} label="Patentes" />
+                        <StatCard icon={Landmark} value={searchResults.stats.instruments} label="Instrumentos" iconClass="text-accent" />
+                        <StatCard icon={Factory} value={searchResults.stats.companies} label="Empresas" />
+                        <StatCard icon={Globe} value={searchResults.stats.international} label="Países" />
                       </div>
                     </div>
 
-                {/* Network Graph Visualization */}
-                <div>
-                  <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
-                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
-                      <Network className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                    {/* Network Graph Visualization */}
+                    <div className="card-modern p-6">
+                      <div className="section-header">
+                        <div className="section-icon bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20">
+                          <Network className="w-7 h-7 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl md:text-2xl font-semibold text-foreground">
+                            Grafo de Incidência
+                          </h3>
+                          <p className="text-sm text-muted-foreground">Visualização interativa das conexões</p>
+                        </div>
+                      </div>
+                      <NetworkGraph searchResults={searchResults} onNodeSelect={handleNodeSelect} />
                     </div>
-                    <div>
-                      <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground font-serif">
-                        Grafo de Incidência
-                      </h3>
-                      <p className="text-xs md:text-sm text-muted-foreground">Visualização interativa das conexões</p>
-                    </div>
-                  </div>
-                  <NetworkGraph searchResults={searchResults} onNodeSelect={handleNodeSelect} />
-                </div>
 
-                {/* Flow Visualization */}
-                <div className="relative py-6 md:py-8">
-                  <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-border to-transparent" />
-                </div>
+                    {/* Section Divider */}
+                    <div className="flex items-center justify-center py-2">
+                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                        <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    </div>
 
                 {/* Scientific Incidence */}
-                <div>
-                  <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
-                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
-                      <Microscope className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                <div className="card-modern p-6">
+                  <div className="section-header">
+                    <div className="section-icon bg-gradient-to-br from-blue-500 to-cyan-600 shadow-lg shadow-blue-500/20">
+                      <Microscope className="w-7 h-7 text-white" />
                     </div>
                     <div className="flex-grow">
-                      <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground font-serif">
+                      <h3 className="text-xl md:text-2xl font-semibold text-foreground">
                         Incidência Científica
                       </h3>
                       <p className="text-xs md:text-sm text-muted-foreground">Diretório de Grupos de Pesquisa — CNPq</p>
@@ -464,20 +265,20 @@ const MvpEngine = () => {
                 </div>
 
                 {/* Divider Arrow */}
-                <div className="flex justify-center">
+                <div className="flex justify-center py-2">
                   <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                    <ChevronRight className="w-6 h-6 text-muted-foreground rotate-90" />
+                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
                   </div>
                 </div>
 
                 {/* Technological Incidence */}
-                <div>
-                  <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
-                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-purple-500 flex items-center justify-center shadow-lg shadow-purple-500/25">
-                      <Cpu className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                <div className="card-modern p-6">
+                  <div className="section-header">
+                    <div className="section-icon bg-gradient-to-br from-purple-500 to-violet-600 shadow-lg shadow-purple-500/20">
+                      <Cpu className="w-7 h-7 text-white" />
                     </div>
                     <div className="flex-grow">
-                      <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground font-serif">
+                      <h3 className="text-xl md:text-2xl font-semibold text-foreground">
                         Incidência Tecnológica
                       </h3>
                       <p className="text-xs md:text-sm text-muted-foreground">Base de Patentes — INPI</p>
@@ -536,38 +337,37 @@ const MvpEngine = () => {
                 </div>
 
                 {/* Divider Arrow */}
-                <div className="flex justify-center">
+                <div className="flex justify-center py-2">
                   <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                    <ChevronRight className="w-6 h-6 text-muted-foreground rotate-90" />
+                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
                   </div>
                 </div>
 
-                {/* Companies Section - NEW */}
-                <div>
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="w-16 h-16 rounded-2xl bg-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/25">
-                      <Factory className="w-8 h-8 text-white" />
+                {/* Companies Section */}
+                <div className="card-modern p-6">
+                  <div className="section-header">
+                    <div className="section-icon bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/20">
+                      <Factory className="w-7 h-7 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-2xl md:text-3xl font-bold text-foreground font-serif">
+                      <h3 className="text-xl md:text-2xl font-semibold text-foreground">
                         Empresas no Setor
                       </h3>
-                      <p className="text-muted-foreground">Empresas brasileiras e internacionais</p>
+                      <p className="text-sm text-muted-foreground">Empresas brasileiras e internacionais</p>
                     </div>
                   </div>
                   
-                  <div className="grid md:grid-cols-2 gap-8">
+                  <div className="grid md:grid-cols-2 gap-6">
                     {/* Brazilian Companies */}
                     <div>
-                      <h4 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-4">
-                        <span className="text-2xl">🇧🇷</span> Brasil
+                      <h4 className="flex items-center gap-2 text-base font-semibold text-foreground mb-4">
+                        <span className="text-xl">🇧🇷</span> Brasil
                       </h4>
                       <div className="space-y-3">
                         {searchResults.companies.filter(c => c.country === "Brasil").map((company, index) => (
                           <div 
                             key={index}
-                            className="flex items-center gap-3 bg-card border border-border rounded-lg p-4 hover:border-primary/30 transition-all opacity-0 animate-fade-in cursor-pointer"
-                            style={{ animationDelay: `${1.8 + index * 0.1}s` }}
+                            className="flex items-center gap-3 bg-muted/50 border border-border rounded-xl p-4 hover:border-primary/30 hover:bg-muted transition-all cursor-pointer"
                             onClick={() => handleNodeSelect({ type: 'company', data: { ...company, companyType: company.type } })}
                           >
                             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -584,15 +384,14 @@ const MvpEngine = () => {
 
                     {/* International Companies */}
                     <div>
-                      <h4 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-4">
-                        <span className="text-2xl">🌍</span> Internacional
+                      <h4 className="flex items-center gap-2 text-base font-semibold text-foreground mb-4">
+                        <span className="text-xl">🌍</span> Internacional
                       </h4>
                       <div className="space-y-3">
                         {searchResults.companies.filter(c => c.country !== "Brasil").slice(0, 5).map((company, index) => (
                           <div 
                             key={index}
-                            className="flex items-center gap-3 bg-card border border-border rounded-lg p-4 hover:border-primary/30 transition-all opacity-0 animate-fade-in cursor-pointer"
-                            style={{ animationDelay: `${2.2 + index * 0.1}s` }}
+                            className="flex items-center gap-3 bg-muted/50 border border-border rounded-xl p-4 hover:border-accent/30 hover:bg-muted transition-all cursor-pointer"
                             onClick={() => handleNodeSelect({ type: 'company', data: { ...company, companyType: company.type } })}
                           >
                             <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
@@ -610,23 +409,23 @@ const MvpEngine = () => {
                 </div>
 
                 {/* Divider Arrow */}
-                <div className="flex justify-center">
+                <div className="flex justify-center py-2">
                   <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                    <ChevronRight className="w-6 h-6 text-muted-foreground rotate-90" />
+                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
                   </div>
                 </div>
 
-                {/* International Incidence - NEW */}
-                <div>
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="w-16 h-16 rounded-2xl bg-rose-500 flex items-center justify-center shadow-lg shadow-rose-500/25">
-                      <Globe className="w-8 h-8 text-white" />
+                {/* International Incidence */}
+                <div className="card-modern p-6">
+                  <div className="section-header">
+                    <div className="section-icon bg-gradient-to-br from-rose-500 to-pink-600 shadow-lg shadow-rose-500/20">
+                      <Globe className="w-7 h-7 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-2xl md:text-3xl font-bold text-foreground font-serif">
+                      <h3 className="text-xl md:text-2xl font-semibold text-foreground">
                         Incidência Internacional
                       </h3>
-                      <p className="text-muted-foreground">Mapeamento global do objeto tecnológico</p>
+                      <p className="text-sm text-muted-foreground">Mapeamento global do objeto tecnológico</p>
                     </div>
                   </div>
                   
@@ -634,23 +433,22 @@ const MvpEngine = () => {
                     {searchResults.international.map((item, index) => (
                       <div 
                         key={index}
-                        className="bg-card border border-border rounded-xl p-5 hover:border-primary/30 hover:shadow-lg transition-all opacity-0 animate-fade-in cursor-pointer"
-                        style={{ animationDelay: `${2.8 + index * 0.1}s` }}
+                        className="bg-muted/50 border border-border rounded-xl p-5 hover:border-rose-300 hover:bg-muted transition-all cursor-pointer"
                         onClick={() => handleNodeSelect({ type: 'international', data: { ...item, name: item.country } })}
                       >
                         <div className="flex items-center justify-between mb-3">
-                          <span className="text-lg font-medium">{item.country}</span>
-                          <span className="text-xs font-medium px-2 py-1 bg-secondary text-secondary-foreground rounded-full">
+                          <span className="text-base font-medium">{item.country}</span>
+                          <span className="badge badge-muted">
                             {item.relevance}
                           </span>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                          <div className="text-center p-2 bg-muted/50 rounded-lg">
-                            <p className="text-2xl font-bold text-foreground">{item.institutions}</p>
+                          <div className="text-center p-3 bg-card rounded-lg">
+                            <p className="text-xl font-bold text-foreground">{item.institutions}</p>
                             <p className="text-xs text-muted-foreground">Instituições</p>
                           </div>
-                          <div className="text-center p-2 bg-muted/50 rounded-lg">
-                            <p className="text-2xl font-bold text-foreground">{item.patents}</p>
+                          <div className="text-center p-3 bg-card rounded-lg">
+                            <p className="text-xl font-bold text-foreground">{item.patents}</p>
                             <p className="text-xs text-muted-foreground">Patentes</p>
                           </div>
                         </div>
@@ -660,27 +458,27 @@ const MvpEngine = () => {
                 </div>
 
                 {/* Divider Arrow */}
-                <div className="flex justify-center">
+                <div className="flex justify-center py-2">
                   <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                    <ChevronRight className="w-6 h-6 text-muted-foreground rotate-90" />
+                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
                   </div>
                 </div>
 
                 {/* Institutional Incidence */}
-                <div>
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="w-16 h-16 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/25">
-                      <Building2 className="w-8 h-8 text-white" />
+                <div className="card-modern p-6">
+                  <div className="section-header">
+                    <div className="section-icon bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
+                      <Landmark className="w-7 h-7 text-white" />
                     </div>
                     <div className="flex-grow">
-                      <h3 className="text-2xl md:text-3xl font-bold text-foreground font-serif">
+                      <h3 className="text-xl md:text-2xl font-semibold text-foreground">
                         Incidência Institucional
                       </h3>
-                      <p className="text-muted-foreground">Instrumentos Públicos — Finep, BNDES, Embrapii</p>
+                      <p className="text-sm text-muted-foreground">Instrumentos Públicos — Finep, BNDES, Embrapii</p>
                     </div>
                     <button
                       onClick={() => setExpandedSections(prev => ({ ...prev, institutional: !prev.institutional }))}
-                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                      className="btn-secondary text-sm py-2 px-4"
                     >
                       {expandedSections.institutional ? 'Recolher' : `Ver ${searchResults.stats.instruments} Instrumentos`}
                     </button>
@@ -690,15 +488,14 @@ const MvpEngine = () => {
                     {(expandedSections.institutional ? searchResults.institutional : searchResults.institutional.slice(0, 6)).map((inst, index) => (
                       <div 
                         key={index} 
-                        className="group bg-card border border-border rounded-xl p-6 hover:border-accent/30 hover:shadow-lg transition-all duration-300 opacity-0 animate-fade-in cursor-pointer"
-                        style={{ animationDelay: `${3.4 + index * 0.1}s` }}
+                        className="group bg-muted/50 border border-border rounded-xl p-5 hover:border-emerald-300 hover:bg-muted transition-all cursor-pointer"
                         onClick={() => handleNodeSelect({ type: 'institutional', data: inst })}
                       >
                         <div className="flex items-start justify-between mb-4">
-                          <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
-                            <Briefcase className="w-6 h-6 text-accent" />
+                          <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center">
+                            <Briefcase className="w-5 h-5 text-accent" />
                           </div>
-                          <span className={`text-xs font-medium px-3 py-1 rounded-full ${
+                          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
                             inst.status === 'Aberto' 
                               ? 'bg-accent/10 text-accent' 
                               : inst.status === 'Contínuo'
@@ -732,41 +529,41 @@ const MvpEngine = () => {
                 </div>
 
                 {/* Divider Arrow */}
-                <div className="flex justify-center">
+                <div className="flex justify-center py-2">
                   <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                    <ChevronRight className="w-6 h-6 text-muted-foreground rotate-90" />
+                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
                   </div>
                 </div>
 
-                {/* Scholarships Section - NEW */}
+                {/* Scholarships Section */}
                 {searchResults.scholarships && searchResults.scholarships.total > 0 && (
-                  <div>
-                    <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
-                      <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/25">
-                        <Briefcase className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                  <div className="card-modern p-6">
+                    <div className="section-header">
+                      <div className="section-icon bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/20">
+                        <GraduationCap className="w-7 h-7 text-white" />
                       </div>
                       <div className="flex-grow">
-                        <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground font-serif">
+                        <h3 className="text-xl md:text-2xl font-semibold text-foreground">
                           Bolsas de Estudo
                         </h3>
-                        <p className="text-xs md:text-sm text-muted-foreground">Brasil e Internacional</p>
+                        <p className="text-sm text-muted-foreground">Brasil e Internacional</p>
                       </div>
                       <button
                         onClick={() => setExpandedSections(prev => ({ ...prev, scholarships: !prev.scholarships }))}
-                        className="px-3 py-1.5 md:px-4 md:py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-xs md:text-sm"
+                        className="btn-secondary text-sm py-2 px-4"
                       >
                         {expandedSections.scholarships ? 'Recolher' : `Ver ${searchResults.scholarships.total} Bolsas`}
                       </button>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {(expandedSections.scholarships ? searchResults.scholarships.all : searchResults.scholarships.all.slice(0, 6)).map((scholarship, index) => (
                         <div 
                           key={index} 
-                          className="group bg-card border border-border rounded-xl p-4 md:p-5 hover:border-green-300 hover:shadow-lg transition-all duration-300"
+                          className="group bg-muted/50 border border-border rounded-xl p-5 hover:border-green-300 hover:bg-muted transition-all"
                         >
                           <div className="flex items-start justify-between mb-3">
-                            <span className={`text-xs px-2 py-1 rounded-full ${
+                            <span className={`badge ${
                               scholarship.country === 'Brasil' 
                                 ? 'bg-green-100 text-green-700'
                                 : 'bg-blue-100 text-blue-700'
@@ -799,38 +596,38 @@ const MvpEngine = () => {
                 )}
 
                 {/* Divider Arrow */}
-                <div className="flex justify-center">
+                <div className="flex justify-center py-2">
                   <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                    <ChevronRight className="w-6 h-6 text-muted-foreground rotate-90" />
+                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
                   </div>
                 </div>
 
-                {/* Education Institutions Section - NEW */}
+                {/* Education Institutions Section */}
                 {searchResults.education && searchResults.education.total_institutions > 0 && (
-                  <div>
-                    <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
-                      <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
-                        <Building2 className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                  <div className="card-modern p-6">
+                    <div className="section-header">
+                      <div className="section-icon bg-gradient-to-br from-indigo-500 to-blue-600 shadow-lg shadow-indigo-500/20">
+                        <BookOpen className="w-7 h-7 text-white" />
                       </div>
                       <div className="flex-grow">
-                        <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground font-serif">
+                        <h3 className="text-xl md:text-2xl font-semibold text-foreground">
                           Instituições de Ensino
                         </h3>
-                        <p className="text-xs md:text-sm text-muted-foreground">INEP — Censo da Educação Superior</p>
+                        <p className="text-sm text-muted-foreground">INEP — Censo da Educação Superior</p>
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {searchResults.education.institutions.map((inst, index) => (
                         <div 
                           key={index} 
-                          className="group bg-card border border-border rounded-xl p-4 md:p-5 hover:border-indigo-300 hover:shadow-lg transition-all duration-300"
+                          className="group bg-muted/50 border border-border rounded-xl p-5 hover:border-indigo-300 hover:bg-muted transition-all"
                         >
                           <div className="flex items-start justify-between mb-3">
                             <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
-                              <Building2 className="w-5 h-5 text-indigo-600" />
+                              <BookOpen className="w-5 h-5 text-indigo-600" />
                             </div>
-                            <span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
+                            <span className="badge badge-muted">
                               {inst.state}
                             </span>
                           </div>
@@ -853,41 +650,41 @@ const MvpEngine = () => {
                 )}
 
                 {/* Divider Arrow */}
-                <div className="flex justify-center">
+                <div className="flex justify-center py-2">
                   <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                    <ChevronRight className="w-6 h-6 text-muted-foreground rotate-90" />
+                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
                   </div>
                 </div>
 
-                {/* GitHub Projects Section - NEW */}
+                {/* GitHub Projects Section */}
                 {searchResults.github_projects && searchResults.github_projects.total > 0 && (
-                  <div>
-                    <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
-                      <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-gray-800 flex items-center justify-center shadow-lg shadow-gray-500/25">
-                        <Cpu className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                  <div className="card-modern p-6">
+                    <div className="section-header">
+                      <div className="section-icon bg-gradient-to-br from-slate-700 to-slate-900 shadow-lg shadow-slate-500/20">
+                        <Code2 className="w-7 h-7 text-white" />
                       </div>
                       <div className="flex-grow">
-                        <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground font-serif">
+                        <h3 className="text-xl md:text-2xl font-semibold text-foreground">
                           Projetos Open Source
                         </h3>
-                        <p className="text-xs md:text-sm text-muted-foreground">GitHub — Repositórios Relacionados</p>
+                        <p className="text-sm text-muted-foreground">GitHub — Repositórios Relacionados</p>
                       </div>
                     </div>
                     
-                    <div className="space-y-2 md:space-y-3">
+                    <div className="space-y-3">
                       {searchResults.github_projects.projects.slice(0, 10).map((project, index) => (
                         <div 
                           key={index} 
-                          className="group bg-card border border-border rounded-xl p-4 md:p-5 hover:border-gray-400 hover:shadow-lg transition-all duration-300"
+                          className="group bg-muted/50 border border-border rounded-xl p-5 hover:border-slate-400 hover:bg-muted transition-all"
                         >
-                          <div className="flex items-start gap-3 md:gap-4">
-                            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                              <Cpu className="w-5 h-5 text-gray-700" />
+                          <div className="flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                              <Code2 className="w-5 h-5 text-slate-700" />
                             </div>
                             <div className="flex-grow min-w-0">
                               <div className="flex items-start justify-between gap-3">
                                 <div>
-                                  <h4 className="font-semibold text-foreground group-hover:text-gray-700 transition-colors">
+                                  <h4 className="font-semibold text-foreground group-hover:text-slate-700 transition-colors">
                                     {project.full_name}
                                   </h4>
                                   <p className="text-sm text-muted-foreground mt-1">{project.description}</p>
@@ -896,13 +693,14 @@ const MvpEngine = () => {
                                   href={project.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-xs px-2 py-1 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors flex-shrink-0"
+                                  className="btn-primary py-1.5 px-3 text-xs flex items-center gap-1"
                                 >
-                                  Ver no GitHub
+                                  <ExternalLink className="w-3 h-3" />
+                                  GitHub
                                 </a>
                               </div>
                               <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-                                <span>{project.language}</span>
+                                <span className="badge badge-muted">{project.language}</span>
                                 <span>⭐ {project.stars}</span>
                                 <span>🍴 {project.forks}</span>
                                 {project.license && <span>📄 {project.license}</span>}
@@ -916,18 +714,18 @@ const MvpEngine = () => {
                 )}
 
                 {/* Call to Action with PDF Download */}
-                <div className="bg-primary rounded-2xl p-10 text-center">
-                  <h3 className="text-2xl font-bold text-primary-foreground mb-4 font-serif">
+                <div className="card-feature bg-gradient-to-br from-primary to-primary/90 p-8 md:p-10 text-center">
+                  <h3 className="text-2xl font-semibold text-primary-foreground mb-4">
                     Rede de Incidência Construída
                   </h3>
-                  <p className="text-primary-foreground/80 max-w-3xl mx-auto mb-6">
+                  <p className="text-primary-foreground/80 max-w-3xl mx-auto mb-6 text-sm md:text-base">
                     O MOTOR 4P traduziu o objeto tecnológico "{searchResults.query}" em uma rede verificável 
                     de {searchResults.stats.groups} grupos de pesquisa, {searchResults.stats.patents} patentes, 
                     {searchResults.stats.companies} empresas e incidência em {searchResults.stats.international} países.
                   </p>
                   <button
                     onClick={handleDownloadPDF}
-                    className="inline-flex items-center gap-2 bg-white text-primary px-8 py-4 rounded-xl font-semibold hover:bg-white/90 transition-colors shadow-lg"
+                    className="inline-flex items-center gap-2 bg-white text-primary px-8 py-4 rounded-xl font-semibold hover:bg-white/90 transition-all hover:scale-105 shadow-lg"
                   >
                     <Download className="w-5 h-5" />
                     Baixar Relatório PDF
@@ -940,20 +738,20 @@ const MvpEngine = () => {
           </div>
 
         {/* Verificabilidade */}
-        <section className="py-12 bg-muted/30 border-t border-border">
-        <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 text-center">
+        <section className="py-16 bg-muted/30 border-t border-border">
+        <div className="container-wide">
+          <h2 className="text-2xl font-semibold text-foreground mb-8 text-center">
             Infraestrutura pública, explicável e auditável
           </h2>
           <div className="grid md:grid-cols-3 gap-4">
             {[
-              "Cada resultado aponta a fonte pública original",
-              "Cada vínculo possui critério explícito",
-              "Dados reprodutíveis e transparentes"
+              { icon: CheckCircle, text: "Cada resultado aponta a fonte pública original" },
+              { icon: CheckCircle, text: "Cada vínculo possui critério explícito" },
+              { icon: CheckCircle, text: "Dados reprodutíveis e transparentes" }
             ].map((item, index) => (
-              <div key={index} className="flex items-start gap-3 p-4 bg-card rounded-lg border border-border">
-                <CheckCircle className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-muted-foreground">{item}</p>
+              <div key={index} className="card-modern p-5 flex items-start gap-3">
+                <item.icon className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-foreground">{item.text}</p>
               </div>
             ))}
           </div>
@@ -961,35 +759,35 @@ const MvpEngine = () => {
       </section>
 
       {/* Bases Públicas Integradas */}
-      <section className="py-12">
-        <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
-            Bases Públicas Integradas no MVP
+      <section className="py-16">
+        <div className="container-wide">
+          <h2 className="text-2xl font-semibold text-foreground mb-10 text-center">
+            Bases Públicas Integradas
           </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="card-institutional text-center">
-              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="card-modern text-center p-8">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <Database className="w-7 h-7 text-primary" />
               </div>
-              <h3 className="text-lg font-bold text-foreground mb-2 font-serif">CNPq</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">CNPq</h3>
               <p className="text-muted-foreground text-sm">
                 Diretório de Grupos de Pesquisa
               </p>
             </div>
-            <div className="card-institutional text-center">
-              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <div className="card-modern text-center p-8">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <FileText className="w-7 h-7 text-primary" />
               </div>
-              <h3 className="text-lg font-bold text-foreground mb-2 font-serif">INPI</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">INPI</h3>
               <p className="text-muted-foreground text-sm">
                 Patentes e classificação IPC/CPC
               </p>
             </div>
-            <div className="card-institutional text-center">
-              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Landmark className="w-7 h-7 text-primary" />
+            <div className="card-modern text-center p-8">
+              <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
+                <Landmark className="w-7 h-7 text-accent" />
               </div>
-              <h3 className="text-lg font-bold text-foreground mb-2 font-serif">Finep</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Finep</h3>
               <p className="text-muted-foreground text-sm">
                 Instrumentos e chamadas públicas
               </p>
@@ -999,46 +797,44 @@ const MvpEngine = () => {
       </section>
 
       {/* Roadmap */}
-      <section className="py-12 bg-muted/30 border-t border-border">
-        <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
+      <section className="py-16 bg-muted/30 border-t border-border">
+        <div className="container-narrow">
+          <h2 className="text-2xl font-semibold text-foreground mb-10 text-center">
             Roadmap
           </h2>
-          <div className="max-w-md mx-auto">
-            <div className="timeline-item">
-              <div className="timeline-dot" />
-              <p className="font-mono text-accent font-bold mb-1">2026</p>
-              <h4 className="font-bold text-foreground mb-1">Engine do Pesquisador</h4>
-              <p className="text-sm text-muted-foreground">objeto → rede</p>
-            </div>
-            <div className="timeline-item">
-              <div className="timeline-dot" />
-              <p className="font-mono text-accent font-bold mb-1">2027</p>
-              <h4 className="font-bold text-foreground mb-1">Engine da Empresa</h4>
-              <p className="text-sm text-muted-foreground">CNPJ → instrumentos</p>
-            </div>
-            <div className="timeline-item">
-              <div className="timeline-dot" />
-              <p className="font-mono text-accent font-bold mb-1">2028</p>
-              <h4 className="font-bold text-foreground mb-1">Engine do Estado</h4>
-              <p className="text-sm text-muted-foreground">lacunas e avaliação</p>
-            </div>
+          <div className="max-w-lg mx-auto space-y-0">
+            {[
+              { year: "2026", title: "Engine do Pesquisador", desc: "objeto → rede", active: true },
+              { year: "2027", title: "Engine da Empresa", desc: "CNPJ → instrumentos", active: false },
+              { year: "2028", title: "Engine do Estado", desc: "lacunas e avaliação", active: false },
+            ].map((item, index) => (
+              <div key={index} className="timeline-item">
+                <div className={`absolute -left-2 w-4 h-4 rounded-full border-2 ${item.active ? 'bg-accent border-accent' : 'bg-background border-border'}`} />
+                <p className={`font-mono text-sm ${item.active ? 'text-accent' : 'text-muted-foreground'} font-semibold mb-1`}>{item.year}</p>
+                <h4 className="font-semibold text-foreground mb-1">{item.title}</h4>
+                <p className="text-sm text-muted-foreground">{item.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Academic Credits */}
-      <section className="py-12 border-t border-border bg-muted/30">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <p className="text-sm text-muted-foreground mb-2">
-            Doutorado em Políticas Públicas — Universidade Federal do Paraná
+      <section className="py-12 border-t border-border">
+        <div className="container-narrow text-center">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-3">
+            Doutorado em Políticas Públicas — UFPR
           </p>
-          <p className="text-base text-foreground font-medium">
-            Decio Dalton Deliberador Filho <span className="text-muted-foreground font-normal">(Doutorando)</span>
-          </p>
-          <p className="text-base text-foreground font-medium">
-            Walter Tadahiro Shima <span className="text-muted-foreground font-normal">(Orientador)</span>
-          </p>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-8">
+            <p className="text-sm text-foreground">
+              <span className="font-medium">Decio Dalton Deliberador Filho</span>
+              <span className="text-muted-foreground ml-1">(Doutorando)</span>
+            </p>
+            <p className="text-sm text-foreground">
+              <span className="font-medium">Walter Tadahiro Shima</span>
+              <span className="text-muted-foreground ml-1">(Orientador)</span>
+            </p>
+          </div>
         </div>
       </section>
         </main>
