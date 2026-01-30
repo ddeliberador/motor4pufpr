@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Search, Microscope, FileText, Landmark, Globe, Factory, Download, Network, TrendingUp, AlertTriangle, Target, Link2, Info, CheckCircle, Database, Users, FlaskConical, Briefcase, ChevronRight, Cpu, Building2 } from "lucide-react";
 import { useIncidenceSearch } from "@/hooks/useIncidenceSearch";
 import ApiStatusIndicator from "@/components/ApiStatusIndicator";
-import OntologyPreview from "@/components/OntologyPreview";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import UfprLogo from "@/components/UfprLogo";
@@ -162,31 +161,6 @@ const MvpEngine = () => {
                 {isSearching ? "Processando..." : "Buscar no Motor"}
               </button>
             </form>
-            
-            {/* Preview de Ontologia */}
-            <OntologyPreview query={searchQuery} />
-          </div>
-        </div>
-      </section>
-
-      {/* MVP Enxuto e Poderoso */}
-      <section className="section-spacing">
-        <div className="container-narrow">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6 text-center">
-            MVP Enxuto e Poderoso
-          </h2>
-          <p className="text-lg text-muted-foreground text-center mb-8">
-            O MVP inicial não tenta mapear tudo.<br />
-            Ele implementa a <strong className="text-foreground">camada ausente</strong>:
-          </p>
-          <div className="diagram-flow py-8 bg-accent/5 rounded-xl border border-accent/20 px-6">
-            <span className="diagram-node bg-accent text-accent-foreground text-sm">Objeto tecnológico</span>
-            <span className="diagram-arrow text-accent">→</span>
-            <span className="diagram-node bg-accent text-accent-foreground text-sm">Incidência científica</span>
-            <span className="diagram-arrow text-accent">→</span>
-            <span className="diagram-node bg-accent text-accent-foreground text-sm">Incidência tecnológica</span>
-            <span className="diagram-arrow text-accent">→</span>
-            <span className="diagram-node bg-accent text-accent-foreground text-sm">Instrumentos públicos</span>
           </div>
         </div>
       </section>
