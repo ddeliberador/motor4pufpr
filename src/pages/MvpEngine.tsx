@@ -35,14 +35,14 @@ const MvpEngine = () => {
     international: false,
   });
 
-  // Hook para busca com API real (com fallback para mock se API estiver offline)
+  // Hook para busca com API real
   const {
     search: apiSearch,
     results: apiResults,
     isLoading: isSearching,
     isUsingMock,
     backendAvailable,
-  } = useIncidenceSearch({ useMockOnError: true });
+  } = useIncidenceSearch();
   
   // Transforma resultados da API para o formato local
   const searchResults = apiResults ? {
@@ -55,9 +55,9 @@ const MvpEngine = () => {
       area: g.area,
       international: g.international_collaboration,
     })),
-    technological: apiResults.technological.patents.map(p => ({
+    technological: apiResults.technological.patents.slice(0, 5).map(p => ({
       title: p.title,
-      applicant: Array.isArray(p.applicants) ? p.applicants[0] : p.applicants || 'N/A',
+      applicant: p.applicants[0] || 'N/A',
       year: p.filing_date?.split('-')[0] || 'N/A',
       code: p.id,
       international: p.cited_by_count > 0 ? `Citada ${p.cited_by_count}x` : undefined,
@@ -66,16 +66,11 @@ const MvpEngine = () => {
       name: i.name,
       type: i.type,
       status: i.status,
-      value: i.total_value ? `R$ ${(i.total_value / 1000000).toFixed(1)}M` : undefined,
+      value: i.total_value ? `R$ ${(i.total_value / 1000000).toFixed(0)}M` : undefined,
     })),
-    companies: apiResults.productive?.companies?.map(c => ({
-      name: c.name,
-      country: c.country || 'Brasil',
-      sector: c.sector || 'N/A',
-      type: c.type || 'Empresa',
-    })) || [],
-    international: apiResults.international.map(i => ({
-      country: i.country_name || i.country.replace('https://openalex.org/countries/', ''),
+    companies: [] as { name: string; country: string; sector: string; type: string }[],
+    international: apiResults.international.slice(0, 6).map(i => ({
+      country: `${i.flag_emoji} ${i.country.replace('https://openalex.org/countries/', '')}`,
       institutions: i.institutions_count,
       patents: i.patents_count,
       relevance: i.global_relevance,
@@ -93,10 +88,8 @@ const MvpEngine = () => {
 
   const handleNodeSelect = useCallback((nodeData: { type: string; data: Record<string, unknown> } | null) => {
     if (nodeData) {
-      console.log('handleNodeSelect chamado:', nodeData);
       setSelectedNode(nodeData as NodeDetailData);
       setDetailPanelOpen(true);
-      console.log('Estado atualizado - detailPanelOpen: true');
     }
   }, []);
 
@@ -120,17 +113,17 @@ const MvpEngine = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <div className="flex pt-16">
+      <div className="flex flex-col md:flex-row pt-16">
         {/* Sidebar */}
-        <aside className="w-80 flex-shrink-0 bg-card border-r border-border overflow-y-auto sticky top-16 h-[calc(100vh-4rem)]">
-          <div className="p-6 space-y-6">
+        <aside className="w-full md:w-80 flex-shrink-0 bg-gradient-to-br from-blue-50 via-slate-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950 border-r-4 md:border-r-4 border-b-4 md:border-b-0 border-blue-200 dark:border-blue-900 shadow-2xl overflow-y-auto md:sticky md:top-16 h-auto md:h-[calc(100vh-4rem)]">
+          <div className="p-4 md:p-6 space-y-4 md:space-y-6">
             {/* Logo and Title */}
-            <div className="text-center pb-6 border-b border-border">
-              <UfprLogo className="w-16 h-16 mx-auto mb-3 opacity-90" />
-              <h1 className="text-2xl font-bold text-foreground mb-1">
+            <div className="text-center pb-4 md:pb-6 border-b border-border">
+              <UfprLogo className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-2 md:mb-3 opacity-90" />
+              <h1 className="text-xl md:text-2xl font-bold text-foreground mb-1">
                 MVP Engine
               </h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs md:text-sm text-muted-foreground">
                 Primeira Camada da Tradução
               </p>
             </div>
@@ -145,9 +138,9 @@ const MvpEngine = () => {
             </Link>
 
             {/* Search Box */}
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-foreground">
+                <label className="text-xs md:text-sm font-semibold text-foreground">
                   Buscar Objeto Tecnológico
                 </label>
                 <ApiStatusIndicator 
@@ -158,19 +151,19 @@ const MvpEngine = () => {
               
               <form onSubmit={handleSearch}>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Digite aqui..."
-                    className="w-full pl-10 pr-3 py-3 text-sm rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                    className="w-full pl-9 md:pl-10 pr-3 py-2 md:py-3 text-xs md:text-sm rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={isSearching || !searchQuery.trim()}
-                  className="w-full mt-3 bg-primary text-primary-foreground py-3 rounded-lg font-semibold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full mt-2 md:mt-3 bg-primary text-primary-foreground py-2 md:py-3 rounded-lg font-semibold text-xs md:text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSearching ? "Processando..." : "Buscar"}
                 </button>
@@ -191,6 +184,123 @@ const MvpEngine = () => {
               </button>
             </div>
 
+            {/* Indicadores e Conceituação */}
+            {searchResults?.indicators && (
+              <div className="pt-4 md:pt-6 border-t border-border space-y-3 md:space-y-4">
+                <h3 className="text-xs md:text-sm font-bold text-foreground">Indicadores de Tradução</h3>
+                
+                {/* C2T - Maturidade */}
+                <div className="bg-card/50 border border-border rounded-lg p-2 md:p-3 hover:border-cyan-300 transition-colors">
+                  <div className="flex items-center gap-2 mb-1.5 md:mb-2">
+                    <div className="w-6 h-6 md:w-7 md:h-7 rounded bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                      <TrendingUp className="w-3 h-3 md:w-3.5 md:h-3.5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] text-muted-foreground leading-tight">Maturidade</p>
+                      <p className="text-xs font-bold text-foreground">C2T</p>
+                    </div>
+                    <span className="text-sm font-bold text-foreground">{searchResults.indicators.c2t.value}%</span>
+                  </div>
+                  <div className="relative h-1.5 bg-muted rounded-full overflow-hidden mb-2">
+                    <div 
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"
+                      style={{ width: `${searchResults.indicators.c2t.value}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-tight">{searchResults.indicators.c2t.description}</p>
+                </div>
+
+                {/* GT - Gargalo */}
+                <div className="bg-card/50 border border-border rounded-lg p-2 md:p-3 hover:border-orange-300 transition-colors">
+                  <div className="flex items-center gap-2 mb-1.5 md:mb-2">
+                    <div className="w-6 h-6 md:w-7 md:h-7 rounded bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center flex-shrink-0">
+                      <AlertTriangle className="w-3 h-3 md:w-3.5 md:h-3.5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] text-muted-foreground leading-tight">Gargalo</p>
+                      <p className="text-xs font-bold text-foreground">GT</p>
+                    </div>
+                    <span className="text-sm font-bold text-foreground">{searchResults.indicators.gt.value}%</span>
+                  </div>
+                  <div className="relative h-1.5 bg-muted rounded-full overflow-hidden mb-2">
+                    <div 
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-orange-500 to-red-600 rounded-full"
+                      style={{ width: `${searchResults.indicators.gt.value}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-tight">{searchResults.indicators.gt.description}</p>
+                </div>
+
+                {/* P2C - Aderência */}
+                <div className="bg-card/50 border border-border rounded-lg p-2 md:p-3 hover:border-emerald-300 transition-colors">
+                  <div className="flex items-center gap-2 mb-1.5 md:mb-2">
+                    <div className="w-6 h-6 md:w-7 md:h-7 rounded bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
+                      <Target className="w-3 h-3 md:w-3.5 md:h-3.5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] text-muted-foreground leading-tight">Aderência</p>
+                      <p className="text-xs font-bold text-foreground">P2C</p>
+                    </div>
+                    <span className="text-sm font-bold text-foreground">{searchResults.indicators.p2c.value}%</span>
+                  </div>
+                  <div className="relative h-1.5 bg-muted rounded-full overflow-hidden mb-2">
+                    <div 
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full"
+                      style={{ width: `${searchResults.indicators.p2c.value}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-tight">{searchResults.indicators.p2c.description}</p>
+                </div>
+
+                {/* CD - Dependência */}
+                <div className="bg-card/50 border border-border rounded-lg p-2 md:p-3 hover:border-violet-300 transition-colors">
+                  <div className="flex items-center gap-2 mb-1.5 md:mb-2">
+                    <div className="w-6 h-6 md:w-7 md:h-7 rounded bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                      <Link2 className="w-3 h-3 md:w-3.5 md:h-3.5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] text-muted-foreground leading-tight">Dependência</p>
+                      <p className="text-xs font-bold text-foreground">CD</p>
+                    </div>
+                    <span className="text-sm font-bold text-foreground">{searchResults.indicators.cd.value}%</span>
+                  </div>
+                  <div className="relative h-1.5 bg-muted rounded-full overflow-hidden mb-2">
+                    <div 
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full"
+                      style={{ width: `${searchResults.indicators.cd.value}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-tight">{searchResults.indicators.cd.description}</p>
+                </div>
+
+                {/* Conceituação Expandida */}
+                <div className="bg-accent/5 border border-accent/20 rounded-lg p-2.5 md:p-3 mt-3 md:mt-4">
+                  <h4 className="text-[10px] md:text-xs font-semibold text-foreground mb-1.5 md:mb-2 flex items-center gap-1.5">
+                    <Info className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                    Conceituação
+                  </h4>
+                  <div className="space-y-1.5 md:space-y-2 text-[9px] md:text-[10px] leading-relaxed">
+                    <div>
+                      <p className="font-medium text-foreground mb-0.5">C2T — Maturidade Ciência → Tecnologia</p>
+                      <p className="text-muted-foreground">Mede a conversão de produção científica em outputs tecnológicos. Valores altos indicam forte transferência de conhecimento.</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground mb-0.5">GT — Gargalo de Tradução</p>
+                      <p className="text-muted-foreground">Identifica obstáculos na cadeia de tradução. Valores altos indicam gargalos severos que impedem a tradução.</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground mb-0.5">P2C — Aderência Política → Capacidade</p>
+                      <p className="text-muted-foreground">Avalia o alinhamento entre instrumentos públicos e capacidade instalada. Valores altos indicam políticas bem direcionadas.</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground mb-0.5">CD — Concentração e Dependência</p>
+                      <p className="text-muted-foreground">Mede a dependência de fontes externas. Valores altos indicam vulnerabilidade estratégica.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Info */}
             <div className="pt-6 border-t border-border text-xs text-muted-foreground">
               <p className="mb-2">
@@ -204,7 +314,7 @@ const MvpEngine = () => {
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 min-w-0 overflow-y-auto bg-background">
+        <main className="flex-1 min-w-0 overflow-y-auto bg-muted/20">
           {showApiStatus && (
             <div className="bg-card border-b border-border p-6">
               <div className="max-w-6xl mx-auto">
@@ -239,302 +349,38 @@ const MvpEngine = () => {
                       
                       {/* Stats Overview - 5 columns now */}
                       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                        <div className="bg-muted rounded-lg p-4 text-center">
+                        <div className="bg-muted rounded-lg p-4">
                           <Microscope className="w-6 h-6 mx-auto mb-2 text-primary" />
                           <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.groups}</p>
                           <p className="text-xs text-muted-foreground">Grupos de Pesquisa</p>
                         </div>
-                        <div className="bg-muted rounded-lg p-4 text-center">
+                    <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+                      <FileText className="w-7 h-7 mx-auto mb-2 text-primary" />
+                      <p className="text-3xl md:text-4xl font-bold mb-1 text-foreground">{searchResults.stats.patents}</p>
+                      <p className="text-xs text-muted-foreground">Patentes</p>
+                        </div>
+                        <div className="bg-muted rounded-lg p-4">
                           <FlaskConical className="w-6 h-6 mx-auto mb-2 text-primary" />
                           <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.patents}</p>
                           <p className="text-xs text-muted-foreground">Patentes</p>
                         </div>
-                        <div className="bg-muted rounded-lg p-4 text-center">
+                        <div className="bg-muted rounded-lg p-4">
                           <Landmark className="w-6 h-6 mx-auto mb-2 text-accent" />
                           <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.instruments}</p>
                           <p className="text-xs text-muted-foreground">Instrumentos</p>
                         </div>
-                        <div className="bg-muted rounded-lg p-4 text-center">
+                        <div className="bg-muted rounded-lg p-4">
                           <Factory className="w-6 h-6 mx-auto mb-2 text-primary" />
                           <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.companies}</p>
                           <p className="text-xs text-muted-foreground">Empresas</p>
                         </div>
-                        <div className="bg-muted rounded-lg p-4 text-center">
+                        <div className="bg-muted rounded-lg p-4">
                           <Globe className="w-6 h-6 mx-auto mb-2 text-primary" />
                           <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.international}</p>
                           <p className="text-xs text-muted-foreground">Países</p>
                         </div>
                       </div>
                     </div>
-
-                    {/* New Indicators Section */}
-                    {searchResults.indicators && (
-                      <div className="bg-card border border-border rounded-xl p-6 mb-8">
-                        <div className="mb-6">
-                          <h4 className="text-lg font-bold text-foreground mb-2">Indicadores de Tradução Tecnológica</h4>
-                          <p className="text-sm text-muted-foreground">
-                            Métricas propostas para avaliar a maturidade, gargalos e dependências na tradução de conhecimento científico em capacidade produtiva.
-                          </p>
-                        </div>
-                        
-                        {/* Conceptual Explanation */}
-                        <div className="bg-accent/5 border border-accent/20 rounded-lg p-5 mb-6">
-                          <h5 className="font-semibold text-foreground mb-3 text-sm">Conceituação dos Indicadores</h5>
-                          <div className="grid md:grid-cols-2 gap-3 text-xs">
-                            <div className="flex gap-2">
-                              <div className="w-6 h-6 rounded bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
-                                <TrendingUp className="w-3 h-3 text-white" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-foreground">C2T — Maturidade Ciência → Tecnologia</p>
-                                <p className="text-muted-foreground mt-0.5">
-                                  Mede a conversão de produção científica (artigos, grupos de pesquisa) em outputs tecnológicos (patentes, protótipos). 
-                                  Valores altos indicam forte transferência de conhecimento para aplicações práticas.
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <div className="w-6 h-6 rounded bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center flex-shrink-0">
-                                <AlertTriangle className="w-3 h-3 text-white" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-foreground">GT — Gargalo de Tradução</p>
-                                <p className="text-muted-foreground mt-0.5">
-                                  Identifica obstáculos na cadeia de tradução: escala produtiva, integração indústria-academia, 
-                                  regulação ou financiamento. Valores altos indicam gargalos severos que impedem a tradução.
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <div className="w-6 h-6 rounded bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
-                                <Target className="w-3 h-3 text-white" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-foreground">P2C — Aderência Política → Capacidade</p>
-                                <p className="text-muted-foreground mt-0.5">
-                                  Avalia o alinhamento entre instrumentos públicos disponíveis (Finep, BNDES, Embrapii) e a 
-                                  capacidade instalada no país. Valores altos indicam políticas bem direcionadas.
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <div className="w-6 h-6 rounded bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                                <Link2 className="w-3 h-3 text-white" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-foreground">CD — Concentração e Dependência</p>
-                                <p className="text-muted-foreground mt-0.5">
-                                  Mede a dependência de insumos, tecnologia e conhecimento de fontes externas. 
-                                  Valores altos indicam vulnerabilidade estratégica e necessidade de internalização.
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                          {/* C2T - Maturidade Ciência → Tecnologia */}
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                            <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in cursor-help hover:border-cyan-300 transition-colors" style={{ animationDelay: "0.6s" }}>
-                              <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-                                  <TrendingUp className="w-5 h-5 text-white" />
-                                </div>
-                                <div className="flex-grow">
-                                  <p className="text-xs text-muted-foreground">Maturidade</p>
-                                  <p className="font-bold text-foreground">C2T</p>
-                                </div>
-                                <Info className="w-4 h-4 text-muted-foreground/50" />
-                              </div>
-                              <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-3">
-                                <div 
-                                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full transition-all duration-1000"
-                                  style={{ width: `${searchResults.indicators.c2t.value}%` }}
-                                />
-                              </div>
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-2xl font-bold text-foreground">{searchResults.indicators.c2t.value}%</span>
-                                <span className={`text-xs px-2 py-1 rounded-full ${
-                                  searchResults.indicators.c2t.value >= 70 ? 'bg-green-100 text-green-700' :
-                                  searchResults.indicators.c2t.value >= 50 ? 'bg-yellow-100 text-yellow-700' :
-                                  'bg-red-100 text-red-700'
-                                }`}>
-                                  {searchResults.indicators.c2t.value >= 70 ? 'Alto' : searchResults.indicators.c2t.value >= 50 ? 'Médio' : 'Baixo'}
-                                </span>
-                              </div>
-                              <p className="text-xs text-muted-foreground">{searchResults.indicators.c2t.description}</p>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom" className="max-w-xs p-4">
-                            <p className="font-semibold text-sm mb-2">Metodologia C2T</p>
-                            <p className="text-xs text-muted-foreground mb-2">
-                              <strong>Fórmula:</strong> C2T = (Patentes / Grupos de Pesquisa) × Fator de Citação
-                            </p>
-                            <p className="text-xs text-muted-foreground mb-2">
-                              <strong>Variáveis:</strong> Nº de patentes depositadas, Nº de grupos ativos no DGP/CNPq, 
-                              citações internacionais das patentes.
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              <strong>Interpretação:</strong> Valores &gt;70% indicam forte conversão de ciência em tecnologia aplicada.
-                            </p>
-                          </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-
-                          {/* GT - Gargalo de Tradução */}
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                            <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in cursor-help hover:border-orange-300 transition-colors" style={{ animationDelay: "0.7s" }}>
-                              <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-                                  <AlertTriangle className="w-5 h-5 text-white" />
-                                </div>
-                                <div className="flex-grow">
-                                  <p className="text-xs text-muted-foreground">Gargalo</p>
-                                  <p className="font-bold text-foreground">GT</p>
-                                </div>
-                                <Info className="w-4 h-4 text-muted-foreground/50" />
-                              </div>
-                              <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-3">
-                                <div 
-                                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-orange-500 to-red-600 rounded-full transition-all duration-1000"
-                                  style={{ width: `${searchResults.indicators.gt.value}%` }}
-                                />
-                              </div>
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-2xl font-bold text-foreground">{searchResults.indicators.gt.value}%</span>
-                                <span className={`text-xs px-2 py-1 rounded-full ${
-                                  searchResults.indicators.gt.value <= 30 ? 'bg-green-100 text-green-700' :
-                                  searchResults.indicators.gt.value <= 50 ? 'bg-yellow-100 text-yellow-700' :
-                                  'bg-red-100 text-red-700'
-                                }`}>
-                                  {searchResults.indicators.gt.value <= 30 ? 'Baixo' : searchResults.indicators.gt.value <= 50 ? 'Médio' : 'Alto'}
-                                </span>
-                              </div>
-                              <p className="text-xs text-muted-foreground">{searchResults.indicators.gt.description}</p>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom" className="max-w-xs p-4">
-                            <p className="font-semibold text-sm mb-2">Metodologia GT</p>
-                            <p className="text-xs text-muted-foreground mb-2">
-                              <strong>Fórmula:</strong> GT = 100 - [(Licenças Ativas / Patentes) × (Empresas / Grupos)]
-                            </p>
-                            <p className="text-xs text-muted-foreground mb-2">
-                              <strong>Variáveis:</strong> Nº de licenciamentos, patentes sem exploração comercial, 
-                              densidade de empresas por área de pesquisa.
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              <strong>Interpretação:</strong> Valores &gt;50% indicam gargalos severos na tradução tecnológica.
-                            </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-
-                          {/* P2C - Aderência Política → Capacidade */}
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                            <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in cursor-help hover:border-emerald-300 transition-colors" style={{ animationDelay: "0.8s" }}>
-                              <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                                  <Target className="w-5 h-5 text-white" />
-                                </div>
-                                <div className="flex-grow">
-                                  <p className="text-xs text-muted-foreground">Aderência</p>
-                                  <p className="font-bold text-foreground">P2C</p>
-                                </div>
-                                <Info className="w-4 h-4 text-muted-foreground/50" />
-                              </div>
-                              <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-3">
-                                <div 
-                                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full transition-all duration-1000"
-                                  style={{ width: `${searchResults.indicators.p2c.value}%` }}
-                                />
-                              </div>
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-2xl font-bold text-foreground">{searchResults.indicators.p2c.value}%</span>
-                                <span className={`text-xs px-2 py-1 rounded-full ${
-                                  searchResults.indicators.p2c.value >= 70 ? 'bg-green-100 text-green-700' :
-                                  searchResults.indicators.p2c.value >= 50 ? 'bg-yellow-100 text-yellow-700' :
-                                  'bg-red-100 text-red-700'
-                                }`}>
-                                  {searchResults.indicators.p2c.value >= 70 ? 'Alto' : searchResults.indicators.p2c.value >= 50 ? 'Médio' : 'Baixo'}
-                                </span>
-                              </div>
-                              <p className="text-xs text-muted-foreground">{searchResults.indicators.p2c.description}</p>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom" className="max-w-xs p-4">
-                            <p className="font-semibold text-sm mb-2">Metodologia P2C</p>
-                            <p className="text-xs text-muted-foreground mb-2">
-                              <strong>Fórmula:</strong> P2C = Σ(Instrumentos Aderentes × Peso) / Total de Instrumentos
-                            </p>
-                            <p className="text-xs text-muted-foreground mb-2">
-                              <strong>Variáveis:</strong> Nº de instrumentos (Finep, BNDES, Embrapii) com editais ativos 
-                              para o objeto, compatibilidade de TRL/MRL.
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              <strong>Interpretação:</strong> Valores &gt;70% indicam políticas bem alinhadas com capacidades existentes.
-                            </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-
-                          {/* CD - Concentração e Dependência */}
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                            <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in cursor-help hover:border-violet-300 transition-colors" style={{ animationDelay: "0.9s" }}>
-                              <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                                  <Link2 className="w-5 h-5 text-white" />
-                                </div>
-                                <div className="flex-grow">
-                                  <p className="text-xs text-muted-foreground">Dependência</p>
-                                  <p className="font-bold text-foreground">CD</p>
-                                </div>
-                                <Info className="w-4 h-4 text-muted-foreground/50" />
-                              </div>
-                              <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-3">
-                                <div 
-                                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full transition-all duration-1000"
-                                  style={{ width: `${searchResults.indicators.cd.value}%` }}
-                                />
-                              </div>
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-2xl font-bold text-foreground">{searchResults.indicators.cd.value}%</span>
-                                <span className={`text-xs px-2 py-1 rounded-full ${
-                                  searchResults.indicators.cd.value <= 40 ? 'bg-green-100 text-green-700' :
-                                  searchResults.indicators.cd.value <= 60 ? 'bg-yellow-100 text-yellow-700' :
-                                  'bg-red-100 text-red-700'
-                                }`}>
-                                  {searchResults.indicators.cd.value <= 40 ? 'Baixa' : searchResults.indicators.cd.value <= 60 ? 'Média' : 'Alta'}
-                                </span>
-                              </div>
-                              <p className="text-xs text-muted-foreground">{searchResults.indicators.cd.description}</p>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom" className="max-w-xs p-4">
-                            <p className="font-semibold text-sm mb-2">Metodologia CD</p>
-                            <p className="text-xs text-muted-foreground mb-2">
-                              <strong>Fórmula:</strong> CD = (Patentes Estrangeiras / Total) + (Importações Críticas / Consumo)
-                            </p>
-                            <p className="text-xs text-muted-foreground mb-2">
-                              <strong>Variáveis:</strong> % de patentes de titulares estrangeiros, dependência de insumos 
-                              importados, concentração de fornecedores por país.
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              <strong>Interpretação:</strong> Valores &gt;60% indicam alta vulnerabilidade e risco estratégico.
-                            </p>
-                          </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                      </div>
-                    )}
 
                 {/* Network Graph Visualization */}
                 <div>
@@ -573,47 +419,43 @@ const MvpEngine = () => {
                       onClick={() => setExpandedSections(prev => ({ ...prev, scientific: !prev.scientific }))}
                       className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                     >
-                      {expandedSections.scientific ? `Ver ${searchResults.stats.groups} Grupos` : 'Recolher'}
+                      {expandedSections.scientific ? 'Recolher' : `Ver ${searchResults.stats.groups} Grupos`}
                     </button>
                   </div>
                   
-                  <div className="space-y-2">
-                    {(expandedSections.scientific ? searchResults.scientific.slice(0, 5) : searchResults.scientific).map((group, index) => (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {(expandedSections.scientific ? searchResults.scientific : searchResults.scientific.slice(0, 6)).map((group, index) => (
                       <div 
                         key={index} 
-                        className="group bg-card border border-border rounded-lg p-4 hover:border-primary hover:bg-accent/5 transition-all duration-200 cursor-pointer flex items-center gap-4"
+                        className="group bg-card border border-border rounded-xl p-5 hover:border-primary/30 hover:shadow-lg transition-all duration-300 opacity-0 animate-fade-in cursor-pointer"
+                        style={{ animationDelay: `${0.6 + index * 0.1}s` }}
                         onClick={() => handleNodeSelect({ type: 'scientific', data: group })}
                       >
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <Users className="w-5 h-5 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                              {group.name}
-                            </h4>
-                            <span className="text-xs font-medium px-2 py-1 bg-secondary text-secondary-foreground rounded-full flex-shrink-0">
-                              {group.state}
-                            </span>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Users className="w-5 h-5 text-primary" />
                           </div>
-                          <p className="text-sm text-muted-foreground line-clamp-1">{group.institution}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <p className="text-xs text-muted-foreground/70 line-clamp-1 flex-1">{group.area}</p>
-                            {group.international && (
-                              <div className="flex items-center gap-1 text-xs text-accent bg-accent/10 px-2 py-0.5 rounded-full flex-shrink-0">
-                                <Globe className="w-3 h-3" />
-                                <span>{group.international}</span>
-                              </div>
-                            )}
-                          </div>
+                          <span className="text-xs font-medium px-2 py-1 bg-secondary text-secondary-foreground rounded-full">
+                            {group.state}
+                          </span>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                        <h4 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
+                          {group.name}
+                        </h4>
+                        <p className="text-sm text-muted-foreground mb-2">{group.institution}</p>
+                        <p className="text-xs text-muted-foreground/70 mb-2">{group.area}</p>
+                        {group.international && (
+                          <div className="flex items-center gap-1 text-xs text-accent bg-accent/10 px-2 py-1 rounded-full">
+                            <Globe className="w-3 h-3" />
+                            <span>{group.international}</span>
+                          </div>
+                        )}
                       </div>
                     ))}
-                    {expandedSections.scientific && searchResults.scientific.length > 5 && (
-                      <div className="bg-muted/50 border border-border border-dashed rounded-lg p-3 text-center">
+                    {!expandedSections.scientific && searchResults.scientific.length > 6 && (
+                      <div className="bg-muted/50 border border-border border-dashed rounded-xl p-5 flex items-center justify-center">
                         <p className="text-sm text-muted-foreground font-medium">
-                          + {searchResults.scientific.length - 5} grupos ocultados
+                          + {searchResults.scientific.length - 6} grupos
                         </p>
                       </div>
                     )}
@@ -643,47 +485,49 @@ const MvpEngine = () => {
                       onClick={() => setExpandedSections(prev => ({ ...prev, technological: !prev.technological }))}
                       className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                     >
-                      {expandedSections.technological ? `Ver ${searchResults.stats.patents} Patentes` : 'Recolher'}
+                      {expandedSections.technological ? 'Recolher' : `Ver ${searchResults.stats.patents} Patentes`}
                     </button>
                   </div>
                   
-                  <div className="space-y-2">
-                    {(expandedSections.technological ? searchResults.technological.slice(0, 5) : searchResults.technological).map((patent, index) => (
+                  <div className="space-y-3">
+                    {(expandedSections.technological ? searchResults.technological : searchResults.technological.slice(0, 5)).map((patent, index) => (
                       <div 
                         key={index} 
-                        className="group bg-card border border-border rounded-lg p-4 hover:border-primary hover:bg-accent/5 transition-all duration-200 cursor-pointer flex items-center gap-4"
+                        className="group bg-card border border-border rounded-xl p-5 hover:border-primary/30 hover:shadow-lg transition-all duration-300 opacity-0 animate-fade-in cursor-pointer"
+                        style={{ animationDelay: `${1.2 + index * 0.1}s` }}
                         onClick={() => handleNodeSelect({ type: 'technological', data: patent })}
                       >
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <FlaskConical className="w-5 h-5 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                              {patent.title}
-                            </h4>
-                            <span className="text-xs font-mono bg-secondary text-secondary-foreground px-2 py-1 rounded flex-shrink-0">
-                              {patent.year}
-                            </span>
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <FlaskConical className="w-6 h-6 text-primary" />
                           </div>
-                          <p className="text-sm text-muted-foreground line-clamp-1">{patent.applicant}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <p className="text-xs text-muted-foreground/70 font-mono line-clamp-1 flex-1">{patent.code}</p>
-                            {patent.international && (
-                              <div className="flex items-center gap-1 text-xs text-accent bg-accent/10 px-2 py-0.5 rounded-full flex-shrink-0">
-                                <Globe className="w-3 h-3" />
-                                <span>{patent.international}</span>
-                              </div>
-                            )}
+                          <div className="flex-grow min-w-0">
+                            <div className="flex items-start justify-between gap-4">
+                              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                                {patent.title}
+                              </h4>
+                              <span className="text-xs font-mono bg-secondary text-secondary-foreground px-2 py-1 rounded flex-shrink-0">
+                                {patent.year}
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{patent.applicant}</p>
+                            <div className="flex items-center gap-3 mt-2">
+                              <p className="text-xs text-muted-foreground/70 font-mono">{patent.code}</p>
+                              {patent.international && (
+                                <span className="flex items-center gap-1 text-xs text-accent bg-accent/10 px-2 py-1 rounded-full">
+                                  <Globe className="w-3 h-3" />
+                                  {patent.international}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
                       </div>
                     ))}
-                    {expandedSections.technological && searchResults.technological.length > 5 && (
-                      <div className="bg-muted/50 border border-border border-dashed rounded-lg p-3 text-center">
+                    {!expandedSections.technological && searchResults.technological.length > 5 && (
+                      <div className="bg-muted/50 border border-border border-dashed rounded-xl p-5 text-center">
                         <p className="text-sm text-muted-foreground font-medium">
-                          + {searchResults.technological.length - 5} patentes ocultadas
+                          + {searchResults.technological.length - 5} patentes relacionadas
                         </p>
                       </div>
                     )}
@@ -711,27 +555,27 @@ const MvpEngine = () => {
                     </div>
                   </div>
                   
-                  <div className="grid md:grid-cols-2 gap-6">
+                  <div className="grid md:grid-cols-2 gap-8">
                     {/* Brazilian Companies */}
                     <div>
                       <h4 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-4">
                         <span className="text-2xl">🇧🇷</span> Brasil
                       </h4>
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {searchResults.companies.filter(c => c.country === "Brasil").map((company, index) => (
                           <div 
                             key={index}
-                            className="group bg-card border border-border rounded-lg p-4 hover:border-primary hover:bg-accent/5 transition-all duration-200 cursor-pointer flex items-center gap-4"
+                            className="flex items-center gap-3 bg-card border border-border rounded-lg p-4 hover:border-primary/30 transition-all opacity-0 animate-fade-in cursor-pointer"
+                            style={{ animationDelay: `${1.8 + index * 0.1}s` }}
                             onClick={() => handleNodeSelect({ type: 'company', data: { ...company, companyType: company.type } })}
                           >
-                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                               <Building2 className="w-5 h-5 text-primary" />
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <h5 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">{company.name}</h5>
-                              <p className="text-sm text-muted-foreground line-clamp-1">{company.sector} • {company.type}</p>
+                            <div className="flex-grow">
+                              <h5 className="font-medium text-foreground">{company.name}</h5>
+                              <p className="text-xs text-muted-foreground">{company.sector} • {company.type}</p>
                             </div>
-                            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
                           </div>
                         ))}
                       </div>
@@ -742,21 +586,21 @@ const MvpEngine = () => {
                       <h4 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-4">
                         <span className="text-2xl">🌍</span> Internacional
                       </h4>
-                      <div className="space-y-2">
-                        {searchResults.companies.filter(c => c.country !== "Brasil").slice(0, 10).map((company, index) => (
+                      <div className="space-y-3">
+                        {searchResults.companies.filter(c => c.country !== "Brasil").slice(0, 5).map((company, index) => (
                           <div 
                             key={index}
-                            className="group bg-card border border-border rounded-lg p-4 hover:border-accent hover:bg-accent/5 transition-all duration-200 cursor-pointer flex items-center gap-4"
+                            className="flex items-center gap-3 bg-card border border-border rounded-lg p-4 hover:border-primary/30 transition-all opacity-0 animate-fade-in cursor-pointer"
+                            style={{ animationDelay: `${2.2 + index * 0.1}s` }}
                             onClick={() => handleNodeSelect({ type: 'company', data: { ...company, companyType: company.type } })}
                           >
-                            <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
+                            <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
                               <Globe className="w-5 h-5 text-accent" />
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <h5 className="font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-1">{company.name}</h5>
-                              <p className="text-sm text-muted-foreground line-clamp-1">{company.country} • {company.sector}</p>
+                            <div className="flex-grow">
+                              <h5 className="font-medium text-foreground">{company.name}</h5>
+                              <p className="text-xs text-muted-foreground">{company.country} • {company.sector}</p>
                             </div>
-                            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-accent transition-colors flex-shrink-0" />
                           </div>
                         ))}
                       </div>
@@ -785,35 +629,30 @@ const MvpEngine = () => {
                     </div>
                   </div>
                   
-                  <div className="space-y-2">
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {searchResults.international.map((item, index) => (
                       <div 
                         key={index}
-                        className="group bg-card border border-border rounded-lg p-4 hover:border-primary hover:bg-accent/5 transition-all duration-200 cursor-pointer flex items-center gap-4"
+                        className="bg-card border border-border rounded-xl p-5 hover:border-primary/30 hover:shadow-lg transition-all opacity-0 animate-fade-in cursor-pointer"
+                        style={{ animationDelay: `${2.8 + index * 0.1}s` }}
                         onClick={() => handleNodeSelect({ type: 'international', data: { ...item, name: item.country } })}
                       >
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <Globe className="w-5 h-5 text-primary" />
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-lg font-medium">{item.country}</span>
+                          <span className="text-xs font-medium px-2 py-1 bg-secondary text-secondary-foreground rounded-full">
+                            {item.relevance}
+                          </span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                              {item.country}
-                            </h4>
-                            <span className="text-xs font-medium px-2 py-1 bg-secondary text-secondary-foreground rounded-full flex-shrink-0">
-                              {item.relevance}
-                            </span>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="text-center p-2 bg-muted/50 rounded-lg">
+                            <p className="text-2xl font-bold text-foreground">{item.institutions}</p>
+                            <p className="text-xs text-muted-foreground">Instituições</p>
                           </div>
-                          <div className="flex items-center gap-4">
-                            <p className="text-sm text-muted-foreground">
-                              <span className="font-semibold text-foreground">{item.institutions}</span> instituições
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              <span className="font-semibold text-foreground">{item.patents}</span> patentes
-                            </p>
+                          <div className="text-center p-2 bg-muted/50 rounded-lg">
+                            <p className="text-2xl font-bold text-foreground">{item.patents}</p>
+                            <p className="text-xs text-muted-foreground">Patentes</p>
                           </div>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
                       </div>
                     ))}
                   </div>
@@ -842,51 +681,49 @@ const MvpEngine = () => {
                       onClick={() => setExpandedSections(prev => ({ ...prev, institutional: !prev.institutional }))}
                       className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                     >
-                      {expandedSections.institutional ? `Ver ${searchResults.stats.instruments} Instrumentos` : 'Recolher'}
+                      {expandedSections.institutional ? 'Recolher' : `Ver ${searchResults.stats.instruments} Instrumentos`}
                     </button>
                   </div>
                   
-                  <div className="space-y-2">
-                    {(expandedSections.institutional ? searchResults.institutional.slice(0, 5) : searchResults.institutional).map((inst, index) => (
+                  <div className="grid md:grid-cols-3 gap-4">
+                    {(expandedSections.institutional ? searchResults.institutional : searchResults.institutional.slice(0, 6)).map((inst, index) => (
                       <div 
                         key={index} 
-                        className="group bg-card border border-border rounded-lg p-4 hover:border-accent hover:bg-accent/5 transition-all duration-200 cursor-pointer flex items-center gap-4"
+                        className="group bg-card border border-border rounded-xl p-6 hover:border-accent/30 hover:shadow-lg transition-all duration-300 opacity-0 animate-fade-in cursor-pointer"
+                        style={{ animationDelay: `${3.4 + index * 0.1}s` }}
                         onClick={() => handleNodeSelect({ type: 'institutional', data: inst })}
                       >
-                        <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
-                          <Briefcase className="w-5 h-5 text-accent" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <h4 className="font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-1">
-                              {inst.name}
-                            </h4>
-                            <span className={`text-xs font-medium px-2 py-1 rounded-full flex-shrink-0 ${
-                              inst.status === 'Aberto' 
-                                ? 'bg-accent/10 text-accent' 
-                                : inst.status === 'Contínuo'
-                                ? 'bg-primary/10 text-primary'
-                                : inst.status === 'Ativo'
-                                ? 'bg-accent/10 text-accent'
-                                : 'bg-muted text-muted-foreground'
-                            }`}>
-                              {inst.status}
-                            </span>
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
+                            <Briefcase className="w-6 h-6 text-accent" />
                           </div>
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm text-muted-foreground line-clamp-1">{inst.type}</span>
-                            {inst.value && (
-                              <span className="text-sm font-semibold text-accent flex-shrink-0">{inst.value}</span>
-                            )}
-                          </div>
+                          <span className={`text-xs font-medium px-3 py-1 rounded-full ${
+                            inst.status === 'Aberto' 
+                              ? 'bg-accent/10 text-accent' 
+                              : inst.status === 'Contínuo'
+                              ? 'bg-primary/10 text-primary'
+                              : inst.status === 'Ativo'
+                              ? 'bg-accent/10 text-accent'
+                              : 'bg-muted text-muted-foreground'
+                          }`}>
+                            {inst.status}
+                          </span>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-accent transition-colors flex-shrink-0" />
+                        <h4 className="font-semibold text-foreground mb-2 group-hover:text-accent transition-colors">
+                          {inst.name}
+                        </h4>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">{inst.type}</span>
+                          {inst.value && (
+                            <span className="text-sm font-semibold text-accent">{inst.value}</span>
+                          )}
+                        </div>
                       </div>
                     ))}
-                    {expandedSections.institutional && searchResults.institutional.length > 5 && (
-                      <div className="bg-muted/50 border border-border border-dashed rounded-lg p-3 text-center">
+                    {!expandedSections.institutional && searchResults.institutional.length > 6 && (
+                      <div className="bg-muted/50 border border-border border-dashed rounded-xl p-5 flex items-center justify-center">
                         <p className="text-sm text-muted-foreground font-medium">
-                          + {searchResults.institutional.length - 5} instrumentos ocultados
+                          + {searchResults.institutional.length - 6} instrumentos
                         </p>
                       </div>
                     )}
@@ -1024,7 +861,7 @@ const MvpEngine = () => {
 
       <Footer />
       
-      {/* Node Detail Panel - Outside main container for proper z-index */}
+      {/* Node Detail Panel */}
       <NodeDetailPanel 
         open={detailPanelOpen} 
         onClose={() => setDetailPanelOpen(false)} 
