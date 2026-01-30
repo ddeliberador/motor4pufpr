@@ -53,6 +53,7 @@ export default function IntegratedBasesPanel() {
         <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12 text-center">
           Bases Públicas Integradas
         </h2>
+        <div className="text-center text-primary font-bold mb-4">DEBUG: Painel está sendo renderizado</div>
         <div className="grid md:grid-cols-3 gap-8">
           {BASES.map((base) => {
             const Icon = ICONS[base.icon] || Database;
