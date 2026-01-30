@@ -110,11 +110,11 @@ const MvpEngine = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background">
       <Header />
 
       {/* Main Layout: Sidebar + Content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex" style={{ height: 'calc(100vh - 64px)', marginTop: '64px' }}>
         {/* Sidebar */}
         <aside className="w-80 bg-card border-r border-border overflow-y-auto flex-shrink-0">
           <div className="p-6 space-y-6">
