@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Search, Microscope, FileText, Landmark, Globe, Factory, Download, Network, TrendingUp, AlertTriangle, Target, Link2, Info, CheckCircle } from "lucide-react";
+import { ArrowLeft, Search, Microscope, FileText, Landmark, Globe, Factory, Download, Network, TrendingUp, AlertTriangle, Target, Link2, Info, CheckCircle, Database } from "lucide-react";
 import { useIncidenceSearch } from "@/hooks/useIncidenceSearch";
 import ApiStatusIndicator from "@/components/ApiStatusIndicator";
 import OntologyPreview from "@/components/OntologyPreview";
