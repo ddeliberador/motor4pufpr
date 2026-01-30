@@ -4,7 +4,11 @@
  */
 
 // Configuração do ambiente
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+// Usa Railway em produção, localhost apenas em desenvolvimento local
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+  (window.location.hostname === 'localhost' 
+    ? 'http://localhost:8000/api/v1'
+    : 'https://motor4pufpr-production.up.railway.app/api/v1');
 
 // Tipos de resposta da API
 export interface OntologyMapping {
