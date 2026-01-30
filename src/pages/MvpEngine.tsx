@@ -1,8 +1,9 @@
 import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Search, Microscope, FileText, Landmark, Globe, Factory, Download, Network, TrendingUp, AlertTriangle, Target, Link2, Info, CheckCircle, Database, Users, FlaskConical, Briefcase, ChevronRight, Cpu, Building2 } from "lucide-react";
+import { ArrowLeft, Search, Microscope, FileText, Landmark, Globe, Factory, Download, Network, TrendingUp, AlertTriangle, Target, Link2, Info, CheckCircle, Database, Users, FlaskConical, Briefcase, ChevronRight, Cpu, Building2, Activity } from "lucide-react";
 import { useIncidenceSearch } from "@/hooks/useIncidenceSearch";
 import ApiStatusIndicator from "@/components/ApiStatusIndicator";
+import ApiStatusView from "@/components/ApiStatusView";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import UfprLogo from "@/components/UfprLogo";
@@ -25,6 +26,7 @@ const MvpEngine = () => {
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedNode, setSelectedNode] = useState<NodeDetailData | null>(null);
   const [detailPanelOpen, setDetailPanelOpen] = useState(false);
+  const [showApiStatus, setShowApiStatus] = useState(false);
 
   // Hook para busca com API real
   const {
@@ -160,9 +162,29 @@ const MvpEngine = () => {
               >
                 {isSearching ? "Processando..." : "Buscar no Motor"}
               </button>
-            </form>
+
+            {/* API Status Toggle */}
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => setShowApiStatus(!showApiStatus)}
+                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Activity className="w-4 h-4" />
+                {showApiStatus ? "Ocultar" : "Ver"} Status das APIs
+              </button>
+            </div>
           </div>
         </div>
+      </section>
+
+      {/* API Status Section */}
+      {showApiStatus && (
+        <section className="section-spacing section-alt">
+          <div className="container-wide">
+            <ApiStatusView />
+          </div>
+        </section>
+      )}
       </section>
 
       {/* Search Results - Visual Output */}
