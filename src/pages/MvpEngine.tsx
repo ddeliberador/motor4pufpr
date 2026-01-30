@@ -28,11 +28,11 @@ const MvpEngine = () => {
   const [detailPanelOpen, setDetailPanelOpen] = useState(false);
   const [showApiStatus, setShowApiStatus] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
-    scientific: false,
-    technological: false,
-    institutional: false,
-    companies: false,
-    international: false,
+    scientific: true,
+    technological: true,
+    institutional: true,
+    companies: true,
+    international: true,
   });
 
   // Hook para busca com API real
