@@ -332,10 +332,10 @@ const MvpEngine = () => {
                         </div>
                         
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {/* C2T - Maturidade Ciência → Tecnologia */}
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
+                          {/* C2T - Maturidade Ciência → Tecnologia */}
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
                             <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in cursor-help hover:border-cyan-300 transition-colors" style={{ animationDelay: "0.6s" }}>
                               <div className="flex items-center gap-3 mb-4">
                                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
@@ -379,13 +379,13 @@ const MvpEngine = () => {
                               <strong>Interpretação:</strong> Valores &gt;70% indicam forte conversão de ciência em tecnologia aplicada.
                             </p>
                           </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                            </Tooltip>
+                          </TooltipProvider>
 
-                      {/* GT - Gargalo de Tradução */}
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
+                          {/* GT - Gargalo de Tradução */}
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
                             <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in cursor-help hover:border-orange-300 transition-colors" style={{ animationDelay: "0.7s" }}>
                               <div className="flex items-center gap-3 mb-4">
                                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
@@ -428,14 +428,14 @@ const MvpEngine = () => {
                             <p className="text-xs text-muted-foreground">
                               <strong>Interpretação:</strong> Valores &gt;50% indicam gargalos severos na tradução tecnológica.
                             </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
 
-                      {/* P2C - Aderência Política → Capacidade */}
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
+                          {/* P2C - Aderência Política → Capacidade */}
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
                             <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in cursor-help hover:border-emerald-300 transition-colors" style={{ animationDelay: "0.8s" }}>
                               <div className="flex items-center gap-3 mb-4">
                                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
@@ -478,14 +478,14 @@ const MvpEngine = () => {
                             <p className="text-xs text-muted-foreground">
                               <strong>Interpretação:</strong> Valores &gt;70% indicam políticas bem alinhadas com capacidades existentes.
                             </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
 
-                      {/* CD - Concentração e Dependência */}
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
+                          {/* CD - Concentração e Dependência */}
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
                             <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in cursor-help hover:border-violet-300 transition-colors" style={{ animationDelay: "0.9s" }}>
                               <div className="flex items-center gap-3 mb-4">
                                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
@@ -529,10 +529,9 @@ const MvpEngine = () => {
                               <strong>Interpretação:</strong> Valores &gt;60% indicam alta vulnerabilidade e risco estratégico.
                             </p>
                           </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </div>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </div>
                     )}
 
