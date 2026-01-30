@@ -8,7 +8,10 @@
       "Bash(git config --local core.worktree)",
       "Bash(git config:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git restore:*)",
+      "Bash(git checkout:*)",
+      "Bash(git ls-tree:*)"
     ]
   }
 }

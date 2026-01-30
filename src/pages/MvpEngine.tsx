@@ -275,17 +275,6 @@ const MvpEngine = () => {
                             Métricas propostas para avaliar a maturidade, gargalos e dependências na tradução de conhecimento científico em capacidade produtiva.
                           </p>
                         </div>
-                      <div className="grid md:grid-cols-2 gap-4 text-sm">
-                        <div className="flex gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
-                            <TrendingUp className="w-4 h-4 text-white" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-foreground">C2T — Maturidade Ciência → Tecnologia</p>
-                            <p className="text-muted-foreground text-xs mt-1">
-                              Mede a conversão de produção científica (artigos, grupos de pesquisa) em outputs tecnológicos (patentes, protótipos). 
-                              Valores altos indicam forte transferência de conhecimento para aplicações práticas.
-                        </div>
                         
                         {/* Conceptual Explanation */}
                         <div className="bg-accent/5 border border-accent/20 rounded-lg p-5 mb-6">
