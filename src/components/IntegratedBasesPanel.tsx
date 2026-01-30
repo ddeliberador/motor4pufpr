@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Database, FileText, Landmark, BarChart3, GraduationCap } from "lucide-react";
 
 const ICONS: Record<string, any> = {
@@ -9,22 +8,45 @@ const ICONS: Record<string, any> = {
   scholarship: GraduationCap,
 };
 
-export type IntegratedBase = {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  url?: string;
-};
+const BASES = [
+  {
+    id: "cnpq",
+    name: "CNPq",
+    description: "Diretório de Grupos de Pesquisa",
+    icon: "database",
+    url: "http://dgp.cnpq.br/"
+  },
+  {
+    id: "inpi",
+    name: "INPI",
+    description: "Patentes e classificação IPC/CPC",
+    icon: "file",
+    url: "https://busca.inpi.gov.br/"
+  },
+  {
+    id: "finep",
+    name: "Finep",
+    description: "Instrumentos e chamadas públicas",
+    icon: "government",
+    url: "https://www.finep.gov.br/"
+  },
+  {
+    id: "ibge",
+    name: "IBGE/SIDRA",
+    description: "Produção industrial, mercado de trabalho, indicadores econômicos",
+    icon: "chart",
+    url: "https://sidra.ibge.gov.br/"
+  },
+  {
+    id: "capes",
+    name: "CAPES",
+    description: "Bolsas e programas de pós-graduação",
+    icon: "scholarship",
+    url: "https://dadosabertos.capes.gov.br/"
+  }
+];
 
 export default function IntegratedBasesPanel() {
-  const [bases, setBases] = useState<IntegratedBase[]>([]);
-  useEffect(() => {
-    fetch("/api/v1/integrated-bases")
-      .then((res) => res.json())
-      .then((data) => setBases(data.bases || []));
-  }, []);
-
   return (
     <section className="section-spacing section-alt">
       <div className="container-wide">
@@ -32,7 +54,7 @@ export default function IntegratedBasesPanel() {
           Bases Públicas Integradas
         </h2>
         <div className="grid md:grid-cols-3 gap-8">
-          {bases.map((base) => {
+          {BASES.map((base) => {
             const Icon = ICONS[base.icon] || Database;
             return (
               <a
