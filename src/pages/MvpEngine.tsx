@@ -186,7 +186,6 @@ const MvpEngine = () => {
           </div>
         </section>
       )}
-      </section>
 
       {/* Search Results - Visual Output */}
       {hasSearched && (
