@@ -234,32 +234,27 @@ const MvpEngine = () => {
                       
                       {/* Stats Overview - 5 columns now */}
                       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                        <div className="bg-muted rounded-lg p-4">
+                        <div className="bg-muted rounded-lg p-4 text-center">
                           <Microscope className="w-6 h-6 mx-auto mb-2 text-primary" />
                           <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.groups}</p>
                           <p className="text-xs text-muted-foreground">Grupos de Pesquisa</p>
                         </div>
-                    <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-                      <FileText className="w-7 h-7 mx-auto mb-2 text-primary" />
-                      <p className="text-3xl md:text-4xl font-bold mb-1 text-foreground">{searchResults.stats.patents}</p>
-                      <p className="text-xs text-muted-foreground">Patentes</p>
-                        </div>
-                        <div className="bg-muted rounded-lg p-4">
+                        <div className="bg-muted rounded-lg p-4 text-center">
                           <FlaskConical className="w-6 h-6 mx-auto mb-2 text-primary" />
                           <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.patents}</p>
                           <p className="text-xs text-muted-foreground">Patentes</p>
                         </div>
-                        <div className="bg-muted rounded-lg p-4">
+                        <div className="bg-muted rounded-lg p-4 text-center">
                           <Landmark className="w-6 h-6 mx-auto mb-2 text-accent" />
                           <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.instruments}</p>
                           <p className="text-xs text-muted-foreground">Instrumentos</p>
                         </div>
-                        <div className="bg-muted rounded-lg p-4">
+                        <div className="bg-muted rounded-lg p-4 text-center">
                           <Factory className="w-6 h-6 mx-auto mb-2 text-primary" />
                           <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.companies}</p>
                           <p className="text-xs text-muted-foreground">Empresas</p>
                         </div>
-                        <div className="bg-muted rounded-lg p-4">
+                        <div className="bg-muted rounded-lg p-4 text-center">
                           <Globe className="w-6 h-6 mx-auto mb-2 text-primary" />
                           <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.international}</p>
                           <p className="text-xs text-muted-foreground">Países</p>
@@ -1023,14 +1018,15 @@ const MvpEngine = () => {
       </div>
 
       <Footer />
-      
-      {/* Node Detail Panel */}
-      <NodeDetailPanel 
-        open={detailPanelOpen} 
-        onClose={() => setDetailPanelOpen(false)} 
-        nodeData={selectedNode} 
-      />
     </div>
+      
+    {/* Node Detail Panel - Outside main container for proper z-index */}
+    <NodeDetailPanel 
+      open={detailPanelOpen} 
+      onClose={() => setDetailPanelOpen(false)} 
+      nodeData={selectedNode} 
+    />
+    </>
   );
 };
 
