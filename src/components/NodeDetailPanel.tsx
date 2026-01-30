@@ -50,6 +50,8 @@ const typeConfig = {
 };
 
 export default function NodeDetailPanel({ open, onClose, nodeData }: NodeDetailPanelProps) {
+  console.log('NodeDetailPanel render:', { open, nodeData: nodeData?.type });
+  
   if (!nodeData) return null;
 
   const config = typeConfig[nodeData.type];
