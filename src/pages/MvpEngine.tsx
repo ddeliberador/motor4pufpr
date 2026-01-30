@@ -533,8 +533,8 @@ const MvpEngine = () => {
                       </TooltipProvider>
                     </div>
                   </div>
-                  )}
-                </div>
+                      </div>
+                    )}
 
                 {/* Network Graph Visualization */}
                 <div>
