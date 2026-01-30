@@ -105,7 +105,7 @@ export default function ApiStatusView() {
           Status das APIs Integradas
         </h3>
         <p className="text-muted-foreground">
-          Fontes de dados públicas utilizadas pelo MOTOR 4P
+          CNPq • INPI • OpenAlex • COMEX Stat • Finep • BNDES • Embrapii
         </p>
       </div>
 

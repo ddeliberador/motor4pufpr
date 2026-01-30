@@ -150,7 +150,7 @@ const MvpEngine = () => {
                       <Zap className="absolute inset-0 m-auto w-6 h-6 text-primary/60" />
                     </div>
                     <p className="text-lg font-semibold text-foreground mb-2">Traduzindo objeto tecnológico...</p>
-                    <p className="text-sm text-muted-foreground">Consultando CNPq, INPI, Finep e bases internacionais</p>
+                    <p className="text-sm text-muted-foreground">Consultando: CNPq • INPI • OpenAlex • COMEX Stat • Finep • BNDES • Embrapii</p>
                   </div>
                 ) : searchResults ? (
                   <div className="space-y-8 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">

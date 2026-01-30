@@ -111,7 +111,7 @@ const Sidebar = ({
           >
             <span className="flex items-center gap-2">
               <Activity className="w-4 h-4 text-primary" />
-              Status das APIs
+              Status das APIs (CNPq, INPI, OpenAlex, COMEX, Finep)
             </span>
             <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${showApiStatus ? 'rotate-90' : ''}`} />
           </button>
