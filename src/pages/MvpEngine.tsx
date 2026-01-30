@@ -1,6 +1,8 @@
 import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Search, Microscope, Cpu, Building2, CheckCircle, Database, FileText, Landmark, Users, FlaskConical, Briefcase, ChevronRight, Globe, Factory, Download, Network, TrendingUp, AlertTriangle, Target, Link2, Info, MapPin } from "lucide-react";
+import { useIncidenceSearch } from "@/hooks/useIncidenceSearch";
+import ApiStatusIndicator from "@/components/ApiStatusIndicator";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import UfprLogo from "@/components/UfprLogo";
@@ -20,167 +22,63 @@ interface Indicators {
   cd: { value: number; label: string; description: string };
 }
 
-const mockSearchResults: Record<string, {
-  query: string;
-  scientific: { name: string; institution: string; state: string; area: string; international?: string }[];
-  technological: { title: string; applicant: string; year: string; code: string; international?: string }[];
-  institutional: { name: string; type: string; status: string; value?: string }[];
-  companies: { name: string; country: string; sector: string; type: string }[];
-  international: { country: string; institutions: number; patents: number; relevance: string }[];
-  stats: { groups: number; patents: number; instruments: number; companies: number; international: number };
-  indicators: Indicators;
-}> = {
-  "baterias de sódio": {
-    query: "Baterias de sódio",
-    stats: { groups: 97, patents: 199, instruments: 3, companies: 23, international: 12 },
-    scientific: [
-      { name: "Grupo de Materiais para Energia", institution: "USP", state: "SP", area: "Engenharia de Materiais", international: "Parceria com MIT e Fraunhofer" },
-      { name: "Lab. de Armazenamento de Energia", institution: "UNICAMP", state: "SP", area: "Química", international: "Colaboração com CNRS (França)" },
-      { name: "Núcleo de Eletroquímica Aplicada", institution: "UFPR", state: "PR", area: "Física" },
-      { name: "Centro de Pesquisa em Baterias", institution: "UFRGS", state: "RS", area: "Engenharia Química", international: "Projeto conjunto com ETH Zurich" },
-      { name: "Grupo de Materiais Funcionais", institution: "UFMG", state: "MG", area: "Química" },
-    ],
-    technological: [
-      { title: "Célula eletroquímica de sódio-ion para armazenamento", applicant: "Petrobras S.A.", year: "2024", code: "BR102024001234", international: "Citada em 15 patentes internacionais" },
-      { title: "Eletrodo de carbono para baterias de sódio", applicant: "USP", year: "2023", code: "BR102023005678", international: "Licenciada para empresa chinesa CATL" },
-      { title: "Processo de síntese de materiais catódicos", applicant: "UNICAMP", year: "2023", code: "BR102023009012" },
-      { title: "Sistema de gestão térmica para baterias Na-ion", applicant: "WEG S.A.", year: "2022", code: "BR102022003456" },
-    ],
-    institutional: [
-      { name: "Programa Finep Energias Renováveis", type: "Subvenção", status: "Aberto", value: "R$ 50M" },
-      { name: "BNDES Linha Verde", type: "Financiamento", status: "Contínuo", value: "até R$ 200M" },
-      { name: "Embrapii - Armazenamento de Energia", type: "Parceria", status: "Ativo" },
-    ],
-    companies: [
-      { name: "WEG S.A.", country: "Brasil", sector: "Energia/Elétrica", type: "Grande Empresa" },
-      { name: "Moura", country: "Brasil", sector: "Baterias", type: "Grande Empresa" },
-      { name: "Unicoba", country: "Brasil", sector: "Eletrônicos", type: "Média Empresa" },
-      { name: "Heliar", country: "Brasil", sector: "Baterias", type: "Grande Empresa" },
-      { name: "CATL", country: "China", sector: "Baterias", type: "Multinacional" },
-      { name: "BYD", country: "China", sector: "Veículos/Energia", type: "Multinacional" },
-      { name: "Northvolt", country: "Suécia", sector: "Baterias", type: "Scale-up" },
-      { name: "Faradion", country: "Reino Unido", sector: "Baterias Na-ion", type: "Startup" },
-      { name: "Natron Energy", country: "EUA", sector: "Baterias Na-ion", type: "Scale-up" },
-      { name: "TIAMAT", country: "França", sector: "Baterias Na-ion", type: "Startup" },
-    ],
-    international: [
-      { country: "🇨🇳 China", institutions: 245, patents: 3420, relevance: "Líder mundial" },
-      { country: "🇺🇸 EUA", institutions: 89, patents: 890, relevance: "Alta P&D" },
-      { country: "🇯🇵 Japão", institutions: 67, patents: 654, relevance: "Pioneiro" },
-      { country: "🇰🇷 Coreia do Sul", institutions: 54, patents: 512, relevance: "Alta escala" },
-      { country: "🇩🇪 Alemanha", institutions: 43, patents: 234, relevance: "Pesquisa avançada" },
-      { country: "🇫🇷 França", institutions: 28, patents: 187, relevance: "TIAMAT líder" },
-    ],
-    indicators: {
-      c2t: { value: 72, label: "C2T", description: "Alta maturidade científica, tradução tecnológica em progresso" },
-      gt: { value: 45, label: "GT", description: "Gargalo moderado: escala produtiva e integração com indústria" },
-      p2c: { value: 58, label: "P2C", description: "Boa aderência dos instrumentos à capacidade instalada" },
-      cd: { value: 78, label: "CD", description: "Alta dependência de insumos e tecnologia externa (China, Coreia)" },
-    },
-  },
-  "ia industrial": {
-    query: "IA Industrial",
-    stats: { groups: 325, patents: 1043, instruments: 4, companies: 67, international: 18 },
-    scientific: [
-      { name: "Lab. de Inteligência Artificial", institution: "USP", state: "SP", area: "Ciência da Computação", international: "Parceria com Stanford AI Lab" },
-      { name: "Grupo de IA e Automação", institution: "UFSC", state: "SC", area: "Engenharia de Produção", international: "Colaboração com Fraunhofer IPA" },
-      { name: "Centro de IA Aplicada", institution: "PUC-Rio", state: "RJ", area: "Informática", international: "Projeto com Microsoft Research" },
-      { name: "Núcleo de Machine Learning Industrial", institution: "UNICAMP", state: "SP", area: "Engenharia Elétrica" },
-      { name: "Grupo de Sistemas Inteligentes", institution: "UFPE", state: "PE", area: "Ciência da Computação" },
-    ],
-    technological: [
-      { title: "Sistema de visão computacional para controle de qualidade", applicant: "Embraer S.A.", year: "2024", code: "BR102024002345", international: "Adotada por Airbus" },
-      { title: "Método de manutenção preditiva com IA", applicant: "Vale S.A.", year: "2024", code: "BR102024003456", international: "Implementada em minas australianas" },
-      { title: "Plataforma de otimização de processos industriais", applicant: "SENAI-SP", year: "2023", code: "BR102023004567" },
-      { title: "Algoritmo de detecção de anomalias em linhas de produção", applicant: "Bosch Brasil", year: "2023", code: "BR102023005678" },
-    ],
-    institutional: [
-      { name: "Programa IA Brasil 2030", type: "Subvenção", status: "Aberto", value: "R$ 200M" },
-      { name: "BNDES Digitalização Industrial", type: "Financiamento", status: "Contínuo", value: "até R$ 500M" },
-      { name: "Embrapii - Competência IA", type: "Parceria", status: "Ativo" },
-      { name: "CNPq Chamada Universal IA", type: "Bolsas", status: "Encerrado" },
-    ],
-    companies: [
-      { name: "Embraer", country: "Brasil", sector: "Aeronáutica", type: "Grande Empresa" },
-      { name: "Vale", country: "Brasil", sector: "Mineração", type: "Multinacional" },
-      { name: "Petrobras", country: "Brasil", sector: "Energia", type: "Estatal" },
-      { name: "WEG", country: "Brasil", sector: "Indústria", type: "Grande Empresa" },
-      { name: "Siemens", country: "Alemanha", sector: "Automação", type: "Multinacional" },
-      { name: "ABB", country: "Suíça", sector: "Robótica", type: "Multinacional" },
-      { name: "Rockwell", country: "EUA", sector: "Automação", type: "Multinacional" },
-      { name: "Fanuc", country: "Japão", sector: "Robótica", type: "Multinacional" },
-      { name: "NVIDIA", country: "EUA", sector: "Hardware IA", type: "Multinacional" },
-    ],
-    international: [
-      { country: "🇺🇸 EUA", institutions: 412, patents: 8934, relevance: "Líder global" },
-      { country: "🇨🇳 China", institutions: 378, patents: 7654, relevance: "Crescimento acelerado" },
-      { country: "🇩🇪 Alemanha", institutions: 156, patents: 2341, relevance: "Indústria 4.0" },
-      { country: "🇯🇵 Japão", institutions: 134, patents: 1987, relevance: "Robótica avançada" },
-      { country: "🇰🇷 Coreia do Sul", institutions: 98, patents: 1234, relevance: "Smart factories" },
-      { country: "🇬🇧 Reino Unido", institutions: 87, patents: 876, relevance: "P&D intensivo" },
-    ],
-    indicators: {
-      c2t: { value: 85, label: "C2T", description: "Excelente maturidade científica e forte conversão tecnológica" },
-      gt: { value: 32, label: "GT", description: "Gargalo baixo: ecossistema bem integrado, falta de escala" },
-      p2c: { value: 75, label: "P2C", description: "Alta aderência: políticas de IA alinhadas com capacidades" },
-      cd: { value: 65, label: "CD", description: "Dependência moderada em hardware especializado (GPUs, chips)" },
-    },
-  },
-  "biomateriais": {
-    query: "Biomateriais",
-    stats: { groups: 191, patents: 321, instruments: 3, companies: 34, international: 15 },
-    scientific: [
-      { name: "Lab. de Biomateriais e Bioengenharia", institution: "USP", state: "SP", area: "Engenharia Biomédica", international: "Parceria com Harvard Medical School" },
-      { name: "Grupo de Materiais Biocompatíveis", institution: "UFRJ", state: "RJ", area: "Engenharia Metalúrgica", international: "Colaboração com Max Planck Institute" },
-      { name: "Centro de Pesquisa em Biomateriais", institution: "UFMG", state: "MG", area: "Odontologia" },
-      { name: "Núcleo de Engenharia de Tecidos", institution: "UNICAMP", state: "SP", area: "Biologia", international: "Projeto com Karolinska Institutet" },
-      { name: "Lab. de Polímeros Biodegradáveis", institution: "UNESP", state: "SP", area: "Química" },
-    ],
-    technological: [
-      { title: "Scaffold bioativo para regeneração óssea", applicant: "Baumer S.A.", year: "2024", code: "BR102024006789", international: "Aprovado FDA (EUA)" },
-      { title: "Hidrogel injetável para liberação de fármacos", applicant: "USP", year: "2023", code: "BR102023007890", international: "Licenciada para Johnson & Johnson" },
-      { title: "Membrana polimérica para implantes dentários", applicant: "Straumann Brasil", year: "2023", code: "BR102023008901" },
-      { title: "Compósito cerâmico para próteses", applicant: "UFRJ", year: "2022", code: "BR102022009012" },
-    ],
-    institutional: [
-      { name: "Finep Bioeconomia", type: "Subvenção", status: "Aberto", value: "R$ 80M" },
-      { name: "BNDES Programa Saúde", type: "Financiamento", status: "Contínuo", value: "até R$ 300M" },
-      { name: "Embrapii - Materiais Avançados", type: "Parceria", status: "Ativo" },
-    ],
-    companies: [
-      { name: "Baumer", country: "Brasil", sector: "Dispositivos Médicos", type: "Grande Empresa" },
-      { name: "Bionnovation", country: "Brasil", sector: "Implantes", type: "Média Empresa" },
-      { name: "Genius", country: "Brasil", sector: "Odontologia", type: "Média Empresa" },
-      { name: "Straumann", country: "Suíça", sector: "Implantes Dentários", type: "Multinacional" },
-      { name: "Medtronic", country: "Irlanda", sector: "Dispositivos Médicos", type: "Multinacional" },
-      { name: "Johnson & Johnson", country: "EUA", sector: "Saúde", type: "Multinacional" },
-      { name: "Zimmer Biomet", country: "EUA", sector: "Implantes", type: "Multinacional" },
-      { name: "DSM Biomedical", country: "Holanda", sector: "Biomateriais", type: "Multinacional" },
-    ],
-    international: [
-      { country: "🇺🇸 EUA", institutions: 234, patents: 4567, relevance: "Líder P&D" },
-      { country: "🇩🇪 Alemanha", institutions: 123, patents: 1234, relevance: "Engenharia avançada" },
-      { country: "🇯🇵 Japão", institutions: 98, patents: 987, relevance: "Alta precisão" },
-      { country: "🇨🇭 Suíça", institutions: 67, patents: 654, relevance: "Implantes premium" },
-      { country: "🇬🇧 Reino Unido", institutions: 54, patents: 432, relevance: "Biotech inovador" },
-    ],
-    indicators: {
-      c2t: { value: 68, label: "C2T", description: "Boa maturidade científica, tradução em desenvolvimento" },
-      gt: { value: 55, label: "GT", description: "Gargalo significativo: regulação ANVISA e escala produtiva" },
-      p2c: { value: 62, label: "P2C", description: "Aderência moderada: falta alinhamento entre BNDES e Finep" },
-      cd: { value: 48, label: "CD", description: "Dependência média em insumos e equipamentos de teste" },
-    },
-  },
-};
-
 const MvpEngine = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<typeof mockSearchResults["baterias de sódio"] | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedNode, setSelectedNode] = useState<NodeDetailData | null>(null);
   const [detailPanelOpen, setDetailPanelOpen] = useState(false);
   const [activeView, setActiveView] = useState<"incidencia" | "atlas">("incidencia");
+
+  // Hook para busca com API real
+  const {
+    search: apiSearch,
+    results: apiResults,
+    isLoading: isSearching,
+    isUsingMock,
+    backendAvailable,
+  } = useIncidenceSearch();
+  
+  // Transforma resultados da API para o formato local
+  const searchResults = apiResults ? {
+    query: apiResults.query,
+    stats: apiResults.stats,
+    scientific: apiResults.scientific.research_groups.map(g => ({
+      name: g.name,
+      institution: g.institution_acronym || g.institution,
+      state: g.state,
+      area: g.area,
+      international: g.international_collaboration,
+    })),
+    technological: apiResults.technological.patents.slice(0, 5).map(p => ({
+      title: p.title,
+      applicant: p.applicants[0] || 'N/A',
+      year: p.filing_date?.split('-')[0] || 'N/A',
+      code: p.id,
+      international: p.cited_by_count > 0 ? `Citada ${p.cited_by_count}x` : undefined,
+    })),
+    institutional: apiResults.institutional.instruments.map(i => ({
+      name: i.name,
+      type: i.type,
+      status: i.status,
+      value: i.total_value ? `R$ ${(i.total_value / 1000000).toFixed(0)}M` : undefined,
+    })),
+    companies: [] as { name: string; country: string; sector: string; type: string }[],
+    international: apiResults.international.slice(0, 6).map(i => ({
+      country: `${i.flag_emoji} ${i.country.replace('https://openalex.org/countries/', '')}`,
+      institutions: i.institutions_count,
+      patents: i.patents_count,
+      relevance: i.global_relevance,
+    })),
+    indicators: {
+      c2t: { value: apiResults.indicators.c2t.value, label: "C2T", description: apiResults.indicators.c2t.description },
+      gt: { value: apiResults.indicators.gt.value, label: "GT", description: apiResults.indicators.gt.description },
+      p2c: { value: apiResults.indicators.p2c.value, label: "P2C", description: apiResults.indicators.p2c.description },
+      cd: { value: apiResults.indicators.cd.value, label: "CD", description: apiResults.indicators.cd.description },
+    },
+    // Metadata from API
+    _processingTimeMs: apiResults.processing_time_ms,
+    _dataSources: apiResults.data_sources,
+  } : null;
 
   const handleNodeSelect = useCallback((nodeData: { type: string; data: Record<string, unknown> } | null) => {
     if (nodeData) {
@@ -189,68 +87,14 @@ const MvpEngine = () => {
     }
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
 
-    setIsSearching(true);
     setHasSearched(true);
-
-    setTimeout(() => {
-      const normalizedQuery = searchQuery.toLowerCase().trim();
-      
-      if (mockSearchResults[normalizedQuery]) {
-        setSearchResults(mockSearchResults[normalizedQuery]);
-      } else {
-        const baseMultiplier = Math.random() * 0.5 + 0.5;
-        setSearchResults({
-          query: searchQuery,
-          stats: { 
-            groups: Math.floor(80 * baseMultiplier), 
-            patents: Math.floor(150 * baseMultiplier), 
-            instruments: 3,
-            companies: Math.floor(20 * baseMultiplier),
-            international: Math.floor(10 * baseMultiplier)
-          },
-          scientific: [
-            { name: "Grupo de Pesquisa Relacionado", institution: "USP", state: "SP", area: "Área Principal", international: "Colaboração internacional ativa" },
-            { name: "Laboratório Especializado", institution: "UNICAMP", state: "SP", area: "Área Secundária" },
-            { name: "Núcleo de Investigação", institution: "UFRJ", state: "RJ", area: "Área Correlata" },
-            { name: "Centro de Estudos Avançados", institution: "UFMG", state: "MG", area: "Área Técnica" },
-          ],
-          technological: [
-            { title: "Invenção relacionada ao tema", applicant: "Empresa Nacional", year: "2024", code: "BR102024000001", international: "Citada internacionalmente" },
-            { title: "Processo inovador aplicado", applicant: "Universidade", year: "2023", code: "BR102023000002" },
-            { title: "Dispositivo técnico avançado", applicant: "Instituto de Pesquisa", year: "2023", code: "BR102023000003" },
-          ],
-          institutional: [
-            { name: "Programa de Fomento Temático", type: "Subvenção", status: "Aberto", value: "R$ 50M" },
-            { name: "Linha de Financiamento", type: "Financiamento", status: "Contínuo" },
-            { name: "Parceria Estratégica", type: "Parceria", status: "Ativo" },
-          ],
-          companies: [
-            { name: "Empresa Brasileira Líder", country: "Brasil", sector: "Setor Principal", type: "Grande Empresa" },
-            { name: "Startup Nacional", country: "Brasil", sector: "Inovação", type: "Startup" },
-            { name: "Multinacional Líder", country: "EUA", sector: "Tecnologia", type: "Multinacional" },
-            { name: "Player Asiático", country: "China", sector: "Manufatura", type: "Multinacional" },
-            { name: "Líder Europeu", country: "Alemanha", sector: "Engenharia", type: "Multinacional" },
-          ],
-          international: [
-            { country: "🇺🇸 EUA", institutions: Math.floor(150 * baseMultiplier), patents: Math.floor(2000 * baseMultiplier), relevance: "Líder global" },
-            { country: "🇨🇳 China", institutions: Math.floor(120 * baseMultiplier), patents: Math.floor(1800 * baseMultiplier), relevance: "Em expansão" },
-            { country: "🇩🇪 Alemanha", institutions: Math.floor(80 * baseMultiplier), patents: Math.floor(900 * baseMultiplier), relevance: "Alta qualidade" },
-            { country: "🇯🇵 Japão", institutions: Math.floor(70 * baseMultiplier), patents: Math.floor(700 * baseMultiplier), relevance: "Tradicional" },
-          ],
-          indicators: {
-            c2t: { value: Math.floor(50 + Math.random() * 40), label: "C2T", description: "Maturidade científica em análise" },
-            gt: { value: Math.floor(30 + Math.random() * 50), label: "GT", description: "Gargalo de tradução identificado" },
-            p2c: { value: Math.floor(40 + Math.random() * 40), label: "P2C", description: "Aderência política sendo avaliada" },
-            cd: { value: Math.floor(35 + Math.random() * 50), label: "CD", description: "Concentração e dependência variável" },
-          },
-        });
-      }
-      setIsSearching(false);
-    }, 1500);
+    
+    // Usa a API real através do hook
+    await apiSearch(searchQuery);
   };
 
   const handleExampleClick = (example: string) => {
@@ -412,9 +256,19 @@ const MvpEngine = () => {
                 {/* Results Header */}
                 <div className="text-center">
                   <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">Resultados para</p>
-                  <h2 className="text-4xl md:text-5xl font-bold text-foreground font-serif mb-8">
+                  <h2 className="text-4xl md:text-5xl font-bold text-foreground font-serif mb-4">
                     "{searchResults.query}"
                   </h2>
+                  
+                  {/* API Status Indicator */}
+                  <div className="flex justify-center mb-8">
+                    <ApiStatusIndicator
+                      isUsingMock={isUsingMock}
+                      backendAvailable={backendAvailable}
+                      processingTimeMs={searchResults._processingTimeMs}
+                      dataSources={searchResults._dataSources}
+                    />
+                  </div>
                   
                   {/* Stats Overview - 5 columns now */}
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4 max-w-5xl mx-auto">
