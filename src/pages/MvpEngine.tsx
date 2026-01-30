@@ -113,9 +113,10 @@ const MvpEngine = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-16 bottom-0 w-80 bg-card border-r border-border overflow-y-auto z-10">
-        <div className="p-6 space-y-6">
+      <div className="flex pt-16">
+        {/* Sidebar */}
+        <aside className="w-80 flex-shrink-0 bg-card border-r border-border overflow-y-auto sticky top-16 h-[calc(100vh-4rem)]">
+          <div className="p-6 space-y-6">
             {/* Logo and Title */}
             <div className="text-center pb-6 border-b border-border">
               <UfprLogo className="w-16 h-16 mx-auto mb-3 opacity-90" />
@@ -195,10 +196,10 @@ const MvpEngine = () => {
           </div>
         </aside>
 
-      {/* Main Content Area */}
-      <main className="pt-16 pl-80 min-h-screen overflow-y-auto bg-muted/20">
-        {showApiStatus && (
-          <div className="bg-card border-b border-border p-6">
+        {/* Main Content Area */}
+        <main className="flex-1 min-w-0 overflow-y-auto bg-muted/20">
+          {showApiStatus && (
+            <div className="bg-card border-b border-border p-6">
               <div className="max-w-6xl mx-auto">
                 <ApiStatusView />
               </div>
@@ -1007,7 +1008,8 @@ const MvpEngine = () => {
           </p>
         </div>
       </section>
-      </main>
+        </main>
+      </div>
 
       <Footer />
       
