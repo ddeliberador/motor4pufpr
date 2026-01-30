@@ -110,7 +110,7 @@ function generateMockResults(query: string): IncidenceResult {
   const baseGroups = Math.floor(100 * multiplier);
   const basePatents = Math.floor(200 * multiplier);
 
-  return {
+  const result = {
     query,
     ontology: {
       query,
@@ -300,11 +300,130 @@ function generateMockResults(query: string): IncidenceResult {
       instruments: 3,
       companies: 23,
       international: 12,
+      scholarships: 15,
+      institutions: 8,
+      github_projects: 12,
+    },
+    scholarships: {
+      source: 'CAPES + International (mock)',
+      brazil: [
+        {
+          type: 'Mestrado',
+          institution: 'USP',
+          program: `Programa de Pós-graduação em ${query}`,
+          area: 'Engenharias',
+          duration_months: 24,
+          value_monthly: 2100,
+          country: 'Brasil',
+        },
+        {
+          type: 'Doutorado',
+          institution: 'UNICAMP',
+          program: `Doutorado em ${query}`,
+          area: 'Ciências Exatas',
+          duration_months: 48,
+          value_monthly: 3100,
+          country: 'Brasil',
+        },
+      ],
+      international: [
+        {
+          name: 'Erasmus Mundus',
+          institution: 'European Union',
+          country: 'Multiple EU Countries',
+          level: 'Master',
+          field: query,
+          value_yearly: '€25,000',
+          duration_months: 24,
+          deadline: 'January',
+        },
+        {
+          name: 'Fulbright',
+          institution: 'U.S. Department of State',
+          country: 'United States',
+          level: 'PhD',
+          field: query,
+          value_yearly: 'Full funding',
+          duration_months: 48,
+          deadline: 'May',
+        },
+      ],
+      all: [],
+      total: 15,
+      by_country: { Brasil: 8, 'United States': 3, 'European Union': 4 },
+      by_level: { Mestrado: 5, Doutorado: 7, 'Pós-doc': 3 },
+    },
+    education: {
+      source: 'INEP (mock)',
+      institutions: [
+        {
+          name: 'Universidade Federal do Paraná',
+          acronym: 'UFPR',
+          state: 'PR',
+          city: 'Curitiba',
+          type: 'Pública Federal',
+          has_graduate: true,
+          areas: ['Tecnologia', 'Engenharias'],
+          grade_enade: 4.2,
+        },
+        {
+          name: 'Universidade de São Paulo',
+          acronym: 'USP',
+          state: 'SP',
+          city: 'São Paulo',
+          type: 'Pública Estadual',
+          has_graduate: true,
+          areas: ['Todas as áreas'],
+          grade_enade: 4.8,
+        },
+      ],
+      courses: [],
+      total_institutions: 8,
+      total_courses: 45,
+    },
+    github_projects: {
+      source: 'GitHub (mock)',
+      projects: [
+        {
+          name: `${query.replace(' ', '-').toLowerCase()}-framework`,
+          full_name: `opensource/${query.replace(' ', '-').toLowerCase()}-framework`,
+          description: `Open source framework for ${query} research and development`,
+          language: 'Python',
+          stars: 1250,
+          forks: 180,
+          open_issues: 23,
+          created_at: '2022-06-15',
+          updated_at: '2024-01-20',
+          url: `https://github.com/opensource/${query.replace(' ', '-').toLowerCase()}-framework`,
+          topics: [query.split(' ')[0], 'machine-learning', 'research'],
+          license: 'MIT',
+        },
+        {
+          name: `${query.split(' ')[0].toLowerCase()}-toolkit`,
+          full_name: `community/${query.split(' ')[0].toLowerCase()}-toolkit`,
+          description: `Community-driven toolkit for ${query} applications`,
+          language: 'JavaScript',
+          stars: 850,
+          forks: 120,
+          open_issues: 15,
+          created_at: '2023-03-10',
+          updated_at: '2024-01-25',
+          url: `https://github.com/community/${query.split(' ')[0].toLowerCase()}-toolkit`,
+          topics: ['open-source', 'development', 'tools'],
+          license: 'Apache-2.0',
+        },
+      ],
+      total: 12,
+      showing: 12,
     },
     generated_at: new Date().toISOString(),
     processing_time_ms: 1500,
-    data_sources: ['CNPq (mock)', 'INPI (mock)', 'COMEX (mock)'],
+    data_sources: ['CNPq (mock)', 'INPI (mock)', 'COMEX (mock)', 'CAPES (mock)', 'INEP (mock)', 'GitHub (mock)'],
   };
-}
+  
+  // Combina bolsas brasil e internacional
+  result.scholarships.all = [...result.scholarships.brazil, ...result.scholarships.international];
+  
+  return result;
 
 export default useIncidenceSearch;
