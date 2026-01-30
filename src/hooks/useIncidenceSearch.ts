@@ -20,6 +20,7 @@ interface UseIncidenceSearchReturn {
   error: string | null;
   isUsingMock: boolean;
   backendAvailable: boolean;
+  dataSource?: 'api' | 'cache' | 'mock';
 }
 
 export function useIncidenceSearch(
