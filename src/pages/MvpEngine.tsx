@@ -116,7 +116,7 @@ const MvpEngine = () => {
       {/* Main Layout: Sidebar + Content */}
       <div className="flex-1 flex flex-row pt-16">
         {/* Sidebar */}
-        <aside className="w-80 h-full bg-card border-r border-border overflow-y-auto flex-shrink-0">
+        <aside className="w-80 bg-card border-r border-border overflow-y-auto flex-shrink-0">
           <div className="p-6 space-y-6">
             {/* Logo and Title */}
             <div className="text-center pb-6 border-b border-border">
