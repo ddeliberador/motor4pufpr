@@ -176,6 +176,14 @@ export interface Scholarship {
   description?: string;
   url?: string;
   is_international?: boolean;
+  type?: string;
+  institution?: string;
+  name?: string;
+  program?: string;
+  field?: string;
+  value_monthly?: number | string;
+  value_yearly?: string;
+  duration_months?: number;
 }
 
 export interface ScholarshipsData {
@@ -198,6 +206,8 @@ export interface EducationInstitution {
   courses_count: number;
   relevant_courses: string[];
   website?: string;
+  type?: string;
+  grade_enade?: number;
 }
 
 export interface EducationData {
@@ -217,6 +227,7 @@ export interface GitHubProject {
   forks: number;
   language?: string;
   topics: string[];
+  license?: string;
   url: string;
   last_updated: string;
 }
