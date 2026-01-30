@@ -15,6 +15,7 @@ from .api.routes import incidence_router, health_router
 from fastapi import FastAPI
 
 app = FastAPI()
+app.include_router(router)
 
 @app.get("/api/v1/health")
 def healthcheck():
