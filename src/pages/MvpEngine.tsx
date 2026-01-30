@@ -115,7 +115,7 @@ const MvpEngine = () => {
 
       <div className="flex pt-16">
         {/* Sidebar */}
-        <aside className="w-80 flex-shrink-0 bg-slate-50 dark:bg-slate-900 border-r border-border overflow-y-auto sticky top-16 h-[calc(100vh-4rem)]">
+        <aside className="w-80 flex-shrink-0 bg-gradient-to-b from-slate-100 to-slate-50 dark:from-slate-900 dark:to-slate-800 border-r-2 border-slate-300 dark:border-slate-700 shadow-lg overflow-y-auto sticky top-16 h-[calc(100vh-4rem)]">
           <div className="p-6 space-y-6">
             {/* Logo and Title */}
             <div className="text-center pb-6 border-b border-border">
