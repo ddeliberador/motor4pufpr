@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Database, Network, BarChart3, Lightbulb, Target, TrendingUp, AlertTriangle } from "lucide-react";
+import IntegratedBasesPanel from "@/components/IntegratedBasesPanel";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import UfprLogo from "@/components/UfprLogo";
@@ -39,6 +40,9 @@ const CamadaAusente = () => {
         </div>
       </section>
 
+      {/* Bases Públicas Integradas - dinâmico */}
+      <IntegratedBasesPanel />
+
       {/* O Desafio Estrutural - com cards interativos */}
       <section className="section-spacing">
         <div className="container-wide">
@@ -48,9 +52,7 @@ const CamadaAusente = () => {
           <p className="text-lg text-muted-foreground text-center max-w-2xl mx-auto mb-12">
             O Brasil tem dados. Mas não tem coordenação.
           </p>
-          
           <ChallengeCards />
-          
           <div className="highlight-box max-w-3xl mx-auto mt-12">
             <p className="text-lg text-foreground font-medium text-center">
               O problema central não é ausência de política.<br />
