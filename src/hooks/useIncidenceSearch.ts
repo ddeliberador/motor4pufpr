@@ -1,10 +1,9 @@
 /**
  * MOTOR 4P UFPR - useIncidenceSearch Hook
- * Hook com sistema profissional de integração, cache e fallback
+ * Hook personalizado para busca de incidência com fallback para dados mock
  */
 import { useState, useCallback } from 'react';
-import { IncidenceResult } from '@/lib/api';
-import { apiIntegrator } from '@/lib/apiIntegrator';
+import { api, SearchResponse, IncidenceResult, isBackendAvailable } from '@/lib/api';
 
 interface UseIncidenceSearchOptions {
   includeInternational?: boolean;
@@ -20,7 +19,6 @@ interface UseIncidenceSearchReturn {
   error: string | null;
   isUsingMock: boolean;
   backendAvailable: boolean;
-  dataSource?: 'api' | 'cache' | 'mock';
 }
 
 export function useIncidenceSearch(
@@ -31,7 +29,6 @@ export function useIncidenceSearch(
   const [error, setError] = useState<string | null>(null);
   const [isUsingMock, setIsUsingMock] = useState(false);
   const [backendAvailable, setBackendAvailable] = useState(true);
-  const [dataSource, setDataSource] = useState<'api' | 'cache' | 'mock'>('api');
 
   const {
     includeInternational = true,
@@ -45,37 +42,52 @@ export function useIncidenceSearch(
 
     setIsLoading(true);
     setError(null);
+    setIsUsingMock(false);
 
     try {
-      // Usa o integrador profissional com cache e retry
-      const result = await apiIntegrator.searchWithFallback(query, {
-        includeInternational,
-        includePapers,
-        limit,
-      });
+      // Verifica se o backend está disponível
+      const available = await isBackendAvailable();
+      setBackendAvailable(available);
 
-      setResults(result.data);
-      setDataSource(result.source);
-      setIsUsingMock(result.source === 'mock');
-      setBackendAvailable(result.source !== 'mock');
+      if (available) {
+        // Usa API real
+        const response: SearchResponse = await api.searchIncidence(query, {
+          includeInternational,
+          includePapers,
+          limit,
+        });
 
-      if (result.fromCache) {
-        console.info('✅ Dados carregados do cache');
-      } else if (result.source === 'api') {
-        console.info('✅ Dados carregados da API real');
+        if (response.success && response.data) {
+          setResults(response.data);
+        } else {
+          throw new Error(response.error || 'Erro desconhecido');
+        }
+      } else if (useMockOnError) {
+        // Fallback para dados mock
+        console.warn('Backend não disponível, usando dados simulados');
+        setIsUsingMock(true);
+        const mockData = generateMockResults(query);
+        setResults(mockData);
       } else {
-        console.warn('⚠️ Usando dados simulados');
+        throw new Error('Backend não disponível');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar dados';
       console.error('Search error:', errorMessage);
-      setError(errorMessage);
-      setIsUsingMock(true);
-      setBackendAvailable(false);
+
+      if (useMockOnError) {
+        // Fallback para dados mock em caso de erro
+        console.warn('Erro na API, usando dados simulados');
+        setIsUsingMock(true);
+        const mockData = generateMockResults(query);
+        setResults(mockData);
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [includeInternational, includePapers, limit]);
+  }, [includeInternational, includePapers, limit, useMockOnError]);
 
   return {
     search,
@@ -84,7 +96,6 @@ export function useIncidenceSearch(
     error,
     isUsingMock,
     backendAvailable,
-    dataSource,
   };
 }
 
@@ -120,18 +131,31 @@ function generateMockResults(query: string): IncidenceResult {
       confidence: 0.75,
     },
     scientific: {
-      research_groups: Array.from({ length: Math.min(baseGroups, 50) }, (_, i) => ({
-        id: `mock_${i + 1}`,
-        name: `Grupo de Pesquisa ${i + 1} em ${query}`,
-        institution: ['Universidade de São Paulo', 'UNICAMP', 'UFRJ', 'UFMG', 'UFRGS', 'UFPR'][i % 6],
-        institution_acronym: ['USP', 'UNICAMP', 'UFRJ', 'UFMG', 'UFRGS', 'UFPR'][i % 6],
-        state: ['SP', 'SP', 'RJ', 'MG', 'RS', 'PR'][i % 6],
-        area: ['Engenharia de Materiais', 'Química', 'Física', 'Engenharia Elétrica'][i % 4],
-        researchers_count: 10 + (i % 15),
-        students_count: 15 + (i % 25),
-        international_collaboration: i % 3 === 0 ? 'Parceria Internacional' : undefined,
-        source: 'cnpq',
-      })),
+      research_groups: [
+        {
+          id: 'mock_1',
+          name: `Grupo de Pesquisa em ${query}`,
+          institution: 'Universidade de São Paulo',
+          institution_acronym: 'USP',
+          state: 'SP',
+          area: 'Engenharia de Materiais',
+          researchers_count: 15,
+          students_count: 20,
+          international_collaboration: 'Parceria com MIT',
+          source: 'cnpq',
+        },
+        {
+          id: 'mock_2',
+          name: `Laboratório de ${query}`,
+          institution: 'Universidade Estadual de Campinas',
+          institution_acronym: 'UNICAMP',
+          state: 'SP',
+          area: 'Química',
+          researchers_count: 12,
+          students_count: 18,
+          source: 'cnpq',
+        },
+      ],
       papers: [],
       total_groups: baseGroups,
       total_papers: Math.floor(baseGroups * 5),
@@ -140,20 +164,22 @@ function generateMockResults(query: string): IncidenceResult {
       by_institution: { USP: 15, UNICAMP: 12, UFRJ: 10 },
     },
     technological: {
-      patents: Array.from({ length: Math.min(basePatents, 50) }, (_, i) => ({
-        id: `BR10202400${String(i + 1).padStart(4, '0')}`,
-        title: `Processo de ${query} - Variação ${i + 1}`,
-        applicants: [['USP', 'Petrobras', 'Empresa Nacional S.A.', 'UNICAMP', 'UFRJ'][i % 5]],
-        inventors: [`Inventor ${i + 1}`, `Inventor ${i + 2}`],
-        filing_date: `2024-0${(i % 9) + 1}-15`,
-        ipc_codes: ['H01M', 'C01B', 'H01G'][i % 3] ? [[['H01M', 'C01B', 'H01G'][i % 3]]] : [],
-        cpc_codes: [],
-        status: ['Publicado', 'Em análise', 'Concedido'][i % 3],
-        citations_count: i % 10,
-        cited_by_count: i % 5,
-        country: 'BR',
-        source: 'inpi',
-      })),
+      patents: [
+        {
+          id: 'BR102024001234',
+          title: `Processo de ${query}`,
+          applicants: ['Empresa Nacional S.A.'],
+          inventors: ['Inventor 1', 'Inventor 2'],
+          filing_date: '2024-03-15',
+          ipc_codes: ['H01M'],
+          cpc_codes: [],
+          status: 'Publicado',
+          citations_count: 5,
+          cited_by_count: 3,
+          country: 'BR',
+          source: 'inpi',
+        },
+      ],
       total_patents: basePatents,
       patents_by_year: { '2024': 50, '2023': 80, '2022': 70 },
       patents_by_applicant_type: {},

@@ -324,7 +324,7 @@ const MvpEngine = () => {
           )}
 
           {/* Results Container */}
-          <div className="max-w-6xl mx-auto p-6">
+          <div className="max-w-6xl mx-auto p-3 md:p-6">
             {/* Search Results */}
             {hasSearched && (
               <div className="space-y-8">
@@ -339,95 +339,90 @@ const MvpEngine = () => {
                     <p className="text-muted-foreground">Consultando CNPq, INPI, Finep e bases internacionais</p>
                   </div>
                 ) : searchResults ? (
-                  <div className="space-y-8 animate-fade-in">
+                  <div className="space-y-6 md:space-y-8 animate-fade-in">
                     {/* Results Header */}
-                    <div className="bg-card border border-border rounded-xl p-6">
+                    <div className="bg-card border border-border rounded-xl p-4 md:p-6">
                       <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Resultados para</p>
-                      <h2 className="text-3xl font-bold text-foreground font-serif mb-4">
+                      <h2 className="text-xl md:text-3xl font-bold text-foreground font-serif mb-3 md:mb-4">
                         "{searchResults.query}"
                       </h2>
                       
                       {/* Stats Overview - 5 columns now */}
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                        <div className="bg-muted rounded-lg p-4">
-                          <Microscope className="w-6 h-6 mx-auto mb-2 text-primary" />
-                          <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.groups}</p>
-                          <p className="text-xs text-muted-foreground">Grupos de Pesquisa</p>
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
+                        <div className="bg-muted rounded-lg p-3 md:p-4">
+                          <Microscope className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1.5 md:mb-2 text-primary" />
+                          <p className="text-lg md:text-2xl font-bold mb-0.5 md:mb-1 text-foreground">{searchResults.stats.groups}</p>
+                          <p className="text-[10px] md:text-xs text-muted-foreground">Grupos de Pesquisa</p>
                         </div>
-                    <div className="bg-card border border-border rounded-2xl p-5 opacity-0 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-                      <FileText className="w-7 h-7 mx-auto mb-2 text-primary" />
-                      <p className="text-3xl md:text-4xl font-bold mb-1 text-foreground">{searchResults.stats.patents}</p>
-                      <p className="text-xs text-muted-foreground">Patentes</p>
+                        <div className="bg-muted rounded-lg p-3 md:p-4">
+                          <FlaskConical className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1.5 md:mb-2 text-primary" />
+                          <p className="text-lg md:text-2xl font-bold mb-0.5 md:mb-1 text-foreground">{searchResults.stats.patents}</p>
+                          <p className="text-[10px] md:text-xs text-muted-foreground">Patentes</p>
                         </div>
-                        <div className="bg-muted rounded-lg p-4">
-                          <FlaskConical className="w-6 h-6 mx-auto mb-2 text-primary" />
-                          <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.patents}</p>
-                          <p className="text-xs text-muted-foreground">Patentes</p>
+                        <div className="bg-muted rounded-lg p-3 md:p-4">
+                          <Landmark className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1.5 md:mb-2 text-accent" />
+                          <p className="text-lg md:text-2xl font-bold mb-0.5 md:mb-1 text-foreground">{searchResults.stats.instruments}</p>
+                          <p className="text-[10px] md:text-xs text-muted-foreground">Instrumentos</p>
                         </div>
-                        <div className="bg-muted rounded-lg p-4">
-                          <Landmark className="w-6 h-6 mx-auto mb-2 text-accent" />
-                          <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.instruments}</p>
-                          <p className="text-xs text-muted-foreground">Instrumentos</p>
+                        <div className="bg-muted rounded-lg p-3 md:p-4">
+                          <Factory className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1.5 md:mb-2 text-primary" />
+                          <p className="text-lg md:text-2xl font-bold mb-0.5 md:mb-1 text-foreground">{searchResults.stats.companies}</p>
+                          <p className="text-[10px] md:text-xs text-muted-foreground">Empresas</p>
                         </div>
-                        <div className="bg-muted rounded-lg p-4">
-                          <Factory className="w-6 h-6 mx-auto mb-2 text-primary" />
-                          <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.companies}</p>
-                          <p className="text-xs text-muted-foreground">Empresas</p>
-                        </div>
-                        <div className="bg-muted rounded-lg p-4">
-                          <Globe className="w-6 h-6 mx-auto mb-2 text-primary" />
-                          <p className="text-2xl font-bold mb-1 text-foreground">{searchResults.stats.international}</p>
-                          <p className="text-xs text-muted-foreground">Países</p>
+                        <div className="bg-muted rounded-lg p-3 md:p-4 col-span-2 md:col-span-1">
+                          <Globe className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1.5 md:mb-2 text-primary" />
+                          <p className="text-lg md:text-2xl font-bold mb-0.5 md:mb-1 text-foreground">{searchResults.stats.international}</p>
+                          <p className="text-[10px] md:text-xs text-muted-foreground">Países</p>
                         </div>
                       </div>
                     </div>
 
                 {/* Network Graph Visualization */}
                 <div>
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
-                      <Network className="w-8 h-8 text-white" />
+                  <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
+                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                      <Network className="w-6 h-6 md:w-8 md:h-8 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-2xl md:text-3xl font-bold text-foreground font-serif">
+                      <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground font-serif">
                         Grafo de Incidência
                       </h3>
-                      <p className="text-muted-foreground">Visualização interativa das conexões</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">Visualização interativa das conexões</p>
                     </div>
                   </div>
                   <NetworkGraph searchResults={searchResults} onNodeSelect={handleNodeSelect} />
                 </div>
 
                 {/* Flow Visualization */}
-                <div className="relative py-8">
+                <div className="relative py-6 md:py-8">
                   <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-border to-transparent" />
                 </div>
 
                 {/* Scientific Incidence */}
                 <div>
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="w-16 h-16 rounded-2xl bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
-                      <Microscope className="w-8 h-8 text-white" />
+                  <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
+                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                      <Microscope className="w-6 h-6 md:w-8 md:h-8 text-white" />
                     </div>
                     <div className="flex-grow">
-                      <h3 className="text-2xl md:text-3xl font-bold text-foreground font-serif">
+                      <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground font-serif">
                         Incidência Científica
                       </h3>
-                      <p className="text-muted-foreground">Diretório de Grupos de Pesquisa — CNPq</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">Diretório de Grupos de Pesquisa — CNPq</p>
                     </div>
                     <button
                       onClick={() => setExpandedSections(prev => ({ ...prev, scientific: !prev.scientific }))}
-                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                      className="px-3 py-1.5 md:px-4 md:py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-xs md:text-sm"
                     >
                       {expandedSections.scientific ? 'Recolher' : `Ver ${searchResults.stats.groups} Grupos`}
                     </button>
                   </div>
                   
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                     {(expandedSections.scientific ? searchResults.scientific : searchResults.scientific.slice(0, 6)).map((group, index) => (
                       <div 
                         key={index} 
-                        className="group bg-card border border-border rounded-xl p-5 hover:border-primary/30 hover:shadow-lg transition-all duration-300 opacity-0 animate-fade-in cursor-pointer"
+                        className="group bg-card border border-border rounded-xl p-4 md:p-5 hover:border-primary/30 hover:shadow-lg transition-all duration-300 opacity-0 animate-fade-in cursor-pointer"
                         style={{ animationDelay: `${0.6 + index * 0.1}s` }}
                         onClick={() => handleNodeSelect({ type: 'scientific', data: group })}
                       >
@@ -471,38 +466,38 @@ const MvpEngine = () => {
 
                 {/* Technological Incidence */}
                 <div>
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="w-16 h-16 rounded-2xl bg-purple-500 flex items-center justify-center shadow-lg shadow-purple-500/25">
-                      <Cpu className="w-8 h-8 text-white" />
+                  <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
+                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-purple-500 flex items-center justify-center shadow-lg shadow-purple-500/25">
+                      <Cpu className="w-6 h-6 md:w-8 md:h-8 text-white" />
                     </div>
                     <div className="flex-grow">
-                      <h3 className="text-2xl md:text-3xl font-bold text-foreground font-serif">
+                      <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground font-serif">
                         Incidência Tecnológica
                       </h3>
-                      <p className="text-muted-foreground">Base de Patentes — INPI</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">Base de Patentes — INPI</p>
                     </div>
                     <button
                       onClick={() => setExpandedSections(prev => ({ ...prev, technological: !prev.technological }))}
-                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                      className="px-3 py-1.5 md:px-4 md:py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-xs md:text-sm"
                     >
                       {expandedSections.technological ? 'Recolher' : `Ver ${searchResults.stats.patents} Patentes`}
                     </button>
                   </div>
                   
-                  <div className="space-y-3">
+                  <div className="space-y-2 md:space-y-3">
                     {(expandedSections.technological ? searchResults.technological : searchResults.technological.slice(0, 5)).map((patent, index) => (
                       <div 
                         key={index} 
-                        className="group bg-card border border-border rounded-xl p-5 hover:border-primary/30 hover:shadow-lg transition-all duration-300 opacity-0 animate-fade-in cursor-pointer"
+                        className="group bg-card border border-border rounded-xl p-4 md:p-5 hover:border-primary/30 hover:shadow-lg transition-all duration-300 opacity-0 animate-fade-in cursor-pointer"
                         style={{ animationDelay: `${1.2 + index * 0.1}s` }}
                         onClick={() => handleNodeSelect({ type: 'technological', data: patent })}
                       >
-                        <div className="flex items-start gap-4">
-                          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <FlaskConical className="w-6 h-6 text-primary" />
+                        <div className="flex items-start gap-3 md:gap-4">
+                          <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <FlaskConical className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                           </div>
                           <div className="flex-grow min-w-0">
-                            <div className="flex items-start justify-between gap-4">
+                            <div className="flex items-start justify-between gap-3 md:gap-4">
                               <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">
                                 {patent.title}
                               </h4>
