@@ -1,8 +1,11 @@
 import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Search, Microscope, Cpu, Building2, CheckCircle, Database, FileText, Landmark, Users, FlaskConical, Briefcase, ChevronRight, Globe, Factory, Download, Network, TrendingUp, AlertTriangle, Target, Link2, Info, MapPin } from "lucide-react";
+import { ArrowLeft, Search, Microscope, Cpu, Building2, CheckCircle, Database, FileText, Landmark, Users, FlaskConical, Briefcase, ChevronRight, Globe, Factory, Download, Network, TrendingUp, AlertTriangle, Target, Link2, Info, MapPin, BookOpen } from "lucide-react";
 import { useIncidenceSearch } from "@/hooks/useIncidenceSearch";
 import ApiStatusIndicator from "@/components/ApiStatusIndicator";
+import OntologyPreview from "@/components/OntologyPreview";
+import MethodologyModal from "@/components/MethodologyModal";
+import ExamplesSection from "@/components/ExamplesSection";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import UfprLogo from "@/components/UfprLogo";
@@ -28,6 +31,7 @@ const MvpEngine = () => {
   const [selectedNode, setSelectedNode] = useState<NodeDetailData | null>(null);
   const [detailPanelOpen, setDetailPanelOpen] = useState(false);
   const [activeView, setActiveView] = useState<"incidencia" | "atlas">("incidencia");
+  const [methodologyModalOpen, setMethodologyModalOpen] = useState(false);
 
   // Hook para busca com API real
   const {
@@ -189,9 +193,13 @@ const MvpEngine = () => {
             <TabsContent value="incidencia" className="mt-0">
               <div className="container-narrow mx-auto">
                 <div className="bg-card rounded-xl border border-border p-8 max-w-xl mx-auto shadow-lg">
-                  <label className="block text-sm font-medium text-muted-foreground mb-3">
-                    Entrada do pesquisador
-                  </label>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-sm font-medium text-muted-foreground">
+                      Entrada do pesquisador
+                    </label>
+                    <ApiStatusIndicator />
+                  </div>
+                  
                   <form onSubmit={handleSearch}>
                     <div className="relative">
                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -211,20 +219,24 @@ const MvpEngine = () => {
                       {isSearching ? "Processando..." : "Buscar no Motor"}
                     </button>
                   </form>
-                  <div className="mt-6">
-                    <p className="text-xs text-muted-foreground mb-2">Exemplos de pesquisa:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {["Baterias de sódio", "IA industrial", "Biomateriais"].map((example) => (
-                        <button
-                          key={example}
-                          onClick={() => handleExampleClick(example.toLowerCase())}
-                          className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded-full text-sm hover:bg-secondary/80 transition-colors cursor-pointer"
-                        >
-                          {example}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  
+                  {/* Preview de Ontologia */}
+                  <OntologyPreview query={searchQuery} />
+                  
+                  {/* Seção de Exemplos Dinâmica */}
+                  <ExamplesSection 
+                    onExampleClick={handleExampleClick} 
+                    disabled={isSearching}
+                  />
+                  
+                  {/* Link para Metodologia */}
+                  <button
+                    onClick={() => setMethodologyModalOpen(true)}
+                    className="w-full mt-4 flex items-center justify-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    Ver Metodologia dos Indicadores
+                  </button>
                 </div>
               </div>
             </TabsContent>
@@ -1022,6 +1034,12 @@ const MvpEngine = () => {
         open={detailPanelOpen} 
         onClose={() => setDetailPanelOpen(false)} 
         nodeData={selectedNode} 
+      />
+      
+      {/* Methodology Modal */}
+      <MethodologyModal 
+        open={methodologyModalOpen} 
+        onClose={() => setMethodologyModalOpen(false)} 
       />
     </div>
   );
