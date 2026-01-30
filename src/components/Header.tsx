@@ -8,9 +8,7 @@ const Header = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  const navItems = [
-    { path: "/", label: "Conceito" },
-  ];
+
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass-card">
@@ -29,22 +27,7 @@ const Header = () => {
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive(item.path)
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
+
 
           {/* CTA Button */}
           <div className="hidden md:flex items-center gap-4">
@@ -74,20 +57,6 @@ const Header = () => {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-border">
             <div className="flex flex-col gap-2">
-              {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    isActive(item.path)
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
               <Link
                 to="/mvp"
                 onClick={() => setMobileMenuOpen(false)}
