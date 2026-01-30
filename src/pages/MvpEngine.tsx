@@ -197,7 +197,10 @@ const MvpEngine = () => {
                     <label className="block text-sm font-medium text-muted-foreground">
                       Entrada do pesquisador
                     </label>
-                    <ApiStatusIndicator />
+                    <ApiStatusIndicator 
+                      isUsingMock={isUsingMock}
+                      backendAvailable={backendAvailable}
+                    />
                   </div>
                   
                   <form onSubmit={handleSearch}>
