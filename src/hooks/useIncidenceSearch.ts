@@ -425,5 +425,6 @@ function generateMockResults(query: string): IncidenceResult {
   result.scholarships.all = [...result.scholarships.brazil, ...result.scholarships.international];
   
   return result;
+}
 
 export default useIncidenceSearch;
