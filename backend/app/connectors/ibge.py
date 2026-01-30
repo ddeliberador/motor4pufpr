@@ -18,6 +18,25 @@ logger = logging.getLogger(__name__)
 
 
 class IBGEConnector(BaseConnector):
+        async def get_sidra_table(self, table_id: str, params: Optional[dict] = None) -> Any:
+            """
+            Busca dados de uma tabela do SIDRA (IBGE)
+            Args:
+                table_id: ID da tabela SIDRA (ex: '3653' para produção industrial)
+                params: Parâmetros opcionais (ex: { 'periodo': '202401', 'localidades': 'PR' })
+            Returns:
+                Dados da tabela SIDRA em formato JSON
+            """
+            try:
+                url = f"https://sidra.ibge.gov.br/geratabela"
+                sidra_params = {"format": "json", "name": f"t{table_id}"}
+                if params:
+                    sidra_params.update(params)
+                data = await self.get(url, params=sidra_params, use_cache=True)
+                return data
+            except Exception as e:
+                logger.warning(f"Erro ao buscar tabela SIDRA {table_id}: {e}")
+                return None
     """
     Conector para APIs do IBGE
 

@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 from app.core.config import settings
-from app.api.routes import health_router, incidence_router
+from app.api.routes import health_router, incidence_router, productive_demand_router
 
 # Configura logging
 logging.basicConfig(
@@ -79,6 +79,7 @@ app.add_middleware(
 # Registra rotas
 app.include_router(health_router, prefix=settings.API_PREFIX)
 app.include_router(incidence_router, prefix=settings.API_PREFIX)
+app.include_router(productive_demand_router, prefix=settings.API_PREFIX)
 
 
 @app.get("/")
