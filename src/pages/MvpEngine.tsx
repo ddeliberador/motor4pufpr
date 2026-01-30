@@ -1018,15 +1018,14 @@ const MvpEngine = () => {
       </div>
 
       <Footer />
-    </div>
       
-    {/* Node Detail Panel - Outside main container for proper z-index */}
-    <NodeDetailPanel 
-      open={detailPanelOpen} 
-      onClose={() => setDetailPanelOpen(false)} 
-      nodeData={selectedNode} 
-    />
-    </>
+      {/* Node Detail Panel - Outside main container for proper z-index */}
+      <NodeDetailPanel 
+        open={detailPanelOpen} 
+        onClose={() => setDetailPanelOpen(false)} 
+        nodeData={selectedNode} 
+      />
+    </div>
   );
 };
 
