@@ -27,6 +27,13 @@ const MvpEngine = () => {
   const [selectedNode, setSelectedNode] = useState<NodeDetailData | null>(null);
   const [detailPanelOpen, setDetailPanelOpen] = useState(false);
   const [showApiStatus, setShowApiStatus] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({
+    scientific: false,
+    technological: false,
+    institutional: false,
+    companies: false,
+    international: false,
+  });
 
   // Hook para busca com API real
   const {
@@ -546,16 +553,22 @@ const MvpEngine = () => {
                     <div className="w-16 h-16 rounded-2xl bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
                       <Microscope className="w-8 h-8 text-white" />
                     </div>
-                    <div>
+                    <div className="flex-grow">
                       <h3 className="text-2xl md:text-3xl font-bold text-foreground font-serif">
                         Incidência Científica
                       </h3>
                       <p className="text-muted-foreground">Diretório de Grupos de Pesquisa — CNPq</p>
                     </div>
+                    <button
+                      onClick={() => setExpandedSections(prev => ({ ...prev, scientific: !prev.scientific }))}
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                    >
+                      {expandedSections.scientific ? 'Recolher' : `Ver ${searchResults.stats.groups} Grupos`}
+                    </button>
                   </div>
                   
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {searchResults.scientific.map((group, index) => (
+                    {(expandedSections.scientific ? searchResults.scientific : searchResults.scientific.slice(0, 6)).map((group, index) => (
                       <div 
                         key={index} 
                         className="group bg-card border border-border rounded-xl p-5 hover:border-primary/30 hover:shadow-lg transition-all duration-300 opacity-0 animate-fade-in cursor-pointer"
@@ -583,11 +596,13 @@ const MvpEngine = () => {
                         )}
                       </div>
                     ))}
-                    <div className="bg-muted/50 border border-border border-dashed rounded-xl p-5 flex items-center justify-center">
-                      <p className="text-sm text-muted-foreground font-medium">
-                        + {searchResults.stats.groups - searchResults.scientific.length} grupos
-                      </p>
-                    </div>
+                    {!expandedSections.scientific && searchResults.scientific.length > 6 && (
+                      <div className="bg-muted/50 border border-border border-dashed rounded-xl p-5 flex items-center justify-center">
+                        <p className="text-sm text-muted-foreground font-medium">
+                          + {searchResults.scientific.length - 6} grupos
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -604,16 +619,22 @@ const MvpEngine = () => {
                     <div className="w-16 h-16 rounded-2xl bg-purple-500 flex items-center justify-center shadow-lg shadow-purple-500/25">
                       <Cpu className="w-8 h-8 text-white" />
                     </div>
-                    <div>
+                    <div className="flex-grow">
                       <h3 className="text-2xl md:text-3xl font-bold text-foreground font-serif">
                         Incidência Tecnológica
                       </h3>
                       <p className="text-muted-foreground">Base de Patentes — INPI</p>
                     </div>
+                    <button
+                      onClick={() => setExpandedSections(prev => ({ ...prev, technological: !prev.technological }))}
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                    >
+                      {expandedSections.technological ? 'Recolher' : `Ver ${searchResults.stats.patents} Patentes`}
+                    </button>
                   </div>
                   
                   <div className="space-y-3">
-                    {searchResults.technological.map((patent, index) => (
+                    {(expandedSections.technological ? searchResults.technological : searchResults.technological.slice(0, 5)).map((patent, index) => (
                       <div 
                         key={index} 
                         className="group bg-card border border-border rounded-xl p-5 hover:border-primary/30 hover:shadow-lg transition-all duration-300 opacity-0 animate-fade-in cursor-pointer"
@@ -647,11 +668,13 @@ const MvpEngine = () => {
                         </div>
                       </div>
                     ))}
-                    <div className="bg-muted/50 border border-border border-dashed rounded-xl p-5 text-center">
-                      <p className="text-sm text-muted-foreground font-medium">
-                        + {searchResults.stats.patents - searchResults.technological.length} patentes relacionadas
-                      </p>
-                    </div>
+                    {!expandedSections.technological && searchResults.technological.length > 5 && (
+                      <div className="bg-muted/50 border border-border border-dashed rounded-xl p-5 text-center">
+                        <p className="text-sm text-muted-foreground font-medium">
+                          + {searchResults.technological.length - 5} patentes relacionadas
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -792,16 +815,22 @@ const MvpEngine = () => {
                     <div className="w-16 h-16 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/25">
                       <Building2 className="w-8 h-8 text-white" />
                     </div>
-                    <div>
+                    <div className="flex-grow">
                       <h3 className="text-2xl md:text-3xl font-bold text-foreground font-serif">
                         Incidência Institucional
                       </h3>
                       <p className="text-muted-foreground">Instrumentos Públicos — Finep, BNDES, Embrapii</p>
                     </div>
+                    <button
+                      onClick={() => setExpandedSections(prev => ({ ...prev, institutional: !prev.institutional }))}
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                    >
+                      {expandedSections.institutional ? 'Recolher' : `Ver ${searchResults.stats.instruments} Instrumentos`}
+                    </button>
                   </div>
                   
                   <div className="grid md:grid-cols-3 gap-4">
-                    {searchResults.institutional.map((inst, index) => (
+                    {(expandedSections.institutional ? searchResults.institutional : searchResults.institutional.slice(0, 6)).map((inst, index) => (
                       <div 
                         key={index} 
                         className="group bg-card border border-border rounded-xl p-6 hover:border-accent/30 hover:shadow-lg transition-all duration-300 opacity-0 animate-fade-in cursor-pointer"
@@ -835,6 +864,13 @@ const MvpEngine = () => {
                         </div>
                       </div>
                     ))}
+                    {!expandedSections.institutional && searchResults.institutional.length > 6 && (
+                      <div className="bg-muted/50 border border-border border-dashed rounded-xl p-5 flex items-center justify-center">
+                        <p className="text-sm text-muted-foreground font-medium">
+                          + {searchResults.institutional.length - 6} instrumentos
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
