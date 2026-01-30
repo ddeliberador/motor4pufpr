@@ -89,11 +89,13 @@ const MvpEngine = () => {
   const handleNodeSelect = useCallback((nodeData: { type: string; data: Record<string, unknown> } | null) => {
     if (nodeData) {
       console.log('Nó selecionado:', nodeData);
+      alert(`Clicou em: ${nodeData.type}`);
       setSelectedNode(nodeData as NodeDetailData);
       setDetailPanelOpen(true);
       console.log('Painel aberto:', true);
+      console.log('Estado detailPanelOpen:', detailPanelOpen);
     }
-  }, []);
+  }, [detailPanelOpen]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
