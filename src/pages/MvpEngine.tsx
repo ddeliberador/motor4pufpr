@@ -110,31 +110,16 @@ const MvpEngine = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-muted/30">
-      {/* Mobile Header */}
-      <div className="md:hidden bg-card/80 backdrop-blur-sm border-b border-border p-4 flex items-center justify-between sticky top-0 z-20">
-        <div className="flex items-center gap-3">
-          <UfprLogo className="w-8 h-8 opacity-90" />
-          <div>
-            <h1 className="text-lg font-bold text-foreground">MVP Engine</h1>
-            <p className="text-xs text-muted-foreground">Primeira Camada da Tradução</p>
-          </div>
-        </div>
-        <Link
-          to="/"
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </Link>
-      </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header />
 
       {/* Main Layout: Sidebar + Content */}
-      <div className="flex min-h-screen">
+      <div className="flex-1 flex pt-16">
         {/* Fixed Sidebar */}
-        <aside className="w-80 fixed left-0 top-0 bottom-0 bg-gradient-to-b from-card via-card to-muted/30 border-r border-border shadow-xl overflow-y-auto z-10 hidden md:block">
+        <aside className="w-80 fixed left-0 top-16 bottom-0 bg-card border-r border-border overflow-y-auto">
           <div className="p-6 space-y-6">
             {/* Logo and Title */}
-            <div className="text-center pb-4 border-b border-border/50">
+            <div className="text-center pb-6 border-b border-border">
               <UfprLogo className="w-16 h-16 mx-auto mb-3 opacity-90" />
               <h1 className="text-2xl font-bold text-foreground mb-1">
                 MVP Engine
@@ -179,7 +164,7 @@ const MvpEngine = () => {
                 <button
                   type="submit"
                   disabled={isSearching || !searchQuery.trim()}
-                  className="w-full mt-3 bg-primary text-primary-foreground py-3 rounded-lg font-semibold text-sm hover:bg-primary/90 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                  className="w-full mt-3 bg-primary text-primary-foreground py-3 rounded-lg font-semibold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSearching ? "Processando..." : "Buscar"}
                 </button>
@@ -190,7 +175,7 @@ const MvpEngine = () => {
             <div className="space-y-3">
               <button
                 onClick={() => setShowApiStatus(!showApiStatus)}
-                className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-muted to-muted/50 hover:from-muted/80 hover:to-muted/30 rounded-lg text-sm font-medium transition-all shadow-sm hover:shadow-md"
+                className="w-full flex items-center justify-between px-4 py-3 bg-muted hover:bg-muted/80 rounded-lg text-sm font-medium transition-colors"
               >
                 <span className="flex items-center gap-2">
                   <Activity className="w-4 h-4" />
@@ -201,11 +186,11 @@ const MvpEngine = () => {
             </div>
 
             {/* Info */}
-            <div className="pt-6 border-t border-border/50 text-xs text-muted-foreground">
+            <div className="pt-6 border-t border-border text-xs text-muted-foreground">
               <p className="mb-2">
                 <strong className="text-foreground">Protótipo auditável</strong>
               </p>
-              <p className="leading-relaxed">
+              <p>
                 Baseado em dados públicos reais: CNPq, INPI, Finep, OpenAlex, Comex Stat
               </p>
             </div>
@@ -213,9 +198,9 @@ const MvpEngine = () => {
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 md:ml-80 min-h-screen">
+        <main className="flex-1 ml-80 overflow-y-auto bg-muted/20">
           {showApiStatus && (
-            <div className="bg-card/80 backdrop-blur-sm border-b border-border shadow-sm p-6">
+            <div className="bg-card border-b border-border p-6">
               <div className="max-w-6xl mx-auto">
                 <ApiStatusView />
               </div>
@@ -223,7 +208,7 @@ const MvpEngine = () => {
           )}
 
           {/* Results Container */}
-          <div className="max-w-6xl mx-auto p-4 md:p-8">
+          <div className="max-w-6xl mx-auto p-6">
             {/* Search Results */}
             {hasSearched && (
               <div className="space-y-8">
