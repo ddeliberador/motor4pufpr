@@ -1,10 +1,10 @@
 import React from "react";
-import { Search, Activity, ChevronRight, Zap, Database } from "lucide-react";
-import UfprLogo from "@/components/UfprLogo";
+import { Search, Activity, ChevronRight, Zap, Database, Building2, X } from "lucide-react";
 import ApiStatusIndicator from "@/components/ApiStatusIndicator";
 import ApiStatusView from "@/components/ApiStatusView";
 import IndicatorsCard from "./IndicatorsCard";
 import { Link } from "react-router-dom";
+import type { CnaeCode } from "./CnaeSelectionModal";
 
 interface SidebarProps {
   searchQuery: string;
@@ -21,6 +21,8 @@ interface SidebarProps {
     p2c: { value: number; label: string; description: string };
     cd: { value: number; label: string; description: string };
   };
+  selectedCnaes?: CnaeCode[];
+  onRemoveCnae?: (code: string) => void;
 }
 
 const Sidebar = ({
@@ -33,6 +35,8 @@ const Sidebar = ({
   showApiStatus,
   setShowApiStatus,
   indicators,
+  selectedCnaes = [],
+  onRemoveCnae,
 }: SidebarProps) => {
   return (
     <aside className="w-full md:w-80 flex-shrink-0 bg-card border-r border-border shadow-lg overflow-y-auto md:sticky md:top-16 h-auto md:h-[calc(100vh-4rem)]">
@@ -102,6 +106,49 @@ const Sidebar = ({
             </button>
           </form>
         </div>
+
+        {/* Selected CNAEs Display */}
+        {selectedCnaes.length > 0 && (
+          <div className="space-y-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">
+                  CNAEs Vinculados
+                </span>
+              </div>
+              <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-medium">
+                {selectedCnaes.length}
+              </span>
+            </div>
+            <div className="space-y-2 max-h-40 overflow-y-auto">
+              {selectedCnaes.map(cnae => (
+                <div
+                  key={cnae.code}
+                  className="flex items-start gap-2 p-2 bg-background rounded-lg border border-border group"
+                >
+                  <div className="flex-1 min-w-0">
+                    <span className="font-mono text-xs font-semibold text-primary block">
+                      {cnae.code}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground line-clamp-2">
+                      {cnae.description}
+                    </span>
+                  </div>
+                  {onRemoveCnae && (
+                    <button
+                      onClick={() => onRemoveCnae(cnae.code)}
+                      className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors opacity-0 group-hover:opacity-100"
+                      title="Remover CNAE"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* API Status Section */}
         <div className="space-y-3">
