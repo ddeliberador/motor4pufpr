@@ -145,6 +145,10 @@ const MvpEngine = () => {
     setPendingSearchQuery("");
   };
 
+  const handleRemoveCnae = (code: string) => {
+    setSelectedCnaes(prev => prev.filter(c => c.code !== code));
+  };
+
   const handleDownloadPDF = () => {
     if (searchResults) {
       generateNewspaperPDF(searchResults);
@@ -167,6 +171,8 @@ const MvpEngine = () => {
           showApiStatus={showApiStatus}
           setShowApiStatus={setShowApiStatus}
           indicators={searchResults?.indicators}
+          selectedCnaes={selectedCnaes}
+          onRemoveCnae={handleRemoveCnae}
         />
 
         {/* Main Content Area */}
@@ -216,32 +222,6 @@ const MvpEngine = () => {
                         <StatCard icon={Globe} value={searchResults.stats.international} label="Países" />
                       </div>
 
-                      {/* Selected CNAEs Display */}
-                      {selectedCnaes.length > 0 && (
-                        <div className="mt-6 pt-6 border-t border-border">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Building2 className="w-4 h-4 text-primary" />
-                            <span className="text-sm font-medium text-foreground">
-                              CNAEs Selecionados ({selectedCnaes.length})
-                            </span>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {selectedCnaes.map(cnae => (
-                              <div
-                                key={cnae.code}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-xs"
-                              >
-                                <span className="font-mono font-medium text-primary">{cnae.code}</span>
-                                <span className="text-muted-foreground hidden sm:inline">
-                                  {cnae.description.length > 40 
-                                    ? cnae.description.substring(0, 40) + '...' 
-                                    : cnae.description}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
 
                     {/* Network Graph Visualization */}
