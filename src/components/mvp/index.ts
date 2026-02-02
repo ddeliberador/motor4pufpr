@@ -2,3 +2,5 @@ export { default as Sidebar } from './Sidebar';
 export { default as SectionCard } from './SectionCard';
 export { default as StatCard } from './StatCard';
 export { default as IndicatorsCard } from './IndicatorsCard';
+export { default as CnaeSelectionModal } from './CnaeSelectionModal';
+export type { CnaeCode } from './CnaeSelectionModal';
