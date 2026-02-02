@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Search, Microscope, FileText, Landmark, Globe, Factory, Download, Network, TrendingUp, AlertTriangle, Target, Link2, Info, CheckCircle, Database, Users, FlaskConical, Briefcase, ChevronRight, ChevronDown, Cpu, Building2, Activity, Zap, ExternalLink, GraduationCap, BookOpen, Code2 } from "lucide-react";
 import { useIncidenceSearch } from "@/hooks/useIncidenceSearch";
+import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import ApiStatusIndicator from "@/components/ApiStatusIndicator";
 import ApiStatusView from "@/components/ApiStatusView";
 import Header from "@/components/Header";
@@ -10,7 +11,7 @@ import { generateNewspaperPDF } from "@/lib/generatePdf";
 import NetworkGraph from "@/components/NetworkGraph";
 import NodeDetailPanel, { type NodeDetailData } from "@/components/NodeDetailPanel";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Sidebar, StatCard, IndicatorsCard } from "@/components/mvp";
+import { Sidebar, StatCard, IndicatorsCard, CnaeSelectionModal, type CnaeCode } from "@/components/mvp";
 
 // Extended mock data with companies and international incidences
 // Indicator types
@@ -38,6 +39,12 @@ const MvpEngine = () => {
     github: false,
   });
 
+  // CNAE selection state
+  const [showCnaeModal, setShowCnaeModal] = useState(false);
+  const [suggestedCnaes, setSuggestedCnaes] = useState<CnaeCode[]>([]);
+  const [selectedCnaes, setSelectedCnaes] = useState<CnaeCode[]>([]);
+  const [pendingSearchQuery, setPendingSearchQuery] = useState("");
+
   // Hook para busca com API real
   const {
     search: apiSearch,
@@ -46,6 +53,9 @@ const MvpEngine = () => {
     isUsingMock,
     backendAvailable,
   } = useIncidenceSearch();
+
+  // Hook para busca de CNAEs
+  const { searchCnaes, isLoading: isLoadingCnaes } = useCnaeSearch();
   
   // Transforma resultados da API para o formato local
   const searchResults = apiResults ? {
@@ -104,10 +114,35 @@ const MvpEngine = () => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
 
+    // Primeiro busca CNAEs oficiais relacionados
+    setPendingSearchQuery(searchQuery);
+    const cnaes = await searchCnaes(searchQuery);
+    
+    if (cnaes.length > 0) {
+      // Se encontrou CNAEs, mostra modal para seleção
+      setSuggestedCnaes(cnaes);
+      setShowCnaeModal(true);
+    } else {
+      // Se não encontrou CNAEs, prossegue direto com a busca
+      setHasSearched(true);
+      await apiSearch(searchQuery);
+    }
+  };
+
+  const handleCnaeConfirm = async (selected: CnaeCode[]) => {
+    setSelectedCnaes(selected);
+    setShowCnaeModal(false);
     setHasSearched(true);
     
-    // Usa a API real através do hook
-    await apiSearch(searchQuery);
+    // Prossegue com a busca usando os CNAEs selecionados
+    // Os CNAEs selecionados podem ser usados para refinar a busca
+    await apiSearch(pendingSearchQuery);
+  };
+
+  const handleCnaeCancel = () => {
+    setShowCnaeModal(false);
+    setSuggestedCnaes([]);
+    setPendingSearchQuery("");
   };
 
   const handleDownloadPDF = () => {
@@ -180,6 +215,33 @@ const MvpEngine = () => {
                         <StatCard icon={Factory} value={searchResults.stats.companies} label="Empresas" />
                         <StatCard icon={Globe} value={searchResults.stats.international} label="Países" />
                       </div>
+
+                      {/* Selected CNAEs Display */}
+                      {selectedCnaes.length > 0 && (
+                        <div className="mt-6 pt-6 border-t border-border">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Building2 className="w-4 h-4 text-primary" />
+                            <span className="text-sm font-medium text-foreground">
+                              CNAEs Selecionados ({selectedCnaes.length})
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedCnaes.map(cnae => (
+                              <div
+                                key={cnae.code}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-xs"
+                              >
+                                <span className="font-mono font-medium text-primary">{cnae.code}</span>
+                                <span className="text-muted-foreground hidden sm:inline">
+                                  {cnae.description.length > 40 
+                                    ? cnae.description.substring(0, 40) + '...' 
+                                    : cnae.description}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Network Graph Visualization */}
@@ -828,6 +890,16 @@ const MvpEngine = () => {
         open={detailPanelOpen} 
         onClose={() => setDetailPanelOpen(false)} 
         nodeData={selectedNode} 
+      />
+
+      {/* CNAE Selection Modal */}
+      <CnaeSelectionModal
+        isOpen={showCnaeModal}
+        onClose={handleCnaeCancel}
+        onConfirm={handleCnaeConfirm}
+        suggestedCnaes={suggestedCnaes}
+        searchQuery={pendingSearchQuery}
+        isLoading={isLoadingCnaes}
       />
     </div>
   );
