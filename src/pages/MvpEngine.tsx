@@ -12,6 +12,7 @@ import NetworkGraph from "@/components/NetworkGraph";
 import NodeDetailPanel, { type NodeDetailData } from "@/components/NodeDetailPanel";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sidebar, StatCard, IndicatorsCard, CnaeSelectionModal, type CnaeCode } from "@/components/mvp";
+import AIAnalysisPanel from "@/components/mvp/AIAnalysisPanel";
 
 // Extended mock data with companies and international incidences
 // Indicator types
@@ -223,6 +224,13 @@ const MvpEngine = () => {
                       </div>
 
                     </div>
+
+                    {/* AI Analysis Panel */}
+                    <AIAnalysisPanel
+                      query={searchResults.query}
+                      searchData={searchResults as unknown as Record<string, unknown>}
+                      selectedCnaes={selectedCnaes.map(c => ({ code: c.code, description: c.description }))}
+                    />
 
                     {/* Network Graph Visualization */}
                     <div className="card-modern p-6">
