@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ?? `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co`;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || `https://jtoeinerhvxxgoeicrif.supabase.co`;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 const AGENT_URL = `${SUPABASE_URL}/functions/v1/research-agent`;
 
 export function useResearchAgent() {
@@ -23,7 +24,7 @@ export function useResearchAgent() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
           },
           body: JSON.stringify({ query, searchData, selectedCnaes }),
         });
