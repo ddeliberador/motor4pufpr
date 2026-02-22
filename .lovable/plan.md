@@ -1,78 +1,141 @@
 
 
-# Agente Pesquisador IA para o Motor 4P
+# MOTOR 4P v2 — Fase 1: Interface por Personas
 
-## Objetivo
-Criar um agente de IA pesquisador especializado em pesquisa cientifica, integrado ao fluxo de busca do Motor 4P, que enriquece e cruza os dados das bases publicas de forma inteligente.
+## Resumo
 
-## Nota sobre o modelo
-O projeto ja possui acesso ao Lovable AI (chave LOVABLE_API_KEY pre-configurada), que inclui modelos OpenAI (gpt-5-mini, gpt-5) e Google Gemini. Usaremos o modelo `google/gemini-3-flash-preview` (modelo padrao, rapido e capaz) para o agente, pois e mais performatico e nao requer configuracao adicional. Caso prefira usar exclusivamente a chave OpenAI que voce adicionou, podemos ajustar.
+Reestruturar a home do Motor 4P para iniciar com a pergunta "Qual e o seu papel no Sistema de Inovacao?" e criar dashboards dedicados por persona. Cada persona tera linguagem, KPIs, recomendacoes e IA contextual adaptados ao seu perfil.
 
-## Arquitetura
+## O que muda para o usuario
 
-O agente sera implementado como uma edge function que:
-1. Recebe os dados brutos da busca (resultados das bases publicas + CNAEs selecionados)
-2. Analisa e cruza os dados usando IA
-3. Retorna insights estrategicos, lacunas identificadas e recomendacoes
+1. **Nova Home** com 4 botoes grandes de persona (Pesquisador, Universidade, Empresario, Governo)
+2. **Dashboards dedicados** com KPIs e linguagem especificos por perfil
+3. **IA contextual** com prompts diferentes para cada persona
+4. **PDFs personalizados** com titulo e foco por perfil
 
-## Implementacao
+## Arquitetura de Navegacao
 
-### 1. Edge Function: `research-agent`
-**Arquivo:** `supabase/functions/research-agent/index.ts`
+```text
+/                    -> Nova Home (selecao de persona)
+/pesquisador         -> Dashboard Pesquisador (atual MVP refatorado)
+/universidade        -> Dashboard Universidade
+/empresa             -> Dashboard Empresarial
+/governo             -> Dashboard Governamental
+/camada-ausente      -> Pagina conceitual (atual home movida)
+```
 
-- Recebe: query do usuario, dados das bases (cientifica, tecnologica, produtiva, institucional), CNAEs selecionados
-- System prompt especializado em:
-  - Analise de ecossistemas de inovacao brasileiros
-  - Conhecimento de bases CNPq, INPI, COMEX Stat, Finep, CAPES, INEP
-  - Cruzamento inteligente entre camadas (cientifica, tecnologica, produtiva, institucional)
-  - Identificacao de lacunas, gargalos e oportunidades
-- Retorna analise estruturada com:
-  - Diagnostico geral do cenario
-  - Cruzamentos entre camadas (ex: grupos de pesquisa vs patentes vs exportacao)
-  - Lacunas identificadas (onde ha pesquisa mas nao ha producao, etc.)
-  - Oportunidades estrategicas
-  - Recomendacoes de politica publica
+## Implementacao Detalhada
 
-### 2. Atualizacao do `supabase/config.toml`
-- Registrar a nova funcao com `verify_jwt = false`
+### 1. Nova Home — `src/pages/Index.tsx`
 
-### 3. Hook: `useResearchAgent`
-**Arquivo:** `src/hooks/useResearchAgent.ts`
+Substituir pagina em branco por tela de selecao de persona:
+- Header do Motor 4P
+- Titulo: "Qual e o seu papel no Sistema de Inovacao?"
+- 4 cards grandes clicaveis com icone, titulo, subtitulo e exemplos de perguntas
+- Cada card navega para `/pesquisador`, `/universidade`, `/empresa` ou `/governo`
+- Link secundario para "Conhecer o conceito" -> `/camada-ausente`
 
-- Chama a edge function apos os resultados da busca estarem disponiveis
-- Gerencia estados de loading e erro
-- Suporte a streaming para exibicao progressiva da analise
+### 2. Tipo de Persona — `src/types/persona.ts`
 
-### 4. Componente: `AIAnalysisPanel`
-**Arquivo:** `src/components/mvp/AIAnalysisPanel.tsx`
+Criar tipo compartilhado:
+```text
+type Persona = "pesquisador" | "universidade" | "empresa" | "governo"
+```
 
-- Painel expansivel nos resultados da busca (apos o header de resultados)
-- Botao "Analisar com IA" para disparar a analise
-- Exibicao da analise em markdown com secoes:
-  - Diagnostico do Cenario
-  - Cruzamento de Dados
-  - Lacunas e Gargalos
-  - Oportunidades
-  - Recomendacoes
-- Indicador de loading com streaming
-- Renderizacao em markdown (usando formatacao simples ou react-markdown)
+Com configuracoes de:
+- Label e icone
+- KPIs prioritarios
+- Prompt de IA customizado
+- Perguntas estrategicas exibidas no topo
+- Titulo do PDF
 
-### 5. Integracao no `MvpEngine.tsx`
-- Adicionar o `AIAnalysisPanel` apos o header de resultados
-- Passar os dados da busca e CNAEs selecionados para o componente
+### 3. Configuracao por Persona — `src/config/personas.ts`
 
-## Fluxo do Usuario
-1. Usuario pesquisa um objeto tecnologico (ex: "baterias de litio")
-2. Seleciona CNAEs relevantes
-3. Resultados das bases publicas sao exibidos normalmente
-4. No topo dos resultados, aparece o botao "Analisar com Agente IA"
-5. Ao clicar, o agente analisa todos os dados cruzados e exibe insights em tempo real (streaming)
+Arquivo com todas as diferencas entre personas:
 
-## Detalhes Tecnicos
+**Pesquisador:**
+- Pergunta: "Onde ha bolsas? Quem pesquisa isso?"
+- KPIs: Grupos ativos, Bolsas abertas, Patentes recentes, Tendencia global
+- IA: "Gerar Estrategia de Pesquisa" (fontes, parceiros, gaps)
+- Secoes prioritarias: Cientifica, Bolsas, Internacional
 
-- **Modelo:** `google/gemini-3-flash-preview` via Lovable AI Gateway
-- **Gateway:** `https://ai.gateway.lovable.dev/v1/chat/completions`
-- **Autenticacao:** `LOVABLE_API_KEY` (ja configurada automaticamente)
-- **Streaming:** SSE para exibicao progressiva dos tokens
-- **Dados enviados ao agente:** resumo dos resultados (stats, indicadores, CNAEs, top grupos, top patentes, balanca comercial, instrumentos)
+**Universidade:**
+- Pergunta: "Onde estamos posicionados? Estamos captando recursos?"
+- KPIs: Ranking por area, Captacao, Patentes por depto, Parcerias
+- IA: "Gerar Estrategia Institucional" (investimento, parcerias)
+- Secoes prioritarias: Cientifica, Institucional, Internacional
+
+**Empresario:**
+- Pergunta: "Qual maturidade? Quem lidera? Qual financiamento?"
+- KPIs: TRL estimado, Empresas atuantes, Linhas abertas, Patentes
+- IA: "Gerar Inteligencia Competitiva" (riscos, maturidade, lideres)
+- Secoes prioritarias: Tecnologica, Empresas, Institucional
+
+**Governo:**
+- Pergunta: "Onde investir? Qual regiao esta atrasada?"
+- KPIs: Incidencia por estado, Financiamento, Dependencia externa
+- IA: "Gerar Diagnostico de Politica Publica" (lacunas, impacto)
+- Secoes prioritarias: Todas com foco em distribuicao regional
+
+### 4. Dashboard Unificado — `src/pages/PersonaDashboard.tsx`
+
+Componente unico que recebe a persona como parametro de rota e adapta:
+- Barra lateral com pergunta estrategica no topo
+- Ordem e destaque das secoes de resultados
+- Botao de IA com label e prompt customizado
+- Secoes opcionais por persona (ex: Bolsas so aparece destacado para Pesquisador)
+
+Reutiliza toda a logica existente do MvpEngine (hooks, API, componentes), apenas reorganizando a apresentacao.
+
+### 5. Edge Function Atualizada — `supabase/functions/research-agent/index.ts`
+
+Adicionar campo `persona` no payload e ajustar o system prompt:
+- Pesquisador: foco em estrategia de pesquisa, fontes, parceiros
+- Universidade: foco em posicionamento institucional, captacao
+- Empresa: foco em maturidade tecnologica, concorrencia, financiamento
+- Governo: foco em lacunas regionais, impacto, dependencia
+
+### 6. Rotas — `src/App.tsx`
+
+```text
+/                   -> Index (selecao de persona)
+/pesquisador        -> PersonaDashboard (persona="pesquisador")
+/universidade       -> PersonaDashboard (persona="universidade")
+/empresa            -> PersonaDashboard (persona="empresa")
+/governo            -> PersonaDashboard (persona="governo")
+/camada-ausente     -> CamadaAusente (pagina conceitual existente)
+/mvp                -> Redirect para /pesquisador (retrocompatibilidade)
+```
+
+### 7. Componentes Novos
+
+- `src/components/mvp/PersonaSelector.tsx` — Cards de selecao na home
+- `src/components/mvp/StrategicQuestion.tsx` — Pergunta estrategica no topo dos resultados
+- `src/config/personas.ts` — Configuracoes por persona
+
+### 8. Componentes Reutilizados (sem alteracao)
+
+- Sidebar (recebe config de persona para label do botao IA)
+- StatCard, IndicatorsCard, NetworkGraph, NodeDetailPanel
+- AIAnalysisPanel (recebe prompt customizado)
+- CnaeSelectionModal
+
+### 9. Arquivos Modificados
+
+- `src/App.tsx` — novas rotas
+- `src/pages/Index.tsx` — nova home com selecao de persona
+- `src/pages/MvpEngine.tsx` — refatorado para `PersonaDashboard.tsx`
+- `src/components/mvp/AIAnalysisPanel.tsx` — aceitar label e persona customizados
+- `src/components/mvp/Sidebar.tsx` — aceitar config de persona
+- `supabase/functions/research-agent/index.ts` — prompt por persona
+- `src/components/mvp/index.ts` — exportar novos componentes
+
+## Fora do escopo (Fases 2 e 3)
+
+- **Fase 2**: Motor de Recomendacao (match automatico entre camadas) — requer backend adicional
+- **Fase 3**: Simulacao Estrategica (modelagem preditiva) — requer modelos de dados novos
+- Score TRL estimado — requer algoritmo dedicado no backend
+- Simulador de Politica Publica — requer modelagem economica
+
+Essas fases serao implementadas em iteracoes futuras apos a Fase 1 estar validada.
 
