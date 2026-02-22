@@ -2,3 +2,6 @@ project_id = "jtoeinerhvxxgoeicrif"
 
 [functions.research-agent]
 verify_jwt = false
+
+[functions.research-gaps]
+verify_jwt = false

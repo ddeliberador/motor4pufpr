@@ -340,12 +340,7 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
             {/* Scientific */}
             <TabsContent value="scientific" className="space-y-6">
               {persona === "pesquisador" && (
-                <ResearchGaps
-                  groups={searchResults.scientific}
-                  query={searchResults.query}
-                  totalGroups={searchResults.stats.groups}
-                  totalPatents={searchResults.stats.patents}
-                />
+                <ResearchGaps query={searchResults.query} />
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {searchResults.scientific.map((group, index) => (
