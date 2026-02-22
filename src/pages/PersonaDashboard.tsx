@@ -12,6 +12,7 @@ import { CnaeSelectionModal, type CnaeCode } from "@/components/mvp";
 import OpportunityRadar from "@/components/mvp/OpportunityRadar";
 import PolicySimulator from "@/components/mvp/PolicySimulator";
 import IndicatorsCard from "@/components/mvp/IndicatorsCard";
+import ResearchGaps from "@/components/mvp/ResearchGaps";
 import { personaConfigs } from "@/config/personas";
 import type { Persona } from "@/types/persona";
 import { Link } from "react-router-dom";
@@ -337,7 +338,15 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
             </TabsContent>
 
             {/* Scientific */}
-            <TabsContent value="scientific">
+            <TabsContent value="scientific" className="space-y-6">
+              {persona === "pesquisador" && (
+                <ResearchGaps
+                  groups={searchResults.scientific}
+                  query={searchResults.query}
+                  totalGroups={searchResults.stats.groups}
+                  totalPatents={searchResults.stats.patents}
+                />
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {searchResults.scientific.map((group, index) => (
                   <div key={index} className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer" onClick={() => handleNodeSelect({ type: 'scientific', data: group })}>
