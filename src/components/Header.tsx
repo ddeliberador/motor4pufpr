@@ -32,11 +32,11 @@ const Header = () => {
           {/* CTA Button */}
           <div className="hidden md:flex items-center gap-4">
             <Link
-              to="/mvp"
+              to="/"
               className="btn-primary flex items-center gap-2 text-sm py-2 px-4"
             >
               <Zap className="w-4 h-4" />
-              Iniciar Busca
+              Escolher Perfil
             </Link>
           </div>
 
@@ -58,12 +58,12 @@ const Header = () => {
           <div className="md:hidden py-4 border-t border-border">
             <div className="flex flex-col gap-2">
               <Link
-                to="/mvp"
+                to="/"
                 onClick={() => setMobileMenuOpen(false)}
                 className="btn-primary flex items-center justify-center gap-2 mt-2"
               >
                 <Zap className="w-4 h-4" />
-                Iniciar Busca
+                Escolher Perfil
               </Link>
             </div>
           </div>

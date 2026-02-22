@@ -1,18 +1,23 @@
 import { Bot, Sparkles, AlertCircle, RefreshCw } from "lucide-react";
 import { useResearchAgent } from "@/hooks/useResearchAgent";
 import { Button } from "@/components/ui/button";
+import type { Persona } from "@/types/persona";
+import { personaConfigs } from "@/config/personas";
 
 interface AIAnalysisPanelProps {
   query: string;
   searchData: Record<string, unknown>;
   selectedCnaes: Array<{ code: string; description: string }>;
+  persona?: Persona;
 }
 
-const AIAnalysisPanel = ({ query, searchData, selectedCnaes }: AIAnalysisPanelProps) => {
+const AIAnalysisPanel = ({ query, searchData, selectedCnaes, persona }: AIAnalysisPanelProps) => {
   const { analysis, isAnalyzing, error, analyze, reset } = useResearchAgent();
+  const config = persona ? personaConfigs[persona] : undefined;
+  const buttonLabel = config?.aiButtonLabel || "Analisar com IA";
 
   const handleAnalyze = () => {
-    analyze(query, searchData, selectedCnaes);
+    analyze(query, searchData, selectedCnaes, persona);
   };
 
   // Simple markdown renderer for headers and bold
@@ -53,21 +58,21 @@ const AIAnalysisPanel = ({ query, searchData, selectedCnaes }: AIAnalysisPanelPr
     return (
       <div className="card-modern p-6">
         <div className="flex flex-col sm:flex-row items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/20 flex items-center justify-center flex-shrink-0">
+          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${config?.color || 'from-amber-500 to-orange-600'} shadow-lg flex items-center justify-center flex-shrink-0`}>
             <Bot className="w-6 h-6 text-white" />
           </div>
           <div className="flex-grow text-center sm:text-left">
             <h3 className="text-lg font-semibold text-foreground">Agente Pesquisador IA</h3>
             <p className="text-sm text-muted-foreground">
-              Análise inteligente com cruzamento de dados entre todas as camadas
+              {config ? `Análise contextualizada para ${config.label}` : 'Análise inteligente com cruzamento de dados entre todas as camadas'}
             </p>
           </div>
           <Button
             onClick={handleAnalyze}
-            className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white gap-2"
+            className={`bg-gradient-to-r ${config?.color || 'from-amber-500 to-orange-600'} text-white gap-2`}
           >
             <Sparkles className="w-4 h-4" />
-            Analisar com IA
+            {buttonLabel}
           </Button>
         </div>
       </div>
@@ -78,7 +83,7 @@ const AIAnalysisPanel = ({ query, searchData, selectedCnaes }: AIAnalysisPanelPr
     <div className="card-modern p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/20 flex items-center justify-center">
+          <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${config?.color || 'from-amber-500 to-orange-600'} shadow-lg flex items-center justify-center`}>
             <Bot className="w-5 h-5 text-white" />
           </div>
           <div>

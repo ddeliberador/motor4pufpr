@@ -3,8 +3,11 @@ import { Search, Activity, ChevronRight, Zap, Database, Building2, X } from "luc
 import ApiStatusIndicator from "@/components/ApiStatusIndicator";
 import ApiStatusView from "@/components/ApiStatusView";
 import IndicatorsCard from "./IndicatorsCard";
+import StrategicQuestion from "./StrategicQuestion";
 import { Link } from "react-router-dom";
 import type { CnaeCode } from "./CnaeSelectionModal";
+import type { Persona } from "@/types/persona";
+import { personaConfigs } from "@/config/personas";
 
 interface SidebarProps {
   searchQuery: string;
@@ -23,6 +26,7 @@ interface SidebarProps {
   };
   selectedCnaes?: CnaeCode[];
   onRemoveCnae?: (code: string) => void;
+  persona?: Persona;
 }
 
 const Sidebar = ({
@@ -37,22 +41,28 @@ const Sidebar = ({
   indicators,
   selectedCnaes = [],
   onRemoveCnae,
+  persona,
 }: SidebarProps) => {
+  const config = persona ? personaConfigs[persona] : undefined;
+
   return (
     <aside className="w-full md:w-80 flex-shrink-0 bg-card border-r border-border shadow-lg overflow-y-auto md:sticky md:top-16 h-auto md:h-[calc(100vh-4rem)]">
       <div className="p-5 md:p-6 space-y-6">
         {/* Logo and Title */}
         <div className="text-center pb-6 border-b border-border">
-          <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20">
-            <Zap className="w-7 h-7 text-primary-foreground" />
+          <div className={`w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-br ${config ? config.color : 'from-primary to-primary/80'} flex items-center justify-center shadow-lg shadow-primary/20`}>
+            {config ? <config.icon className="w-7 h-7 text-white" /> : <Zap className="w-7 h-7 text-primary-foreground" />}
           </div>
           <h1 className="text-xl font-semibold text-foreground mb-1">
-            MVP Engine
+            {config ? `Motor 4P — ${config.label}` : 'MVP Engine'}
           </h1>
           <p className="text-xs text-muted-foreground">
-            Primeira Camada da Tradução
+            {config ? config.subtitle : 'Primeira Camada da Tradução'}
           </p>
         </div>
+
+        {/* Strategic Question */}
+        {config && <StrategicQuestion config={config} />}
 
         {/* Back Link */}
         <Link
@@ -60,7 +70,7 @@ const Sidebar = ({
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
         >
           <ChevronRight className="w-4 h-4 rotate-180 group-hover:-translate-x-1 transition-transform" />
-          Voltar para Conceito
+          Voltar para Seleção
         </Link>
 
         {/* Search Box */}
