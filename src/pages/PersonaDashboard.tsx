@@ -11,6 +11,8 @@ import { StatCard, CnaeSelectionModal, type CnaeCode } from "@/components/mvp";
 import Sidebar from "@/components/mvp/Sidebar";
 import AIAnalysisPanel from "@/components/mvp/AIAnalysisPanel";
 import StrategicQuestion from "@/components/mvp/StrategicQuestion";
+import OpportunityRadar from "@/components/mvp/OpportunityRadar";
+import PolicySimulator from "@/components/mvp/PolicySimulator";
 import { personaConfigs } from "@/config/personas";
 import type { Persona } from "@/types/persona";
 
@@ -477,6 +479,22 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
                       selectedCnaes={selectedCnaes.map(c => ({ code: c.code, description: c.description }))}
                       persona={persona}
                     />
+
+                    {/* Opportunity Radar — Fase 2 */}
+                    <OpportunityRadar
+                      query={searchResults.query}
+                      searchData={searchResults as unknown as Record<string, unknown>}
+                      persona={persona}
+                      selectedCnaes={selectedCnaes.map(c => ({ code: c.code, description: c.description }))}
+                    />
+
+                    {/* Policy Simulator — Fase 3 (governo only) */}
+                    {persona === "governo" && (
+                      <PolicySimulator
+                        query={searchResults.query}
+                        searchData={searchResults as unknown as Record<string, unknown>}
+                      />
+                    )}
 
                     {/* Network Graph */}
                     <div className="card-modern p-6">
