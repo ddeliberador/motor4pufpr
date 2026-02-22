@@ -13,7 +13,8 @@ export function useResearchAgent() {
     async (
       query: string,
       searchData: Record<string, unknown>,
-      selectedCnaes: Array<{ code: string; description: string }>
+      selectedCnaes: Array<{ code: string; description: string }>,
+      persona?: string
     ) => {
       setIsAnalyzing(true);
       setAnalysis("");
@@ -26,7 +27,7 @@ export function useResearchAgent() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${SUPABASE_KEY}`,
           },
-          body: JSON.stringify({ query, searchData, selectedCnaes }),
+          body: JSON.stringify({ query, searchData, selectedCnaes, persona }),
         });
 
         if (!resp.ok) {
