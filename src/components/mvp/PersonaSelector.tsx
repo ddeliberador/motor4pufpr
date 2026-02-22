@@ -38,7 +38,7 @@ const PersonaSelector = () => {
             whileHover={{ y: -6, scale: 1.02, transition: { duration: 0.25 } }}
             whileTap={{ scale: 0.98 }}
             onClick={() => navigate(`/${key}`)}
-            className="group relative card-modern p-6 md:p-8 text-left hover:border-primary/40 transition-colors duration-300 cursor-pointer overflow-hidden"
+            className="group relative p-6 md:p-8 text-left transition-colors duration-300 cursor-pointer overflow-hidden rounded-xl border border-white/10 bg-white/5 backdrop-blur-md hover:border-blue-400/40 hover:bg-white/10"
           >
             {/* Hover glow */}
             <div
@@ -60,17 +60,17 @@ const PersonaSelector = () => {
               >
                 <Icon className="w-7 h-7 text-white" />
               </motion.div>
-              <h3 className="text-xl font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
+              <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-blue-300 transition-colors">
                 {config.label}
               </h3>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-sm text-blue-200/60 mb-4">
                 {config.subtitle}
               </p>
               <ul className="space-y-1.5 mb-5">
                 {config.questions.slice(0, 3).map((q, qi) => (
                   <motion.li
                     key={qi}
-                    className="text-xs text-muted-foreground/80 flex items-center gap-2"
+                    className="text-xs text-blue-200/50 flex items-center gap-2"
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 1.4 + i * 0.12 + qi * 0.08 }}
@@ -84,7 +84,7 @@ const PersonaSelector = () => {
                   </motion.li>
                 ))}
               </ul>
-              <div className="flex items-center gap-2 text-sm font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-2 text-sm font-medium text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
                 Acessar
                 <motion.span
                   animate={{ x: [0, 4, 0] }}

@@ -4,271 +4,113 @@ import { motion } from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PersonaSelector from "@/components/mvp/PersonaSelector";
-import { useEffect, useState } from "react";
+import { Suspense } from "react";
+import ElectricScene from "@/components/home/ElectricScene";
 
-/* ─── Particle field background ─── */
-const PARTICLE_COUNT = 60;
-const CONNECTION_DIST = 120;
-
-interface Particle {
-  id: number;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  size: number;
-}
-
-const ParticleField = () => {
-  const [particles, setParticles] = useState<Particle[]>([]);
-  const [dimensions, setDimensions] = useState({ w: 1200, h: 800 });
-
-  useEffect(() => {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    setDimensions({ w, h });
-    setParticles(
-      Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
-        id: i,
-        x: Math.random() * w,
-        y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        size: Math.random() * 2 + 1,
-      }))
-    );
-  }, []);
-
-  useEffect(() => {
-    let raf: number;
-    const animate = () => {
-      setParticles((prev) =>
-        prev.map((p) => {
-          let nx = p.x + p.vx;
-          let ny = p.y + p.vy;
-          if (nx < 0 || nx > dimensions.w) p.vx *= -1;
-          if (ny < 0 || ny > dimensions.h) p.vy *= -1;
-          return { ...p, x: nx, y: ny };
-        })
-      );
-      raf = requestAnimationFrame(animate);
-    };
-    raf = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(raf);
-  }, [dimensions]);
-
-  const connections: { x1: number; y1: number; x2: number; y2: number; opacity: number }[] = [];
-  for (let i = 0; i < particles.length; i++) {
-    for (let j = i + 1; j < particles.length; j++) {
-      const dx = particles[i].x - particles[j].x;
-      const dy = particles[i].y - particles[j].y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < CONNECTION_DIST) {
-        connections.push({
-          x1: particles[i].x,
-          y1: particles[i].y,
-          x2: particles[j].x,
-          y2: particles[j].y,
-          opacity: 1 - dist / CONNECTION_DIST,
-        });
-      }
-    }
-  }
-
-  return (
-    <svg className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden>
-      {connections.map((c, i) => (
-        <line
-          key={`l-${i}`}
-          x1={c.x1}
-          y1={c.y1}
-          x2={c.x2}
-          y2={c.y2}
-          stroke="hsl(var(--primary))"
-          strokeOpacity={c.opacity * 0.12}
-          strokeWidth={0.5}
-        />
-      ))}
-      {particles.map((p) => (
-        <circle
-          key={p.id}
-          cx={p.x}
-          cy={p.y}
-          r={p.size}
-          fill="hsl(var(--primary))"
-          fillOpacity={0.25}
-        />
-      ))}
-    </svg>
-  );
-};
-
-/* ─── Orbiting rings ─── */
-const OrbitRings = () => (
-  <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden>
-    {[280, 400, 520].map((size, i) => (
-      <motion.div
-        key={i}
-        className="absolute rounded-full border border-primary/[0.06]"
-        style={{ width: size, height: size }}
-        animate={{ rotate: 360 }}
-        transition={{ duration: 30 + i * 15, repeat: Infinity, ease: "linear" }}
-      >
-        <motion.div
-          className="absolute w-2 h-2 rounded-full bg-primary/30"
-          style={{ top: -4, left: "50%", marginLeft: -4 }}
-          animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.7, 0.3] }}
-          transition={{ duration: 2 + i, repeat: Infinity }}
-        />
-      </motion.div>
-    ))}
-  </div>
-);
-
-/* ─── Scanning line ─── */
-const ScanLine = () => (
-  <motion.div
-    className="absolute left-0 right-0 h-px pointer-events-none"
-    style={{ background: "linear-gradient(90deg, transparent, hsl(var(--primary) / 0.15), transparent)" }}
-    animate={{ top: ["0%", "100%", "0%"] }}
-    transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-    aria-hidden
-  />
-);
-
-/* ─── Glowing hex grid ─── */
-const HexGrid = () => (
-  <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
-    <svg className="absolute inset-0 w-full h-full opacity-[0.03]">
-      <defs>
-        <pattern id="hex" width="56" height="100" patternUnits="userSpaceOnUse" patternTransform="scale(1.5)">
-          <path
-            d="M28 66L0 50V16L28 0L56 16V50L28 66Z M28 100L0 84V50L28 34L56 50V84L28 100Z"
-            fill="none"
-            stroke="hsl(var(--primary))"
-            strokeWidth="0.5"
-          />
-        </pattern>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#hex)" />
-    </svg>
-  </div>
-);
-
-/* ─── Floating data labels ─── */
-const floatingLabels = ["CNPq", "INPI", "OpenAlex", "Finep", "COMEX", "CAPES", "Embrapii", "BNDES"];
-
-const FloatingLabels = () => (
-  <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
-    {floatingLabels.map((label, i) => (
-      <motion.div
-        key={label}
-        className="absolute text-[10px] font-mono tracking-wider text-primary/20 uppercase"
-        style={{
-          left: `${10 + (i % 4) * 25}%`,
-          top: `${15 + Math.floor(i / 4) * 60}%`,
-        }}
-        animate={{
-          y: [0, -10, 0],
-          opacity: [0.15, 0.35, 0.15],
-        }}
-        transition={{
-          duration: 4 + i * 0.5,
-          repeat: Infinity,
-          delay: i * 0.7,
-        }}
-      >
-        {label}
-      </motion.div>
-    ))}
-  </div>
-);
-
-/* ─── Main Component ─── */
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
+    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: "hsl(222 47% 6%)" }}>
       <Header />
 
-      {/* Background effects */}
-      <ParticleField />
-      <HexGrid />
-      <OrbitRings />
-      <ScanLine />
-      <FloatingLabels />
-
-      {/* Radial glow */}
-      <div
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full pointer-events-none"
-        style={{
-          background: "radial-gradient(circle, hsl(var(--primary) / 0.06) 0%, transparent 70%)",
-        }}
-        aria-hidden
-      />
+      {/* 3D Electric Background */}
+      <Suspense fallback={null}>
+        <ElectricScene />
+      </Suspense>
 
       <main className="flex-1 flex flex-col items-center justify-center pt-16 relative z-10">
         <div className="container-wide py-16 md:py-24">
           {/* Hero */}
           <div className="text-center mb-12 md:mb-16">
-            {/* Animated icon */}
+            {/* Animated icon with electric pulse */}
             <motion.div
-              className="relative w-20 h-20 mx-auto mb-8"
+              className="relative w-24 h-24 mx-auto mb-8"
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+              transition={{ type: "spring", stiffness: 180, damping: 14, delay: 0.3 }}
             >
-              {/* Pulse rings */}
+              {/* Pulse shockwaves */}
               {[1, 2, 3].map((ring) => (
                 <motion.div
                   key={ring}
-                  className="absolute inset-0 rounded-2xl border border-primary/20"
-                  animate={{ scale: [1, 1.5 + ring * 0.3], opacity: [0.4, 0] }}
-                  transition={{ duration: 2.5, repeat: Infinity, delay: ring * 0.6 }}
+                  className="absolute inset-0 rounded-3xl border-2 border-primary/30"
+                  animate={{
+                    scale: [1, 2 + ring * 0.4],
+                    opacity: [0.6, 0],
+                    borderColor: ["hsl(var(--primary))", "hsl(var(--accent))"],
+                  }}
+                  transition={{ duration: 2, repeat: Infinity, delay: ring * 0.5 }}
                 />
               ))}
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
-                <Zap className="w-9 h-9 text-primary-foreground" />
+              {/* Electric glow behind */}
+              <motion.div
+                className="absolute -inset-4 rounded-3xl"
+                style={{
+                  background: "radial-gradient(circle, hsl(var(--primary) / 0.3) 0%, transparent 70%)",
+                }}
+                animate={{
+                  scale: [1, 1.3, 1],
+                  opacity: [0.5, 1, 0.5],
+                }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary via-primary/90 to-accent flex items-center justify-center shadow-2xl shadow-primary/40">
+                <motion.div
+                  animate={{ rotate: [0, 5, -5, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <Zap className="w-11 h-11 text-primary-foreground drop-shadow-lg" />
+                </motion.div>
               </div>
             </motion.div>
 
             {/* Tagline */}
             <motion.div
-              className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full border border-primary/20 bg-primary/5"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
+              className="inline-flex items-center gap-2 px-5 py-2 mb-6 rounded-full border border-blue-500/30 bg-blue-500/10 backdrop-blur-sm"
+              initial={{ opacity: 0, y: 15, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.6, type: "spring" }}
             >
-              <Activity className="w-3.5 h-3.5 text-primary" />
-              <span className="text-xs font-medium text-primary tracking-wide uppercase">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              >
+                <Activity className="w-4 h-4 text-primary" />
+              </motion.div>
+              <span className="text-xs font-semibold text-blue-300 tracking-widest uppercase">
                 Infraestrutura Pública de Inteligência
               </span>
               <motion.span
-                className="w-1.5 h-1.5 rounded-full bg-accent"
-                animate={{ scale: [1, 1.4, 1], opacity: [1, 0.6, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
+                className="w-2 h-2 rounded-full bg-accent shadow-lg shadow-accent/50"
+                animate={{ scale: [1, 1.6, 1], opacity: [1, 0.5, 1] }}
+                transition={{ duration: 1, repeat: Infinity }}
               />
             </motion.div>
 
             <motion.h1
-              className="text-4xl md:text-6xl font-bold text-foreground mb-5 tracking-tight"
-              initial={{ opacity: 0, y: 20 }}
+              className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight leading-[1.1]"
+              initial={{ opacity: 0, y: 25 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.6 }}
+              transition={{ delay: 0.7, duration: 0.7 }}
             >
               Qual é o seu papel no
               <br />
-              <span className="bg-gradient-to-r from-primary via-primary/80 to-accent bg-clip-text text-transparent">
+              <motion.span
+                className="bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 bg-[length:200%_auto] bg-clip-text text-transparent"
+                animate={{ backgroundPosition: ["0% center", "200% center"] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+              >
                 Sistema de Inovação?
-              </span>
+              </motion.span>
             </motion.h1>
 
             <motion.p
-              className="text-lg text-muted-foreground max-w-2xl mx-auto"
+              className="text-lg md:text-xl text-blue-200/70 max-w-2xl mx-auto leading-relaxed"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8, duration: 0.5 }}
+              transition={{ delay: 0.9, duration: 0.5 }}
             >
-              O MOTOR 4P traduz objetos tecnológicos em redes verificáveis de incidência.
+              O <span className="font-semibold text-white">MOTOR 4P</span> traduz objetos tecnológicos em redes verificáveis de incidência.
+              <br className="hidden md:block" />
               Escolha sua perspectiva para começar.
             </motion.p>
           </div>
@@ -276,9 +118,9 @@ const Index = () => {
           {/* Persona Cards */}
           <motion.div
             className="max-w-4xl mx-auto mb-12"
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1, duration: 0.6 }}
+            transition={{ delay: 1.1, duration: 0.7 }}
           >
             <PersonaSelector />
           </motion.div>
@@ -288,15 +130,15 @@ const Index = () => {
             className="text-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.3 }}
+            transition={{ delay: 1.5 }}
           >
             <Link
               to="/camada-ausente"
-              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
+              className="inline-flex items-center gap-2 text-sm text-blue-300/60 hover:text-blue-200 transition-colors group backdrop-blur-sm bg-white/5 px-4 py-2 rounded-full border border-white/10"
             >
               <BookOpen className="w-4 h-4" />
               Conhecer o conceito do Motor 4P
-              <span className="group-hover:translate-x-0.5 transition-transform">→</span>
+              <span className="group-hover:translate-x-1 transition-transform">→</span>
             </Link>
           </motion.div>
         </div>
