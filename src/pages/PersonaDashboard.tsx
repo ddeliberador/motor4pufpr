@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Microscope, FileText, Landmark, Globe, Factory, Download, Network, Database, Users, FlaskConical, Briefcase, Cpu, Building2, Zap, ExternalLink, GraduationCap, BookOpen, Code2, Search, ArrowLeft, Sparkles, MapPin } from "lucide-react";
+import { Microscope, FileText, Landmark, Globe, Factory, Download, Network, Database, Users, FlaskConical, Briefcase, Cpu, Building2, Zap, ExternalLink, GraduationCap, BookOpen, Code2, Search, ArrowLeft, MapPin } from "lucide-react";
 import { useIncidenceSearch } from "@/hooks/useIncidenceSearch";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import Header from "@/components/Header";
@@ -8,7 +8,7 @@ import { generateNewspaperPDF } from "@/lib/generatePdf";
 import NetworkGraph from "@/components/NetworkGraph";
 import NodeDetailPanel, { type NodeDetailData } from "@/components/NodeDetailPanel";
 import { CnaeSelectionModal, type CnaeCode } from "@/components/mvp";
-import AIAnalysisPanel from "@/components/mvp/AIAnalysisPanel";
+
 import OpportunityRadar from "@/components/mvp/OpportunityRadar";
 import PolicySimulator from "@/components/mvp/PolicySimulator";
 import IndicatorsCard from "@/components/mvp/IndicatorsCard";
@@ -309,9 +309,6 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
               {(tabCounts.education ?? 0) > 0 && <TabsTrigger value="education" className="text-xs rounded-lg">Ensino</TabsTrigger>}
               {(tabCounts.github ?? 0) > 0 && <TabsTrigger value="github" className="text-xs rounded-lg">Open Source</TabsTrigger>}
               <TabsTrigger value="graph" className="text-xs rounded-lg">Grafo</TabsTrigger>
-              <TabsTrigger value="ai" className="text-xs rounded-lg gap-1">
-                <Sparkles className="w-3 h-3" /> IA
-              </TabsTrigger>
             </TabsList>
 
             {/* Overview */}
@@ -322,12 +319,6 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
                   <IndicatorsCard {...searchResults.indicators} />
                 </div>
                 <div className="space-y-4">
-                  <AIAnalysisPanel
-                    query={searchResults.query}
-                    searchData={searchResults as unknown as Record<string, unknown>}
-                    selectedCnaes={selectedCnaes.map(c => ({ code: c.code, description: c.description }))}
-                    persona={persona}
-                  />
                   <OpportunityRadar
                     query={searchResults.query}
                     searchData={searchResults as unknown as Record<string, unknown>}
@@ -509,27 +500,6 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
               </div>
             </TabsContent>
 
-            {/* AI */}
-            <TabsContent value="ai" className="space-y-4">
-              <AIAnalysisPanel
-                query={searchResults.query}
-                searchData={searchResults as unknown as Record<string, unknown>}
-                selectedCnaes={selectedCnaes.map(c => ({ code: c.code, description: c.description }))}
-                persona={persona}
-              />
-              <OpportunityRadar
-                query={searchResults.query}
-                searchData={searchResults as unknown as Record<string, unknown>}
-                persona={persona}
-                selectedCnaes={selectedCnaes.map(c => ({ code: c.code, description: c.description }))}
-              />
-              {persona === "governo" && (
-                <PolicySimulator
-                  query={searchResults.query}
-                  searchData={searchResults as unknown as Record<string, unknown>}
-                />
-              )}
-            </TabsContent>
           </Tabs>
         </div>
       </main>
