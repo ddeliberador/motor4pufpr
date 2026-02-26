@@ -1,5 +1,5 @@
 /**
- * Hook para buscar dados de enriquecimento das novas bases públicas
+ * Hook para buscar dados de enriquecimento das bases públicas
  * (IPEAData, BCB, PNCP, Querido Diário, Portal Dados Abertos)
  */
 import { useState, useCallback } from "react";
@@ -7,8 +7,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface MacroIndicator {
   name: string;
-  value: string | null;
+  unit: string;
+  value: number | null;
   date: string | null;
+  variation: number | null;
+  history: Array<{ date: string; value: number }>;
 }
 
 export interface IPEADataSeries {
@@ -16,6 +19,9 @@ export interface IPEADataSeries {
   name: string;
   theme: string;
   source: string;
+  frequency: string | null;
+  values: Array<{ date: string; value: number }>;
+  lastValue: number | null;
 }
 
 export interface PublicContract {
@@ -26,6 +32,7 @@ export interface PublicContract {
   status: string;
   date: string;
   uf: string;
+  url: string;
 }
 
 export interface OfficialGazette {
@@ -42,6 +49,7 @@ export interface OpenDataset {
   organization: string;
   formats: string[];
   url: string;
+  resourceCount: number;
 }
 
 export interface EnrichmentData {
