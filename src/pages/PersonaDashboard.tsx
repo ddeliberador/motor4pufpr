@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { Microscope, FileText, Landmark, Globe, Factory, Download, Network, Database, Users, FlaskConical, Briefcase, Cpu, Building2, Zap, ExternalLink, GraduationCap, BookOpen, Code2, Search, ArrowLeft, MapPin, TrendingUp } from "lucide-react";
+import { Microscope, Landmark, Globe, Factory, Download, Users, FlaskConical, Briefcase, Zap, ExternalLink, BookOpen, Code2, Search, ArrowLeft, MapPin, TrendingUp, ArrowUpRight, ArrowDownRight, AlertTriangle } from "lucide-react";
 import { useIncidenceSearch } from "@/hooks/useIncidenceSearch";
 import { useEnrichmentSearch } from "@/hooks/useEnrichmentSearch";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
@@ -10,10 +10,7 @@ import NetworkGraph from "@/components/NetworkGraph";
 import NodeDetailPanel, { type NodeDetailData } from "@/components/NodeDetailPanel";
 import { CnaeSelectionModal, type CnaeCode } from "@/components/mvp";
 
-import OpportunityRadar from "@/components/mvp/OpportunityRadar";
-import PolicySimulator from "@/components/mvp/PolicySimulator";
 import IndicatorsCard from "@/components/mvp/IndicatorsCard";
-import ResearchGaps from "@/components/mvp/ResearchGaps";
 import ProductiveTab from "@/components/mvp/ProductiveTab";
 import InstitutionalEnrichment from "@/components/mvp/InstitutionalEnrichment";
 import { personaConfigs } from "@/config/personas";
@@ -33,11 +30,6 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedNode, setSelectedNode] = useState<NodeDetailData | null>(null);
   const [detailPanelOpen, setDetailPanelOpen] = useState(false);
-  const [expandedSections, setExpandedSections] = useState({
-    scientific: false, technological: false, institutional: false,
-    companies: false, international: false, scholarships: false,
-    education: false, github: false,
-  });
 
   const [showCnaeModal, setShowCnaeModal] = useState(false);
   const [suggestedCnaes, setSuggestedCnaes] = useState<CnaeCode[]>([]);
@@ -86,11 +78,12 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
     scholarships: apiResults.scholarships || undefined,
     education: apiResults.education || undefined,
     github_projects: apiResults.github_projects || undefined,
+    // Raw data for cross-references
+    _raw: apiResults,
     _processingTimeMs: apiResults.processing_time_ms,
     _dataSources: apiResults.data_sources,
   } : null;
 
-  // Trigger enrichment search when main search completes
   useEffect(() => {
     if (apiResults?.query) {
       enrichmentSearch(apiResults.query);
@@ -146,7 +139,6 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
     setActiveTab("overview");
   };
 
-  // Count available tabs for badge display
   const tabCounts = searchResults ? {
     scientific: searchResults.scientific.length,
     technological: searchResults.technological.length,
@@ -157,14 +149,13 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
     github: searchResults.github_projects?.total || 0,
   } : {};
 
-  // Enrichment counts
   const enrichmentCounts = {
     productive: (enrichmentData?.productive.macro_indicators.length || 0) + (enrichmentData?.productive.ipeadata_series.length || 0),
     contracts: enrichmentData?.institutional.public_contracts.length || 0,
     gazettes: enrichmentData?.institutional.official_gazettes.length || 0,
   };
 
-  /* ===== EMPTY STATE — Clean search ===== */
+  /* ===== EMPTY STATE ===== */
   if (!hasSearched) {
     return (
       <div className="min-h-screen bg-background">
@@ -247,8 +238,8 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
               <Zap className="absolute inset-0 m-auto w-6 h-6 text-primary/60" />
             </div>
             <div>
-              <p className="text-lg font-medium text-foreground">Traduzindo objeto tecnológico...</p>
-              <p className="text-sm text-muted-foreground mt-1">CNPq · INPI · OpenAlex · COMEX · Finep · BCB · IPEAData · PNCP</p>
+              <p className="text-lg font-medium text-foreground">Consultando bases públicas...</p>
+              <p className="text-sm text-muted-foreground mt-1">CNPq · INPI · OpenAlex · COMEX · BCB · IPEAData · PNCP</p>
             </div>
           </div>
         </main>
@@ -259,17 +250,79 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
   /* ===== RESULTS STATE ===== */
   if (!searchResults) return null;
 
-  // Merge enrichment sources into data sources list
+  const raw = searchResults._raw;
   const allSources = [
     ...(searchResults._dataSources || []),
     ...(enrichmentData?.meta.sources || []),
   ];
 
+  // Build cross-reference insights from actual data
+  const crossInsights: Array<{ icon: typeof TrendingUp; text: string; type: "info" | "warning" | "positive" }> = [];
+  
+  const groups = searchResults.stats.groups || 0;
+  const patents = searchResults.stats.patents || 0;
+  const instruments = searchResults.stats.instruments || 0;
+  
+  // Translation gap
+  if (groups > 0 && patents > 0) {
+    const ratio = (patents / groups).toFixed(1);
+    if (groups > patents) {
+      crossInsights.push({ icon: AlertTriangle, text: `${groups} grupos de pesquisa produzem apenas ${patents} patentes (${ratio} pat/grupo) → gap de tradução ciência→tecnologia`, type: "warning" });
+    } else {
+      crossInsights.push({ icon: TrendingUp, text: `Boa conversão: ${patents} patentes para ${groups} grupos (${ratio} pat/grupo)`, type: "positive" });
+    }
+  }
+
+  // Institutional coverage
+  if (instruments > 0 && groups > 0) {
+    crossInsights.push({ icon: Landmark, text: `${instruments} instrumentos de fomento disponíveis para ${groups} grupos ativos`, type: "info" });
+  }
+
+  // Trade balance
+  if (raw?.productive) {
+    const balance = raw.productive.trade_balance;
+    if (balance < 0) {
+      crossInsights.push({ icon: ArrowDownRight, text: `Déficit comercial: Brasil importa ${Math.abs(balance / 1e6).toFixed(0)}M USD a mais do que exporta neste segmento`, type: "warning" });
+    } else if (balance > 0) {
+      crossInsights.push({ icon: ArrowUpRight, text: `Superávit comercial de ${(balance / 1e6).toFixed(0)}M USD neste segmento`, type: "positive" });
+    }
+  }
+
+  // Enrichment cross-references
+  if (enrichmentCounts.contracts > 0) {
+    const totalValue = enrichmentData!.institutional.public_contracts.reduce((s, c) => s + (c.value || 0), 0);
+    crossInsights.push({
+      icon: Landmark,
+      text: `${enrichmentCounts.contracts} licitações públicas encontradas${totalValue > 0 ? ` (R$ ${(totalValue / 1e6).toFixed(1)}M estimados)` : ''}`,
+      type: "positive",
+    });
+  }
+
+  // Regional concentration
+  if (raw?.scientific?.by_state) {
+    const states = Object.entries(raw.scientific.by_state as Record<string, number>).sort((a, b) => b[1] - a[1]);
+    if (states.length > 0) {
+      const top = states.slice(0, 3).map(([s, n]) => `${s}(${n})`).join(", ");
+      crossInsights.push({ icon: MapPin, text: `Concentração regional: ${top}`, type: "info" });
+    }
+  }
+
+  const insightColors = {
+    info: "border-primary/20 bg-primary/5",
+    warning: "border-amber-500/20 bg-amber-500/5",
+    positive: "border-emerald-500/20 bg-emerald-500/5",
+  };
+  const insightIconColors = {
+    info: "text-primary",
+    warning: "text-amber-600",
+    positive: "text-emerald-600",
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="pt-16">
-        {/* Top bar with search context */}
+        {/* Top bar */}
         <div className="sticky top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
           <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-4">
             <button onClick={handleNewSearch} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors flex-shrink-0">
@@ -281,9 +334,15 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
               {allSources.length > 0 && (
                 <p className="text-[10px] text-muted-foreground truncate">
                   Fontes: {allSources.join(" · ")}
+                  {searchResults._processingTimeMs && ` · ${searchResults._processingTimeMs}ms`}
                 </p>
               )}
             </div>
+            {isUsingMock && (
+              <span className="text-[10px] px-2 py-1 bg-amber-500/10 text-amber-600 rounded-full border border-amber-500/20 flex-shrink-0">
+                Dados simulados
+              </span>
+            )}
             <Button variant="outline" size="sm" onClick={handleDownloadPDF} className="gap-1.5 flex-shrink-0">
               <Download className="w-3.5 h-3.5" />
               PDF
@@ -346,23 +405,48 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
               <TabsTrigger value="graph" className="text-xs rounded-lg">Grafo</TabsTrigger>
             </TabsList>
 
-            {/* Overview */}
+            {/* Overview — Objective cross-references */}
             <TabsContent value="overview" className="space-y-6">
+              {/* Cross-reference insights */}
+              {crossInsights.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-foreground mb-2">Cruzamentos objetivos</h3>
+                  {crossInsights.map((insight, i) => (
+                    <div key={i} className={`flex items-start gap-3 p-3 rounded-lg border ${insightColors[insight.type]}`}>
+                      <insight.icon className={`w-4 h-4 mt-0.5 flex-shrink-0 ${insightIconColors[insight.type]}`} />
+                      <p className="text-xs text-foreground leading-relaxed">{insight.text}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Indicators */}
                 <div className="bg-card border border-border rounded-xl p-5">
                   <IndicatorsCard {...searchResults.indicators} />
                 </div>
-                <div className="space-y-4">
-                  <OpportunityRadar
-                    query={searchResults.query}
-                    searchData={searchResults as unknown as Record<string, unknown>}
-                    persona={persona}
-                    selectedCnaes={selectedCnaes.map(c => ({ code: c.code, description: c.description }))}
-                  />
+
+                {/* Top groups ranking */}
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Microscope className="w-4 h-4 text-primary" />
+                    Principais Grupos de Pesquisa
+                  </h3>
+                  <div className="space-y-2">
+                    {searchResults.scientific.slice(0, 5).map((g, i) => (
+                      <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-foreground truncate">{g.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{g.institution}</p>
+                        </div>
+                        <span className="text-[10px] px-1.5 py-0.5 bg-secondary text-secondary-foreground rounded ml-2">{g.state}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* Macro indicators preview in overview */}
+              {/* Macro context */}
               {enrichmentData && enrichmentData.productive.macro_indicators.length > 0 && (
                 <div className="bg-card border border-border rounded-xl p-5">
                   <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
@@ -372,26 +456,83 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {enrichmentData.productive.macro_indicators.map((ind, i) => (
                       <div key={i} className="text-center p-3 bg-muted rounded-lg">
-                        <p className="text-lg font-bold text-foreground">{ind.value ?? "—"}</p>
+                        <p className="text-lg font-bold text-foreground">
+                          {ind.value !== null ? ind.value.toLocaleString("pt-BR", { maximumFractionDigits: 2 }) : "—"}
+                        </p>
                         <p className="text-[10px] text-muted-foreground">{ind.name}</p>
+                        {ind.variation !== null && (
+                          <span className={`text-[9px] font-medium ${ind.variation > 0 ? 'text-emerald-600' : ind.variation < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                            {ind.variation > 0 ? '↑' : ind.variation < 0 ? '↓' : '→'} {Math.abs(ind.variation).toFixed(1)}%
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {persona === "governo" && (
-                <PolicySimulator
-                  query={searchResults.query}
-                  searchData={searchResults as unknown as Record<string, unknown>}
-                />
+              {/* Trade summary if available */}
+              {raw?.productive && (raw.productive.total_exports_usd > 0 || raw.productive.total_imports_usd > 0) && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-primary" />
+                    Balança Comercial do Segmento
+                  </h3>
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <p className="text-lg font-bold text-emerald-600">
+                        ${(raw.productive.total_exports_usd / 1e6).toFixed(0)}M
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">Exportações</p>
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-red-500">
+                        ${(raw.productive.total_imports_usd / 1e6).toFixed(0)}M
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">Importações</p>
+                    </div>
+                    <div>
+                      <p className={`text-lg font-bold ${raw.productive.trade_balance >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                        ${(Math.abs(raw.productive.trade_balance) / 1e6).toFixed(0)}M
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {raw.productive.trade_balance >= 0 ? 'Superávit' : 'Déficit'}
+                      </p>
+                    </div>
+                  </div>
+                  {raw.productive.main_import_origins?.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <p className="text-[10px] text-muted-foreground mb-1">Principais origens de importação:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {raw.productive.main_import_origins.slice(0, 4).map((o: any, i: number) => (
+                          <span key={i} className="text-[10px] px-2 py-0.5 bg-secondary text-secondary-foreground rounded-full">
+                            {o.country_name}: ${(o.total_value / 1e6).toFixed(0)}M
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </TabsContent>
 
             {/* Scientific */}
             <TabsContent value="scientific" className="space-y-6">
-              {persona === "pesquisador" && (
-                <ResearchGaps query={searchResults.query} />
+              {/* State distribution table */}
+              {raw?.scientific?.by_state && Object.keys(raw.scientific.by_state).length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-3">Distribuição por Estado</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(raw.scientific.by_state as Record<string, number>)
+                      .sort((a, b) => b[1] - a[1])
+                      .map(([state, count], i) => (
+                        <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-lg">
+                          <span className="text-xs font-semibold text-foreground">{state}</span>
+                          <span className="text-xs text-muted-foreground">{count}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {searchResults.scientific.map((group, index) => (
@@ -404,7 +545,7 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
                     <p className="text-xs text-muted-foreground mb-1">{group.institution}</p>
                     <p className="text-[10px] text-muted-foreground/70">{group.area}</p>
                     {group.international && (
-                      <div className="flex items-center gap-1 text-[10px] text-accent mt-2">
+                      <div className="flex items-center gap-1 text-[10px] text-primary mt-2">
                         <Globe className="w-3 h-3" />{group.international}
                       </div>
                     )}
@@ -415,6 +556,20 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
 
             {/* Technological */}
             <TabsContent value="technological">
+              {/* Top applicants */}
+              {raw?.technological?.top_applicants?.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5 mb-4">
+                  <h3 className="text-sm font-semibold text-foreground mb-3">Ranking de Depositantes</h3>
+                  <div className="space-y-1.5">
+                    {raw.technological.top_applicants.slice(0, 5).map((a: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between py-1 border-b border-border/50 last:border-0">
+                        <span className="text-xs text-foreground">{i + 1}. {a.name}</span>
+                        <span className="text-xs font-semibold text-primary">{a.count} patentes</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="space-y-3">
                 {searchResults.technological.map((patent, index) => (
                   <div key={index} className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer flex gap-4" onClick={() => handleNodeSelect({ type: 'technological', data: patent })}>
@@ -426,7 +581,7 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">{patent.applicant}</p>
                       {patent.international && (
-                        <span className="inline-flex items-center gap-1 text-[10px] text-accent mt-1.5">
+                        <span className="inline-flex items-center gap-1 text-[10px] text-primary mt-1.5">
                           <Globe className="w-3 h-3" />{patent.international}
                         </span>
                       )}
@@ -436,7 +591,7 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
               </div>
             </TabsContent>
 
-            {/* Productive (NEW) */}
+            {/* Productive */}
             <TabsContent value="productive">
               <ProductiveTab
                 macroIndicators={enrichmentData?.productive.macro_indicators || []}
@@ -451,19 +606,18 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
                 {searchResults.institutional.map((inst, index) => (
                   <div key={index} className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer" onClick={() => handleNodeSelect({ type: 'institutional', data: inst })}>
                     <div className="flex items-start justify-between mb-2">
-                      <Briefcase className="w-4 h-4 text-accent" />
-                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${inst.status === 'Aberto' || inst.status === 'Ativo' ? 'bg-accent/10 text-accent' : inst.status === 'Contínuo' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>{inst.status}</span>
+                      <Briefcase className="w-4 h-4 text-primary" />
+                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${inst.status === 'Aberto' || inst.status === 'Ativo' ? 'bg-emerald-500/10 text-emerald-600' : inst.status === 'Contínuo' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>{inst.status}</span>
                     </div>
                     <h4 className="text-sm font-semibold text-foreground mb-1">{inst.name}</h4>
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">{inst.type}</span>
-                      {inst.value && <span className="text-xs font-semibold text-accent">{inst.value}</span>}
+                      {inst.value && <span className="text-xs font-semibold text-primary">{inst.value}</span>}
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Enrichment: PNCP + Querido Diário + Dados Abertos */}
               <InstitutionalEnrichment
                 contracts={enrichmentData?.institutional.public_contracts || []}
                 gazettes={enrichmentData?.institutional.official_gazettes || []}
@@ -503,12 +657,12 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
                   {searchResults.scholarships.all.map((s: any, i: number) => (
                     <div key={i} className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition-all">
                       <div className="flex items-start justify-between mb-2">
-                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${s.country === 'Brasil' ? 'bg-accent/10 text-accent' : 'bg-primary/10 text-primary'}`}>{s.country}</span>
+                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${s.country === 'Brasil' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-primary/10 text-primary'}`}>{s.country}</span>
                         <span className="text-[10px] text-muted-foreground">{s.type || s.level}</span>
                       </div>
                       <h4 className="text-sm font-semibold text-foreground mb-1">{s.institution || s.name}</h4>
                       <p className="text-xs text-muted-foreground mb-1">{s.program || s.field}</p>
-                      {s.value_monthly && <p className="text-xs font-semibold text-accent">{typeof s.value_monthly === 'number' ? `R$ ${s.value_monthly.toLocaleString()}/mês` : s.value_monthly}</p>}
+                      {s.value_monthly && <p className="text-xs font-semibold text-primary">{typeof s.value_monthly === 'number' ? `R$ ${s.value_monthly.toLocaleString()}/mês` : s.value_monthly}</p>}
                       <p className="text-[10px] text-muted-foreground mt-1">Duração: {s.duration_months} meses</p>
                     </div>
                   ))}
