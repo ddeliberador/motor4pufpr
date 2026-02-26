@@ -18,3 +18,12 @@ from .dados_gov import DadosGovConnector
 from .dou import DOUConnector
 from .transparencia import TransparenciaConnector
 from .siconfi import SICONFIConnector
+from .bcb import BCBConnector
+from .anvisa import ANVISAConnector
+from .anatel import ANATELConnector
+from .cvm import CVMConnector
+from .ibama import IBAMAConnector
+from .inpe import INPEConnector
+from .fnde import FNDEConnector
+from .tcu import TCUConnector
+from .rais_caged import RAISCAGEDConnector
