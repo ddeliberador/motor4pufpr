@@ -1,16 +1,1 @@
 project_id = "jtoeinerhvxxgoeicrif"
-
-[functions.research-agent]
-verify_jwt = false
-
-[functions.research-gaps]
-verify_jwt = false
-
-[functions.enrichment-search]
-verify_jwt = false
-
-[functions.smart-insights]
-verify_jwt = false
-
-[functions.policy-simulator]
-verify_jwt = false
