@@ -3,7 +3,7 @@
  * (IPEAData, BCB, PNCP, Querido Diário, Portal Dados Abertos)
  */
 import { useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { safeSupabase as supabase } from "@/lib/supabaseClient";
 
 export interface MacroIndicator {
   name: string;
