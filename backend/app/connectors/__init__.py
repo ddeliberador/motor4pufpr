@@ -8,3 +8,13 @@ from .capes import CAPESConnector
 from .scholarships import InternationalScholarshipsConnector
 from .inep import INEPConnector
 from .github import GitHubConnector
+from .ipeadata import IPEADataConnector
+from .brasilapi import BrasilAPIConnector
+from .pncp import PNCPConnector
+from .querido_diario import QueridoDiarioConnector
+from .aneel import ANEELConnector
+from .anp import ANPConnector
+from .dados_gov import DadosGovConnector
+from .dou import DOUConnector
+from .transparencia import TransparenciaConnector
+from .siconfi import SICONFIConnector
