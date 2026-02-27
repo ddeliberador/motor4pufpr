@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Landmark, Globe, Users, Zap, ExternalLink, BookOpen, Search, ArrowLeft, TrendingUp, ArrowUpRight, ArrowDownRight, AlertTriangle, FileText, Database, Activity } from "lucide-react";
+import { Landmark, Globe, Users, Zap, ExternalLink, BookOpen, Search, ArrowLeft, TrendingUp, ArrowUpRight, ArrowDownRight, AlertTriangle, FileText, Database, Activity, GitBranch, Shield } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import Header from "@/components/Header";
@@ -145,7 +145,7 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
             </div>
             <div>
               <p className="text-lg font-medium text-foreground">Consultando bases públicas...</p>
-              <p className="text-sm text-muted-foreground mt-1">OpenAlex · BCB · IPEAData · PNCP · Querido Diário · dados.gov.br</p>
+              <p className="text-sm text-muted-foreground mt-1">Consultando 21 bases: OpenAlex · BCB · IBGE · IPEAData · PNCP · GitHub · CAPES · ANEEL · CVM · Transparência · SICONFI · ANVISA...</p>
             </div>
           </div>
         </main>
@@ -215,7 +215,7 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
 
         <div className="max-w-6xl mx-auto px-4 py-6 space-y-6 animate-in fade-in-0 duration-500">
           {/* Stats row */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-2">
             {[
               { icon: BookOpen, value: data.stats.papers, label: "Papers" },
               { icon: Landmark, value: data.stats.contracts, label: "Licitações" },
@@ -224,6 +224,9 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
               { icon: Globe, value: data.stats.countries, label: "Países" },
               { icon: Activity, value: data.stats.macro_indicators, label: "Indicadores" },
               { icon: TrendingUp, value: data.stats.ipeadata_series, label: "Séries" },
+              { icon: GitBranch, value: data.stats.github_repos, label: "Repos" },
+              { icon: Users, value: data.stats.convenios, label: "Convênios" },
+              { icon: Shield, value: data.stats.sanctions, label: "Sanções" },
             ].map((s, i) => (
               <div key={i} className="bg-card border border-border rounded-xl p-3 text-center">
                 <s.icon className="w-4 h-4 mx-auto mb-1 text-primary" />
@@ -253,7 +256,10 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
                 Científica ({data.stats.papers})
               </TabsTrigger>
               <TabsTrigger value="productive" className="text-xs rounded-lg">
-                Produtiva ({data.stats.macro_indicators + data.stats.ipeadata_series})
+                Produtiva
+              </TabsTrigger>
+              <TabsTrigger value="technological" className="text-xs rounded-lg">
+                Tecnológica ({data.stats.github_repos})
               </TabsTrigger>
               <TabsTrigger value="institutional" className="text-xs rounded-lg">
                 Institucional ({data.stats.contracts + data.stats.gazettes + data.stats.datasets})
@@ -347,6 +353,52 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
                   </div>
                 )}
               </div>
+
+              {/* GitHub repos */}
+              {data.technological?.github_repos?.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <GitBranch className="w-4 h-4 text-primary" />
+                    Repositórios Open Source (GitHub)
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {data.technological.github_repos.slice(0, 6).map((r, i) => (
+                      <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between px-3 py-2 bg-muted rounded-lg hover:bg-muted/70 transition-colors">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium text-foreground truncate">{r.name}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{r.description}</p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                          {r.language && <span className="text-[9px] px-1.5 py-0.5 bg-primary/10 text-primary rounded">{r.language}</span>}
+                          <span className="text-[10px] font-bold text-primary">⭐ {r.stars}</span>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Convênios Transparência */}
+              {data.institutional?.transparencia?.convenios?.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-primary" />
+                    Convênios Federais (Portal da Transparência)
+                  </h3>
+                  <div className="space-y-2">
+                    {data.institutional.transparencia.convenios.slice(0, 4).map((c, i) => (
+                      <div key={i} className="py-1.5 border-b border-border/50 last:border-0">
+                        <p className="text-xs font-medium text-foreground line-clamp-1">{c.object || "Sem objeto"}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] text-muted-foreground">{c.proponent}</span>
+                          {c.value > 0 && <span className="text-[10px] font-semibold text-primary">R$ {(c.value / 1e3).toFixed(0)}mil</span>}
+                          <span className="text-[9px] px-1 py-0.5 bg-secondary text-secondary-foreground rounded">{c.situation}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Institution ranking */}
               {institutionRanking.length > 0 && (
@@ -449,6 +501,57 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
                 ipeadataSeries={data.productive.ipeadata_series}
                 isLoading={false}
               />
+            </TabsContent>
+
+            {/* ===== TECHNOLOGICAL ===== */}
+            <TabsContent value="technological" className="space-y-4">
+              {data.technological?.github_repos?.length > 0 ? (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <GitBranch className="w-4 h-4 text-primary" />
+                    Repositórios Open Source
+                  </h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Repositório</th>
+                          <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Descrição</th>
+                          <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Linguagem</th>
+                          <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Stars</th>
+                          <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Forks</th>
+                          <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Link</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.technological.github_repos.map((r, i) => (
+                          <tr key={i} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                            <td className="py-2.5 px-3 text-xs font-medium text-foreground">{r.name}</td>
+                            <td className="py-2.5 px-3 max-w-[250px]">
+                              <p className="text-[10px] text-muted-foreground line-clamp-2">{r.description}</p>
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              {r.language && <span className="text-[9px] px-1.5 py-0.5 bg-primary/10 text-primary rounded">{r.language}</span>}
+                            </td>
+                            <td className="py-2.5 px-3 text-right text-xs font-semibold text-primary">⭐ {r.stars}</td>
+                            <td className="py-2.5 px-3 text-right text-xs text-muted-foreground">{r.forks}</td>
+                            <td className="py-2.5 px-3 text-center">
+                              <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <GitBranch className="w-8 h-8 mx-auto mb-3 opacity-40" />
+                  <p className="text-sm">Nenhum repositório encontrado para "{data.query}"</p>
+                </div>
+              )}
             </TabsContent>
 
             {/* ===== INSTITUTIONAL ===== */}
