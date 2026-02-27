@@ -51,8 +51,7 @@ const MvpEngine = () => {
     search: apiSearch,
     results: apiResults,
     isLoading: isSearching,
-    isUsingMock,
-    backendAvailable,
+    error: searchError,
   } = useIncidenceSearch();
 
   // Hook para busca de CNAEs
@@ -167,8 +166,6 @@ const MvpEngine = () => {
           setSearchQuery={setSearchQuery}
           onSearch={handleSearch}
           isSearching={isSearching}
-          isUsingMock={isUsingMock}
-          backendAvailable={backendAvailable}
           showApiStatus={showApiStatus}
           setShowApiStatus={setShowApiStatus}
           indicators={searchResults?.indicators}
