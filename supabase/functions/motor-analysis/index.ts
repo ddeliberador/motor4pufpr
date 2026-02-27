@@ -11,6 +11,7 @@ const AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 interface PersonaQuestions {
   questions: string[];
   context: string;
+  outputFocus: string;
 }
 
 const PERSONA_QUESTIONS: Record<string, PersonaQuestions> = {
@@ -18,25 +19,28 @@ const PERSONA_QUESTIONS: Record<string, PersonaQuestions> = {
     questions: [
       "Onde há bolsas e financiamento para pesquisa neste tema?",
       "Quem pesquisa isso no Brasil e no mundo?",
-      "Onde publicar e quem já patenteou?",
+      "Onde estão as lacunas científicas e nichos de fronteira?",
     ],
-    context: "pesquisador acadêmico brasileiro buscando oportunidades de pesquisa, colaboração e publicação",
+    context: "pesquisador acadêmico brasileiro buscando oportunidades de pesquisa e publicação",
+    outputFocus: "Mapa de saturação temática, cross entre publicações e ausência de patente, áreas com financiamento alto e produção baixa, nichos de fronteira.",
   },
   universidade: {
     questions: [
       "Onde estamos posicionados e como nos comparamos?",
-      "Estamos captando recursos e patenteando neste tema?",
+      "Estamos captando recursos e convertendo pesquisa em inovação?",
       "Quais parcerias estratégicas são possíveis?",
     ],
-    context: "gestor universitário avaliando posicionamento institucional, captação de recursos e parcerias",
+    context: "gestor universitário avaliando posicionamento institucional",
+    outputFocus: "Heatmap de áreas emergentes, empresas da região com baixa interação U-E, patentes sem exploração, índice de conversão pesquisa→inovação.",
   },
   empresa: {
     questions: [
       "Qual a maturidade tecnológica e quem lidera?",
       "Qual financiamento e incentivo está disponível?",
-      "Quais os riscos e oportunidades de mercado?",
+      "Quem resolve meu problema? Onde tem tecnologia aplicável?",
     ],
-    context: "empresário/empreendedor avaliando viabilidade, concorrência e oportunidades de mercado",
+    context: "empresário avaliando viabilidade e concorrência",
+    outputFocus: "Matching empresa↔grupo de pesquisa, patentes disponíveis por setor, universidades com histórico de cooperação, projetos públicos com possibilidade de parceria.",
   },
   governo: {
     questions: [
@@ -44,7 +48,8 @@ const PERSONA_QUESTIONS: Record<string, PersonaQuestions> = {
       "Estamos dependentes do exterior neste tema?",
       "Os instrumentos públicos estão funcionando?",
     ],
-    context: "formulador de política pública avaliando investimentos, lacunas regionais e efetividade de políticas",
+    context: "formulador de política pública avaliando investimentos e efetividade",
+    outputFocus: "Mapa de capacidades por território, lacunas tecnológicas (setor com papers mas zero contrato), alertas de dependência externa, ranking de densidade inovativa. PRESCRITIVO: diga O QUE FAZER, não apenas o que existe.",
   },
 };
 
@@ -70,65 +75,62 @@ Deno.serve(async (req) => {
 
     const personaKey = persona || "pesquisador";
     const pq = PERSONA_QUESTIONS[personaKey] || PERSONA_QUESTIONS.pesquisador;
+    const indices = searchData.strategic_indices || {};
 
-    const systemPrompt = `Você é o Motor 4P — analista estratégico de inovação que cruza dados de 21+ bases públicas brasileiras.
+    const systemPrompt = `Você é o Motor 4P — analista estratégico PRESCRITIVO de inovação.
 
-CONTEXTO: Você está respondendo para um ${pq.context}.
+CONTEXTO: ${pq.context}.
+FOCO DE OUTPUT: ${pq.outputFocus}
 
-A busca retornou dados REAIS das seguintes bases: ${searchData.meta?.sources?.join(", ") || "diversas"}.
+ÍNDICES COMPUTADOS (já calculados dos dados reais):
+- Gargalo de Tradução (GT): ${indices.gt?.value ?? "N/A"}/100 — ${indices.gt?.description || ""}
+- Dependência Externa (CD): ${indices.cd?.value ?? "N/A"}% — ${indices.cd?.description || ""}
+- Articulação U-E (AUE): ${indices.aue?.value ?? "N/A"}% — ${indices.aue?.description || ""}
+- Efetividade Instrumental (EI): ${indices.ei?.value ?? "N/A"}/100 — ${indices.ei?.description || ""}
+- Distribuição UF: ${JSON.stringify(indices.uf_distribution || {})}
 
-ESTRUTURA OBRIGATÓRIA — Responda EXATAMENTE estas 3 questões, cada uma como seção:
+Fontes: ${searchData.meta?.sources?.join(", ") || "diversas"}.
 
+ESTRUTURA — Responda EXATAMENTE estas 3 questões:
 ## 1. ${pq.questions[0]}
 ## 2. ${pq.questions[1]}
 ## 3. ${pq.questions[2]}
 
-REGRAS:
-1. Cada resposta DEVE citar FONTES ESPECÍFICAS (ex: "OpenAlex mostra...", "No PNCP há...", "BCB indica...")
-2. Cada resposta DEVE conter NÚMEROS CONCRETOS dos dados fornecidos
-3. NUNCA invente dados — use APENAS o JSON abaixo
-4. Priorize CRUZAMENTOS entre fontes (ex: "Há X papers mas apenas Y licitações — gap de tradução")
-5. Seja DIRETO e OBJETIVO — zero enrolação, zero introduções genéricas
-6. Termine cada seção com 1-2 AÇÕES CONCRETAS que o usuário pode tomar agora
-7. Use negrito para destacar números e nomes importantes`;
+REGRAS INVIOLÁVEIS:
+1. Cada resposta DEVE referenciar os ÍNDICES COMPUTADOS acima e explicar o que significam
+2. Cada resposta DEVE citar FONTES ESPECÍFICAS com NÚMEROS (ex: "OpenAlex: ${searchData.stats?.papers || 0} papers")
+3. Cada resposta DEVE ter CRUZAMENTOS (ex: "GT de ${indices.gt?.value || "?"} indica muita ciência mas pouca aplicação — ${searchData.stats?.contracts || 0} contratos vs ${searchData.stats?.papers || 0} papers")
+4. NUNCA descreva — PRESCREVA: termine cada seção com 2-3 AÇÕES CONCRETAS numeradas
+5. Use **negrito** para números e alertas críticos
+6. Se GT > 70: ALERTE sobre gap de tradução
+7. Se CD > 60: ALERTE sobre dependência externa
+8. Se AUE < 20: ALERTE sobre desarticulação universidade-empresa`;
 
-    // Build data summary
     const dataSummary = JSON.stringify({
       query: searchData.query,
       stats: searchData.stats,
-      meta: searchData.meta,
+      strategic_indices: searchData.strategic_indices,
       papers_top10: (searchData.scientific?.papers || []).slice(0, 10).map((p: any) => ({
         title: p.title, year: p.year, citations: p.citations,
-        authors: p.authors?.slice(0, 2), journal: p.journal, concepts: p.concepts,
+        authors: p.authors?.slice(0, 2), journal: p.journal,
       })),
       institutions_ranking: searchData.scientific?.by_institution,
       international_comparison: searchData.scientific?.international?.slice(0, 10),
-      capes_datasets: searchData.scientific?.capes_datasets?.slice(0, 3),
       github_repos: searchData.technological?.github_repos?.slice(0, 5),
       macro_indicators: (searchData.productive?.macro_indicators || []).map((m: any) => ({
         name: m.name, value: m.value, unit: m.unit, variation: m.variation,
       })),
-      ipeadata_series: (searchData.productive?.ipeadata_series || []).slice(0, 6).map((s: any) => ({
-        name: s.name, lastValue: s.lastValue, theme: s.theme,
-      })),
-      aneel_datasets: searchData.productive?.aneel_datasets?.slice(0, 3),
-      cvm_datasets: searchData.productive?.cvm_datasets?.slice(0, 3),
       contracts_top8: (searchData.institutional?.public_contracts || []).slice(0, 8).map((c: any) => ({
-        object: c.object?.slice(0, 120), organ: c.organ, value: c.value, uf: c.uf, date: c.date,
+        object: c.object?.slice(0, 120), organ: c.organ, value: c.value, uf: c.uf,
       })),
       convenios: searchData.institutional?.transparencia?.convenios?.slice(0, 5),
       sanctions: searchData.institutional?.transparencia?.sanctions?.slice(0, 3),
-      gazettes_sample: (searchData.institutional?.official_gazettes || []).slice(0, 3).map((g: any) => ({
-        territory: g.territory, state: g.state, date: g.date,
-      })),
       open_datasets: (searchData.institutional?.open_datasets || []).slice(0, 5).map((d: any) => ({
         title: d.title, organization: d.organization,
       })),
-      tcu_datasets: searchData.institutional?.tcu_datasets?.slice(0, 3),
-      ibama_datasets: searchData.institutional?.ibama_datasets?.slice(0, 3),
     }, null, 0);
 
-    console.log(`Motor analysis for: ${searchData.query} (persona: ${personaKey}, sources: ${searchData.meta?.source_count})`);
+    console.log(`Motor analysis: ${searchData.query} (persona: ${personaKey}, GT=${indices.gt?.value}, CD=${indices.cd?.value})`);
 
     const aiResponse = await fetch(AI_GATEWAY, {
       method: "POST",
@@ -140,35 +142,33 @@ REGRAS:
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Dados brutos de ${searchData.meta?.source_count || "múltiplas"} bases públicas sobre "${searchData.query}":\n\n${dataSummary}` },
+          { role: "user", content: `Dados de ${searchData.meta?.source_count || "múltiplas"} bases sobre "${searchData.query}":\n\n${dataSummary}` },
         ],
-        temperature: 0.2,
-        max_tokens: 2500,
+        temperature: 0.15,
+        max_tokens: 3000,
       }),
     });
 
     if (!aiResponse.ok) {
       if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns segundos." }), {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos de IA esgotados." }), {
+        return new Response(JSON.stringify({ error: "Créditos esgotados" }), {
           status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const errText = await aiResponse.text();
-      console.error("AI gateway error:", aiResponse.status, errText);
-      return new Response(JSON.stringify({ error: "Erro na análise de IA" }), {
+      console.error("AI error:", aiResponse.status, errText);
+      return new Response(JSON.stringify({ error: "Erro na análise" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const aiData = await aiResponse.json();
     const analysisText = aiData.choices?.[0]?.message?.content || "";
-
-    // Parse the 3 sections from the response
     const sections = parseThreeSections(analysisText, pq.questions);
 
     return new Response(JSON.stringify({
@@ -189,34 +189,23 @@ REGRAS:
 });
 
 function parseThreeSections(text: string, questions: string[]): string[] {
-  // Try to split by ## 1., ## 2., ## 3.
   const sections: string[] = [];
-  const patterns = [
-    /##\s*1\./,
-    /##\s*2\./,
-    /##\s*3\./,
-  ];
-
+  const patterns = [/##\s*1\./, /##\s*2\./, /##\s*3\./];
   const indices: number[] = [];
   for (const p of patterns) {
     const match = text.match(p);
-    if (match && match.index !== undefined) {
-      indices.push(match.index);
-    }
+    if (match && match.index !== undefined) indices.push(match.index);
   }
-
   if (indices.length === 3) {
     sections.push(text.slice(indices[0], indices[1]).replace(/^##\s*1\.[^\n]*\n?/, "").trim());
     sections.push(text.slice(indices[1], indices[2]).replace(/^##\s*2\.[^\n]*\n?/, "").trim());
     sections.push(text.slice(indices[2]).replace(/^##\s*3\.[^\n]*\n?/, "").trim());
   } else {
-    // Fallback: split by any ## headers
     const parts = text.split(/\n##\s+/).filter(Boolean);
     for (let i = 0; i < 3; i++) {
       const part = parts[i] || "";
       sections.push(part.replace(/^\d+\.\s*[^\n]*\n?/, "").trim());
     }
   }
-
   return sections;
 }
