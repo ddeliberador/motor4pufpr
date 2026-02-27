@@ -65,6 +65,34 @@ export interface OpenDataset {
   resourceCount: number;
 }
 
+export interface GitHubRepo {
+  name: string;
+  description: string;
+  stars: number;
+  language: string;
+  url: string;
+  updated: string;
+  forks: number;
+}
+
+export interface Convenio {
+  object: string;
+  proponent: string;
+  value: number;
+  grantor: string;
+  startDate: string;
+  endDate: string;
+  situation: string;
+}
+
+export interface SimpleDataset {
+  title: string;
+  description: string;
+  url: string;
+  organization?: string;
+  formats?: string[];
+}
+
 export interface MotorSearchResult {
   query: string;
   scientific: {
@@ -72,16 +100,31 @@ export interface MotorSearchResult {
     total_papers: number;
     by_institution: Record<string, number>;
     international: Array<{ country_code: string; count: number }>;
+    capes_datasets: SimpleDataset[];
+    inep_datasets: SimpleDataset[];
+  };
+  technological: {
+    github_repos: GitHubRepo[];
   };
   productive: {
     macro_indicators: MacroIndicator[];
     ipeadata_series: IPEADataSeries[];
-    comex_datasets: Array<{ title: string; description: string; url: string }>;
+    comex_datasets: SimpleDataset[];
+    ibge: { pesquisas: Array<{ id: string; name: string; description: string }>; pnad: any; pib: any };
+    aneel_datasets: SimpleDataset[];
+    cvm_datasets: SimpleDataset[];
+    anatel_datasets: SimpleDataset[];
+    anvisa_datasets: SimpleDataset[];
   };
   institutional: {
     public_contracts: PublicContract[];
     official_gazettes: OfficialGazette[];
     open_datasets: OpenDataset[];
+    transparencia: { convenios: Convenio[]; sanctions: Array<{ company: string; type: string; organ: string; date: string }> };
+    siconfi: Array<{ entity: string; year: number; period: string; url: string }>;
+    tcu_datasets: SimpleDataset[];
+    ibama_datasets: SimpleDataset[];
+    inpe_alerts: any[];
   };
   stats: {
     papers: number;
@@ -91,6 +134,9 @@ export interface MotorSearchResult {
     countries: number;
     macro_indicators: number;
     ipeadata_series: number;
+    github_repos: number;
+    convenios: number;
+    sanctions: number;
   };
   meta: {
     processing_time_ms: number;
@@ -119,7 +165,6 @@ export function useMotorSearch() {
     setAnalysis(null);
 
     try {
-      // Step 1: Fetch data from all public APIs
       const { data: searchResult, error: searchError } = await supabase.functions.invoke(
         "motor-search",
         { body: { query } }

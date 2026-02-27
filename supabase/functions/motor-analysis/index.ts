@@ -8,54 +8,49 @@ const corsHeaders = {
 
 const AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
-const PERSONA_PROMPTS: Record<string, string> = {
-  pesquisador: `Você é um analista estratégico para PESQUISADORES ACADÊMICOS brasileiros.
-Dado o conjunto de dados brutos abaixo sobre um tema tecnológico, gere uma análise estratégica OBJETIVA e ACIONÁVEL.
+const SYSTEM_PROMPT = `Você é o Motor 4P — um analista estratégico de inovação do Brasil que cruza dados de 21+ bases públicas oficiais em tempo real.
 
-Foque em:
-- Onde estão os grupos/papers mais relevantes e com quem colaborar
-- Gaps de tradução: muita pesquisa mas poucas patentes? Poucos papers brasileiros vs. internacional?
-- Editais e licitações abertas onde o pesquisador pode se candidatar
-- Datasets disponíveis para pesquisa
-- Recomendações concretas: "Submeta projeto ao edital X", "Busque parceria com grupo Y"
+REGRAS ABSOLUTAS:
+1. Cada insight DEVE citar a FONTE específica (ex: "Segundo OpenAlex...", "No PNCP...", "Dados do BCB mostram...")
+2. Cada parágrafo DEVE ter pelo menos 1 NÚMERO CONCRETO dos dados fornecidos
+3. NUNCA invente dados — use APENAS o que está no JSON abaixo
+4. Priorize CRUZAMENTOS entre fontes diferentes (ex: "Há X papers em OpenAlex mas apenas Y licitações no PNCP — gap de tradução")
+5. Seja DIRETO — zero introduções genéricas, zero enrolação
 
-Formato: Use markdown com headers ##. Seja direto, sem introduções genéricas. Cada insight deve ter um DADO NUMÉRICO de suporte.`,
+ESTRUTURA OBRIGATÓRIA DA ANÁLISE:
 
-  gestor: `Você é um analista estratégico para GESTORES DE POLÍTICA PÚBLICA brasileiros.
-Dado o conjunto de dados brutos abaixo sobre um tema tecnológico, gere uma análise estratégica OBJETIVA e ACIONÁVEL.
+## 🔬 Panorama Científico
+- Quantos papers, quais instituições lideram, comparação internacional BR vs mundo
+- Cruze com CAPES/INEP se houver dados de programas/bolsas
 
-Foque em:
-- Capacidade científica instalada vs. demanda produtiva (gap de tradução)
-- Licitações e contratos públicos ativos: valores, órgãos, oportunidades
-- Menções em diários oficiais: que municípios/estados estão regulamentando isso?
-- Indicadores macro relevantes para política industrial
-- Recomendações concretas: "Criar edital para X", "Articular com órgão Y"
+## 🏭 Panorama Produtivo & Econômico  
+- Indicadores macro (BCB: Selic, IPCA, câmbio) e como afetam o setor
+- Séries IPEAData relevantes
+- Dados IBGE se disponíveis
+- Repositórios GitHub (maturidade tecnológica)
+- Datasets ANEEL/CVM/ANATEL/ANVISA se relevantes
 
-Formato: Use markdown com headers ##. Seja direto, sem introduções genéricas. Cada insight deve ter um DADO NUMÉRICO de suporte.`,
+## 🏛️ Panorama Institucional & Regulatório
+- Licitações PNCP: valores totais, órgãos compradores, estados
+- Convênios da Transparência: valores e proponentes
+- Menções em diários oficiais (Querido Diário)
+- Datasets TCU/IBAMA se relevantes
+- Fiscalizações/sanções se houver
 
-  empresario: `Você é um analista estratégico para EMPRESÁRIOS E EMPREENDEDORES brasileiros.
-Dado o conjunto de dados brutos abaixo sobre um tema tecnológico, gere uma análise estratégica OBJETIVA e ACIONÁVEL.
+## ⚡ Cruzamentos Estratégicos (MAIS IMPORTANTE)
+- Gap Ciência→Mercado: muitos papers mas poucas licitações?
+- Gap Regional: pesquisa concentrada em X mas contratos em Y?
+- Oportunidades: editais abertos + capacidade acadêmica existente
+- Riscos: sanções, embargos ambientais, dependência de importação
 
-Foque em:
-- Oportunidades de mercado: licitações abertas, valores estimados, órgãos compradores
-- Concorrência internacional: quantos países publicam sobre isso? Brasil está atrás?
-- Séries econômicas relevantes: câmbio, inflação, indicadores setoriais
-- Parceiros potenciais: instituições de pesquisa, grupos acadêmicos
-- Recomendações concretas: "Participar da licitação X", "Firmar convênio com universidade Y"
+## 🎯 Recomendações Acionáveis
+- 3-5 ações concretas e específicas para a persona`;
 
-Formato: Use markdown com headers ##. Seja direto, sem introduções genéricas. Cada insight deve ter um DADO NUMÉRICO de suporte.`,
-
-  cidadao: `Você é um analista estratégico para CIDADÃOS brasileiros interessados em inovação.
-Dado o conjunto de dados brutos abaixo sobre um tema tecnológico, gere uma análise explicativa OBJETIVA e ACESSÍVEL.
-
-Foque em:
-- O que o Brasil está fazendo nessa área? Quantos papers, contratos?
-- Como isso afeta a vida do cidadão?
-- Transparência: quais contratos públicos existem? Valores?
-- Dados abertos disponíveis para qualquer pessoa consultar
-- Linguagem simples e clara
-
-Formato: Use markdown com headers ##. Seja direto, sem introduções genéricas. Cada insight deve ter um DADO NUMÉRICO de suporte.`,
+const PERSONA_ADDITIONS: Record<string, string> = {
+  pesquisador: `\n\nPERSONA: Pesquisador acadêmico. Foque em: parceiros de pesquisa, editais, gaps de publicação, oportunidades de financiamento. Nas recomendações, sugira grupos para colaboração, editais para submissão, e temas com lacunas publicáveis.`,
+  gestor: `\n\nPERSONA: Gestor de política pública. Foque em: capacidade instalada vs demanda, investimento público, regulação, comparação internacional. Nas recomendações, sugira políticas, editais a criar, articulações interinstitucionais.`,
+  empresario: `\n\nPERSONA: Empresário/empreendedor. Foque em: oportunidades de mercado, licitações abertas com valores, concorrência, parceiros acadêmicos, risco regulatório. Nas recomendações, sugira licitações para participar, parcerias e nichos de mercado.`,
+  cidadao: `\n\nPERSONA: Cidadão interessado. Use linguagem simples e acessível. Explique o que o Brasil faz nessa área, quanto gasta, e como isso afeta o dia-a-dia. Nas recomendações, indique onde acompanhar e como participar.`,
 };
 
 Deno.serve(async (req) => {
@@ -79,33 +74,54 @@ Deno.serve(async (req) => {
     }
 
     const personaKey = persona || "pesquisador";
-    const systemPrompt = PERSONA_PROMPTS[personaKey] || PERSONA_PROMPTS.pesquisador;
 
-    // Prepare a concise data summary for the AI
+    // Build comprehensive data summary for AI
     const dataSummary = JSON.stringify({
       query: searchData.query,
       stats: searchData.stats,
-      scientific_papers: (searchData.scientific?.papers || []).slice(0, 8).map((p: any) => ({
-        title: p.title, year: p.year, citations: p.citations, authors: p.authors?.slice(0, 2), journal: p.journal,
+      meta: searchData.meta,
+      // Scientific
+      papers_top10: (searchData.scientific?.papers || []).slice(0, 10).map((p: any) => ({
+        title: p.title, year: p.year, citations: p.citations,
+        authors: p.authors?.slice(0, 2), journal: p.journal, concepts: p.concepts,
       })),
-      international_comparison: searchData.scientific?.international?.slice(0, 5),
+      institutions_ranking: searchData.scientific?.by_institution,
+      international_comparison: searchData.scientific?.international?.slice(0, 10),
+      capes_datasets: searchData.scientific?.capes_datasets?.slice(0, 3),
+      inep_datasets: searchData.scientific?.inep_datasets?.slice(0, 3),
+      // Technological
+      github_repos: searchData.technological?.github_repos?.slice(0, 5),
+      // Productive
       macro_indicators: (searchData.productive?.macro_indicators || []).map((m: any) => ({
-        name: m.name, value: m.value, unit: m.unit, variation: m.variation,
+        name: m.name, value: m.value, unit: m.unit, variation: m.variation, date: m.date,
       })),
-      ipeadata_series: (searchData.productive?.ipeadata_series || []).slice(0, 4).map((s: any) => ({
-        name: s.name, lastValue: s.lastValue, theme: s.theme,
+      ipeadata_series: (searchData.productive?.ipeadata_series || []).slice(0, 6).map((s: any) => ({
+        name: s.name, lastValue: s.lastValue, theme: s.theme, source: s.source,
       })),
-      contracts: (searchData.institutional?.public_contracts || []).slice(0, 5).map((c: any) => ({
-        object: c.object?.slice(0, 100), organ: c.organ, value: c.value, uf: c.uf, date: c.date,
+      ibge_pesquisas: searchData.productive?.ibge?.pesquisas?.slice(0, 5),
+      aneel_datasets: searchData.productive?.aneel_datasets?.slice(0, 3),
+      cvm_datasets: searchData.productive?.cvm_datasets?.slice(0, 3),
+      anvisa_datasets: searchData.productive?.anvisa_datasets?.slice(0, 3),
+      // Institutional
+      contracts_top8: (searchData.institutional?.public_contracts || []).slice(0, 8).map((c: any) => ({
+        object: c.object?.slice(0, 120), organ: c.organ, value: c.value, uf: c.uf, date: c.date, modality: c.modality,
       })),
+      convenios: searchData.institutional?.transparencia?.convenios?.slice(0, 5),
+      sanctions: searchData.institutional?.transparencia?.sanctions?.slice(0, 3),
       gazettes_count: searchData.institutional?.official_gazettes?.length || 0,
-      datasets: (searchData.institutional?.open_datasets || []).slice(0, 3).map((d: any) => ({
-        title: d.title, organization: d.organization,
+      gazettes_sample: (searchData.institutional?.official_gazettes || []).slice(0, 3).map((g: any) => ({
+        territory: g.territory, state: g.state, date: g.date,
       })),
-      sources: searchData.meta?.sources,
+      open_datasets: (searchData.institutional?.open_datasets || []).slice(0, 5).map((d: any) => ({
+        title: d.title, organization: d.organization, formats: d.formats,
+      })),
+      tcu_datasets: searchData.institutional?.tcu_datasets?.slice(0, 3),
+      ibama_datasets: searchData.institutional?.ibama_datasets?.slice(0, 3),
     }, null, 0);
 
-    console.log(`Motor analysis for: ${searchData.query} (persona: ${personaKey})`);
+    console.log(`Motor analysis for: ${searchData.query} (persona: ${personaKey}, sources: ${searchData.meta?.source_count})`);
+
+    const fullPrompt = SYSTEM_PROMPT + (PERSONA_ADDITIONS[personaKey] || PERSONA_ADDITIONS.pesquisador);
 
     const aiResponse = await fetch(AI_GATEWAY, {
       method: "POST",
@@ -114,13 +130,13 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Dados brutos da busca por "${searchData.query}":\n\n${dataSummary}` },
+          { role: "system", content: fullPrompt },
+          { role: "user", content: `Dados brutos de 21 bases públicas sobre "${searchData.query}":\n\n${dataSummary}` },
         ],
-        temperature: 0.3,
-        max_tokens: 1500,
+        temperature: 0.2,
+        max_tokens: 3000,
       }),
     });
 
