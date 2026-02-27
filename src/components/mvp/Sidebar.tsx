@@ -14,8 +14,6 @@ interface SidebarProps {
   setSearchQuery: (query: string) => void;
   onSearch: (e: React.FormEvent) => void;
   isSearching: boolean;
-  isUsingMock: boolean;
-  backendAvailable: boolean;
   showApiStatus: boolean;
   setShowApiStatus: (show: boolean) => void;
   indicators?: {
@@ -34,8 +32,6 @@ const Sidebar = ({
   setSearchQuery,
   onSearch,
   isSearching,
-  isUsingMock,
-  backendAvailable,
   showApiStatus,
   setShowApiStatus,
   indicators,
@@ -80,10 +76,9 @@ const Sidebar = ({
               <Database className="w-4 h-4 text-primary" />
               Buscar Objeto Tecnológico
             </label>
-            <ApiStatusIndicator 
-              isUsingMock={isUsingMock}
-              backendAvailable={backendAvailable}
-            />
+            <span className="text-[9px] px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 rounded-full border border-emerald-500/20">
+              Dados Reais
+            </span>
           </div>
           
           <form onSubmit={onSearch} className="space-y-3">

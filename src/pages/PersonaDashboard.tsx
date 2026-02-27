@@ -41,8 +41,7 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
     search: apiSearch,
     results: apiResults,
     isLoading: isSearching,
-    isUsingMock,
-    backendAvailable,
+    error: searchError,
   } = useIncidenceSearch();
 
   const {
@@ -247,6 +246,28 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
     );
   }
 
+  /* ===== ERROR STATE ===== */
+  if (searchError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="pt-16 flex items-center justify-center min-h-[calc(100vh-4rem)]">
+          <div className="text-center space-y-4 max-w-md px-4">
+            <div className="w-16 h-16 mx-auto rounded-full bg-destructive/10 flex items-center justify-center">
+              <AlertTriangle className="w-8 h-8 text-destructive" />
+            </div>
+            <h2 className="text-lg font-semibold text-foreground">Não foi possível buscar dados reais</h2>
+            <p className="text-sm text-muted-foreground">{searchError}</p>
+            <Button onClick={handleNewSearch} variant="outline" className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Tentar nova busca
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   /* ===== RESULTS STATE ===== */
   if (!searchResults) return null;
 
@@ -338,9 +359,9 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
                 </p>
               )}
             </div>
-            {isUsingMock && (
-              <span className="text-[10px] px-2 py-1 bg-amber-500/10 text-amber-600 rounded-full border border-amber-500/20 flex-shrink-0">
-                Dados simulados
+            {searchError && (
+              <span className="text-[10px] px-2 py-1 bg-destructive/10 text-destructive rounded-full border border-destructive/20 flex-shrink-0">
+                Erro na busca
               </span>
             )}
             <Button variant="outline" size="sm" onClick={handleDownloadPDF} className="gap-1.5 flex-shrink-0">

@@ -25,8 +25,7 @@ const CamadaAusente = () => {
   const {
     search: apiSearch,
     isLoading: isSearching,
-    isUsingMock,
-    backendAvailable,
+    error: searchError,
   } = useIncidenceSearch();
 
   const { searchCnaes } = useCnaeSearch();
@@ -76,8 +75,6 @@ const CamadaAusente = () => {
           setSearchQuery={setSearchQuery}
           onSearch={handleSearch}
           isSearching={isSearching}
-          isUsingMock={isUsingMock}
-          backendAvailable={backendAvailable}
           showApiStatus={showApiStatus}
           setShowApiStatus={setShowApiStatus}
           selectedCnaes={selectedCnaes}
