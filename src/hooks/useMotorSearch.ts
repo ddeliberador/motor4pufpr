@@ -93,6 +93,21 @@ export interface SimpleDataset {
   formats?: string[];
 }
 
+export interface StrategicIndex {
+  value: number;
+  label: string;
+  description: string;
+  formula: string;
+}
+
+export interface StrategicIndices {
+  gt: StrategicIndex;
+  cd: StrategicIndex;
+  aue: StrategicIndex;
+  ei: StrategicIndex;
+  uf_distribution: Record<string, number>;
+}
+
 export interface MotorSearchResult {
   query: string;
   scientific: {
@@ -126,6 +141,7 @@ export interface MotorSearchResult {
     ibama_datasets: SimpleDataset[];
     inpe_alerts: any[];
   };
+  strategic_indices: StrategicIndices;
   stats: {
     papers: number;
     contracts: number;

@@ -393,6 +393,65 @@ Deno.serve(async (req) => {
     if (ibama.length > 0) activeSources.push("IBAMA");
     if (anvisa.length > 0) activeSources.push("ANVISA");
 
+    // ===== COMPUTE STRATEGIC INDICES =====
+    const totalPapers = openalex.totalPapers || 0;
+    const totalContracts = pncp.length;
+    const totalConvenios = transparencia.convenios?.length || 0;
+    const totalGithub = github.length;
+    const brCount = openalex.international.find((c: any) => c.country_code === "BR")?.count || 0;
+    const topForeignCount = openalex.international
+      .filter((c: any) => c.country_code !== "BR")
+      .sort((a: any, b: any) => b.count - a.count)[0]?.count || 0;
+    const totalIntlPapers = openalex.international.reduce((s: number, c: any) => s + c.count, 0) || 1;
+
+    // GT — Gargalo de Tradução: papers vs contratos+convênios (0-100, higher = bigger gap)
+    const translationDenominator = totalContracts + totalConvenios + totalGithub;
+    const gt = translationDenominator > 0
+      ? Math.min(100, Math.round((totalPapers / translationDenominator) * 10))
+      : totalPapers > 0 ? 100 : 0;
+
+    // CD — Concentração e Dependência (% produção estrangeira vs BR)
+    const cd = totalIntlPapers > 0
+      ? Math.round(((totalIntlPapers - brCount) / totalIntlPapers) * 100)
+      : 0;
+
+    // AUE — Articulação Universidade-Empresa (institutions in papers that also appear in contracts)
+    const institutionNames = Object.keys(openalex.institutionCounts).map((n: string) => n.toLowerCase());
+    const contractOrgans = pncp.map((c: any) => (c.organ || "").toLowerCase());
+    const convenioProponents = (transparencia.convenios || []).map((c: any) => (c.proponent || "").toLowerCase());
+    const allInstitutional = [...contractOrgans, ...convenioProponents];
+    let matchCount = 0;
+    for (const inst of institutionNames) {
+      if (allInstitutional.some((o: string) => o.includes(inst.slice(0, 15)) || inst.includes(o.slice(0, 15)))) {
+        matchCount++;
+      }
+    }
+    const aue = institutionNames.length > 0
+      ? Math.round((matchCount / institutionNames.length) * 100)
+      : 0;
+
+    // EI — Efetividade Instrumental (convênios+contratos value vs volume)
+    const totalContractValue = pncp.reduce((s: number, c: any) => s + (c.value || 0), 0);
+    const totalConvenioValue = (transparencia.convenios || []).reduce((s: number, c: any) => s + (c.value || 0), 0);
+    const totalInstrumentalValue = totalContractValue + totalConvenioValue;
+    const ei = translationDenominator > 0 && totalInstrumentalValue > 0
+      ? Math.min(100, Math.round(Math.log10(totalInstrumentalValue / translationDenominator) * 20 + 50))
+      : 0;
+
+    // UF concentration from contracts
+    const ufDistribution: Record<string, number> = {};
+    for (const c of pncp) {
+      if (c.uf) ufDistribution[c.uf] = (ufDistribution[c.uf] || 0) + 1;
+    }
+
+    const strategic_indices = {
+      gt: { value: gt, label: "Gargalo de Tradução", description: "Proporção ciência vs aplicação — quanto maior, mais ciência sem tradução prática", formula: "papers / (contratos + convênios + repos) × 10" },
+      cd: { value: cd, label: "Dependência Externa", description: "% da produção científica fora do Brasil", formula: "(papers_estrangeiros / total_papers) × 100" },
+      aue: { value: aue, label: "Articulação U-E", description: "% de instituições científicas presentes também em contratos/convênios", formula: "(instituições_com_match / total_instituições) × 100" },
+      ei: { value: ei, label: "Efetividade Instrumental", description: "Relação entre valor financeiro e volume de instrumentos públicos", formula: "log10(valor_total / qtd_instrumentos) × 20 + 50" },
+      uf_distribution: ufDistribution,
+    };
+
     const result = {
       query,
       scientific: {
@@ -426,6 +485,7 @@ Deno.serve(async (req) => {
         ibama_datasets: ibama,
         inpe_alerts: Array.isArray(inpe) ? inpe : [],
       },
+      strategic_indices,
       stats: {
         papers: openalex.totalPapers,
         contracts: pncp.length,
