@@ -418,24 +418,30 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
                 </div>
               )}
 
-              {/* AI Analysis preview */}
+              {/* AI Analysis — 3 Questions Structure */}
               {isAnalyzing && (
                 <div className="bg-card border border-primary/20 rounded-xl p-5">
                   <div className="flex items-center gap-3">
                     <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                    <span className="text-sm text-muted-foreground">Gerando análise estratégica para {config.label}...</span>
+                    <span className="text-sm text-muted-foreground">Cruzando {data.meta.source_count} bases para responder suas questões...</span>
                   </div>
                 </div>
               )}
-              {analysis && (
-                <div className="bg-card border border-primary/20 rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-primary" />
-                    Análise Estratégica — {config.label}
-                  </h3>
-                  <div className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-li:text-muted-foreground">
-                    <ReactMarkdown>{analysis.analysis}</ReactMarkdown>
-                  </div>
+              {analysis && analysis.sections && analysis.sections.length > 0 && (
+                <div className="grid grid-cols-1 gap-4">
+                  {analysis.questions.map((question, idx) => (
+                    <div key={idx} className="bg-card border border-primary/20 rounded-xl p-5">
+                      <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                        <span className={`w-6 h-6 rounded-full bg-gradient-to-br ${config.color} text-white text-xs font-bold flex items-center justify-center flex-shrink-0`}>
+                          {idx + 1}
+                        </span>
+                        {question}
+                      </h3>
+                      <div className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-li:text-muted-foreground prose-a:text-primary">
+                        <ReactMarkdown>{analysis.sections[idx] || ""}</ReactMarkdown>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </TabsContent>
@@ -591,18 +597,31 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
               )}
             </TabsContent>
 
-            {/* ===== AI ANALYSIS ===== */}
-            <TabsContent value="analysis">
+            {/* ===== AI ANALYSIS — 3 Questions ===== */}
+            <TabsContent value="analysis" className="space-y-4">
               {isAnalyzing ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                  <span className="ml-3 text-sm text-muted-foreground">Gerando análise estratégica...</span>
+                  <span className="ml-3 text-sm text-muted-foreground">Cruzando {data.meta.source_count} bases públicas...</span>
                 </div>
-              ) : analysis ? (
-                <div className="bg-card border border-border rounded-xl p-6">
-                  <div className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-li:text-muted-foreground prose-a:text-primary">
-                    <ReactMarkdown>{analysis.analysis}</ReactMarkdown>
-                  </div>
+              ) : analysis && analysis.sections?.length > 0 ? (
+                <div className="space-y-4">
+                  {analysis.questions.map((question, idx) => (
+                    <div key={idx} className="bg-card border border-border rounded-xl p-6">
+                      <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-3">
+                        <span className={`w-7 h-7 rounded-full bg-gradient-to-br ${config.color} text-white text-sm font-bold flex items-center justify-center flex-shrink-0`}>
+                          {idx + 1}
+                        </span>
+                        {question}
+                      </h3>
+                      <div className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-li:text-muted-foreground prose-a:text-primary">
+                        <ReactMarkdown>{analysis.sections[idx] || ""}</ReactMarkdown>
+                      </div>
+                    </div>
+                  ))}
+                  <p className="text-[10px] text-muted-foreground text-center">
+                    Análise gerada com dados de {data.meta.sources.join(" · ")} em {data.meta.processing_time_ms}ms
+                  </p>
                 </div>
               ) : (
                 <div className="text-center py-12 text-muted-foreground">
