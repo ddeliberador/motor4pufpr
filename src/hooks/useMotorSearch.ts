@@ -147,6 +147,8 @@ export interface MotorSearchResult {
 
 export interface MotorAnalysis {
   analysis: string;
+  sections: string[];
+  questions: string[];
   persona: string;
 }
 
