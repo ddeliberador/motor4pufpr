@@ -22,7 +22,7 @@ const PERSONA_QUESTIONS: Record<string, PersonaQuestions> = {
       "Onde estão as lacunas científicas e nichos de fronteira?",
     ],
     context: "pesquisador acadêmico brasileiro buscando oportunidades de pesquisa e publicação",
-    outputFocus: "Mapa de saturação temática, cross entre publicações e ausência de patente, áreas com financiamento alto e produção baixa, nichos de fronteira.",
+    outputFocus: "Mapa de saturação temática, cross entre publicações e ausência de patente, áreas com financiamento alto e produção baixa, nichos de fronteira. Entregas: 3 agendas estratégicas, 3 parceiros potenciais, 3 fontes de financiamento.",
   },
   universidade: {
     questions: [
@@ -31,7 +31,7 @@ const PERSONA_QUESTIONS: Record<string, PersonaQuestions> = {
       "Quais parcerias estratégicas são possíveis?",
     ],
     context: "gestor universitário avaliando posicionamento institucional",
-    outputFocus: "Heatmap de áreas emergentes, empresas da região com baixa interação U-E, patentes sem exploração, índice de conversão pesquisa→inovação.",
+    outputFocus: "Índice de Conversão Estrutural, áreas fortes e frágeis, heatmap de áreas emergentes, empresas da região com baixa interação U-E. Entregas: Índice de Conversão, 3 parcerias estratégicas sugeridas.",
   },
   empresa: {
     questions: [
@@ -40,7 +40,7 @@ const PERSONA_QUESTIONS: Record<string, PersonaQuestions> = {
       "Quem resolve meu problema? Onde tem tecnologia aplicável?",
     ],
     context: "empresário avaliando viabilidade e concorrência",
-    outputFocus: "Matching empresa↔grupo de pesquisa, patentes disponíveis por setor, universidades com histórico de cooperação, projetos públicos com possibilidade de parceria.",
+    outputFocus: "Matching empresa↔grupo de pesquisa, TRL estimado, patentes disponíveis por setor, universidades com histórico de cooperação. Entregas: 3 parceiros acadêmicos, 3 instrumentos disponíveis, diagnóstico de dependência externa.",
   },
   governo: {
     questions: [
@@ -49,7 +49,7 @@ const PERSONA_QUESTIONS: Record<string, PersonaQuestions> = {
       "Os instrumentos públicos estão funcionando?",
     ],
     context: "formulador de política pública avaliando investimentos e efetividade",
-    outputFocus: "Mapa de capacidades por território, lacunas tecnológicas (setor com papers mas zero contrato), alertas de dependência externa, ranking de densidade inovativa. PRESCRITIVO: diga O QUE FAZER, não apenas o que existe.",
+    outputFocus: "Mapa de capacidades por território, lacunas tecnológicas, alertas de dependência externa, ranking de densidade inovativa. PRESCRITIVO: Investir / Reestruturar / Criar novo instrumento / Reduzir. Setores críticos e alavancas prioritárias.",
   },
 };
 
@@ -75,19 +75,26 @@ Deno.serve(async (req) => {
 
     const personaKey = persona || "pesquisador";
     const pq = PERSONA_QUESTIONS[personaKey] || PERSONA_QUESTIONS.pesquisador;
-    const indices = searchData.strategic_indices || {};
+    const indices = searchData.indices || {};
+    const layers = searchData.layers || {};
 
     const systemPrompt = `Você é o Motor 4P — analista estratégico PRESCRITIVO de inovação.
 
 CONTEXTO: ${pq.context}.
 FOCO DE OUTPUT: ${pq.outputFocus}
 
-ÍNDICES COMPUTADOS (já calculados dos dados reais):
-- Gargalo de Tradução (GT): ${indices.gt?.value ?? "N/A"}/100 — ${indices.gt?.description || ""}
-- Dependência Externa (CD): ${indices.cd?.value ?? "N/A"}% — ${indices.cd?.description || ""}
-- Articulação U-E (AUE): ${indices.aue?.value ?? "N/A"}% — ${indices.aue?.description || ""}
-- Efetividade Instrumental (EI): ${indices.ei?.value ?? "N/A"}/100 — ${indices.ei?.description || ""}
-- Distribuição UF: ${JSON.stringify(indices.uf_distribution || {})}
+ÍNDICES CRUZADOS (calculados cruzando múltiplas camadas):
+- GT (Gargalo de Tradução): ${indices.gt?.value ?? "N/A"}/100 — ${indices.gt?.description || ""} [Camadas: ${indices.gt?.layers_used?.join(", ") || "?"}] ${indices.gt?.alert_level === "critical" ? "🚨 CRÍTICO" : indices.gt?.alert_level === "warning" ? "⚠️ ALERTA" : ""}
+- CD (Dependência Externa): ${indices.cd?.value ?? "N/A"}% — ${indices.cd?.description || ""} [Camadas: ${indices.cd?.layers_used?.join(", ") || "?"}]  ${indices.cd?.alert_level === "critical" ? "🚨 CRÍTICO" : indices.cd?.alert_level === "warning" ? "⚠️ ALERTA" : ""}
+- AUE (Articulação U-E): ${indices.aue?.value ?? "N/A"}% — ${indices.aue?.description || ""} [Camadas: ${indices.aue?.layers_used?.join(", ") || "?"}] ${indices.aue?.alert_level === "critical" ? "🚨 CRÍTICO" : indices.aue?.alert_level === "warning" ? "⚠️ ALERTA" : ""}
+- EI (Efetividade Instrumental): ${indices.ei?.value ?? "N/A"}/100 — ${indices.ei?.description || ""} [Camadas: ${indices.ei?.layers_used?.join(", ") || "?"}] ${indices.ei?.alert_level === "critical" ? "🚨 CRÍTICO" : indices.ei?.alert_level === "warning" ? "⚠️ ALERTA" : ""}
+- Distribuição UF: ${JSON.stringify(layers.policy?.uf_distribution || {})}
+
+DADOS POR CAMADA:
+- Camada 1 (Conhecimento): ${layers.knowledge?.total_papers || 0} papers, densidade=${layers.knowledge?.density || 0}, concentração=${layers.knowledge?.concentration || 0}, especialização=${layers.knowledge?.specialization || 0}
+- Camada 2 (Tecnologia): ${layers.technology?.github_repos?.length || 0} repos, TRL=${layers.technology?.trl_estimate || "?"} (${layers.technology?.trl_label || "?"}), densidade_tech=${layers.technology?.tech_density || 0}
+- Camada 3 (Política): ${layers.policy?.total_contracts || 0} contratos (R$ ${((layers.policy?.total_contract_value || 0) / 1e6).toFixed(1)}M), ${layers.policy?.total_convenios || 0} convênios, intensidade=${layers.policy?.instrumental_intensity || 0}
+- Camada 4 (Internacional): dependência=${layers.international?.dependency_index || 0}%, share BR=${layers.international?.br_share || 0}%, inserção global=${layers.international?.global_insertion || 0}%
 
 Fontes: ${searchData.meta?.sources?.join(", ") || "diversas"}.
 
@@ -97,9 +104,9 @@ ESTRUTURA — Responda EXATAMENTE estas 3 questões:
 ## 3. ${pq.questions[2]}
 
 REGRAS INVIOLÁVEIS:
-1. Cada resposta DEVE referenciar os ÍNDICES COMPUTADOS acima e explicar o que significam
-2. Cada resposta DEVE citar FONTES ESPECÍFICAS com NÚMEROS (ex: "OpenAlex: ${searchData.stats?.papers || 0} papers")
-3. Cada resposta DEVE ter CRUZAMENTOS (ex: "GT de ${indices.gt?.value || "?"} indica muita ciência mas pouca aplicação — ${searchData.stats?.contracts || 0} contratos vs ${searchData.stats?.papers || 0} papers")
+1. Cada resposta DEVE referenciar os ÍNDICES CRUZADOS e explicar DE QUAIS CAMADAS vem o cálculo
+2. Cada resposta DEVE citar FONTES ESPECÍFICAS com NÚMEROS
+3. Cada resposta DEVE ter CRUZAMENTOS entre camadas (ex: "GT de ${indices.gt?.value || "?"} cruza Camada 1 (${layers.knowledge?.total_papers || 0} papers) com Camada 3 (${layers.policy?.total_contracts || 0} contratos)")
 4. NUNCA descreva — PRESCREVA: termine cada seção com 2-3 AÇÕES CONCRETAS numeradas
 5. Use **negrito** para números e alertas críticos
 6. Se GT > 70: ALERTE sobre gap de tradução
@@ -109,25 +116,24 @@ REGRAS INVIOLÁVEIS:
     const dataSummary = JSON.stringify({
       query: searchData.query,
       stats: searchData.stats,
-      strategic_indices: searchData.strategic_indices,
-      papers_top10: (searchData.scientific?.papers || []).slice(0, 10).map((p: any) => ({
+      indices: searchData.indices,
+      knowledge_top10: (layers.knowledge?.papers || []).slice(0, 10).map((p: any) => ({
         title: p.title, year: p.year, citations: p.citations,
         authors: p.authors?.slice(0, 2), journal: p.journal,
       })),
-      institutions_ranking: searchData.scientific?.by_institution,
-      international_comparison: searchData.scientific?.international?.slice(0, 10),
-      github_repos: searchData.technological?.github_repos?.slice(0, 5),
-      macro_indicators: (searchData.productive?.macro_indicators || []).map((m: any) => ({
-        name: m.name, value: m.value, unit: m.unit, variation: m.variation,
-      })),
-      contracts_top8: (searchData.institutional?.public_contracts || []).slice(0, 8).map((c: any) => ({
+      knowledge_institutions: layers.knowledge?.institutions,
+      knowledge_concepts: layers.knowledge?.concepts?.slice(0, 10),
+      technology_repos: layers.technology?.github_repos?.slice(0, 5),
+      technology_trl: { estimate: layers.technology?.trl_estimate, label: layers.technology?.trl_label, signals: layers.technology?.trl_signals },
+      policy_contracts: (layers.policy?.contracts || []).slice(0, 8).map((c: any) => ({
         object: c.object?.slice(0, 120), organ: c.organ, value: c.value, uf: c.uf,
       })),
-      convenios: searchData.institutional?.transparencia?.convenios?.slice(0, 5),
-      sanctions: searchData.institutional?.transparencia?.sanctions?.slice(0, 3),
-      open_datasets: (searchData.institutional?.open_datasets || []).slice(0, 5).map((d: any) => ({
-        title: d.title, organization: d.organization,
+      policy_convenios: (layers.policy?.convenios || []).slice(0, 5),
+      policy_sanctions: (layers.policy?.sanctions || []).slice(0, 3),
+      international_macro: (layers.international?.macro_indicators || []).map((m: any) => ({
+        name: m.name, value: m.value, unit: m.unit, variation: m.variation,
       })),
+      international_countries: layers.international?.country_distribution,
     }, null, 0);
 
     console.log(`Motor analysis: ${searchData.query} (persona: ${personaKey}, GT=${indices.gt?.value}, CD=${indices.cd?.value})`);
