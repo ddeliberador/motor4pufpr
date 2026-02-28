@@ -6,6 +6,8 @@ interface IndexData {
   label: string;
   description: string;
   formula: string;
+  layers_used?: string[];
+  alert_level?: "normal" | "warning" | "critical";
 }
 
 interface StrategicIndicesProps {
@@ -14,9 +16,15 @@ interface StrategicIndicesProps {
     cd: IndexData;
     aue: IndexData;
     ei: IndexData;
-    uf_distribution: Record<string, number>;
   };
 }
+
+const LAYER_LABELS: Record<string, string> = {
+  knowledge: "Conhecimento",
+  technology: "Tecnologia",
+  policy: "Política",
+  international: "Internacional",
+};
 
 const indexConfig = [
   { key: "gt" as const, icon: AlertTriangle, alertThreshold: 70, alertMsg: "Gap de tradução crítico", goodLabel: "Tradução equilibrada", badLabel: "Muita ciência, pouca aplicação", colorHigh: "text-red-500", colorLow: "text-emerald-500" },
@@ -57,12 +65,27 @@ export default function StrategicIndices({ indices }: StrategicIndicesProps) {
                 </p>
                 <p className="text-xs font-medium text-foreground mt-1">{idx.label}</p>
                 <p className={`text-[10px] mt-0.5 ${statusColor}`}>{statusLabel}</p>
+                {/* Layers used badge */}
+                {idx.layers_used && idx.layers_used.length > 0 && (
+                  <div className="flex flex-wrap gap-0.5 mt-2">
+                    {idx.layers_used.map((layer) => (
+                      <span key={layer} className="text-[8px] px-1 py-0.5 bg-muted rounded text-muted-foreground">
+                        {LAYER_LABELS[layer] || layer}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-xs">
               <p className="text-xs font-medium mb-1">{idx.label}</p>
               <p className="text-[11px] text-muted-foreground mb-2">{idx.description}</p>
               <p className="text-[10px] font-mono bg-muted p-1.5 rounded">{idx.formula}</p>
+              {idx.layers_used && (
+                <p className="text-[10px] text-muted-foreground mt-1.5">
+                  Camadas: {idx.layers_used.map(l => LAYER_LABELS[l] || l).join(" × ")}
+                </p>
+              )}
             </TooltipContent>
           </Tooltip>
         );
