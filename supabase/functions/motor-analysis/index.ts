@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { searchData, persona } = await req.json();
+    const { searchData, persona, entityContext } = await req.json();
     if (!searchData) {
       return new Response(JSON.stringify({ error: "searchData is required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -78,9 +78,23 @@ Deno.serve(async (req) => {
     const indices = searchData.indices || {};
     const layers = searchData.layers || {};
 
+    // Build entity context string for personalized analysis
+    let entityStr = "";
+    if (entityContext?.entityName) {
+      if (personaKey === "universidade") {
+        entityStr = `\nENTIDADE: A universidade "${entityContext.entityName}". POSICIONE esta universidade em relação às demais instituições nos dados. Identifique se ela aparece nos papers, contratos ou convênios. Compare seu posicionamento relativo.`;
+      } else if (personaKey === "empresa") {
+        entityStr = `\nENTIDADE: A empresa "${entityContext.entityName}". SITUE esta empresa no ecossistema de inovação. Identifique parceiros acadêmicos potenciais, concorrentes, e instrumentos públicos relevantes para ela.`;
+      } else if (personaKey === "governo") {
+        const level = entityContext.govLevel || "federal";
+        const loc = entityContext.location || "";
+        entityStr = `\nENTIDADE: Governo ${level}${loc ? ` — ${loc}` : ""}. FOQUE a análise na perspectiva deste ente federativo. Priorize dados territoriais relevantes para ${loc || "o Brasil"}, identifique lacunas regionais e instrumentos disponíveis nesta esfera.`;
+      }
+    }
+
     const systemPrompt = `Você é o Motor 4P — analista estratégico PRESCRITIVO de inovação.
 
-CONTEXTO: ${pq.context}.
+CONTEXTO: ${pq.context}.${entityStr}
 FOCO DE OUTPUT: ${pq.outputFocus}
 
 ÍNDICES CRUZADOS (calculados cruzando múltiplas camadas):

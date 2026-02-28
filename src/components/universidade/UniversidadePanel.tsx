@@ -38,10 +38,10 @@ const UniversidadePanel = () => {
     setPendingSearchQuery(searchQuery);
     const cnaes = await searchCnaes(searchQuery);
     if (cnaes.length > 0) { setSuggestedCnaes(cnaes); setShowCnaeModal(true); }
-    else { setHasSearched(true); await search(searchQuery, "universidade"); }
+    else { setHasSearched(true); await search(searchQuery, "universidade", { entityName: universityName }); }
   };
 
-  const handleCnaeConfirm = async (selected: CnaeCode[]) => { setSelectedCnaes(selected); setShowCnaeModal(false); setHasSearched(true); await search(pendingSearchQuery, "universidade"); };
+  const handleCnaeConfirm = async (selected: CnaeCode[]) => { setSelectedCnaes(selected); setShowCnaeModal(false); setHasSearched(true); await search(pendingSearchQuery, "universidade", { entityName: universityName }); };
   const handleNewSearch = () => { setHasSearched(false); setSearchQuery(""); setSelectedCnaes([]); setActiveTab("posicionamento"); };
 
   if (!hasSearched) {
@@ -95,7 +95,7 @@ const UniversidadePanel = () => {
         <div className="sticky top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
           <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-4">
             <button onClick={handleNewSearch} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"><ArrowLeft className="w-4 h-4" />Nova busca</button>
-            <div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground truncate">Posicionamento: "{data.query}"</p><p className="text-[10px] text-muted-foreground truncate">{data.meta.sources.join(" · ")}</p></div>
+            <div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground truncate">{universityName ? `${universityName} ×` : "Posicionamento:"} "{data.query}"</p><p className="text-[10px] text-muted-foreground truncate">{data.meta.sources.join(" · ")}</p></div>
             <span className="text-[9px] px-2 py-1 bg-primary/10 text-primary rounded-full border border-primary/20 flex-shrink-0">{data.meta.source_count} fontes</span>
           </div>
         </div>
