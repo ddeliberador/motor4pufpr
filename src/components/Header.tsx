@@ -29,8 +29,20 @@ const Header = () => {
 
 
 
-          {/* CTA Button */}
-          <div className="hidden md:flex items-center gap-4">
+          {/* Nav Links + CTA */}
+          <div className="hidden md:flex items-center gap-6">
+            <Link
+              to="/conceito"
+              className={`text-sm font-medium transition-colors ${isActive('/conceito') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Conceito
+            </Link>
+            <Link
+              to="/documentacao"
+              className={`text-sm font-medium transition-colors ${isActive('/documentacao') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Documentação
+            </Link>
             <Link
               to="/"
               className="btn-primary flex items-center gap-2 text-sm py-2 px-4"
@@ -57,6 +69,20 @@ const Header = () => {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-border">
             <div className="flex flex-col gap-2">
+              <Link
+                to="/conceito"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/conceito') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+              >
+                Conceito
+              </Link>
+              <Link
+                to="/documentacao"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/documentacao') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+              >
+                Documentação
+              </Link>
               <Link
                 to="/"
                 onClick={() => setMobileMenuOpen(false)}
