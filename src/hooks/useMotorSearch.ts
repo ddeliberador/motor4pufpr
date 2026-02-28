@@ -208,6 +208,15 @@ export interface MotorAnalysis {
   persona: string;
 }
 
+export interface EntityContext {
+  /** Name of institution/company/university */
+  entityName?: string;
+  /** For governo: federal | estadual | municipal */
+  govLevel?: "federal" | "estadual" | "municipal";
+  /** Location (state/city) */
+  location?: string;
+}
+
 export function useMotorSearch() {
   const [data, setData] = useState<MotorSearchResult | null>(null);
   const [analysis, setAnalysis] = useState<MotorAnalysis | null>(null);
@@ -215,7 +224,7 @@ export function useMotorSearch() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const search = useCallback(async (query: string, persona: string = "pesquisador") => {
+  const search = useCallback(async (query: string, persona: string = "pesquisador", entityContext?: EntityContext) => {
     if (!query.trim()) return;
     setIsLoading(true);
     setError(null);
@@ -241,7 +250,7 @@ export function useMotorSearch() {
       try {
         const { data: analysisResult, error: analysisError } = await supabase.functions.invoke(
           "motor-analysis",
-          { body: { searchData: searchResult, persona } }
+          { body: { searchData: searchResult, persona, entityContext } }
         );
 
         if (!analysisError && analysisResult && !analysisResult.error) {
