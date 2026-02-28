@@ -4,13 +4,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import CamadaAusente from "./pages/CamadaAusente";
-import PersonaDashboard from "./pages/PersonaDashboard";
 import GovernoPanel from "./components/governo/GovernoPanel";
 import PesquisadorPanel from "./components/pesquisador/PesquisadorPanel";
 import UniversidadePanel from "./components/universidade/UniversidadePanel";
 import EmpresaPanel from "./components/empresa/EmpresaPanel";
 import Index from "./pages/Index";
+import Conceito from "./pages/Conceito";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,11 +22,12 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/conceito" element={<Conceito />} />
           <Route path="/pesquisador" element={<PesquisadorPanel />} />
           <Route path="/universidade" element={<UniversidadePanel />} />
           <Route path="/empresa" element={<EmpresaPanel />} />
           <Route path="/governo" element={<GovernoPanel />} />
-          <Route path="/camada-ausente" element={<CamadaAusente />} />
+          <Route path="/camada-ausente" element={<Navigate to="/conceito" replace />} />
           <Route path="/mvp" element={<Navigate to="/pesquisador" replace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

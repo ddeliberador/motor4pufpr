@@ -1,2 +1,2 @@
 // Hooks module
-export { useIncidenceSearch } from './useIncidenceSearch';
+export { useMotorSearch } from './useMotorSearch';
