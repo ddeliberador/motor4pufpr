@@ -105,19 +105,13 @@ const PesquisadorPanel = () => {
           </div>
         </div>
 
-        {/* Empty state */}
+        {/* Empty state — minimal prompt */}
         {!data && !isLoading && !error && (
-          <div className="max-w-2xl mx-auto px-4 py-24 text-center space-y-6">
-            <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${config.color} flex items-center justify-center shadow-lg opacity-60`}>
-              <Microscope className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold text-foreground mb-2">Lacunas & Oportunidades de Pesquisa</h2>
-              <p className="text-sm text-muted-foreground">Onde há lacuna? Quem já publicou? Onde captar financiamento?</p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-2">
+          <div className="max-w-6xl mx-auto px-4 py-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground">Sugestões:</span>
               {["grafeno", "inteligência artificial", "baterias de lítio", "CRISPR"].map((q) => (
-                <button key={q} onClick={() => { setSearchQuery(q); }} className="text-xs px-3 py-1.5 rounded-full border border-border bg-card text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all">
+                <button key={q} onClick={() => setSearchQuery(q)} className="text-xs px-3 py-1 rounded-full border border-border bg-card text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all">
                   {q}
                 </button>
               ))}
