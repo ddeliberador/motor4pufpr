@@ -16,6 +16,8 @@ import RelationalGraph from "./RelationalGraph";
 const GovernoPanel = () => {
   const config = personaConfigs.governo;
   const [searchQuery, setSearchQuery] = useState("");
+  const [govLevel, setGovLevel] = useState<"federal" | "estadual" | "municipal">("federal");
+  const [govLocation, setGovLocation] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
   const [showCnaeModal, setShowCnaeModal] = useState(false);
   const [suggestedCnaes, setSuggestedCnaes] = useState<CnaeCode[]>([]);
@@ -48,6 +50,14 @@ const GovernoPanel = () => {
             <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${config.color} flex items-center justify-center shadow-lg`}><Building2 className="w-8 h-8 text-white" /></div>
             <div><h1 className="text-2xl md:text-3xl font-semibold text-foreground mb-2">Diagnóstico de Política Pública</h1><p className="text-muted-foreground text-sm">Onde investir? Qual região está atrasada? Os instrumentos funcionam?</p></div>
             <form onSubmit={handleSearch} className="w-full space-y-3">
+              <div className="flex gap-2">
+                <select value={govLevel} onChange={(e) => setGovLevel(e.target.value as "federal" | "estadual" | "municipal")} className="h-12 rounded-2xl border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-sm">
+                  <option value="federal">Federal</option>
+                  <option value="estadual">Estadual</option>
+                  <option value="municipal">Municipal</option>
+                </select>
+                <input type="text" value={govLocation} onChange={(e) => setGovLocation(e.target.value)} placeholder={govLevel === "federal" ? "Brasil" : govLevel === "estadual" ? "Estado — ex: Paraná, São Paulo..." : "Cidade — ex: Curitiba, Recife..."} className="flex-1 h-12 rounded-2xl border border-border bg-card px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-sm" />
+              </div>
               <div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" /><input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Objeto tecnológico — ex: grafeno, baterias de lítio, semicondutores..." className="w-full h-14 rounded-2xl border border-border bg-card pl-12 pr-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-sm" autoFocus /></div>
               <Button type="submit" disabled={isLoading || !searchQuery.trim()} className={`w-full h-12 rounded-xl bg-gradient-to-r ${config.color} text-white text-base font-medium gap-2`}>{isLoading ? (<><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Consultando bases...</>) : (<><Search className="w-4 h-4" />Diagnosticar</>)}</Button>
             </form>

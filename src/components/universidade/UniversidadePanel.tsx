@@ -17,6 +17,7 @@ import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetail
 const UniversidadePanel = () => {
   const config = personaConfigs.universidade;
   const [searchQuery, setSearchQuery] = useState("");
+  const [universityName, setUniversityName] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
   const [showCnaeModal, setShowCnaeModal] = useState(false);
   const [suggestedCnaes, setSuggestedCnaes] = useState<CnaeCode[]>([]);
@@ -53,6 +54,7 @@ const UniversidadePanel = () => {
             <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${config.color} flex items-center justify-center shadow-lg`}><Landmark className="w-8 h-8 text-white" /></div>
             <div><h1 className="text-2xl md:text-3xl font-semibold text-foreground mb-2">Posicionamento Institucional</h1><p className="text-muted-foreground text-sm">Onde estamos? Quem são os parceiros? Estamos captando?</p></div>
             <form onSubmit={handleSearch} className="w-full space-y-3">
+              <input type="text" value={universityName} onChange={(e) => setUniversityName(e.target.value)} placeholder="Sua universidade — ex: UFPR, USP, UNICAMP..." className="w-full h-12 rounded-2xl border border-border bg-card px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-sm" />
               <div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" /><input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Objeto tecnológico — ex: grafeno, baterias de lítio..." className="w-full h-14 rounded-2xl border border-border bg-card pl-12 pr-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-sm" autoFocus /></div>
               <Button type="submit" disabled={isLoading || !searchQuery.trim()} className={`w-full h-12 rounded-xl bg-gradient-to-r ${config.color} text-white text-base font-medium gap-2`}>{isLoading ? (<><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Mapeando posicionamento...</>) : (<><Search className="w-4 h-4" />Analisar Posição</>)}</Button>
             </form>
