@@ -177,10 +177,16 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
   /* ===== RESULTS STATE ===== */
   if (!data) return null;
 
-  const totalContractValue = data.institutional.public_contracts.reduce((s, c) => s + (c.value || 0), 0);
+  // Layer shortcuts
+  const knowledge = data.layers.knowledge;
+  const technology = data.layers.technology;
+  const policy = data.layers.policy;
+  const international = data.layers.international;
 
-  // Institution ranking from papers
-  const institutionRanking = Object.entries(data.scientific.by_institution || {})
+  const totalContractValue = policy.total_contract_value || 0;
+
+  // Institution ranking from knowledge layer
+  const institutionRanking = Object.entries(knowledge.institutions || {})
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8);
 
@@ -190,6 +196,9 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
     IN: "🇮🇳", CA: "🇨🇦", AU: "🇦🇺", IT: "🇮🇹", ES: "🇪🇸", NL: "🇳🇱", CH: "🇨🇭", SE: "🇸🇪",
     PT: "🇵🇹", AR: "🇦🇷", MX: "🇲🇽", CO: "🇨🇴", CL: "🇨🇱",
   };
+
+  // International data from knowledge layer
+  const internationalData = knowledge.international || [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -274,17 +283,16 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
 
             {/* ===== OVERVIEW ===== */}
             <TabsContent value="overview" className="space-y-6">
-              {/* Quick summary cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Top papers */}
-                {data.scientific.papers.length > 0 && (
+                {knowledge.papers.length > 0 && (
                   <div className="bg-card border border-border rounded-xl p-5">
                     <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                       <BookOpen className="w-4 h-4 text-primary" />
                       Papers mais citados
                     </h3>
                     <div className="space-y-2">
-                      {data.scientific.papers.slice(0, 4).map((p, i) => (
+                      {knowledge.papers.slice(0, 4).map((p, i) => (
                         <a key={i} href={p.url} target="_blank" rel="noopener noreferrer" className="block py-1.5 border-b border-border/50 last:border-0 hover:bg-muted/30 -mx-2 px-2 rounded transition-colors">
                           <p className="text-xs font-medium text-foreground line-clamp-1">{p.title}</p>
                           <div className="flex items-center gap-2 mt-0.5">
@@ -299,7 +307,7 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
                 )}
 
                 {/* Contracts summary */}
-                {data.institutional.public_contracts.length > 0 && (
+                {policy.contracts.length > 0 && (
                   <div className="bg-card border border-border rounded-xl p-5">
                     <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                       <Landmark className="w-4 h-4 text-primary" />
@@ -311,7 +319,7 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
                       )}
                     </h3>
                     <div className="space-y-2">
-                      {data.institutional.public_contracts.slice(0, 3).map((c, i) => (
+                      {policy.contracts.slice(0, 3).map((c, i) => (
                         <a key={i} href={c.url} target="_blank" rel="noopener noreferrer" className="block py-1.5 border-b border-border/50 last:border-0 hover:bg-muted/30 -mx-2 px-2 rounded transition-colors">
                           <p className="text-xs font-medium text-foreground line-clamp-1">{c.object || "Sem objeto"}</p>
                           <div className="flex items-center gap-2 mt-0.5">
@@ -326,14 +334,14 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
                 )}
 
                 {/* Macro context */}
-                {data.productive.macro_indicators.some(m => m.value !== null) && (
+                {international.macro_indicators.some(m => m.value !== null) && (
                   <div className="bg-card border border-border rounded-xl p-5">
                     <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                       <Activity className="w-4 h-4 text-primary" />
                       Contexto Macro
                     </h3>
                     <div className="space-y-2.5">
-                      {data.productive.macro_indicators.filter(m => m.value !== null).map((m, i) => (
+                      {international.macro_indicators.filter(m => m.value !== null).map((m, i) => (
                         <div key={i} className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">{m.name}</span>
                           <div className="flex items-center gap-2">
@@ -355,14 +363,14 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
               </div>
 
               {/* GitHub repos */}
-              {data.technological?.github_repos?.length > 0 && (
+              {technology.github_repos?.length > 0 && (
                 <div className="bg-card border border-border rounded-xl p-5">
                   <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                     <GitBranch className="w-4 h-4 text-primary" />
                     Repositórios Open Source (GitHub)
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {data.technological.github_repos.slice(0, 6).map((r, i) => (
+                    {technology.github_repos.slice(0, 6).map((r, i) => (
                       <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between px-3 py-2 bg-muted rounded-lg hover:bg-muted/70 transition-colors">
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-medium text-foreground truncate">{r.name}</p>
@@ -378,15 +386,15 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
                 </div>
               )}
 
-              {/* Convênios Transparência */}
-              {data.institutional?.transparencia?.convenios?.length > 0 && (
+              {/* Convênios */}
+              {policy.convenios?.length > 0 && (
                 <div className="bg-card border border-border rounded-xl p-5">
                   <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                     <Shield className="w-4 h-4 text-primary" />
                     Convênios Federais (Portal da Transparência)
                   </h3>
                   <div className="space-y-2">
-                    {data.institutional.transparencia.convenios.slice(0, 4).map((c, i) => (
+                    {policy.convenios.slice(0, 4).map((c, i) => (
                       <div key={i} className="py-1.5 border-b border-border/50 last:border-0">
                         <p className="text-xs font-medium text-foreground line-clamp-1">{c.object || "Sem objeto"}</p>
                         <div className="flex items-center gap-2 mt-0.5">
@@ -448,70 +456,68 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
 
             {/* ===== SCIENTIFIC ===== */}
             <TabsContent value="scientific" className="space-y-4">
-              {data.scientific.papers.length === 0 ? (
+              {knowledge.papers.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <BookOpen className="w-8 h-8 mx-auto mb-3 opacity-40" />
                   <p className="text-sm">Nenhum paper encontrado para "{data.query}"</p>
                 </div>
               ) : (
-                <>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Título</th>
-                          <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Autores</th>
-                          <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Ano</th>
-                          <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Citações</th>
-                          <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">OA</th>
-                          <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Link</th>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Título</th>
+                        <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Autores</th>
+                        <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Ano</th>
+                        <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Citações</th>
+                        <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">OA</th>
+                        <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Link</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {knowledge.papers.map((p, i) => (
+                        <tr key={i} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                          <td className="py-2.5 px-3 max-w-[300px]">
+                            <p className="text-xs font-medium text-foreground line-clamp-2">{p.title}</p>
+                            <p className="text-[10px] text-muted-foreground">{p.journal}</p>
+                          </td>
+                          <td className="py-2.5 px-3 max-w-[200px]">
+                            {p.authors.slice(0, 2).map((a, ai) => (
+                              <p key={ai} className="text-[10px] text-muted-foreground line-clamp-1">
+                                {a.name} {a.institution && `(${a.institution})`}
+                              </p>
+                            ))}
+                          </td>
+                          <td className="py-2.5 px-3 text-center text-xs text-foreground">{p.year}</td>
+                          <td className="py-2.5 px-3 text-right text-xs font-semibold text-primary">{p.citations}</td>
+                          <td className="py-2.5 px-3 text-center">
+                            {p.is_open_access && <span className="text-[9px] px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 rounded">OA</span>}
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {data.scientific.papers.map((p, i) => (
-                          <tr key={i} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                            <td className="py-2.5 px-3 max-w-[300px]">
-                              <p className="text-xs font-medium text-foreground line-clamp-2">{p.title}</p>
-                              <p className="text-[10px] text-muted-foreground">{p.journal}</p>
-                            </td>
-                            <td className="py-2.5 px-3 max-w-[200px]">
-                              {p.authors.slice(0, 2).map((a, ai) => (
-                                <p key={ai} className="text-[10px] text-muted-foreground line-clamp-1">
-                                  {a.name} {a.institution && `(${a.institution})`}
-                                </p>
-                              ))}
-                            </td>
-                            <td className="py-2.5 px-3 text-center text-xs text-foreground">{p.year}</td>
-                            <td className="py-2.5 px-3 text-right text-xs font-semibold text-primary">{p.citations}</td>
-                            <td className="py-2.5 px-3 text-center">
-                              {p.is_open_access && <span className="text-[9px] px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 rounded">OA</span>}
-                            </td>
-                            <td className="py-2.5 px-3 text-center">
-                              <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </a>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </TabsContent>
 
             {/* ===== PRODUCTIVE ===== */}
             <TabsContent value="productive">
               <ProductiveTab
-                macroIndicators={data.productive.macro_indicators}
-                ipeadataSeries={data.productive.ipeadata_series}
+                macroIndicators={international.macro_indicators}
+                ipeadataSeries={international.ipeadata_series}
                 isLoading={false}
               />
             </TabsContent>
 
             {/* ===== TECHNOLOGICAL ===== */}
             <TabsContent value="technological" className="space-y-4">
-              {data.technological?.github_repos?.length > 0 ? (
+              {technology.github_repos?.length > 0 ? (
                 <div className="bg-card border border-border rounded-xl p-5">
                   <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                     <GitBranch className="w-4 h-4 text-primary" />
@@ -530,7 +536,7 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
                         </tr>
                       </thead>
                       <tbody>
-                        {data.technological.github_repos.map((r, i) => (
+                        {technology.github_repos.map((r, i) => (
                           <tr key={i} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                             <td className="py-2.5 px-3 text-xs font-medium text-foreground">{r.name}</td>
                             <td className="py-2.5 px-3 max-w-[250px]">
@@ -563,23 +569,40 @@ const PersonaDashboard = ({ persona }: PersonaDashboardProps) => {
             {/* ===== INSTITUTIONAL ===== */}
             <TabsContent value="institutional">
               <InstitutionalEnrichment
-                contracts={data.institutional.public_contracts}
-                gazettes={data.institutional.official_gazettes}
-                datasets={data.institutional.open_datasets}
+                contracts={policy.contracts}
+                gazettes={policy.gazettes}
+                datasets={[
+                  ...knowledge.capes_datasets,
+                  ...knowledge.inep_datasets,
+                  ...knowledge.cnpq_datasets,
+                  ...technology.patent_datasets,
+                  ...technology.employment_datasets,
+                  ...technology.innovation_datasets,
+                  ...policy.funding_datasets,
+                  ...policy.tcu_datasets,
+                  ...international.comex_datasets,
+                ].map(d => ({
+                  title: d.title,
+                  description: d.description,
+                  organization: d.organization || "",
+                  formats: d.formats || [],
+                  url: d.url,
+                  resourceCount: 0,
+                }))}
                 isLoading={false}
               />
             </TabsContent>
 
             {/* ===== INTERNATIONAL ===== */}
             <TabsContent value="international">
-              {data.scientific.international.length > 0 ? (
+              {internationalData.length > 0 ? (
                 <div className="bg-card border border-border rounded-xl p-5">
                   <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                     <Globe className="w-4 h-4 text-primary" />
                     Produção científica por país (OpenAlex)
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                    {data.scientific.international.map((c, i) => (
+                    {internationalData.map((c, i) => (
                       <div key={i} className="text-center p-3 bg-muted rounded-lg">
                         <p className="text-2xl mb-1">{flagMap[c.country_code] || "🌍"}</p>
                         <p className="text-xs font-medium text-foreground">{c.country_code}</p>
