@@ -133,7 +133,7 @@ const Index = () => {
             transition={{ delay: 1.5 }}
           >
             <Link
-              to="/camada-ausente"
+              to="/conceito"
               className="inline-flex items-center gap-2 text-sm text-blue-300/60 hover:text-blue-200 transition-colors group backdrop-blur-sm bg-white/5 px-4 py-2 rounded-full border border-white/10"
             >
               <BookOpen className="w-4 h-4" />

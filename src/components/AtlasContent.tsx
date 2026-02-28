@@ -7,7 +7,7 @@ import {
   BarChart3
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import CollaborationNetwork from "./CollaborationNetwork";
+// CollaborationNetwork removed during cleanup
 
 // ICT-Obj calculation function
 const calculateICTObj = (groups: number, patents: number, projects: number, cooperation: number): number => {
@@ -846,8 +846,7 @@ const AtlasContent = ({ initialQuery = "" }: AtlasContentProps) => {
           </div>
         </div>
 
-        {/* Interactive Collaboration Network */}
-        <CollaborationNetwork hasSearched={hasSearched} />
+        {/* Collaboration Network removed */}
 
         {/* Cluster Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
