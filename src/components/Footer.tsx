@@ -6,9 +6,9 @@ const Footer = () => {
 
   const links = {
     projeto: [
-      { label: "Conceito", href: "/" },
-      { label: "MVP Engine", href: "/mvp" },
-      { label: "Documentação", href: "#" },
+      { label: "Conceito", href: "/conceito" },
+      { label: "Documentação", href: "/documentacao" },
+      { label: "Pesquisador", href: "/pesquisador" },
     ],
     recursos: [
       { label: "CNPq", href: "https://lattes.cnpq.br/", external: true },
