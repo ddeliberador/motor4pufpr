@@ -1,11 +1,11 @@
 /**
- * Hook principal de busca do Motor 4P
- * Usa edge functions (motor-search + motor-analysis) — sem dependência de backend externo
+ * Tipos e hook principal de busca do Motor 4P
+ * Arquitetura de 4 camadas analíticas com índices cruzados
  */
 import { useState, useCallback } from "react";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
 
-// ===== Types =====
+// ===== Layer Types =====
 export interface Paper {
   id: string;
   title: string;
@@ -56,15 +56,6 @@ export interface OfficialGazette {
   url: string;
 }
 
-export interface OpenDataset {
-  title: string;
-  description: string;
-  organization: string;
-  formats: string[];
-  url: string;
-  resourceCount: number;
-}
-
 export interface GitHubRepo {
   name: string;
   description: string;
@@ -91,13 +82,22 @@ export interface SimpleDataset {
   url: string;
   organization?: string;
   formats?: string[];
+  structured?: boolean;
 }
 
+export interface ConceptCount {
+  name: string;
+  count: number;
+}
+
+// ===== Strategic Index with layers_used =====
 export interface StrategicIndex {
   value: number;
   label: string;
   description: string;
   formula: string;
+  layers_used: string[];
+  alert_level: "normal" | "warning" | "critical";
 }
 
 export interface StrategicIndices {
@@ -105,54 +105,94 @@ export interface StrategicIndices {
   cd: StrategicIndex;
   aue: StrategicIndex;
   ei: StrategicIndex;
-  uf_distribution: Record<string, number>;
 }
 
+// ===== Layer-specific result types =====
+export interface KnowledgeLayer {
+  papers: Paper[];
+  total_papers: number;
+  institutions: Record<string, number>;
+  international: Array<{ country_code: string; count: number }>;
+  concepts: ConceptCount[];
+  capes_datasets: SimpleDataset[];
+  inep_datasets: SimpleDataset[];
+  cnpq_datasets: SimpleDataset[];
+  density: number;
+  concentration: number;
+  specialization: number;
+  sources: string[];
+}
+
+export interface TechnologyLayer {
+  github_repos: GitHubRepo[];
+  patent_datasets: SimpleDataset[];
+  employment_datasets: SimpleDataset[];
+  innovation_datasets: SimpleDataset[];
+  tech_density: number;
+  trl_estimate: number;
+  trl_label: string;
+  trl_signals: Record<string, boolean>;
+  science_to_patent: number | null;
+  language_distribution: Record<string, number>;
+  total_stars: number;
+  sources: string[];
+}
+
+export interface PolicyLayer {
+  contracts: PublicContract[];
+  convenios: Convenio[];
+  sanctions: Array<{ company: string; type: string; organ: string; date: string }>;
+  gazettes: OfficialGazette[];
+  siconfi: Array<{ entity: string; year: number; period: string; url: string }>;
+  funding_datasets: SimpleDataset[];
+  tcu_datasets: SimpleDataset[];
+  total_contracts: number;
+  total_convenios: number;
+  total_contract_value: number;
+  total_convenio_value: number;
+  total_instrumental_value: number;
+  instrumental_intensity: number;
+  fiscal_capacity: Record<string, number>;
+  uf_distribution: Record<string, number>;
+  spending_effectiveness: number;
+  sources: string[];
+}
+
+export interface InternationalLayer {
+  country_distribution: Record<string, number>;
+  macro_indicators: MacroIndicator[];
+  ipeadata_series: IPEADataSeries[];
+  comex_datasets: SimpleDataset[];
+  dependency_index: number;
+  br_share: number;
+  competitiveness_rank: number;
+  global_insertion: number;
+  countries_with_coauthorship: number;
+  sources: string[];
+}
+
+// ===== Full Result =====
 export interface MotorSearchResult {
   query: string;
-  scientific: {
-    papers: Paper[];
-    total_papers: number;
-    by_institution: Record<string, number>;
-    international: Array<{ country_code: string; count: number }>;
-    capes_datasets: SimpleDataset[];
-    inep_datasets: SimpleDataset[];
+  layers: {
+    knowledge: KnowledgeLayer;
+    technology: TechnologyLayer;
+    policy: PolicyLayer;
+    international: InternationalLayer;
   };
-  technological: {
-    github_repos: GitHubRepo[];
-  };
-  productive: {
-    macro_indicators: MacroIndicator[];
-    ipeadata_series: IPEADataSeries[];
-    comex_datasets: SimpleDataset[];
-    ibge: { pesquisas: Array<{ id: string; name: string; description: string }>; pnad: any; pib: any };
-    aneel_datasets: SimpleDataset[];
-    cvm_datasets: SimpleDataset[];
-    anatel_datasets: SimpleDataset[];
-    anvisa_datasets: SimpleDataset[];
-  };
-  institutional: {
-    public_contracts: PublicContract[];
-    official_gazettes: OfficialGazette[];
-    open_datasets: OpenDataset[];
-    transparencia: { convenios: Convenio[]; sanctions: Array<{ company: string; type: string; organ: string; date: string }> };
-    siconfi: Array<{ entity: string; year: number; period: string; url: string }>;
-    tcu_datasets: SimpleDataset[];
-    ibama_datasets: SimpleDataset[];
-    inpe_alerts: any[];
-  };
-  strategic_indices: StrategicIndices;
+  indices: StrategicIndices;
   stats: {
     papers: number;
+    institutions: number;
+    countries: number;
     contracts: number;
+    convenios: number;
     gazettes: number;
     datasets: number;
-    countries: number;
+    github_repos: number;
+    sanctions: number;
     macro_indicators: number;
     ipeadata_series: number;
-    github_repos: number;
-    convenios: number;
-    sanctions: number;
   };
   meta: {
     processing_time_ms: number;

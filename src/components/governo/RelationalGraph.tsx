@@ -28,30 +28,29 @@ const typeLabels: Record<string, string> = {
 };
 
 export default function RelationalGraph({ data }: RelationalGraphProps) {
+  const knowledge = data.layers.knowledge;
+  const policy = data.layers.policy;
+
   const { nodes, edges, alerts } = useMemo(() => {
     const nodes: GraphNode[] = [];
     const edges: GraphEdge[] = [];
     const alerts: string[] = [];
 
-    // Center
     nodes.push({ id: "q", label: data.query, type: "query", size: 3 });
 
-    // Institutions → papers (science producers)
-    const instEntries = Object.entries(data.scientific.by_institution || {}).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const instEntries = Object.entries(knowledge.institutions || {}).sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 6);
     instEntries.forEach(([name, count], i) => {
       const id = `inst-${i}`;
-      nodes.push({ id, label: name, type: "institution", size: Math.min(count, 8) });
+      nodes.push({ id, label: name, type: "institution", size: Math.min(count as number, 8) });
       edges.push({ from: "q", to: id, type: "produces" });
     });
 
-    // Contracts
-    const contracts = (data.institutional?.public_contracts || []).slice(0, 4);
+    const contracts = (policy?.contracts || []).slice(0, 4);
     contracts.forEach((c, i) => {
       const id = `ct-${i}`;
       const label = c.organ?.slice(0, 25) || c.object?.slice(0, 25) || "Contrato";
       nodes.push({ id, label, type: "contract", size: 2 });
       edges.push({ from: "q", to: id, type: "funds" });
-      // Try to link contract organ to an institution
       const matchInst = instEntries.findIndex(([name]) =>
         name.toLowerCase().includes((c.organ || "").toLowerCase().slice(0, 12)) ||
         (c.organ || "").toLowerCase().includes(name.toLowerCase().slice(0, 12))
@@ -61,26 +60,23 @@ export default function RelationalGraph({ data }: RelationalGraphProps) {
       }
     });
 
-    // Convenios
-    const convenios = (data.institutional?.transparencia?.convenios || []).slice(0, 3);
+    const convenios = (policy?.convenios || []).slice(0, 3);
     convenios.forEach((c, i) => {
       const id = `cv-${i}`;
       nodes.push({ id, label: c.proponent?.slice(0, 25) || "Convênio", type: "convenio", size: 2 });
       edges.push({ from: "q", to: id, type: "funds" });
     });
 
-    // Top countries (dependency)
-    const countries = (data.scientific?.international || [])
-      .filter((c: any) => c.country_code !== "BR")
-      .sort((a: any, b: any) => b.count - a.count)
+    const countries = (knowledge?.international || [])
+      .filter((c) => c.country_code !== "BR")
+      .sort((a, b) => b.count - a.count)
       .slice(0, 3);
-    countries.forEach((c: any, i: number) => {
+    countries.forEach((c, i) => {
       const id = `co-${i}`;
       nodes.push({ id, label: c.country_code, type: "country", size: Math.min(Math.round(c.count / 50), 5) });
       edges.push({ from: "q", to: id, type: "depends" });
     });
 
-    // Alerts from graph structure
     const isolatedInstitutions = instEntries.filter(([name]) => {
       const hasContractLink = contracts.some(c =>
         (c.organ || "").toLowerCase().includes(name.toLowerCase().slice(0, 10))
@@ -90,14 +86,14 @@ export default function RelationalGraph({ data }: RelationalGraphProps) {
     if (isolatedInstitutions.length > instEntries.length * 0.7) {
       alerts.push(`${isolatedInstitutions.length} de ${instEntries.length} instituições sem vínculo com contratos públicos — desarticulação U-E`);
     }
-    if (countries.length > 0 && countries[0].count > (data.scientific?.international?.find((c: any) => c.country_code === "BR")?.count || 0)) {
+    const brCount = knowledge?.international?.find((c) => c.country_code === "BR")?.count || 0;
+    if (countries.length > 0 && countries[0].count > brCount) {
       alerts.push(`${countries[0].country_code} produz mais que o Brasil neste tema — dependência externa`);
     }
 
     return { nodes, edges, alerts };
-  }, [data]);
+  }, [data, knowledge, policy]);
 
-  // Simple SVG-based relational diagram
   const cx = 300, cy = 200;
   const nodePositions = useMemo(() => {
     const positions: Record<string, { x: number; y: number }> = {};
@@ -132,7 +128,6 @@ export default function RelationalGraph({ data }: RelationalGraphProps) {
 
   return (
     <div className="space-y-3">
-      {/* Alerts */}
       {alerts.length > 0 && (
         <div className="space-y-1.5">
           {alerts.map((alert, i) => (
@@ -144,7 +139,6 @@ export default function RelationalGraph({ data }: RelationalGraphProps) {
         </div>
       )}
 
-      {/* Graph */}
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="p-3 border-b border-border flex items-center justify-between">
           <h3 className="text-sm font-semibold text-foreground">Mapa Relacional</h3>
@@ -158,7 +152,6 @@ export default function RelationalGraph({ data }: RelationalGraphProps) {
           </div>
         </div>
         <svg viewBox="0 0 600 400" className="w-full h-[350px]">
-          {/* Edges */}
           {edges.map((e, i) => {
             const from = nodePositions[e.from];
             const to = nodePositions[e.to];
@@ -171,7 +164,6 @@ export default function RelationalGraph({ data }: RelationalGraphProps) {
               />
             );
           })}
-          {/* Nodes */}
           {nodes.map(n => {
             const pos = nodePositions[n.id];
             if (!pos) return null;
