@@ -27,3 +27,15 @@ from .inpe import INPEConnector
 from .fnde import FNDEConnector
 from .tcu import TCUConnector
 from .rais_caged import RAISCAGEDConnector
+# === Novas bases (inspiradas no BR/ACC World Open Graph) ===
+from .tse import TSEConnector
+from .datasus import DATASUSConnector
+from .basedosdados import BaseDosDadosConnector
+from .cnpj_qsa import CNPJQSAConnector
+from .datajud import DataJudConnector
+from .ana import ANAConnector
+from .transportes import TransportesConnector
+from .siop import SIOPConnector
+from .previdencia import PrevidenciaConnector
+from .b3 import B3Connector
+from .ans import ANSConnector

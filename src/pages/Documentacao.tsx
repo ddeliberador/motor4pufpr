@@ -37,6 +37,8 @@ const apis = [
       { name: "CAPES / Sucupira", url: "https://dadosabertos.capes.gov.br/", desc: "Programas de pós-graduação, bolsas, produção" },
       { name: "CNPq / Lattes", url: "http://dadosabertos.cnpq.br/", desc: "Bolsas, projetos de pesquisa, distribuição regional" },
       { name: "INEP", url: "https://www.gov.br/inep/", desc: "Censo da educação superior, indicadores institucionais" },
+      { name: "DATASUS", url: "https://datasus.saude.gov.br/", desc: "SIH, SIM, SINASC, CNES, SINAN — dados de saúde pública" },
+      { name: "Base dos Dados", url: "https://basedosdados.org/", desc: "Agregador com datasets tratados e normalizados" },
     ],
   },
   {
@@ -47,7 +49,10 @@ const apis = [
       { name: "INPI (via WIPO)", url: "https://www.gov.br/inpi/", desc: "Patentes, marcas, transferência de tecnologia" },
       { name: "RAIS / CAGED", url: "https://pdet.mte.gov.br/", desc: "Emprego formal por ocupação, setor e região" },
       { name: "GitHub API", url: "https://api.github.com/", desc: "Repositórios de código aberto por tema" },
-      { name: "Embrapii", url: "https://embrapii.org.br/", desc: "Projetos de inovação em parceria ICT-empresa" },
+      { name: "Embrapii / Finep", url: "https://embrapii.org.br/", desc: "Projetos de inovação em parceria ICT-empresa" },
+      { name: "CNPJ/QSA", url: "https://arquivos.receitafederal.gov.br/dados/cnpj/", desc: "Quadro societário, CNAE, porte — cruzamento corporativo" },
+      { name: "ANVISA", url: "https://www.gov.br/anvisa/", desc: "Registro de medicamentos, insumos, cosméticos" },
+      { name: "Transportes", url: "https://dados.gov.br/", desc: "ANTT, ANAC, DNIT, DENATRAN — infraestrutura e mobilidade" },
     ],
   },
   {
@@ -56,10 +61,14 @@ const apis = [
     color: "from-amber-500 to-orange-500",
     sources: [
       { name: "PNCP", url: "https://pncp.gov.br/", desc: "Compras públicas e contratos governamentais" },
-      { name: "Portal da Transparência", url: "https://portaldatransparencia.gov.br/", desc: "Execução orçamentária, convênios, emendas" },
+      { name: "Portal da Transparência", url: "https://portaldatransparencia.gov.br/", desc: "Convênios, despesas, sanções (CEIS/CNEP/CEPIM/CEAF)" },
       { name: "SICONFI", url: "https://siconfi.tesouro.gov.br/", desc: "Finanças públicas municipais e estaduais" },
       { name: "FNDE / FNDCT", url: "https://www.gov.br/fnde/", desc: "Fomento à ciência e tecnologia" },
       { name: "Diário Oficial (DOU)", url: "https://queridodiario.ok.org.br/", desc: "Publicações oficiais via Querido Diário" },
+      { name: "TSE", url: "https://dadosabertos.tse.jus.br/", desc: "Candidaturas, prestação de contas, emendas parlamentares" },
+      { name: "SIOP", url: "https://siop.planejamento.gov.br/", desc: "Orçamento federal, LOA, execução orçamentária" },
+      { name: "DataJud/CNJ", url: "https://datajud.cnj.jus.br/", desc: "Processos judiciais, decisões, Justiça em Números" },
+      { name: "IBAMA", url: "https://dados.gov.br/", desc: "Embargos ambientais, licenciamento, SINAFLOR" },
     ],
   },
   {
@@ -68,8 +77,12 @@ const apis = [
     color: "from-emerald-500 to-teal-500",
     sources: [
       { name: "COMEX Stat", url: "https://comexstat.mdic.gov.br/", desc: "Exportação e importação por NCM, país, UF" },
-      { name: "BCB (Banco Central)", url: "https://dadosabertos.bcb.gov.br/", desc: "Câmbio, investimento estrangeiro, balanço de pagamentos" },
+      { name: "BCB (Banco Central)", url: "https://dadosabertos.bcb.gov.br/", desc: "Selic, câmbio, PIX, crédito, reservas, IBC-Br" },
       { name: "OpenAlex (internacional)", url: "https://openalex.org/", desc: "Colaborações internacionais e co-autorias" },
+      { name: "B3/CVM", url: "https://dados.cvm.gov.br/", desc: "Mercado de capitais, companhias abertas, fundos" },
+      { name: "INSS/PREVIC", url: "https://dadosabertos.dataprev.gov.br/", desc: "Benefícios previdenciários, fundos de pensão" },
+      { name: "ANS", url: "https://www.ans.gov.br/", desc: "Saúde suplementar — operadoras, beneficiários" },
+      { name: "ANA", url: "https://dadosabertos.ana.gov.br/", desc: "Recursos hídricos — outorgas, bacias, reservatórios" },
     ],
   },
 ];
@@ -111,7 +124,7 @@ const Documentacao = () => {
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Infraestrutura computacional pública e aberta para diagnóstico estrutural 
-              do Sistema Nacional de Inovação — 28+ bases públicas, 11 edge functions, 4 camadas analíticas.
+              do Sistema Nacional de Inovação — 40+ bases públicas, 11 edge functions, 4 camadas analíticas, entity resolution.
             </p>
           </motion.div>
         </div>
@@ -228,8 +241,8 @@ const Documentacao = () => {
               APIs & Fontes de Dados
             </motion.h2>
             <motion.p variants={fadeUp} custom={1} className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-              28+ bases públicas organizadas nas 4 camadas analíticas. 
-              Todas as fontes são abertas, gratuitas e verificáveis.
+              40+ bases públicas organizadas nas 4 camadas analíticas, com entity resolution entre bases. 
+              Todas as fontes são abertas, gratuitas e verificáveis. Inspirado na matriz do BR/ACC (World Open Graph).
             </motion.p>
 
             <div className="space-y-8">

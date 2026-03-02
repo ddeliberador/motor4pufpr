@@ -20,7 +20,7 @@ async function safeFetch(url: string, timeoutMs = 12000): Promise<any> {
   }
 }
 
-// ===== BCB macro snapshot =====
+// ===== BCB macro snapshot (expandido) =====
 async function getBCBSnapshot() {
   const series = [
     { code: 432, name: "Taxa Selic", unit: "% a.a." },
@@ -29,6 +29,10 @@ async function getBCBSnapshot() {
     { code: 1, name: "Câmbio USD/BRL", unit: "R$" },
     { code: 27574, name: "Crédito PJ total", unit: "R$ mi" },
     { code: 20542, name: "Dívida pública/PIB", unit: "%" },
+    // Novas séries BCB (inspiradas pela matriz BR/ACC)
+    { code: 17622, name: "PIX transações", unit: "milhões" },
+    { code: 1178, name: "Base monetária M1", unit: "R$ mi" },
+    { code: 3546, name: "Reservas internacionais", unit: "US$ mi" },
   ];
   return Promise.all(
     series.map(async (s) => {
@@ -72,6 +76,46 @@ async function searchCOMEX(query: string) {
   }));
 }
 
+// ===== B3 / CVM (mercado de capitais) =====
+async function searchB3CVM(query: string) {
+  const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " B3 CVM ações mercado capitais")}&rows=5`);
+  return (data?.result?.results || []).map((pkg: any) => ({
+    title: pkg.title || "",
+    description: (pkg.notes || "").slice(0, 200),
+    url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
+  }));
+}
+
+// ===== INSS/PREVIC (previdência) =====
+async function searchPrevidencia(query: string) {
+  const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " previdência INSS benefício aposentadoria")}&rows=4`);
+  return (data?.result?.results || []).map((pkg: any) => ({
+    title: pkg.title || "",
+    description: (pkg.notes || "").slice(0, 200),
+    url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
+  }));
+}
+
+// ===== ANS (saúde suplementar) =====
+async function searchANS(query: string) {
+  const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " saúde suplementar ANS operadora plano")}&rows=4&fq=organization:agencia-nacional-de-saude-suplementar-ans`);
+  return (data?.result?.results || []).map((pkg: any) => ({
+    title: pkg.title || "",
+    description: (pkg.notes || "").slice(0, 200),
+    url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
+  }));
+}
+
+// ===== ANA (recursos hídricos) =====
+async function searchANA(query: string) {
+  const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " água recursos hídricos")}&rows=4&fq=organization:agencia-nacional-de-aguas-e-saneamento-basico-ana`);
+  return (data?.result?.results || []).map((pkg: any) => ({
+    title: pkg.title || "",
+    description: (pkg.notes || "").slice(0, 200),
+    url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
+  }));
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -88,10 +132,14 @@ Deno.serve(async (req) => {
     console.log(`Layer International: ${query}`);
     const start = Date.now();
 
-    const [bcb, ipeadata, comex] = await Promise.all([
+    const [bcb, ipeadata, comex, b3cvm, previdencia, ans, ana] = await Promise.all([
       getBCBSnapshot(),
       searchIPEAData(query),
       searchCOMEX(query),
+      searchB3CVM(query),
+      searchPrevidencia(query),
+      searchANS(query),
+      searchANA(query),
     ]);
 
     // ===== COMPUTED OUTPUTS using cross-layer data =====
@@ -99,23 +147,18 @@ Deno.serve(async (req) => {
     const totalIntlPapers = intl.reduce((s: number, c: any) => s + (c.count || 0), 0) || 1;
     const brCount = intl.find((c: any) => c.country_code === "BR")?.count || 0;
 
-    // Índice de Dependência Externa = % produção estrangeira
     const dependency_index = Math.round(((totalIntlPapers - brCount) / totalIntlPapers) * 100);
 
-    // BR share in top 10
     const top10 = [...intl].sort((a: any, b: any) => b.count - a.count).slice(0, 10);
     const top10Total = top10.reduce((s: number, c: any) => s + c.count, 0) || 1;
     const br_share = brCount > 0 ? parseFloat(((brCount / top10Total) * 100).toFixed(1)) : 0;
 
-    // Competitividade = rank do BR entre top10
     const brRank = top10.findIndex((c: any) => c.country_code === "BR") + 1;
     const competitiveness = brRank > 0 ? brRank : top10.length + 1;
 
-    // Inserção global = países com coautoria / total países possíveis (proxy)
     const countriesWithCoauthorship = intl.length;
-    const global_insertion = Math.round((countriesWithCoauthorship / 195) * 100); // 195 países ONU
+    const global_insertion = Math.round((countriesWithCoauthorship / 195) * 100);
 
-    // Country distribution for visualization
     const country_distribution = intl.reduce((acc: Record<string, number>, c: any) => {
       acc[c.country_code] = c.count;
       return acc;
@@ -126,19 +169,25 @@ Deno.serve(async (req) => {
     if (ipeadata.length > 0) sources.push("IPEAData");
     if (comex.length > 0) sources.push("COMEX");
     if (intl.length > 0) sources.push("OpenAlex (coautoria)");
+    if (b3cvm.length > 0) sources.push("B3/CVM");
+    if (previdencia.length > 0) sources.push("INSS/PREVIC");
+    if (ans.length > 0) sources.push("ANS");
+    if (ana.length > 0) sources.push("ANA");
 
     const result = {
       country_distribution,
       macro_indicators: bcb,
       ipeadata_series: ipeadata,
       comex_datasets: comex,
-      // Computed outputs
+      b3cvm_datasets: b3cvm,
+      previdencia_datasets: previdencia,
+      ans_datasets: ans,
+      ana_datasets: ana,
       dependency_index,
       br_share,
       competitiveness_rank: competitiveness,
       global_insertion,
       countries_with_coauthorship: countriesWithCoauthorship,
-      // Meta
       sources,
       processing_time_ms: Date.now() - start,
     };
