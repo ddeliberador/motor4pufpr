@@ -45,7 +45,6 @@ async function searchOpenAlex(query: string) {
     concepts: (w.concepts || []).slice(0, 5).map((c: any) => c.display_name),
   }));
 
-  // Institution counts
   const institutionCounts: Record<string, number> = {};
   for (const p of papers) {
     for (const a of p.authors) {
@@ -53,13 +52,11 @@ async function searchOpenAlex(query: string) {
     }
   }
 
-  // International distribution
   const international = (intlData?.group_by || [])
     .filter((g: any) => g.key && g.key !== "unknown")
     .slice(0, 15)
     .map((g: any) => ({ country_code: g.key, count: g.count }));
 
-  // Concept distribution for specialization
   const concepts = (conceptsData?.group_by || [])
     .filter((g: any) => g.key_display_name)
     .slice(0, 15)
@@ -102,6 +99,71 @@ async function searchCNPq(query: string) {
   }));
 }
 
+// ===== DATASUS (SIH, SIM, CNES, SINAN) =====
+async function searchDATASUS(query: string) {
+  const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " saúde SUS DATASUS")}&rows=5&fq=organization:ministerio-da-saude-ms`);
+  return (data?.result?.results || []).map((pkg: any) => ({
+    title: pkg.title || "",
+    description: (pkg.notes || "").slice(0, 200),
+    url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
+    formats: [...new Set((pkg.resources || []).map((r: any) => r.format?.toUpperCase()).filter(Boolean))],
+  }));
+}
+
+// ===== Base dos Dados (agregador curado) =====
+async function searchBaseDosDados(query: string) {
+  const data = await safeFetch(`https://basedosdados.org/api/3/action/package_search?q=${encodeURIComponent(query)}&rows=5`);
+  return (data?.result?.results || []).map((pkg: any) => ({
+    title: pkg.title || "",
+    description: (pkg.notes || "").slice(0, 200),
+    organization: pkg.organization?.title || "",
+    url: `https://basedosdados.org/dataset/${pkg.name}`,
+    tags: (pkg.tags || []).slice(0, 5).map((t: any) => t.display_name),
+  }));
+}
+
+// ===== Entity Resolution (normalização de nomes de instituições) =====
+const INSTITUTION_ALIASES: Record<string, string[]> = {
+  "UFPR": ["universidade federal do parana", "federal university of parana"],
+  "USP": ["universidade de sao paulo", "university of sao paulo"],
+  "UNICAMP": ["universidade estadual de campinas", "university of campinas"],
+  "UFRJ": ["universidade federal do rio de janeiro", "federal university of rio de janeiro"],
+  "UFRGS": ["universidade federal do rio grande do sul"],
+  "UFMG": ["universidade federal de minas gerais"],
+  "UFSC": ["universidade federal de santa catarina"],
+  "EMBRAPA": ["empresa brasileira de pesquisa agropecuaria", "embrapa"],
+  "FIOCRUZ": ["fundacao oswaldo cruz", "fiocruz", "oswaldo cruz foundation"],
+  "INPE": ["instituto nacional de pesquisas espaciais"],
+};
+
+function normalizeInstitutionName(name: string): string {
+  return name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+}
+
+function resolveInstitution(name: string): { id: string; canonical: string } | null {
+  const norm = normalizeInstitutionName(name);
+  for (const [id, aliases] of Object.entries(INSTITUTION_ALIASES)) {
+    if (norm.includes(id.toLowerCase()) || aliases.some(a => norm.includes(a) || a.includes(norm))) {
+      return { id, canonical: id };
+    }
+  }
+  return null;
+}
+
+function findCrossBaseMatches(institutions: Record<string, number>): Record<string, { canonical: string; count: number }> {
+  const resolved: Record<string, { canonical: string; count: number }> = {};
+  for (const [name, count] of Object.entries(institutions)) {
+    const match = resolveInstitution(name);
+    if (match) {
+      if (!resolved[match.id]) {
+        resolved[match.id] = { canonical: match.canonical, count: 0 };
+      }
+      resolved[match.id].count += count;
+    }
+  }
+  return resolved;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -118,27 +180,25 @@ Deno.serve(async (req) => {
     console.log(`Layer Knowledge: ${query}`);
     const start = Date.now();
 
-    const [openalex, capes, inep, cnpq] = await Promise.all([
+    const [openalex, capes, inep, cnpq, datasus, basedosdados] = await Promise.all([
       searchOpenAlex(query),
       searchCAPES(query),
       searchINEP(query),
       searchCNPq(query),
+      searchDATASUS(query),
+      searchBaseDosDados(query),
     ]);
 
     // ===== COMPUTED OUTPUTS =====
     const totalPapers = openalex.totalPapers;
     const countriesActive = openalex.international.length;
-
-    // Densidade científica = papers / países atuantes
     const density = countriesActive > 0 ? Math.round(totalPapers / countriesActive) : 0;
 
-    // Concentração institucional (HHI simplificado das top 10)
     const instValues = Object.values(openalex.institutionCounts).sort((a, b) => b - a).slice(0, 10);
     const instTotal = instValues.reduce((s, v) => s + v, 0) || 1;
     const hhi = instValues.reduce((s, v) => s + Math.pow(v / instTotal, 2), 0);
-    const concentration = Math.round(hhi * 10000); // HHI em base 10000
+    const concentration = Math.round(hhi * 10000);
 
-    // Índice de especialização temática (entropia normalizada dos concepts)
     const conceptCounts = openalex.concepts.map((c: any) => c.count);
     const conceptTotal = conceptCounts.reduce((s: number, v: number) => s + v, 0) || 1;
     const entropy = -conceptCounts.reduce((s: number, v: number) => {
@@ -146,29 +206,34 @@ Deno.serve(async (req) => {
       return s + (p > 0 ? p * Math.log2(p) : 0);
     }, 0);
     const maxEntropy = Math.log2(conceptCounts.length || 1) || 1;
-    const specialization = Math.round((1 - entropy / maxEntropy) * 100); // 0=diverso, 100=especializado
+    const specialization = Math.round((1 - entropy / maxEntropy) * 100);
 
-    // Active sources tracking
+    // Entity Resolution
+    const resolved_institutions = findCrossBaseMatches(openalex.institutionCounts);
+
     const sources: string[] = [];
     if (openalex.papers.length > 0) sources.push("OpenAlex");
     if (capes.length > 0) sources.push("CAPES");
     if (inep.length > 0) sources.push("INEP");
     if (cnpq.length > 0) sources.push("CNPq");
+    if (datasus.length > 0) sources.push("DATASUS");
+    if (basedosdados.length > 0) sources.push("Base dos Dados");
 
     const result = {
       papers: openalex.papers,
       total_papers: totalPapers,
       institutions: openalex.institutionCounts,
+      resolved_institutions,
       international: openalex.international,
       concepts: openalex.concepts,
       capes_datasets: capes,
       inep_datasets: inep,
       cnpq_datasets: cnpq,
-      // Computed outputs
+      datasus_datasets: datasus,
+      basedosdados_datasets: basedosdados,
       density,
       concentration,
       specialization,
-      // Meta
       sources,
       processing_time_ms: Date.now() - start,
     };

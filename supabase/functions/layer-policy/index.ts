@@ -107,6 +107,47 @@ async function searchTCU(query: string) {
   }));
 }
 
+// ===== TSE (Eleições, emendas, prestação de contas) =====
+async function searchTSE(query: string) {
+  const data = await safeFetch(`https://dadosabertos.tse.jus.br/api/3/action/package_search?q=${encodeURIComponent(query)}&rows=5`);
+  return (data?.result?.results || []).map((pkg: any) => ({
+    title: pkg.title || "",
+    description: (pkg.notes || "").slice(0, 200),
+    url: `https://dadosabertos.tse.jus.br/dataset/${pkg.name}`,
+    formats: [...new Set((pkg.resources || []).map((r: any) => r.format?.toUpperCase()).filter(Boolean))],
+  }));
+}
+
+// ===== SIOP (Orçamento, LOA, emendas parlamentares) =====
+async function searchSIOP(query: string) {
+  const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " orçamento LOA emenda parlamentar")}&rows=5`);
+  return (data?.result?.results || []).map((pkg: any) => ({
+    title: pkg.title || "",
+    description: (pkg.notes || "").slice(0, 200),
+    url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
+  }));
+}
+
+// ===== DataJud/CNJ (Processos judiciais) =====
+async function searchDataJud(query: string) {
+  const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " justiça judicial tribunal CNJ")}&rows=5`);
+  return (data?.result?.results || []).map((pkg: any) => ({
+    title: pkg.title || "",
+    description: (pkg.notes || "").slice(0, 200),
+    url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
+  }));
+}
+
+// ===== IBAMA expandido =====
+async function searchIBAMA(query: string) {
+  const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " IBAMA embargo ambiental licenciamento")}&rows=4`);
+  return (data?.result?.results || []).map((pkg: any) => ({
+    title: pkg.title || "",
+    description: (pkg.notes || "").slice(0, 200),
+    url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
+  }));
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -123,13 +164,17 @@ Deno.serve(async (req) => {
     console.log(`Layer Policy: ${query}`);
     const start = Date.now();
 
-    const [pncp, transparencia, siconfi, gazettes, funding, tcu] = await Promise.all([
+    const [pncp, transparencia, siconfi, gazettes, funding, tcu, tse, siop, datajud, ibama] = await Promise.all([
       searchPNCP(query),
       searchTransparencia(query),
       searchSICONFI(),
       searchQueridoDiario(query),
       searchFundingDatasets(query),
       searchTCU(query),
+      searchTSE(query),
+      searchSIOP(query),
+      searchDataJud(query),
+      searchIBAMA(query),
     ]);
 
     // ===== COMPUTED OUTPUTS =====
@@ -139,25 +184,21 @@ Deno.serve(async (req) => {
     const totalConvenioValue = transparencia.convenios.reduce((s: number, c: any) => s + (c.value || 0), 0);
     const totalInstrumentalValue = totalContractValue + totalConvenioValue;
 
-    // Intensidade instrumental = (contratos + convênios) / papers
     const papersCount = knowledge_total_papers || 0;
     const instrumental_intensity = papersCount > 0
       ? parseFloat(((totalContracts + totalConvenios) / papersCount).toFixed(3))
       : 0;
 
-    // Capacidade fiscal setorial (por UF)
     const fiscal_capacity: Record<string, number> = {};
     for (const c of pncp) {
       if (c.uf) fiscal_capacity[c.uf] = (fiscal_capacity[c.uf] || 0) + (c.value || 0);
     }
 
-    // UF distribution (count)
     const uf_distribution: Record<string, number> = {};
     for (const c of pncp) {
       if (c.uf) uf_distribution[c.uf] = (uf_distribution[c.uf] || 0) + 1;
     }
 
-    // Efetividade do gasto proxy
     const spending_effectiveness = papersCount > 0 && totalInstrumentalValue > 0
       ? Math.round(Math.log10(totalInstrumentalValue / papersCount) * 20 + 50)
       : 0;
@@ -169,6 +210,10 @@ Deno.serve(async (req) => {
     if (gazettes.length > 0) sources.push("Querido Diário");
     if (funding.length > 0) sources.push("BNDES/FNDCT");
     if (tcu.length > 0) sources.push("TCU");
+    if (tse.length > 0) sources.push("TSE");
+    if (siop.length > 0) sources.push("SIOP");
+    if (datajud.length > 0) sources.push("DataJud/CNJ");
+    if (ibama.length > 0) sources.push("IBAMA");
 
     const result = {
       contracts: pncp,
@@ -178,7 +223,10 @@ Deno.serve(async (req) => {
       siconfi,
       funding_datasets: funding,
       tcu_datasets: tcu,
-      // Computed outputs
+      tse_datasets: tse,
+      siop_datasets: siop,
+      datajud_datasets: datajud,
+      ibama_datasets: ibama,
       total_contracts: totalContracts,
       total_convenios: totalConvenios,
       total_contract_value: totalContractValue,
@@ -188,7 +236,6 @@ Deno.serve(async (req) => {
       fiscal_capacity,
       uf_distribution,
       spending_effectiveness,
-      // Meta
       sources,
       processing_time_ms: Date.now() - start,
     };
