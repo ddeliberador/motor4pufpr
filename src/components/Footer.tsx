@@ -47,8 +47,8 @@ const Footer = () => {
             </p>
             <div className="text-xs text-primary-foreground/60 space-y-1">
               <p className="font-medium text-primary-foreground/70">Doutorado em Políticas Públicas — UFPR (2025-2028)</p>
-              <p><span className="text-primary-foreground/50">Doutorando:</span> Decio Dalton Deliberador Filho</p>
-              <p><span className="text-primary-foreground/50">Orientador:</span> Walter Tadahiro Shima</p>
+              <p><span className="text-primary-foreground/50">Doutorando:</span> <a href="http://lattes.cnpq.br/7945502873498590" target="_blank" rel="noopener noreferrer" className="hover:text-primary-foreground underline underline-offset-2 transition-colors">Decio Dalton Deliberador Filho</a></p>
+              <p><span className="text-primary-foreground/50">Orientador:</span> <a href="http://lattes.cnpq.br/1832648887498998" target="_blank" rel="noopener noreferrer" className="hover:text-primary-foreground underline underline-offset-2 transition-colors">Walter Tadahiro Shima</a></p>
             </div>
           </div>
 
