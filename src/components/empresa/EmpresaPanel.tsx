@@ -207,14 +207,11 @@ const EmpresaPanel = () => {
                   </div>
                 </div>
               )}
-            </TabsContent>
-
-            {/* Entity Resolution */}
-            {knowledge.resolved_institutions && Object.keys(knowledge.resolved_institutions).length > 0 && (
-              <div className="my-4">
+              {/* Entity Resolution */}
+              {knowledge.resolved_institutions && Object.keys(knowledge.resolved_institutions).length > 0 && (
                 <EntityResolutionCard resolvedInstitutions={knowledge.resolved_institutions} />
-              </div>
-            )}
+              )}
+            </TabsContent>
 
             {/* ===== CONCORRENTES TAB ===== */}
             <TabsContent value="concorrentes" className="space-y-4">
