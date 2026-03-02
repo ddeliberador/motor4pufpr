@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Building2, Search, ArrowLeft, AlertTriangle, Zap, MapPin, Globe, BookOpen, Landmark, Shield, FileText, Activity } from "lucide-react";
+import { Building2, Search, ArrowLeft, AlertTriangle, Zap, MapPin, Globe, BookOpen, Landmark, Shield, FileText, Activity, GitBranch, Target } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import Header from "@/components/Header";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 import StrategicIndices from "./StrategicIndices";
 import RelationalGraph from "./RelationalGraph";
+import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
 
 const GovernoPanel = () => {
   const config = personaConfigs.governo;
@@ -75,11 +76,15 @@ const GovernoPanel = () => {
   if (error) return (<div className="min-h-screen bg-background"><Header /><main className="pt-16 flex items-center justify-center min-h-[calc(100vh-4rem)]"><div className="text-center space-y-4 max-w-md px-4"><AlertTriangle className="w-12 h-12 mx-auto text-destructive" /><h2 className="text-lg font-semibold text-foreground">Erro</h2><p className="text-sm text-muted-foreground">{error}</p><Button onClick={handleNewSearch} variant="outline" className="gap-2"><ArrowLeft className="w-4 h-4" />Nova busca</Button></div></main></div>);
   if (!data) return null;
 
-  const knowledge = data.layers.knowledge;
+   const knowledge = data.layers.knowledge;
+  const technology = data.layers.technology;
   const policy = data.layers.policy;
   const indices = data.indices;
   const totalContractValue = policy.total_contract_value || 0;
   const totalConvenioValue = policy.total_convenio_value || 0;
+  const trlEstimate = technology.trl_estimate || 2;
+  const trlLabel = technology.trl_label || "Sem dados";
+  const repos = technology.github_repos || [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,6 +117,7 @@ const GovernoPanel = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList className="w-full justify-start overflow-x-auto bg-muted/50 h-auto p-1 rounded-xl">
               <TabsTrigger value="diagnostico" className="text-xs rounded-lg">🎯 Diagnóstico</TabsTrigger>
+              <TabsTrigger value="maturidade" className="text-xs rounded-lg">⚙️ Maturidade (TRL)</TabsTrigger>
               <TabsTrigger value="relacional" className="text-xs rounded-lg">🔗 Mapa Relacional</TabsTrigger>
               <TabsTrigger value="territorial" className="text-xs rounded-lg">📍 Territorial</TabsTrigger>
               <TabsTrigger value="instrumentos" className="text-xs rounded-lg">🏛️ Instrumentos</TabsTrigger>
@@ -159,6 +165,69 @@ const GovernoPanel = () => {
                   </div>
                 </div>
               </div>
+            </TabsContent>
+
+            {/* MATURIDADE TECNOLÓGICA (TRL) */}
+            <TabsContent value="maturidade" className="space-y-4">
+              <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Target className="w-4 h-4 text-primary" /> Maturidade Tecnológica — TRL Estimado</h3>
+                <p className="text-[10px] text-muted-foreground">Avaliação automática baseada em sinais de ciência, tecnologia, contratos e mercado para apoiar decisões de alocação de recursos.</p>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 bg-muted rounded-full h-5 relative overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 rounded-full transition-all" style={{ width: `${(trlEstimate / 9) * 100}%` }} />
+                  </div>
+                  <span className="text-2xl font-bold text-foreground">{trlEstimate}/9</span>
+                </div>
+                <p className="text-xs text-muted-foreground">{trlLabel}</p>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                  {[
+                    { label: "Papers científicos", ok: technology.trl_signals?.has_papers },
+                    { label: "Código aberto", ok: technology.trl_signals?.has_repos },
+                    { label: "Patentes/dados", ok: technology.trl_signals?.has_patents },
+                    { label: "Emprego formal", ok: technology.trl_signals?.has_employment },
+                    { label: "Alta visibilidade", ok: technology.trl_signals?.high_stars },
+                  ].map((s, i) => (
+                    <div key={i} className={`text-center p-2 rounded-lg ${s.ok ? "bg-emerald-500/5 border border-emerald-500/20" : "bg-muted/30 border border-border"}`}>
+                      <span className="text-lg">{s.ok ? "✓" : "—"}</span>
+                      <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+                {trlEstimate <= 3 && (
+                  <div className="flex items-start gap-2 p-2.5 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                    <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-foreground"><strong>TRL baixo ({trlEstimate}):</strong> Campo ainda em pesquisa básica. Investimento deve priorizar P&D, não produção.</p>
+                  </div>
+                )}
+                {trlEstimate >= 7 && (
+                  <div className="flex items-start gap-2 p-2.5 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+                    <Target className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-foreground"><strong>TRL alto ({trlEstimate}):</strong> Tecnologia madura. Priorizar incentivos à produção e escala industrial.</p>
+                  </div>
+                )}
+              </div>
+              {repos.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><GitBranch className="w-4 h-4 text-primary" /> Projetos open source ({repos.length})</h3>
+                  <div className="space-y-1">
+                    {repos.slice(0, 6).map((r, i) => (
+                      <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between px-3 py-2 hover:bg-muted/50 rounded-lg transition-colors">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium text-foreground truncate">{r.name}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{r.description}</p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                          {r.language && <span className="text-[9px] px-1.5 py-0.5 bg-primary/10 text-primary rounded">{r.language}</span>}
+                          <span className="text-[10px] font-bold text-primary">⭐{r.stars}</span>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {knowledge.resolved_institutions && Object.keys(knowledge.resolved_institutions).length > 0 && (
+                <EntityResolutionCard resolvedInstitutions={knowledge.resolved_institutions} />
+              )}
             </TabsContent>
 
             <TabsContent value="relacional"><RelationalGraph data={data} /></TabsContent>

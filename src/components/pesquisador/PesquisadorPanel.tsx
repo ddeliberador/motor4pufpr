@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Microscope, Search, ArrowLeft, AlertTriangle, Zap, Globe, BookOpen, Users, GitBranch, TrendingUp, ExternalLink, Beaker, Target, Lightbulb } from "lucide-react";
+import { Microscope, Search, ArrowLeft, AlertTriangle, Zap, Globe, BookOpen, Users, GitBranch, TrendingUp, ExternalLink, Beaker, Target, Lightbulb, Briefcase } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import Header from "@/components/Header";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 import StrategicIndices from "@/components/governo/StrategicIndices";
 import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetailSheet";
+import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
 
 const PesquisadorPanel = () => {
   const config = personaConfigs.pesquisador;
@@ -127,10 +128,11 @@ const PesquisadorPanel = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="w-full justify-start overflow-x-auto bg-muted/50 h-auto p-1 rounded-xl">
+             <TabsList className="w-full justify-start overflow-x-auto bg-muted/50 h-auto p-1 rounded-xl">
               <TabsTrigger value="panorama" className="text-xs rounded-lg">🔬 Panorama</TabsTrigger>
               <TabsTrigger value="saturacao" className="text-xs rounded-lg">📊 Saturação</TabsTrigger>
               <TabsTrigger value="papers" className="text-xs rounded-lg">📄 Papers ({data.stats.papers})</TabsTrigger>
+              <TabsTrigger value="empregabilidade" className="text-xs rounded-lg">💼 Empregabilidade</TabsTrigger>
               <TabsTrigger value="lacunas" className="text-xs rounded-lg">🎯 Lacunas</TabsTrigger>
               <TabsTrigger value="financiamento" className="text-xs rounded-lg">💰 Financiamento</TabsTrigger>
               <TabsTrigger value="prescricao" className="text-xs rounded-lg">🧠 IA {isAnalyzing && "…"}</TabsTrigger>
@@ -185,9 +187,12 @@ const PesquisadorPanel = () => {
                   </div>
                 </div>
               )}
-            </TabsContent>
 
-            {/* SATURAÇÃO */}
+              {/* Entity Resolution */}
+              {knowledge.resolved_institutions && Object.keys(knowledge.resolved_institutions).length > 0 && (
+                <EntityResolutionCard resolvedInstitutions={knowledge.resolved_institutions} />
+              )}
+            </TabsContent>
             <TabsContent value="saturacao" className="space-y-4">
               <div className="bg-card border border-border rounded-xl p-5 space-y-4">
                 <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Target className="w-4 h-4 text-primary" /> Mapa de Saturação Temática</h3>
@@ -242,7 +247,61 @@ const PesquisadorPanel = () => {
               </div>
             </TabsContent>
 
-            {/* LACUNAS */}
+            {/* EMPREGABILIDADE (RAIS/CAGED) */}
+            <TabsContent value="empregabilidade" className="space-y-4">
+              <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Briefcase className="w-4 h-4 text-primary" /> Mercado de trabalho neste campo</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="bg-muted/30 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-foreground">{technology.employment_datasets?.length || 0}</p>
+                    <p className="text-[10px] text-muted-foreground">Datasets RAIS/CAGED</p>
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-foreground">{technology.trl_estimate || 0}</p>
+                    <p className="text-[10px] text-muted-foreground">TRL (maturidade)</p>
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-foreground">{technology.patent_datasets?.length || 0}</p>
+                    <p className="text-[10px] text-muted-foreground">Datasets patentes</p>
+                  </div>
+                </div>
+                {technology.trl_estimate >= 6 && (
+                  <div className="flex items-start gap-2 p-2.5 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+                    <Briefcase className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-foreground"><strong>Alta empregabilidade potencial:</strong> TRL {technology.trl_estimate} indica que o campo já tem aplicações comerciais e demanda por profissionais.</p>
+                  </div>
+                )}
+                {technology.trl_estimate < 4 && (
+                  <div className="flex items-start gap-2 p-2.5 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                    <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-foreground"><strong>Campo ainda acadêmico:</strong> TRL {technology.trl_estimate} — empregabilidade concentrada em pesquisa. Oportunidade de ser pioneiro.</p>
+                  </div>
+                )}
+                {technology.employment_datasets && technology.employment_datasets.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold text-foreground">Datasets de emprego formal (RAIS/CAGED)</h4>
+                    {technology.employment_datasets.map((d, i) => (
+                      <a key={i} href={d.url} target="_blank" rel="noopener noreferrer" className="block px-3 py-2 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                        <p className="text-xs font-medium text-foreground line-clamp-1">{d.title}</p>
+                        <p className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">{d.description}</p>
+                        <span className="text-[9px] text-primary mt-0.5 inline-block">↗ Acessar dataset</span>
+                      </a>
+                    ))}
+                  </div>
+                )}
+                {technology.innovation_datasets && technology.innovation_datasets.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold text-foreground">Fomento à inovação (Embrapii/Finep)</h4>
+                    {technology.innovation_datasets.slice(0, 4).map((d, i) => (
+                      <a key={i} href={d.url} target="_blank" rel="noopener noreferrer" className="block px-3 py-2 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                        <p className="text-xs font-medium text-foreground line-clamp-1">{d.title}</p>
+                        <span className="text-[9px] text-primary">↗ Acessar</span>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
             <TabsContent value="lacunas" className="space-y-4">
               <div className="bg-card border border-border rounded-xl p-5 space-y-4">
                 <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Lightbulb className="w-4 h-4 text-accent" /> Cruzamentos que revelam lacunas</h3>

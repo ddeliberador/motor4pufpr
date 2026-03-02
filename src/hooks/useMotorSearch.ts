@@ -112,11 +112,14 @@ export interface KnowledgeLayer {
   papers: Paper[];
   total_papers: number;
   institutions: Record<string, number>;
+  resolved_institutions: Record<string, { canonical: string; count: number }>;
   international: Array<{ country_code: string; count: number }>;
   concepts: ConceptCount[];
   capes_datasets: SimpleDataset[];
   inep_datasets: SimpleDataset[];
   cnpq_datasets: SimpleDataset[];
+  datasus_datasets: SimpleDataset[];
+  basedosdados_datasets: SimpleDataset[];
   density: number;
   concentration: number;
   specialization: number;
@@ -128,6 +131,9 @@ export interface TechnologyLayer {
   patent_datasets: SimpleDataset[];
   employment_datasets: SimpleDataset[];
   innovation_datasets: SimpleDataset[];
+  cnpj_qsa_datasets: SimpleDataset[];
+  transport_datasets: SimpleDataset[];
+  anvisa_datasets: SimpleDataset[];
   tech_density: number;
   trl_estimate: number;
   trl_label: string;
