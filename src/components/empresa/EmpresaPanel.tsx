@@ -13,6 +13,7 @@ import { safeSupabase as supabase } from "@/lib/supabaseClient";
 import ReactMarkdown from "react-markdown";
 import StrategicIndices from "@/components/governo/StrategicIndices";
 import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetailSheet";
+import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
 
 interface Competitor {
   name: string;
@@ -207,6 +208,13 @@ const EmpresaPanel = () => {
                 </div>
               )}
             </TabsContent>
+
+            {/* Entity Resolution */}
+            {knowledge.resolved_institutions && Object.keys(knowledge.resolved_institutions).length > 0 && (
+              <div className="my-4">
+                <EntityResolutionCard resolvedInstitutions={knowledge.resolved_institutions} />
+              </div>
+            )}
 
             {/* ===== CONCORRENTES TAB ===== */}
             <TabsContent value="concorrentes" className="space-y-4">

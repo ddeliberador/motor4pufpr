@@ -13,6 +13,7 @@ import ReactMarkdown from "react-markdown";
 import StrategicIndices from "@/components/governo/StrategicIndices";
 import RelationalGraph from "@/components/governo/RelationalGraph";
 import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetailSheet";
+import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
 
 const UniversidadePanel = () => {
   const config = personaConfigs.universidade;
@@ -145,6 +146,10 @@ const UniversidadePanel = () => {
                   ))}
                 </div>
               </div>
+              {/* Entity Resolution */}
+              {knowledge.resolved_institutions && Object.keys(knowledge.resolved_institutions).length > 0 && (
+                <EntityResolutionCard resolvedInstitutions={knowledge.resolved_institutions} />
+              )}
             </TabsContent>
 
             <TabsContent value="relacional"><RelationalGraph data={data} /></TabsContent>
