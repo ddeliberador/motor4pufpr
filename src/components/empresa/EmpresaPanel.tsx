@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Factory, Search, ArrowLeft, AlertTriangle, Zap, Globe, GitBranch, Building2, Landmark, TrendingUp, Target, Handshake, ShieldCheck } from "lucide-react";
+import { Factory, Search, ArrowLeft, AlertTriangle, Zap, Globe, GitBranch, Building2, Landmark, TrendingUp, Target, Handshake, ShieldCheck, Users, Building } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import Header from "@/components/Header";
@@ -9,9 +9,42 @@ import { personaConfigs } from "@/config/personas";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { safeSupabase as supabase } from "@/lib/supabaseClient";
 import ReactMarkdown from "react-markdown";
 import StrategicIndices from "@/components/governo/StrategicIndices";
 import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetailSheet";
+
+interface Competitor {
+  name: string;
+  cnpj?: string;
+  razao_social?: string;
+  nome_fantasia?: string;
+  cnae_descricao?: string;
+  porte?: string;
+  uf?: string;
+  municipio?: string;
+  capital_social?: number;
+  qsa?: Array<{ nome: string; qualificacao: string; cnpj_cpf: string; data_entrada: string }>;
+  total_socios?: number;
+  contracts?: number;
+  total_value?: number;
+  source?: string;
+  signal?: string;
+  country?: string;
+  type?: string;
+  publications?: number;
+  github_stars?: number;
+  github_repos?: number;
+  github_url?: string;
+}
+
+interface CompetitorData {
+  competitors_br: Competitor[];
+  competitors_intl: Competitor[];
+  cnpj_details: any[];
+  sector_datasets: any[];
+  summary: { total_br: number; total_intl: number; sources: string[] };
+}
 
 const EmpresaPanel = () => {
   const config = personaConfigs.empresa;
@@ -25,11 +58,27 @@ const EmpresaPanel = () => {
   const [activeTab, setActiveTab] = useState("oportunidade");
   const [detailItem, setDetailItem] = useState<DetailItem | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [competitors, setCompetitors] = useState<CompetitorData | null>(null);
+  const [isLoadingCompetitors, setIsLoadingCompetitors] = useState(false);
 
   const { search, data, analysis, isLoading, isAnalyzing, error } = useMotorSearch();
   const { searchCnaes, isLoading: isLoadingCnaes } = useCnaeSearch();
 
   const openDetail = useCallback((item: DetailItem) => { setDetailItem(item); setDetailOpen(true); }, []);
+
+  const searchCompetitors = useCallback(async (query: string) => {
+    setIsLoadingCompetitors(true);
+    try {
+      const { data: result, error: err } = await supabase.functions.invoke("competitor-search", { body: { query } });
+      if (!err && result && !result.error) {
+        setCompetitors(result as CompetitorData);
+      }
+    } catch (e) {
+      console.warn("Competitor search error:", e);
+    } finally {
+      setIsLoadingCompetitors(false);
+    }
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,11 +86,19 @@ const EmpresaPanel = () => {
     setPendingSearchQuery(searchQuery);
     const cnaes = await searchCnaes(searchQuery);
     if (cnaes.length > 0) { setSuggestedCnaes(cnaes); setShowCnaeModal(true); }
-    else { setHasSearched(true); await search(searchQuery, "empresa", { entityName: companyName }); }
+    else { 
+      setHasSearched(true); 
+      await search(searchQuery, "empresa", { entityName: companyName });
+      searchCompetitors(searchQuery);
+    }
   };
 
-  const handleCnaeConfirm = async (selected: CnaeCode[]) => { setSelectedCnaes(selected); setShowCnaeModal(false); setHasSearched(true); await search(pendingSearchQuery, "empresa", { entityName: companyName }); };
-  const handleNewSearch = () => { setHasSearched(false); setSearchQuery(""); setSelectedCnaes([]); setActiveTab("oportunidade"); };
+  const handleCnaeConfirm = async (selected: CnaeCode[]) => {
+    setSelectedCnaes(selected); setShowCnaeModal(false); setHasSearched(true);
+    await search(pendingSearchQuery, "empresa", { entityName: companyName });
+    searchCompetitors(pendingSearchQuery);
+  };
+  const handleNewSearch = () => { setHasSearched(false); setSearchQuery(""); setSelectedCnaes([]); setActiveTab("oportunidade"); setCompetitors(null); };
 
   if (!hasSearched) {
     return (
@@ -87,6 +144,8 @@ const EmpresaPanel = () => {
   const trlLabel = technology.trl_label || "Sem dados";
   const trlSignals = technology.trl_signals || {};
 
+  const flagMap: Record<string, string> = { BR: "🇧🇷", US: "🇺🇸", CN: "🇨🇳", DE: "🇩🇪", GB: "🇬🇧", FR: "🇫🇷", JP: "🇯🇵", KR: "🇰🇷", IN: "🇮🇳", CA: "🇨🇦", AU: "🇦🇺", IT: "🇮🇹", ES: "🇪🇸", NL: "🇳🇱", SE: "🇸🇪", CH: "🇨🇭" };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -106,12 +165,13 @@ const EmpresaPanel = () => {
             <div className="bg-card border border-border rounded-xl p-4 text-center"><p className="text-xs text-muted-foreground mb-1">TRL Estimado</p><p className="text-3xl font-bold text-foreground">{trlEstimate}</p><p className="text-[10px] text-muted-foreground">{trlLabel}</p></div>
             <div className="bg-card border border-border rounded-xl p-4 text-center"><p className="text-xs text-muted-foreground mb-1">Grupos de P&D</p><p className="text-3xl font-bold text-foreground">{institutionRanking.length}</p><p className="text-[10px] text-muted-foreground">possíveis parceiros</p></div>
             <div className="bg-card border border-border rounded-xl p-4 text-center"><p className="text-xs text-muted-foreground mb-1">Mercado público</p><p className="text-3xl font-bold text-accent">R$ {((totalContractValue + totalConvenioValue) / 1e6).toFixed(1)}M</p><p className="text-[10px] text-muted-foreground">em instrumentos</p></div>
-            <div className="bg-card border border-border rounded-xl p-4 text-center"><p className="text-xs text-muted-foreground mb-1">Concorrência global</p><p className="text-3xl font-bold text-foreground">{data.stats.countries}</p><p className="text-[10px] text-muted-foreground">países atuantes</p></div>
+            <div className="bg-card border border-border rounded-xl p-4 text-center"><p className="text-xs text-muted-foreground mb-1">Concorrentes mapeados</p><p className="text-3xl font-bold text-foreground">{(competitors?.summary?.total_br || 0) + (competitors?.summary?.total_intl || 0)}</p><p className="text-[10px] text-muted-foreground">{isLoadingCompetitors ? "buscando..." : "BR + global"}</p></div>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList className="w-full justify-start overflow-x-auto bg-muted/50 h-auto p-1 rounded-xl">
               <TabsTrigger value="oportunidade" className="text-xs rounded-lg">🎯 Oportunidade</TabsTrigger>
+              <TabsTrigger value="concorrentes" className="text-xs rounded-lg">🏢 Concorrentes {competitors ? `(${(competitors.competitors_br?.length || 0) + (competitors.competitors_intl?.length || 0)})` : isLoadingCompetitors ? "…" : ""}</TabsTrigger>
               <TabsTrigger value="matching" className="text-xs rounded-lg">🤝 Matching</TabsTrigger>
               <TabsTrigger value="financiamento" className="text-xs rounded-lg">💰 Financiamento</TabsTrigger>
               <TabsTrigger value="tecnologia" className="text-xs rounded-lg">⚙️ Tecnologia ({repos.length})</TabsTrigger>
@@ -119,6 +179,7 @@ const EmpresaPanel = () => {
               <TabsTrigger value="prescricao" className="text-xs rounded-lg">🧠 IA {isAnalyzing && "…"}</TabsTrigger>
             </TabsList>
 
+            {/* ===== OPORTUNIDADE TAB ===== */}
             <TabsContent value="oportunidade" className="space-y-4">
               <div className="bg-card border border-border rounded-xl p-5 space-y-4">
                 <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Target className="w-4 h-4 text-primary" /> Maturidade Tecnológica (TRL)</h3>
@@ -147,6 +208,132 @@ const EmpresaPanel = () => {
               )}
             </TabsContent>
 
+            {/* ===== CONCORRENTES TAB ===== */}
+            <TabsContent value="concorrentes" className="space-y-4">
+              {isLoadingCompetitors ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                  <span className="ml-3 text-sm text-muted-foreground">Mapeando concorrentes via PNCP, OpenAlex, BrasilAPI...</span>
+                </div>
+              ) : competitors ? (
+                <>
+                  {/* BR Competitors */}
+                  {competitors.competitors_br.length > 0 && (
+                    <div className="bg-card border border-border rounded-xl p-5">
+                      <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
+                        <Building className="w-4 h-4 text-primary" /> Concorrentes no Brasil ({competitors.competitors_br.length})
+                      </h3>
+                      <p className="text-[10px] text-muted-foreground mb-4">Empresas identificadas em licitações e contratos públicos no setor pesquisado, com CNPJ e quadro societário.</p>
+                      <div className="space-y-3">
+                        {competitors.competitors_br.map((comp, i) => (
+                          <button
+                            key={i}
+                            onClick={() => openDetail({
+                              type: "concorrente_br",
+                              title: comp.nome_fantasia || comp.razao_social || comp.name,
+                              subtitle: comp.cnpj ? `CNPJ: ${comp.cnpj}` : undefined,
+                              data: comp,
+                            })}
+                            className="w-full text-left bg-muted/30 border border-border/50 rounded-lg p-4 hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="flex items-start justify-between gap-3 mb-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold text-foreground truncate">{comp.nome_fantasia || comp.razao_social || comp.name}</p>
+                                {comp.razao_social && comp.nome_fantasia && <p className="text-[10px] text-muted-foreground truncate">{comp.razao_social}</p>}
+                              </div>
+                              {comp.source && <span className="text-[9px] px-2 py-0.5 bg-primary/10 text-primary rounded-full flex-shrink-0">{comp.source}</span>}
+                            </div>
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {comp.cnpj && <span className="text-[10px] px-2 py-0.5 bg-muted text-muted-foreground rounded font-mono">{comp.cnpj}</span>}
+                              {comp.uf && comp.municipio && <span className="text-[10px] px-2 py-0.5 bg-muted text-muted-foreground rounded">📍 {comp.municipio}/{comp.uf}</span>}
+                              {comp.porte && <span className="text-[10px] px-2 py-0.5 bg-muted text-muted-foreground rounded">{comp.porte}</span>}
+                              {comp.cnae_descricao && <span className="text-[10px] px-2 py-0.5 bg-accent/10 text-accent rounded truncate max-w-[200px]">{comp.cnae_descricao}</span>}
+                            </div>
+                            <div className="flex flex-wrap gap-3 text-[10px]">
+                              {comp.contracts && <span className="text-primary font-semibold">{comp.contracts} contratos</span>}
+                              {comp.total_value && comp.total_value > 0 && <span className="text-foreground font-semibold">R$ {(comp.total_value / 1e6).toFixed(2)}M</span>}
+                              {comp.capital_social && comp.capital_social > 0 && <span className="text-muted-foreground">Capital: R$ {(comp.capital_social / 1e6).toFixed(2)}M</span>}
+                              {comp.total_socios !== undefined && <span className="text-muted-foreground">{comp.total_socios} sócios</span>}
+                            </div>
+                            {comp.qsa && comp.qsa.length > 0 && (
+                              <div className="mt-2 pt-2 border-t border-border/30">
+                                <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1"><Users className="w-3 h-3" /> Quadro Societário:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {comp.qsa.slice(0, 4).map((s, j) => (
+                                    <span key={j} className="text-[9px] px-2 py-0.5 bg-muted rounded text-foreground">{s.nome} <span className="text-muted-foreground">({s.qualificacao})</span></span>
+                                  ))}
+                                  {comp.qsa.length > 4 && <span className="text-[9px] px-2 py-0.5 text-muted-foreground">+{comp.qsa.length - 4} sócios</span>}
+                                </div>
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* International Competitors */}
+                  {competitors.competitors_intl.length > 0 && (
+                    <div className="bg-card border border-border rounded-xl p-5">
+                      <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-primary" /> Concorrentes Internacionais ({competitors.competitors_intl.length})
+                      </h3>
+                      <p className="text-[10px] text-muted-foreground mb-4">Organizações corporativas e tecnológicas identificadas via publicações científicas e repositórios.</p>
+                      <div className="space-y-1.5">
+                        {competitors.competitors_intl.map((comp, i) => (
+                          <button
+                            key={i}
+                            onClick={() => openDetail({
+                              type: "concorrente_intl",
+                              title: comp.name,
+                              subtitle: comp.country ? `${flagMap[comp.country] || "🌍"} ${comp.country}` : undefined,
+                              data: comp,
+                            })}
+                            className="w-full text-left flex items-center gap-3 px-3 py-2.5 hover:bg-muted/50 rounded-lg transition-colors border-b border-border/30 last:border-0"
+                          >
+                            <span className="text-lg flex-shrink-0">{flagMap[comp.country || ""] || "🌍"}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-foreground truncate">{comp.name}</p>
+                              <div className="flex gap-2 mt-0.5">
+                                {comp.publications && <span className="text-[10px] text-primary font-semibold">{comp.publications} publicações</span>}
+                                {comp.type && <span className="text-[9px] px-1.5 py-0.5 bg-muted rounded text-muted-foreground">{comp.type}</span>}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {comp.github_stars !== undefined && <span className="text-[10px] font-bold text-primary">⭐ {comp.github_stars}</span>}
+                              {comp.source && <span className="text-[9px] px-1.5 py-0.5 bg-primary/10 text-primary rounded-full">{comp.source}</span>}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sources */}
+                  {competitors.summary?.sources?.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 justify-center">
+                      {competitors.summary.sources.map((s, i) => (
+                        <span key={i} className="text-[9px] px-2 py-0.5 bg-muted text-muted-foreground rounded-full">{s}</span>
+                      ))}
+                    </div>
+                  )}
+
+                  {competitors.competitors_br.length === 0 && competitors.competitors_intl.length === 0 && (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Building className="w-8 h-8 mx-auto mb-3 opacity-40" />
+                      <p className="text-sm">Nenhum concorrente identificado para este setor.</p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Building className="w-8 h-8 mx-auto mb-3 opacity-40" />
+                  <p className="text-sm">Carregando mapeamento de concorrentes...</p>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* ===== MATCHING TAB ===== */}
             <TabsContent value="matching" className="space-y-4">
               <div className="bg-card border border-border rounded-xl p-5">
                 <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Handshake className="w-4 h-4 text-primary" /> Matching: Grupos de P&D</h3>
@@ -170,17 +357,15 @@ const EmpresaPanel = () => {
                 <div className="bg-card border border-border rounded-xl p-5">
                   <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Globe className="w-4 h-4 text-primary" /> Líderes globais</h3>
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                    {knowledge.international.slice(0, 10).map((c, i) => {
-                      const flagMap: Record<string, string> = { BR: "🇧🇷", US: "🇺🇸", CN: "🇨🇳", DE: "🇩🇪", GB: "🇬🇧", FR: "🇫🇷", JP: "🇯🇵", KR: "🇰🇷" };
-                      return (
-                        <button key={i} onClick={() => openDetail({ type: "country", data: { code: c.country_code, count: c.count, flag: flagMap[c.country_code] } })} className="text-center p-3 bg-muted rounded-lg hover:bg-muted/70 transition-colors"><p className="text-xl mb-0.5">{flagMap[c.country_code] || "🌍"}</p><p className="text-xs font-medium text-foreground">{c.country_code}</p><p className="text-sm font-bold text-primary">{c.count.toLocaleString()}</p></button>
-                      );
-                    })}
+                    {knowledge.international.slice(0, 10).map((c, i) => (
+                      <button key={i} onClick={() => openDetail({ type: "country", data: { code: c.country_code, count: c.count, flag: flagMap[c.country_code] } })} className="text-center p-3 bg-muted rounded-lg hover:bg-muted/70 transition-colors"><p className="text-xl mb-0.5">{flagMap[c.country_code] || "🌍"}</p><p className="text-xs font-medium text-foreground">{c.country_code}</p><p className="text-sm font-bold text-primary">{c.count.toLocaleString()}</p></button>
+                    ))}
                   </div>
                 </div>
               )}
             </TabsContent>
 
+            {/* ===== FINANCIAMENTO TAB ===== */}
             <TabsContent value="financiamento" className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-card border border-border rounded-xl p-5">
@@ -204,6 +389,7 @@ const EmpresaPanel = () => {
               </div>
             </TabsContent>
 
+            {/* ===== TECNOLOGIA TAB ===== */}
             <TabsContent value="tecnologia" className="space-y-4">
               {repos.length > 0 ? (
                 <div className="bg-card border border-border rounded-xl p-5">
@@ -227,6 +413,7 @@ const EmpresaPanel = () => {
               )}
             </TabsContent>
 
+            {/* ===== RISCOS TAB ===== */}
             <TabsContent value="riscos" className="space-y-4">
               <div className="bg-card border border-border rounded-xl p-5 space-y-4">
                 <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-primary" /> Análise de Riscos</h3>
@@ -242,6 +429,7 @@ const EmpresaPanel = () => {
               </div>
             </TabsContent>
 
+            {/* ===== IA TAB ===== */}
             <TabsContent value="prescricao" className="space-y-4">
               {isAnalyzing ? (<div className="flex items-center justify-center py-12"><div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /><span className="ml-3 text-sm text-muted-foreground">Gerando inteligência competitiva...</span></div>
               ) : analysis && analysis.sections?.length > 0 ? (
