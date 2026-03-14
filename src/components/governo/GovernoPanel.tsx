@@ -147,6 +147,27 @@ const GovernoPanel = () => {
                   </div>
                 </div>
               )}
+              {/* Painel de cobertura de fontes */}
+              <div className="bg-card border border-border rounded-xl p-4">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Fontes consultadas</h3>
+                <div className="flex flex-wrap gap-2">
+                  {data.meta.sources.map((src, i) => (
+                    <span key={i} className="text-[10px] px-2 py-1 bg-primary/10 text-primary rounded-full border border-primary/20">
+                      ✓ {src}
+                    </span>
+                  ))}
+                  {!data.meta.sources.includes("Transparência") && (
+                    <span className="text-[10px] px-2 py-1 bg-muted text-muted-foreground rounded-full border border-border">
+                      ○ Transparência (requer API key)
+                    </span>
+                  )}
+                  {!data.meta.sources.includes("SICONFI") && (
+                    <span className="text-[10px] px-2 py-1 bg-muted text-muted-foreground rounded-full border border-border">
+                      ○ SICONFI
+                    </span>
+                  )}
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-card border border-border rounded-xl p-5">
                   <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2"><Landmark className="w-4 h-4 text-primary" />Volume Instrumental</h3>
