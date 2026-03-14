@@ -6,14 +6,19 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-async function safeFetch(url: string, timeoutMs = 12000): Promise<any> {
+// CORREÇÃO: timeout aumentado para 20s + options support
+async function safeFetch(url: string, options?: RequestInit, timeoutMs = 20000): Promise<any> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) return null;
+    const res = await fetch(url, { signal: controller.signal, ...options });
+    if (!res.ok) {
+      console.warn(`safeFetch ${res.status} for ${url}`);
+      return null;
+    }
     return await res.json();
-  } catch {
+  } catch (e) {
+    console.warn(`safeFetch failed for ${url}:`, e instanceof Error ? e.message : e);
     return null;
   } finally {
     clearTimeout(timer);
@@ -21,8 +26,18 @@ async function safeFetch(url: string, timeoutMs = 12000): Promise<any> {
 }
 
 // ===== GitHub repos =====
+// CORREÇÃO: suporte a GITHUB_TOKEN (opcional) — sem token: 60 req/hora, com token: 5.000 req/hora
 async function searchGitHub(query: string) {
-  const data = await safeFetch(`https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=stars&per_page=10`);
+  const token = Deno.env.get("GITHUB_TOKEN");
+  const headers: Record<string, string> = { "Accept": "application/vnd.github.v3+json" };
+  if (token) {
+    headers["Authorization"] = `token ${token}`;
+  }
+
+  const data = await safeFetch(
+    `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=stars&per_page=10`,
+    { headers }
+  );
   return (data?.items || []).map((r: any) => ({
     name: r.full_name || "",
     description: (r.description || "").slice(0, 150),
@@ -72,7 +87,6 @@ async function searchEmbrapiiFinep(query: string) {
 
 // ===== CNPJ/QSA lookup via BrasilAPI =====
 async function searchCNPJQSA(query: string) {
-  // Search for CNPJ-related datasets on dados.gov
   const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " CNPJ empresa cadastro societário")}&rows=5`);
   return (data?.result?.results || []).map((pkg: any) => ({
     title: pkg.title || "",

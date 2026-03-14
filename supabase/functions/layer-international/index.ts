@@ -6,14 +6,19 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-async function safeFetch(url: string, timeoutMs = 12000): Promise<any> {
+// CORREÇÃO: timeout aumentado para 20s + options support
+async function safeFetch(url: string, options?: RequestInit, timeoutMs = 20000): Promise<any> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) return null;
+    const res = await fetch(url, { signal: controller.signal, ...options });
+    if (!res.ok) {
+      console.warn(`safeFetch ${res.status} for ${url}`);
+      return null;
+    }
     return await res.json();
-  } catch {
+  } catch (e) {
+    console.warn(`safeFetch failed for ${url}:`, e instanceof Error ? e.message : e);
     return null;
   } finally {
     clearTimeout(timer);
@@ -29,7 +34,6 @@ async function getBCBSnapshot() {
     { code: 1, name: "Câmbio USD/BRL", unit: "R$" },
     { code: 27574, name: "Crédito PJ total", unit: "R$ mi" },
     { code: 20542, name: "Dívida pública/PIB", unit: "%" },
-    // Novas séries BCB (inspiradas pela matriz BR/ACC)
     { code: 17622, name: "PIX transações", unit: "milhões" },
     { code: 1178, name: "Base monetária M1", unit: "R$ mi" },
     { code: 3546, name: "Reservas internacionais", unit: "US$ mi" },
@@ -50,14 +54,15 @@ async function getBCBSnapshot() {
 }
 
 // ===== IPEAData =====
+// CORREÇÃO: HTTP → HTTPS (Edge Functions bloqueiam HTTP)
 async function searchIPEAData(query: string) {
-  const meta = await safeFetch(`http://www.ipeadata.gov.br/api/odata4/Metadados?$filter=contains(SERNOME,'${encodeURIComponent(query)}')&$top=8&$select=SERCODIGO,SERNOME,SERTEMA,FNTSIGLA,PERNOME`);
+  const meta = await safeFetch(`https://www.ipeadata.gov.br/api/odata4/Metadados?$filter=contains(SERNOME,'${encodeURIComponent(query)}')&$top=8&$select=SERCODIGO,SERNOME,SERTEMA,FNTSIGLA,PERNOME`);
   const series = (meta?.value || []).map((s: any) => ({
     code: s.SERCODIGO, name: s.SERNOME, theme: s.SERTEMA, source: s.FNTSIGLA, frequency: s.PERNOME || null,
   }));
   const withValues = await Promise.all(
     series.slice(0, 6).map(async (s: any) => {
-      const data = await safeFetch(`http://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='${s.code}')?$top=12&$orderby=VALDATA desc&$select=VALDATA,VALVALOR`);
+      const data = await safeFetch(`https://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='${s.code}')?$top=12&$orderby=VALDATA desc&$select=VALDATA,VALVALOR`);
       const values = (data?.value || []).map((v: any) => ({ date: v.VALDATA?.split("T")[0] || "", value: v.VALVALOR })).reverse();
       return { ...s, values, lastValue: values.length > 0 ? values[values.length - 1].value : null };
     })

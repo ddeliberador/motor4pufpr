@@ -53,6 +53,87 @@ const PERSONA_QUESTIONS: Record<string, PersonaQuestions> = {
   },
 };
 
+// Tenta Lovable Gateway primeiro, depois Anthropic como fallback
+async function callAI(systemPrompt: string, userContent: string): Promise<string> {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+
+  // Tentativa 1: Lovable Gateway
+  if (LOVABLE_API_KEY) {
+    try {
+      const res = await fetch(AI_GATEWAY, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userContent },
+          ],
+          temperature: 0.15,
+          max_tokens: 3000,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content;
+        if (text) return text;
+      } else if (res.status === 429) {
+        throw new Error("Rate limit exceeded");
+      } else if (res.status === 402) {
+        throw new Error("Créditos esgotados");
+      }
+      console.warn("Lovable Gateway failed, trying fallback...");
+    } catch (err) {
+      // Re-throw rate limit / credits errors
+      if (err instanceof Error && (err.message === "Rate limit exceeded" || err.message === "Créditos esgotados")) {
+        throw err;
+      }
+      console.warn("Lovable Gateway error:", err);
+    }
+  }
+
+  // Tentativa 2: Anthropic API (fallback)
+  if (ANTHROPIC_API_KEY) {
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 3000,
+          system: systemPrompt,
+          messages: [{ role: "user", content: userContent }],
+          temperature: 0.15,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const text = data.content?.[0]?.text;
+        if (text) return text;
+      }
+      console.warn("Anthropic fallback also failed:", res.status);
+    } catch (err) {
+      console.warn("Anthropic fallback error:", err);
+    }
+  }
+
+  if (!LOVABLE_API_KEY && !ANTHROPIC_API_KEY) {
+    throw new Error("AI not configured — configure LOVABLE_API_KEY ou ANTHROPIC_API_KEY");
+  }
+
+  throw new Error("Erro na análise — ambos provedores falharam");
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -63,13 +144,6 @@ Deno.serve(async (req) => {
     if (!searchData) {
       return new Response(JSON.stringify({ error: "searchData is required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "AI not configured" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -105,12 +179,12 @@ FOCO DE OUTPUT: ${pq.outputFocus}
 - Distribuição UF: ${JSON.stringify(layers.policy?.uf_distribution || {})}
 
 DADOS POR CAMADA:
-- Camada 1 (Conhecimento): ${layers.knowledge?.total_papers || 0} papers, densidade=${layers.knowledge?.density || 0}, concentração=${layers.knowledge?.concentration || 0}, especialização=${layers.knowledge?.specialization || 0}
-- Camada 2 (Tecnologia): ${layers.technology?.github_repos?.length || 0} repos, TRL=${layers.technology?.trl_estimate || "?"} (${layers.technology?.trl_label || "?"}), densidade_tech=${layers.technology?.tech_density || 0}
-- Camada 3 (Política): ${layers.policy?.total_contracts || 0} contratos (R$ ${((layers.policy?.total_contract_value || 0) / 1e6).toFixed(1)}M), ${layers.policy?.total_convenios || 0} convênios, intensidade=${layers.policy?.instrumental_intensity || 0}
-- Camada 4 (Internacional): dependência=${layers.international?.dependency_index || 0}%, share BR=${layers.international?.br_share || 0}%, inserção global=${layers.international?.global_insertion || 0}%
+- Camada 1 (Conhecimento): ${layers.knowledge?.total_papers || 0} papers BR, ${layers.knowledge?.total_papers_global || "?"} papers globais, densidade=${layers.knowledge?.density || 0}, concentração=${layers.knowledge?.concentration || 0}, especialização=${layers.knowledge?.specialization || 0}
+- Camada 2 (Tecnologia): ${layers.technology?.github_repos?.length || 0} repos, TRL=${layers.technology?.trl_estimate || "?"} (${layers.technology?.trl_label || "?"}), densidade_tech=${layers.technology?.tech_density || 0}, stars=${layers.technology?.total_stars || 0}
+- Camada 3 (Política): ${layers.policy?.total_contracts || 0} contratos (R$ ${((layers.policy?.total_contract_value || 0) / 1e6).toFixed(1)}M), ${layers.policy?.total_convenios || 0} convênios (R$ ${((layers.policy?.total_convenio_value || 0) / 1e6).toFixed(1)}M), intensidade=${layers.policy?.instrumental_intensity || 0}, efetividade=${layers.policy?.spending_effectiveness || 0}
+- Camada 4 (Internacional): dependência=${layers.international?.dependency_index || 0}%, share BR=${layers.international?.br_share || 0}%, inserção global=${layers.international?.global_insertion || 0}%, ${layers.international?.countries_with_coauthorship || 0} países com coautoria
 
-Fontes: ${searchData.meta?.sources?.join(", ") || "diversas"}.
+Fontes: ${searchData.meta?.sources?.join(", ") || "diversas"} (${searchData.meta?.source_count || "?"} fontes).
 
 ESTRUTURA — Responda EXATAMENTE estas 3 questões:
 ## 1. ${pq.questions[0]}
@@ -137,58 +211,27 @@ REGRAS INVIOLÁVEIS:
       })),
       knowledge_institutions: layers.knowledge?.institutions,
       knowledge_concepts: layers.knowledge?.concepts?.slice(0, 10),
+      knowledge_resolved: layers.knowledge?.resolved_institutions,
       technology_repos: layers.technology?.github_repos?.slice(0, 5),
       technology_trl: { estimate: layers.technology?.trl_estimate, label: layers.technology?.trl_label, signals: layers.technology?.trl_signals },
+      technology_languages: layers.technology?.language_distribution,
       policy_contracts: (layers.policy?.contracts || []).slice(0, 8).map((c: any) => ({
         object: c.object?.slice(0, 120), organ: c.organ, value: c.value, uf: c.uf,
       })),
       policy_convenios: (layers.policy?.convenios || []).slice(0, 5),
       policy_sanctions: (layers.policy?.sanctions || []).slice(0, 3),
+      policy_gazettes_count: layers.policy?.gazettes?.length || 0,
       international_macro: (layers.international?.macro_indicators || []).map((m: any) => ({
         name: m.name, value: m.value, unit: m.unit, variation: m.variation,
       })),
       international_countries: layers.international?.country_distribution,
+      international_ipeadata_count: layers.international?.ipeadata_series?.length || 0,
     }, null, 0);
 
     console.log(`Motor analysis: ${searchData.query} (persona: ${personaKey}, GT=${indices.gt?.value}, CD=${indices.cd?.value})`);
 
-    const aiResponse = await fetch(AI_GATEWAY, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Dados de ${searchData.meta?.source_count || "múltiplas"} bases sobre "${searchData.query}":\n\n${dataSummary}` },
-        ],
-        temperature: 0.15,
-        max_tokens: 3000,
-      }),
-    });
+    const analysisText = await callAI(systemPrompt, `Dados de ${searchData.meta?.source_count || "múltiplas"} bases sobre "${searchData.query}":\n\n${dataSummary}`);
 
-    if (!aiResponse.ok) {
-      if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos esgotados" }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const errText = await aiResponse.text();
-      console.error("AI error:", aiResponse.status, errText);
-      return new Response(JSON.stringify({ error: "Erro na análise" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const aiData = await aiResponse.json();
-    const analysisText = aiData.choices?.[0]?.message?.content || "";
     const sections = parseThreeSections(analysisText, pq.questions);
 
     return new Response(JSON.stringify({
@@ -201,9 +244,11 @@ REGRAS INVIOLÁVEIS:
     });
   } catch (error) {
     console.error("Motor analysis error:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    const status = message.includes("Rate limit") ? 429 : message.includes("Créditos") ? 402 : 500;
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: message }),
+      { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
