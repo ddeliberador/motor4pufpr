@@ -312,9 +312,58 @@ const PesquisadorPanel = () => {
                   <div className="bg-muted/30 rounded-lg p-4"><p className="text-xs font-semibold text-foreground mb-1">Produção Científica</p><p className="text-2xl font-bold text-primary">{data.stats.papers}</p><p className="text-[10px] text-muted-foreground">papers encontrados</p></div>
                   <div className="bg-muted/30 rounded-lg p-4"><p className="text-xs font-semibold text-foreground mb-1">Aplicação Prática</p><p className="text-2xl font-bold text-accent">{data.stats.contracts + data.stats.github_repos}</p><p className="text-[10px] text-muted-foreground">contratos + repos</p></div>
                 </div>
-                {policy.contracts.length > 0 && data.stats.papers < 200 && (
-                  <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg"><p className="text-xs text-foreground"><strong>Oportunidade:</strong> {data.stats.contracts} licitações mas apenas {data.stats.papers} papers — pesquisa aplicada.</p></div>
-                )}
+                {/* Interpretação automática do gap */}
+                {(() => {
+                  const papers = data.stats.papers;
+                  const aplicacao = data.stats.contracts + data.stats.github_repos;
+                  const ratio = aplicacao > 0 ? papers / aplicacao : papers > 0 ? 999 : 0;
+
+                  if (papers === 0 && aplicacao === 0) return (
+                    <div className="p-3 bg-muted/30 rounded-lg">
+                      <p className="text-xs text-muted-foreground">Nenhum dado encontrado para este tema. Tente um termo mais amplo.</p>
+                    </div>
+                  );
+
+                  if (ratio > 20) return (
+                    <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg space-y-1">
+                      <p className="text-xs font-semibold text-foreground">🚨 Gap crítico de tradução</p>
+                      <p className="text-xs text-muted-foreground">
+                        <strong>{papers.toLocaleString()} papers</strong> e apenas <strong>{aplicacao} aplicações</strong> — ratio {ratio > 100 ? ">100" : ratio.toFixed(0)}:1.
+                        O conhecimento existe mas não está sendo traduzido em produtos, contratos ou código.
+                      </p>
+                      <p className="text-xs text-primary font-medium">→ Oportunidade: pesquisa aplicada ou transferência tecnológica têm demanda reprimida.</p>
+                    </div>
+                  );
+
+                  if (ratio > 5) return (
+                    <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg space-y-1">
+                      <p className="text-xs font-semibold text-foreground">⚠️ Gap de tradução moderado</p>
+                      <p className="text-xs text-muted-foreground">
+                        Ratio {ratio.toFixed(1)}:1 (papers/aplicações). Campo com produção científica ativa mas absorção ainda limitada.
+                      </p>
+                      <p className="text-xs text-primary font-medium">→ Posicione pesquisa na interface ciência-mercado para maior impacto.</p>
+                    </div>
+                  );
+
+                  if (ratio < 1 && aplicacao > papers && papers > 0) return (
+                    <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg space-y-1">
+                      <p className="text-xs font-semibold text-foreground">✅ Campo com demanda prática maior que produção</p>
+                      <p className="text-xs text-muted-foreground">
+                        <strong>{aplicacao} aplicações</strong> para <strong>{papers} papers</strong>.
+                        Mercado absorve mais do que a academia produz — campo com alta empregabilidade.
+                      </p>
+                      <p className="text-xs text-primary font-medium">→ Pesquisa aplicada tem mercado garantido neste tema.</p>
+                    </div>
+                  );
+
+                  return (
+                    <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+                      <p className="text-xs text-foreground">
+                        <strong>Campo equilibrado:</strong> ratio {ratio.toFixed(1)}:1. Boa relação entre produção científica e absorção prática.
+                      </p>
+                    </div>
+                  );
+                })()}
                 {technology.github_repos.length > 0 && (
                   <div className="space-y-2">
                     <h4 className="text-xs font-semibold text-foreground flex items-center gap-2"><GitBranch className="w-3.5 h-3.5" /> Código aberto disponível</h4>
