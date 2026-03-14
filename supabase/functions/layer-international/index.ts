@@ -6,7 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// CORREÇÃO: timeout aumentado para 20s + options support
 async function safeFetch(url: string, options?: RequestInit, timeoutMs = 20000): Promise<any> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -54,7 +53,6 @@ async function getBCBSnapshot() {
 }
 
 // ===== IPEAData =====
-// CORREÇÃO: HTTP → HTTPS (Edge Functions bloqueiam HTTP)
 async function searchIPEAData(query: string) {
   const meta = await safeFetch(`https://www.ipeadata.gov.br/api/odata4/Metadados?$filter=contains(SERNOME,'${encodeURIComponent(query)}')&$top=8&$select=SERCODIGO,SERNOME,SERTEMA,FNTSIGLA,PERNOME`);
   const series = (meta?.value || []).map((s: any) => ({

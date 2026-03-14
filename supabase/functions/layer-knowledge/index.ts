@@ -6,7 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// CORREÇÃO: timeout aumentado para 20s + options support
 async function safeFetch(url: string, options?: RequestInit, timeoutMs = 20000): Promise<any> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -25,18 +24,15 @@ async function safeFetch(url: string, options?: RequestInit, timeoutMs = 20000):
   }
 }
 
-// ===== OpenAlex: papers + institutions + international + concepts =====
-// CORREÇÃO: User-Agent com email (polite pool = sem throttle, 100k req/dia)
 async function searchOpenAlex(query: string) {
   const encoded = encodeURIComponent(query);
-  const headers = { "User-Agent": "Motor4P/1.0 (mailto:contato@motor4p.ufpr.br)" };
+  const headers = { "User-Agent": "Motor4P-UFPR/1.0 (mailto:pesquisa@ufpr.br)" };
 
-  const [papersData, intlData, conceptsData, globalData] = await Promise.all([
+  const [papersData, intlData, conceptsData, totalGlobalData] = await Promise.all([
     safeFetch(`https://api.openalex.org/works?search=${encoded}&filter=institutions.country_code:BR&per_page=15&sort=cited_by_count:desc&select=id,title,publication_year,cited_by_count,authorships,primary_location,open_access,concepts`, { headers }),
     safeFetch(`https://api.openalex.org/works?search=${encoded}&group_by=authorships.institutions.country_code&per_page=15`, { headers }),
     safeFetch(`https://api.openalex.org/works?search=${encoded}&group_by=concepts.id&per_page=20`, { headers }),
-    // NOVO: total global de papers (sem filtro BR) para calcular share
-    safeFetch(`https://api.openalex.org/works?search=${encoded}&per_page=1&select=id`, { headers }),
+    safeFetch(`https://api.openalex.org/works?search=${encoded}&per_page=1`, { headers }),
   ]);
 
   const papers = (papersData?.results || []).map((w: any) => ({
@@ -72,34 +68,37 @@ async function searchOpenAlex(query: string) {
     .slice(0, 15)
     .map((g: any) => ({ name: g.key_display_name, count: g.count }));
 
-  const totalPapers = papersData?.meta?.count || papers.length;
-  const totalPapersGlobal = globalData?.meta?.count || totalPapers;
-
-  return { papers, institutionCounts, international, concepts, totalPapers, totalPapersGlobal };
+  return {
+    papers,
+    institutionCounts,
+    international,
+    concepts,
+    totalPapersBR: papersData?.meta?.count || papers.length,
+    totalPapersGlobal: totalGlobalData?.meta?.count || papersData?.meta?.count || papers.length,
+  };
 }
 
-// ===== CAPES datasets =====
-// CORREÇÃO: URL correta da API CKAN + fallback para dados.gov.br
 async function searchCAPES(query: string) {
-  // Tenta API CKAN oficial da CAPES primeiro
-  let data = await safeFetch(`https://dadosabertos.capes.gov.br/api/3/action/package_search?q=${encodeURIComponent(query)}&rows=6`);
-
-  if (!data?.result) {
-    // Fallback: dados.gov.br filtrado por CAPES
-    console.warn("CAPES API falhou, usando fallback dados.gov.br");
-    data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " CAPES bolsa pós-graduação")}&rows=6`);
+  const data = await safeFetch(`https://dadosabertos.capes.gov.br/api/3/action/package_search?q=${encodeURIComponent(query)}&rows=6`);
+  if (!data?.result?.results) {
+    const fallback = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " CAPES pós-graduação bolsas")}&rows=5`);
+    return (fallback?.result?.results || []).map((pkg: any) => ({
+      title: pkg.title || "",
+      description: (pkg.notes || "").slice(0, 200),
+      organization: pkg.organization?.title || "CAPES",
+      url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
+      formats: [...new Set((pkg.resources || []).map((r: any) => r.format?.toUpperCase()).filter(Boolean))],
+    }));
   }
-
-  return (data?.result?.results || []).map((pkg: any) => ({
+  return (data.result.results || []).map((pkg: any) => ({
     title: pkg.title || "",
     description: (pkg.notes || "").slice(0, 200),
     organization: pkg.organization?.title || "",
-    url: pkg.name?.includes("dados.gov") ? `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}` : `https://dadosabertos.capes.gov.br/dataset/${pkg.name}`,
+    url: `https://dadosabertos.capes.gov.br/dataset/${pkg.name}`,
     formats: [...new Set((pkg.resources || []).map((r: any) => r.format?.toUpperCase()).filter(Boolean))],
   }));
 }
 
-// ===== INEP datasets =====
 async function searchINEP(query: string) {
   const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " educação INEP")}&rows=5&fq=organization:instituto-nacional-de-estudos-e-pesquisas-educacionais-anisio-teixeira-inep`);
   return (data?.result?.results || []).map((pkg: any) => ({
@@ -109,7 +108,6 @@ async function searchINEP(query: string) {
   }));
 }
 
-// ===== CNPq groups proxy via dados.gov =====
 async function searchCNPq(query: string) {
   const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " CNPq pesquisa grupos")}&rows=5`);
   return (data?.result?.results || []).map((pkg: any) => ({
@@ -119,7 +117,6 @@ async function searchCNPq(query: string) {
   }));
 }
 
-// ===== DATASUS (SIH, SIM, CNES, SINAN) =====
 async function searchDATASUS(query: string) {
   const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " saúde SUS DATASUS")}&rows=5&fq=organization:ministerio-da-saude-ms`);
   return (data?.result?.results || []).map((pkg: any) => ({
@@ -130,7 +127,6 @@ async function searchDATASUS(query: string) {
   }));
 }
 
-// ===== Base dos Dados (agregador curado) =====
 async function searchBaseDosDados(query: string) {
   const data = await safeFetch(`https://basedosdados.org/api/3/action/package_search?q=${encodeURIComponent(query)}&rows=5`);
   return (data?.result?.results || []).map((pkg: any) => ({
@@ -142,7 +138,6 @@ async function searchBaseDosDados(query: string) {
   }));
 }
 
-// ===== Entity Resolution (normalização de nomes de instituições) =====
 const INSTITUTION_ALIASES: Record<string, string[]> = {
   "UFPR": ["universidade federal do parana", "federal university of parana"],
   "USP": ["universidade de sao paulo", "university of sao paulo"],
@@ -154,6 +149,11 @@ const INSTITUTION_ALIASES: Record<string, string[]> = {
   "EMBRAPA": ["empresa brasileira de pesquisa agropecuaria", "embrapa"],
   "FIOCRUZ": ["fundacao oswaldo cruz", "fiocruz", "oswaldo cruz foundation"],
   "INPE": ["instituto nacional de pesquisas espaciais"],
+  "UNESP": ["universidade estadual paulista"],
+  "UNIFESP": ["universidade federal de sao paulo"],
+  "UNB": ["universidade de brasilia"],
+  "UFC": ["universidade federal do ceara"],
+  "UFBA": ["universidade federal da bahia"],
 };
 
 function normalizeInstitutionName(name: string): string {
@@ -175,9 +175,7 @@ function findCrossBaseMatches(institutions: Record<string, number>): Record<stri
   for (const [name, count] of Object.entries(institutions)) {
     const match = resolveInstitution(name);
     if (match) {
-      if (!resolved[match.id]) {
-        resolved[match.id] = { canonical: match.canonical, count: 0 };
-      }
+      if (!resolved[match.id]) resolved[match.id] = { canonical: match.canonical, count: 0 };
       resolved[match.id].count += count;
     }
   }
@@ -185,17 +183,11 @@ function findCrossBaseMatches(institutions: Record<string, number>): Record<stri
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const { query } = await req.json();
-    if (!query) {
-      return new Response(JSON.stringify({ error: "query is required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!query) return new Response(JSON.stringify({ error: "query is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     console.log(`Layer Knowledge: ${query}`);
     const start = Date.now();
@@ -209,9 +201,7 @@ Deno.serve(async (req) => {
       searchBaseDosDados(query),
     ]);
 
-    // ===== COMPUTED OUTPUTS =====
-    const totalPapers = openalex.totalPapers;
-    const totalPapersGlobal = openalex.totalPapersGlobal;
+    const totalPapers = openalex.totalPapersBR;
     const countriesActive = openalex.international.length;
     const density = countriesActive > 0 ? Math.round(totalPapers / countriesActive) : 0;
 
@@ -222,14 +212,10 @@ Deno.serve(async (req) => {
 
     const conceptCounts = openalex.concepts.map((c: any) => c.count);
     const conceptTotal = conceptCounts.reduce((s: number, v: number) => s + v, 0) || 1;
-    const entropy = -conceptCounts.reduce((s: number, v: number) => {
-      const p = v / conceptTotal;
-      return s + (p > 0 ? p * Math.log2(p) : 0);
-    }, 0);
+    const entropy = -conceptCounts.reduce((s: number, v: number) => { const p = v / conceptTotal; return s + (p > 0 ? p * Math.log2(p) : 0); }, 0);
     const maxEntropy = Math.log2(conceptCounts.length || 1) || 1;
     const specialization = Math.round((1 - entropy / maxEntropy) * 100);
 
-    // Entity Resolution
     const resolved_institutions = findCrossBaseMatches(openalex.institutionCounts);
 
     const sources: string[] = [];
@@ -240,10 +226,10 @@ Deno.serve(async (req) => {
     if (datasus.length > 0) sources.push("DATASUS");
     if (basedosdados.length > 0) sources.push("Base dos Dados");
 
-    const result = {
+    return new Response(JSON.stringify({
       papers: openalex.papers,
       total_papers: totalPapers,
-      total_papers_global: totalPapersGlobal,
+      total_papers_global: openalex.totalPapersGlobal,
       institutions: openalex.institutionCounts,
       resolved_institutions,
       international: openalex.international,
@@ -258,16 +244,9 @@ Deno.serve(async (req) => {
       specialization,
       sources,
       processing_time_ms: Date.now() - start,
-    };
-
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("Layer Knowledge error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
