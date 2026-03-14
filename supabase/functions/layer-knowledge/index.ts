@@ -29,7 +29,7 @@ async function searchOpenAlex(query: string) {
   const headers = { "User-Agent": "Motor4P-UFPR/1.0 (mailto:pesquisa@ufpr.br)" };
 
   const [papersData, intlData, conceptsData, totalGlobalData] = await Promise.all([
-    safeFetch(`https://api.openalex.org/works?search=${encoded}&filter=institutions.country_code:BR&per_page=15&sort=cited_by_count:desc&select=id,title,publication_year,cited_by_count,authorships,primary_location,open_access,concepts`, { headers }),
+    safeFetch(`https://api.openalex.org/works?search=${encoded}&filter=institutions.country_code:BR&per_page=15&sort=cited_by_count:desc&select=id,title,publication_year,cited_by_count,authorships,primary_location,open_access,concepts,keywords,grants,abstract_inverted_index,doi,sustainable_development_goals`, { headers }),
     safeFetch(`https://api.openalex.org/works?search=${encoded}&group_by=authorships.institutions.country_code&per_page=15`, { headers }),
     safeFetch(`https://api.openalex.org/works?search=${encoded}&group_by=concepts.id&per_page=20`, { headers }),
     safeFetch(`https://api.openalex.org/works?search=${encoded}&per_page=1`, { headers }),
