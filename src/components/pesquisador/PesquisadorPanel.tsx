@@ -88,8 +88,9 @@ const PesquisadorPanel = () => {
   const flagMap: Record<string, string> = { BR: "🇧🇷", US: "🇺🇸", CN: "🇨🇳", DE: "🇩🇪", GB: "🇬🇧", FR: "🇫🇷", JP: "🇯🇵", KR: "🇰🇷", IN: "🇮🇳", CA: "🇨🇦", AU: "🇦🇺", IT: "🇮🇹", ES: "🇪🇸", NL: "🇳🇱", CH: "🇨🇭", SE: "🇸🇪", PT: "🇵🇹" };
 
   const brPapers = knowledge.international.find(c => c.country_code === "BR")?.count || 0;
-  const totalPapers = data.stats.papers || 0;
-  const brShare = totalPapers > 0 ? (brPapers / totalPapers) * 100 : 0;
+  const totalPapers = knowledge.total_papers || 0;
+  const totalPapersGlobal = (knowledge as any).total_papers_global || totalPapers;
+  const brShare = totalPapersGlobal > 0 ? (totalPapers / totalPapersGlobal) * 100 : 0;
 
   const institutionsWithContracts = new Set(policy.contracts.map(c => c.organ?.toLowerCase().slice(0, 15)).filter(Boolean));
   const isolatedResearchGroups = institutionRanking.filter(([name]) =>

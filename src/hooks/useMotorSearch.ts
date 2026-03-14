@@ -123,6 +123,7 @@ export interface KnowledgeLayer {
   density: number;
   concentration: number;
   specialization: number;
+  total_papers_global: number;
   sources: string[];
 }
 
