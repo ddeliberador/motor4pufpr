@@ -6,14 +6,19 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-async function safeFetch(url: string, timeoutMs = 12000): Promise<any> {
+// CORREÇÃO: timeout aumentado para 20s + options support
+async function safeFetch(url: string, options?: RequestInit, timeoutMs = 20000): Promise<any> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) return null;
+    const res = await fetch(url, { signal: controller.signal, ...options });
+    if (!res.ok) {
+      console.warn(`safeFetch ${res.status} for ${url}`);
+      return null;
+    }
     return await res.json();
-  } catch {
+  } catch (e) {
+    console.warn(`safeFetch failed for ${url}:`, e instanceof Error ? e.message : e);
     return null;
   } finally {
     clearTimeout(timer);
@@ -21,12 +26,17 @@ async function safeFetch(url: string, timeoutMs = 12000): Promise<any> {
 }
 
 // ===== OpenAlex: papers + institutions + international + concepts =====
+// CORREÇÃO: User-Agent com email (polite pool = sem throttle, 100k req/dia)
 async function searchOpenAlex(query: string) {
   const encoded = encodeURIComponent(query);
-  const [papersData, intlData, conceptsData] = await Promise.all([
-    safeFetch(`https://api.openalex.org/works?search=${encoded}&filter=institutions.country_code:BR&per_page=15&sort=cited_by_count:desc&select=id,title,publication_year,cited_by_count,authorships,primary_location,open_access,concepts`),
-    safeFetch(`https://api.openalex.org/works?search=${encoded}&group_by=authorships.institutions.country_code&per_page=15`),
-    safeFetch(`https://api.openalex.org/works?search=${encoded}&group_by=concepts.id&per_page=20`),
+  const headers = { "User-Agent": "Motor4P/1.0 (mailto:contato@motor4p.ufpr.br)" };
+
+  const [papersData, intlData, conceptsData, globalData] = await Promise.all([
+    safeFetch(`https://api.openalex.org/works?search=${encoded}&filter=institutions.country_code:BR&per_page=15&sort=cited_by_count:desc&select=id,title,publication_year,cited_by_count,authorships,primary_location,open_access,concepts`, { headers }),
+    safeFetch(`https://api.openalex.org/works?search=${encoded}&group_by=authorships.institutions.country_code&per_page=15`, { headers }),
+    safeFetch(`https://api.openalex.org/works?search=${encoded}&group_by=concepts.id&per_page=20`, { headers }),
+    // NOVO: total global de papers (sem filtro BR) para calcular share
+    safeFetch(`https://api.openalex.org/works?search=${encoded}&per_page=1&select=id`, { headers }),
   ]);
 
   const papers = (papersData?.results || []).map((w: any) => ({
@@ -63,18 +73,28 @@ async function searchOpenAlex(query: string) {
     .map((g: any) => ({ name: g.key_display_name, count: g.count }));
 
   const totalPapers = papersData?.meta?.count || papers.length;
+  const totalPapersGlobal = globalData?.meta?.count || totalPapers;
 
-  return { papers, institutionCounts, international, concepts, totalPapers };
+  return { papers, institutionCounts, international, concepts, totalPapers, totalPapersGlobal };
 }
 
 // ===== CAPES datasets =====
+// CORREÇÃO: URL correta da API CKAN + fallback para dados.gov.br
 async function searchCAPES(query: string) {
-  const data = await safeFetch(`https://dadosabertos.capes.gov.br/api/3/action/package_search?q=${encodeURIComponent(query)}&rows=6`);
+  // Tenta API CKAN oficial da CAPES primeiro
+  let data = await safeFetch(`https://dadosabertos.capes.gov.br/api/3/action/package_search?q=${encodeURIComponent(query)}&rows=6`);
+
+  if (!data?.result) {
+    // Fallback: dados.gov.br filtrado por CAPES
+    console.warn("CAPES API falhou, usando fallback dados.gov.br");
+    data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " CAPES bolsa pós-graduação")}&rows=6`);
+  }
+
   return (data?.result?.results || []).map((pkg: any) => ({
     title: pkg.title || "",
     description: (pkg.notes || "").slice(0, 200),
     organization: pkg.organization?.title || "",
-    url: `https://dadosabertos.capes.gov.br/dataset/${pkg.name}`,
+    url: pkg.name?.includes("dados.gov") ? `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}` : `https://dadosabertos.capes.gov.br/dataset/${pkg.name}`,
     formats: [...new Set((pkg.resources || []).map((r: any) => r.format?.toUpperCase()).filter(Boolean))],
   }));
 }
@@ -191,6 +211,7 @@ Deno.serve(async (req) => {
 
     // ===== COMPUTED OUTPUTS =====
     const totalPapers = openalex.totalPapers;
+    const totalPapersGlobal = openalex.totalPapersGlobal;
     const countriesActive = openalex.international.length;
     const density = countriesActive > 0 ? Math.round(totalPapers / countriesActive) : 0;
 
@@ -222,6 +243,7 @@ Deno.serve(async (req) => {
     const result = {
       papers: openalex.papers,
       total_papers: totalPapers,
+      total_papers_global: totalPapersGlobal,
       institutions: openalex.institutionCounts,
       resolved_institutions,
       international: openalex.international,

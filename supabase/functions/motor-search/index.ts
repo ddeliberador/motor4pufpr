@@ -9,7 +9,10 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
+// CORREÇÃO: timeout aumentado para 45s (as 4 layers em paralelo precisam desse tempo nas APIs do governo)
 async function invokeLayer(name: string, body: Record<string, any>): Promise<any> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 45000);
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
       method: "POST",
@@ -18,6 +21,7 @@ async function invokeLayer(name: string, body: Record<string, any>): Promise<any
         "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify(body),
+      signal: controller.signal,
     });
     if (!res.ok) {
       console.error(`Layer ${name} failed: ${res.status}`);
@@ -27,6 +31,8 @@ async function invokeLayer(name: string, body: Record<string, any>): Promise<any
   } catch (err) {
     console.error(`Layer ${name} error:`, err);
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
