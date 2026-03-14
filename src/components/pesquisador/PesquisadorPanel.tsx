@@ -34,10 +34,13 @@ const PesquisadorPanel = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-    setPendingSearchQuery(searchQuery);
-    const cnaes = await searchCnaes(searchQuery);
-    if (cnaes.length > 0) { setSuggestedCnaes(cnaes); setShowCnaeModal(true); }
-    else { setHasSearched(true); await search(searchQuery, "pesquisador"); }
+    // Vai direto para os resultados — CNAE é opcional e pode ser refinado depois
+    setHasSearched(true);
+    await search(searchQuery, "pesquisador");
+    // Busca CNAEs em background para enriquecer se necessário
+    searchCnaes(searchQuery).then(cnaes => {
+      if (cnaes.length > 0) setSuggestedCnaes(cnaes);
+    });
   };
 
   const handleCnaeConfirm = async (selected: CnaeCode[]) => { setSelectedCnaes(selected); setShowCnaeModal(false); setHasSearched(true); await search(pendingSearchQuery, "pesquisador"); };

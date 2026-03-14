@@ -32,10 +32,11 @@ const GovernoPanel = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-    setPendingSearchQuery(searchQuery);
-    const cnaes = await searchCnaes(searchQuery);
-    if (cnaes.length > 0) { setSuggestedCnaes(cnaes); setShowCnaeModal(true); }
-    else { setHasSearched(true); await search(searchQuery, "governo", { entityName: govLocation, govLevel, location: govLocation }); }
+    setHasSearched(true);
+    await search(searchQuery, "governo", { entityName: govLocation, govLevel, location: govLocation });
+    searchCnaes(searchQuery).then(cnaes => {
+      if (cnaes.length > 0) setSuggestedCnaes(cnaes);
+    });
   };
 
   const handleCnaeConfirm = async (selected: CnaeCode[]) => { setSelectedCnaes(selected); setShowCnaeModal(false); setHasSearched(true); await search(pendingSearchQuery, "governo", { entityName: govLocation, govLevel, location: govLocation }); };
