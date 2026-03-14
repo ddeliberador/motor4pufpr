@@ -192,6 +192,21 @@ function findCrossBaseMatches(institutions: Record<string, number>): Record<stri
   return resolved;
 }
 
+function decodeAbstract(invertedIndex: Record<string, number[]> | null | undefined): string {
+  if (!invertedIndex) return "";
+  try {
+    const words: string[] = [];
+    for (const [word, positions] of Object.entries(invertedIndex)) {
+      for (const pos of positions) {
+        words[pos] = word;
+      }
+    }
+    return words.filter(Boolean).join(" ").slice(0, 600);
+  } catch {
+    return "";
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
