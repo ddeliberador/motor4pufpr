@@ -40,15 +40,25 @@ async function searchOpenAlex(query: string) {
     title: w.title || "",
     year: w.publication_year,
     citations: w.cited_by_count || 0,
-    authors: (w.authorships || []).slice(0, 5).map((a: any) => ({
+    authors: (w.authorships || []).slice(0, 8).map((a: any) => ({
       name: a.author?.display_name || "",
       institution: a.institutions?.[0]?.display_name || "",
       country: a.institutions?.[0]?.country_code || "",
+      orcid: a.author?.orcid?.replace("https://orcid.org/", "") || "",
     })),
     journal: w.primary_location?.source?.display_name || "",
     is_open_access: w.open_access?.is_oa || false,
+    oa_url: w.open_access?.oa_url || "",
     url: w.primary_location?.landing_page_url || w.id || "",
-    concepts: (w.concepts || []).slice(0, 5).map((c: any) => c.display_name),
+    doi: w.doi?.replace("https://doi.org/", "") || "",
+    abstract: decodeAbstract(w.abstract_inverted_index),
+    concepts: (w.concepts || []).slice(0, 8).map((c: any) => c.display_name),
+    keywords: (w.keywords || []).slice(0, 6).map((k: any) => k.display_name || k.keyword || ""),
+    grants: (w.grants || []).slice(0, 4).map((g: any) => ({
+      funder: g.funder_display_name || "",
+      award: g.award_id || "",
+    })),
+    sdgs: (w.sustainable_development_goals || []).slice(0, 3).map((s: any) => s.display_name || ""),
   }));
 
   const institutionCounts: Record<string, number> = {};
