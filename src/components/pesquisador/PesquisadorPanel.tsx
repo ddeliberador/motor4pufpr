@@ -206,6 +206,47 @@ const PesquisadorPanel = () => {
                   <div className="bg-muted/30 rounded-lg p-3 text-center"><p className="text-2xl font-bold text-foreground">{brShare.toFixed(1)}%</p><p className="text-[10px] text-muted-foreground">Share Brasil</p></div>
                   <div className="bg-muted/30 rounded-lg p-3 text-center"><p className="text-2xl font-bold text-foreground">{data.stats.github_repos}</p><p className="text-[10px] text-muted-foreground">Repos abertos</p></div>
                 </div>
+                {/* Barra comparativa Brasil vs mundo */}
+                {totalPapers > 0 && totalPapersGlobal > 0 && (
+                  <div className="bg-muted/30 rounded-lg p-4 space-y-2">
+                    <p className="text-xs font-semibold text-foreground">Brasil no contexto global</p>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted-foreground w-16">🇧🇷 Brasil</span>
+                        <div className="flex-1 bg-muted rounded-full h-4 relative overflow-hidden">
+                          <div
+                            className="h-full bg-primary rounded-full"
+                            style={{ width: `${Math.min(100, brShare)}%` }}
+                          />
+                          <span className="absolute inset-0 flex items-center justify-end pr-2 text-[9px] font-bold text-foreground">
+                            {totalPapers.toLocaleString()} papers
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-primary w-12 text-right">{brShare.toFixed(1)}%</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted-foreground w-16">🌍 Mundo</span>
+                        <div className="flex-1 bg-muted rounded-full h-4 relative overflow-hidden">
+                          <div className="h-full bg-muted-foreground/20 rounded-full" style={{ width: "100%" }} />
+                          <span className="absolute inset-0 flex items-center justify-end pr-2 text-[9px] font-bold text-foreground">
+                            {totalPapersGlobal.toLocaleString()} papers
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-muted-foreground w-12 text-right">100%</span>
+                      </div>
+                    </div>
+                    {brShare < 2 && (
+                      <p className="text-[10px] text-amber-500">
+                        Brasil representa menos de 2% da produção global neste tema — campo com baixa presença nacional.
+                      </p>
+                    )}
+                    {brShare > 10 && (
+                      <p className="text-[10px] text-emerald-500">
+                        Brasil tem presença relevante — acima de 10% da produção global.
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div className="space-y-2">
                   {data.stats.papers > 5000 && data.stats.countries > 20 && (
                     <div className="flex items-start gap-2 p-2.5 bg-amber-500/5 border border-amber-500/20 rounded-lg"><AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" /><p className="text-xs text-foreground"><strong>Campo saturado:</strong> {data.stats.papers.toLocaleString()} papers em {data.stats.countries} países.</p></div>
