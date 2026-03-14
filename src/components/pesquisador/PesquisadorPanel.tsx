@@ -34,10 +34,13 @@ const PesquisadorPanel = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-    setPendingSearchQuery(searchQuery);
-    const cnaes = await searchCnaes(searchQuery);
-    if (cnaes.length > 0) { setSuggestedCnaes(cnaes); setShowCnaeModal(true); }
-    else { setHasSearched(true); await search(searchQuery, "pesquisador"); }
+    // Vai direto para os resultados — CNAE é opcional e pode ser refinado depois
+    setHasSearched(true);
+    await search(searchQuery, "pesquisador");
+    // Busca CNAEs em background para enriquecer se necessário
+    searchCnaes(searchQuery).then(cnaes => {
+      if (cnaes.length > 0) setSuggestedCnaes(cnaes);
+    });
   };
 
   const handleCnaeConfirm = async (selected: CnaeCode[]) => { setSelectedCnaes(selected); setShowCnaeModal(false); setHasSearched(true); await search(pendingSearchQuery, "pesquisador"); };
@@ -84,9 +87,10 @@ const PesquisadorPanel = () => {
   const topPapers = knowledge.papers.slice(0, 10);
   const flagMap: Record<string, string> = { BR: "🇧🇷", US: "🇺🇸", CN: "🇨🇳", DE: "🇩🇪", GB: "🇬🇧", FR: "🇫🇷", JP: "🇯🇵", KR: "🇰🇷", IN: "🇮🇳", CA: "🇨🇦", AU: "🇦🇺", IT: "🇮🇹", ES: "🇪🇸", NL: "🇳🇱", CH: "🇨🇭", SE: "🇸🇪", PT: "🇵🇹" };
 
-  const brPapers = knowledge.international.find(c => c.country_code === "BR")?.count || 0;
-  const totalPapers = data.stats.papers || 0;
-  const brShare = totalPapers > 0 ? (brPapers / totalPapers) * 100 : 0;
+  const _brPapers = knowledge.international.find(c => c.country_code === "BR")?.count || 0;
+  const totalPapers = knowledge.total_papers || 0;
+  const totalPapersGlobal = (knowledge as any).total_papers_global || totalPapers;
+  const brShare = totalPapersGlobal > 0 ? (totalPapers / totalPapersGlobal) * 100 : 0;
 
   const institutionsWithContracts = new Set(policy.contracts.map(c => c.organ?.toLowerCase().slice(0, 15)).filter(Boolean));
   const isolatedResearchGroups = institutionRanking.filter(([name]) =>
@@ -202,6 +206,47 @@ const PesquisadorPanel = () => {
                   <div className="bg-muted/30 rounded-lg p-3 text-center"><p className="text-2xl font-bold text-foreground">{brShare.toFixed(1)}%</p><p className="text-[10px] text-muted-foreground">Share Brasil</p></div>
                   <div className="bg-muted/30 rounded-lg p-3 text-center"><p className="text-2xl font-bold text-foreground">{data.stats.github_repos}</p><p className="text-[10px] text-muted-foreground">Repos abertos</p></div>
                 </div>
+                {/* Barra comparativa Brasil vs mundo */}
+                {totalPapers > 0 && totalPapersGlobal > 0 && (
+                  <div className="bg-muted/30 rounded-lg p-4 space-y-2">
+                    <p className="text-xs font-semibold text-foreground">Brasil no contexto global</p>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted-foreground w-16">🇧🇷 Brasil</span>
+                        <div className="flex-1 bg-muted rounded-full h-4 relative overflow-hidden">
+                          <div
+                            className="h-full bg-primary rounded-full"
+                            style={{ width: `${Math.min(100, brShare)}%` }}
+                          />
+                          <span className="absolute inset-0 flex items-center justify-end pr-2 text-[9px] font-bold text-foreground">
+                            {totalPapers.toLocaleString()} papers
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-primary w-12 text-right">{brShare.toFixed(1)}%</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted-foreground w-16">🌍 Mundo</span>
+                        <div className="flex-1 bg-muted rounded-full h-4 relative overflow-hidden">
+                          <div className="h-full bg-muted-foreground/20 rounded-full" style={{ width: "100%" }} />
+                          <span className="absolute inset-0 flex items-center justify-end pr-2 text-[9px] font-bold text-foreground">
+                            {totalPapersGlobal.toLocaleString()} papers
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-muted-foreground w-12 text-right">100%</span>
+                      </div>
+                    </div>
+                    {brShare < 2 && (
+                      <p className="text-[10px] text-amber-500">
+                        Brasil representa menos de 2% da produção global neste tema — campo com baixa presença nacional.
+                      </p>
+                    )}
+                    {brShare > 10 && (
+                      <p className="text-[10px] text-emerald-500">
+                        Brasil tem presença relevante — acima de 10% da produção global.
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div className="space-y-2">
                   {data.stats.papers > 5000 && data.stats.countries > 20 && (
                     <div className="flex items-start gap-2 p-2.5 bg-amber-500/5 border border-amber-500/20 rounded-lg"><AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" /><p className="text-xs text-foreground"><strong>Campo saturado:</strong> {data.stats.papers.toLocaleString()} papers em {data.stats.countries} países.</p></div>
@@ -309,9 +354,58 @@ const PesquisadorPanel = () => {
                   <div className="bg-muted/30 rounded-lg p-4"><p className="text-xs font-semibold text-foreground mb-1">Produção Científica</p><p className="text-2xl font-bold text-primary">{data.stats.papers}</p><p className="text-[10px] text-muted-foreground">papers encontrados</p></div>
                   <div className="bg-muted/30 rounded-lg p-4"><p className="text-xs font-semibold text-foreground mb-1">Aplicação Prática</p><p className="text-2xl font-bold text-accent">{data.stats.contracts + data.stats.github_repos}</p><p className="text-[10px] text-muted-foreground">contratos + repos</p></div>
                 </div>
-                {policy.contracts.length > 0 && data.stats.papers < 200 && (
-                  <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg"><p className="text-xs text-foreground"><strong>Oportunidade:</strong> {data.stats.contracts} licitações mas apenas {data.stats.papers} papers — pesquisa aplicada.</p></div>
-                )}
+                {/* Interpretação automática do gap */}
+                {(() => {
+                  const papers = data.stats.papers;
+                  const aplicacao = data.stats.contracts + data.stats.github_repos;
+                  const ratio = aplicacao > 0 ? papers / aplicacao : papers > 0 ? 999 : 0;
+
+                  if (papers === 0 && aplicacao === 0) return (
+                    <div className="p-3 bg-muted/30 rounded-lg">
+                      <p className="text-xs text-muted-foreground">Nenhum dado encontrado para este tema. Tente um termo mais amplo.</p>
+                    </div>
+                  );
+
+                  if (ratio > 20) return (
+                    <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg space-y-1">
+                      <p className="text-xs font-semibold text-foreground">🚨 Gap crítico de tradução</p>
+                      <p className="text-xs text-muted-foreground">
+                        <strong>{papers.toLocaleString()} papers</strong> e apenas <strong>{aplicacao} aplicações</strong> — ratio {ratio > 100 ? ">100" : ratio.toFixed(0)}:1.
+                        O conhecimento existe mas não está sendo traduzido em produtos, contratos ou código.
+                      </p>
+                      <p className="text-xs text-primary font-medium">→ Oportunidade: pesquisa aplicada ou transferência tecnológica têm demanda reprimida.</p>
+                    </div>
+                  );
+
+                  if (ratio > 5) return (
+                    <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg space-y-1">
+                      <p className="text-xs font-semibold text-foreground">⚠️ Gap de tradução moderado</p>
+                      <p className="text-xs text-muted-foreground">
+                        Ratio {ratio.toFixed(1)}:1 (papers/aplicações). Campo com produção científica ativa mas absorção ainda limitada.
+                      </p>
+                      <p className="text-xs text-primary font-medium">→ Posicione pesquisa na interface ciência-mercado para maior impacto.</p>
+                    </div>
+                  );
+
+                  if (ratio < 1 && aplicacao > papers && papers > 0) return (
+                    <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg space-y-1">
+                      <p className="text-xs font-semibold text-foreground">✅ Campo com demanda prática maior que produção</p>
+                      <p className="text-xs text-muted-foreground">
+                        <strong>{aplicacao} aplicações</strong> para <strong>{papers} papers</strong>.
+                        Mercado absorve mais do que a academia produz — campo com alta empregabilidade.
+                      </p>
+                      <p className="text-xs text-primary font-medium">→ Pesquisa aplicada tem mercado garantido neste tema.</p>
+                    </div>
+                  );
+
+                  return (
+                    <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+                      <p className="text-xs text-foreground">
+                        <strong>Campo equilibrado:</strong> ratio {ratio.toFixed(1)}:1. Boa relação entre produção científica e absorção prática.
+                      </p>
+                    </div>
+                  );
+                })()}
                 {technology.github_repos.length > 0 && (
                   <div className="space-y-2">
                     <h4 className="text-xs font-semibold text-foreground flex items-center gap-2"><GitBranch className="w-3.5 h-3.5" /> Código aberto disponível</h4>

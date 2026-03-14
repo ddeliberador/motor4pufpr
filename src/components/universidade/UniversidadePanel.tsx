@@ -36,10 +36,11 @@ const UniversidadePanel = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-    setPendingSearchQuery(searchQuery);
-    const cnaes = await searchCnaes(searchQuery);
-    if (cnaes.length > 0) { setSuggestedCnaes(cnaes); setShowCnaeModal(true); }
-    else { setHasSearched(true); await search(searchQuery, "universidade", { entityName: universityName }); }
+    setHasSearched(true);
+    await search(searchQuery, "universidade", { entityName: universityName });
+    searchCnaes(searchQuery).then(cnaes => {
+      if (cnaes.length > 0) setSuggestedCnaes(cnaes);
+    });
   };
 
   const handleCnaeConfirm = async (selected: CnaeCode[]) => { setSelectedCnaes(selected); setShowCnaeModal(false); setHasSearched(true); await search(pendingSearchQuery, "universidade", { entityName: universityName }); };

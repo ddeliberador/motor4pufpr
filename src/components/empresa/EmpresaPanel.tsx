@@ -84,14 +84,12 @@ const EmpresaPanel = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-    setPendingSearchQuery(searchQuery);
-    const cnaes = await searchCnaes(searchQuery);
-    if (cnaes.length > 0) { setSuggestedCnaes(cnaes); setShowCnaeModal(true); }
-    else { 
-      setHasSearched(true); 
-      await search(searchQuery, "empresa", { entityName: companyName });
-      searchCompetitors(searchQuery);
-    }
+    setHasSearched(true);
+    await search(searchQuery, "empresa", { entityName: companyName });
+    searchCompetitors(searchQuery);
+    searchCnaes(searchQuery).then(cnaes => {
+      if (cnaes.length > 0) setSuggestedCnaes(cnaes);
+    });
   };
 
   const handleCnaeConfirm = async (selected: CnaeCode[]) => {
