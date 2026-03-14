@@ -339,6 +339,50 @@ const PesquisadorPanel = () => {
 
             {/* FINANCIAMENTO */}
             <TabsContent value="financiamento" className="space-y-4">
+              {/* Estado vazio — sem dados de financiamento */}
+              {policy.contracts.length === 0 && policy.convenios.length === 0 && (
+                <div className="bg-card border border-amber-500/20 rounded-xl p-5 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl">💡</span>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground mb-1">Como ativar dados de financiamento</p>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Contratos e convênios federais requerem a chave da API do Portal da Transparência.
+                        É gratuita e leva menos de 5 minutos para obter.
+                      </p>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">1</span>
+                          Acesse <a href="https://portaldatransparencia.gov.br/api-de-dados/api-swaggerui" target="_blank" rel="noopener noreferrer" className="text-primary underline">portaldatransparencia.gov.br/api-de-dados</a> e solicite a chave
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">2</span>
+                          No Supabase → Settings → Edge Functions → Secrets, adicione <code className="bg-muted px-1 rounded">TRANSPARENCIA_API_KEY</code>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">3</span>
+                          Republique o projeto — contratos e convênios aparecerão aqui
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Datasets de fomento como fallback útil */}
+                  {policy.funding_datasets && policy.funding_datasets.length > 0 && (
+                    <div className="pt-3 border-t border-border/50">
+                      <p className="text-xs font-semibold text-foreground mb-2">Datasets de fomento disponíveis (BNDES/Finep/FNDCT)</p>
+                      <div className="space-y-1">
+                        {policy.funding_datasets.slice(0, 5).map((d: any, i: number) => (
+                          <a key={i} href={d.url} target="_blank" rel="noopener noreferrer"
+                             className="block px-3 py-2 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                            <p className="text-xs font-medium text-foreground line-clamp-1">{d.title}</p>
+                            <span className="text-[9px] text-primary">↗ Acessar dataset</span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               {policy.contracts.length > 0 && (
                 <div className="bg-card border border-border rounded-xl p-5">
                   <h3 className="text-sm font-semibold text-foreground mb-3">Licitações públicas relacionadas</h3>
