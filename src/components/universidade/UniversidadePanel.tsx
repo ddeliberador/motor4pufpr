@@ -213,6 +213,15 @@ const UniversidadePanel = () => {
                   <div className="bg-muted/30 rounded-lg p-4 text-center"><p className="text-3xl font-bold text-accent">{instWithContracts.length}</p><p className="text-[10px] text-muted-foreground">Com contratos</p></div>
                   <div className="bg-muted/30 rounded-lg p-4 text-center"><p className="text-3xl font-bold text-primary">{conversionRate}%</p><p className="text-[10px] text-muted-foreground">Conversão</p></div>
                 </div>
+                {conversionRate === "0" && policy.contracts.length === 0 && (
+                  <div className="flex items-start gap-2 p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                    <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground">
+                      Taxa de conversão não calculável sem dados de contratos. Ative a{" "}
+                      <code className="bg-muted px-1 rounded">TRANSPARENCIA_API_KEY</code> para ver o índice real de conversão U-E.
+                    </p>
+                  </div>
+                )}
                 {instWithContracts.length > 0 && (
                   <div className="space-y-2">
                     <h4 className="text-xs font-semibold text-emerald-600">✓ Com articulação P&D ↔ contratos</h4>

@@ -439,7 +439,14 @@ const PesquisadorPanel = () => {
                   <p className="text-[10px] text-muted-foreground text-center">Análise baseada em {data.meta.sources.join(" · ")}</p>
                 </div>
               ) : (
-                <div className="text-center py-12 text-muted-foreground"><Zap className="w-8 h-8 mx-auto mb-3 opacity-40" /><p className="text-sm">Análise IA não disponível.</p></div>
+                <div className="text-center py-12 space-y-3">
+                  <Zap className="w-8 h-8 mx-auto text-muted-foreground/40" />
+                  <p className="text-sm text-muted-foreground">Prescrição IA não disponível.</p>
+                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                    Configure <code className="bg-muted px-1 rounded">LOVABLE_API_KEY</code> ou{" "}
+                    <code className="bg-muted px-1 rounded">ANTHROPIC_API_KEY</code> nos Secrets do Supabase para ativar análises prescritivas.
+                  </p>
+                </div>
               )}
             </TabsContent>
           </Tabs>

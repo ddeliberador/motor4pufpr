@@ -420,6 +420,46 @@ const EmpresaPanel = () => {
 
             {/* ===== RISCOS TAB ===== */}
             <TabsContent value="riscos" className="space-y-4">
+              {/* Resumo de riscos calculados */}
+              <div className="bg-card border border-border rounded-xl p-5 space-y-3">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-primary" /> Radar de dependências
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className={`rounded-lg p-3 border ${intl.dependency_index > 60 ? "border-red-500/30 bg-red-500/5" : "border-border bg-muted/30"}`}>
+                    <p className="text-[10px] text-muted-foreground mb-1">Dependência externa</p>
+                    <p className={`text-2xl font-bold ${intl.dependency_index > 60 ? "text-red-500" : "text-foreground"}`}>
+                      {intl.dependency_index}%
+                    </p>
+                    <p className="text-[9px] text-muted-foreground">prod. científica fora do BR</p>
+                  </div>
+                  <div className={`rounded-lg p-3 border ${intl.br_share < 10 ? "border-amber-500/30 bg-amber-500/5" : "border-border bg-muted/30"}`}>
+                    <p className="text-[10px] text-muted-foreground mb-1">Share Brasil</p>
+                    <p className={`text-2xl font-bold ${intl.br_share < 10 ? "text-amber-500" : "text-foreground"}`}>
+                      {intl.br_share}%
+                    </p>
+                    <p className="text-[9px] text-muted-foreground">no top-10 global</p>
+                  </div>
+                </div>
+                {intl.dependency_index > 60 && (
+                  <div className="flex items-start gap-2 p-2.5 bg-red-500/5 border border-red-500/20 rounded-lg">
+                    <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-foreground">
+                      <strong>Risco de dependência crítica:</strong> {intl.dependency_index}% da produção científica está fora do Brasil.
+                      Estratégia de make-or-buy recomendada antes de investir em P&D local.
+                    </p>
+                  </div>
+                )}
+                {sanctions.length > 0 && (
+                  <div className="flex items-start gap-2 p-2.5 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                    <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-foreground">
+                      <strong>{sanctions.length} empresa(s) sancionada(s)</strong> encontrada(s) neste campo (CEIS/Portal Transparência).
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <div className="bg-card border border-border rounded-xl p-5 space-y-4">
                 <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-primary" /> Análise de Riscos</h3>
                 {indices?.cd?.value > 50 && (<div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg"><p className="text-xs font-semibold text-foreground mb-1">⚠ Dependência Externa ({indices.cd.value}%)</p><p className="text-[10px] text-muted-foreground">Riscos de supply chain e IP.</p></div>)}
