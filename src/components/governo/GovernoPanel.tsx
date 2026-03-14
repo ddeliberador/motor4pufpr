@@ -147,6 +147,27 @@ const GovernoPanel = () => {
                   </div>
                 </div>
               )}
+              {/* Painel de cobertura de fontes */}
+              <div className="bg-card border border-border rounded-xl p-4">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Fontes consultadas</h3>
+                <div className="flex flex-wrap gap-2">
+                  {data.meta.sources.map((src, i) => (
+                    <span key={i} className="text-[10px] px-2 py-1 bg-primary/10 text-primary rounded-full border border-primary/20">
+                      ✓ {src}
+                    </span>
+                  ))}
+                  {!data.meta.sources.includes("Transparência") && (
+                    <span className="text-[10px] px-2 py-1 bg-muted text-muted-foreground rounded-full border border-border">
+                      ○ Transparência (requer API key)
+                    </span>
+                  )}
+                  {!data.meta.sources.includes("SICONFI") && (
+                    <span className="text-[10px] px-2 py-1 bg-muted text-muted-foreground rounded-full border border-border">
+                      ○ SICONFI
+                    </span>
+                  )}
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-card border border-border rounded-xl p-5">
                   <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2"><Landmark className="w-4 h-4 text-primary" />Volume Instrumental</h3>
@@ -233,17 +254,52 @@ const GovernoPanel = () => {
             <TabsContent value="relacional"><RelationalGraph data={data} /></TabsContent>
 
             <TabsContent value="territorial" className="space-y-4">
-              {policy.uf_distribution && Object.keys(policy.uf_distribution).length > 0 ? (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><MapPin className="w-4 h-4 text-primary" />Distribuição por UF</h3>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                    {Object.entries(policy.uf_distribution).sort(([, a], [, b]) => (b as number) - (a as number)).map(([uf, count]) => (
-                      <div key={uf} className="text-center p-3 bg-muted rounded-lg"><p className="text-lg font-bold text-foreground">{uf}</p><p className="text-sm font-semibold text-primary">{count as number}</p><p className="text-[10px] text-muted-foreground">licitações</p></div>
-                    ))}
-                  </div>
-                  {Object.keys(policy.uf_distribution).length < 5 && (<p className="text-xs text-amber-500 mt-3 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Concentração territorial alta</p>)}
+              {(!policy.uf_distribution || Object.keys(policy.uf_distribution).length === 0) ? (
+                <div className="bg-card border border-amber-500/20 rounded-xl p-5 space-y-3">
+                  <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-amber-500" />
+                    Mapa territorial indisponível
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    A distribuição por UF (estado) é calculada a partir dos contratos do PNCP e convênios do Portal da Transparência.
+                    Para ativar, configure o secret <code className="bg-muted px-1 rounded">TRANSPARENCIA_API_KEY</code> no Supabase.
+                  </p>
+                  <a href="https://portaldatransparencia.gov.br/api-de-dados/api-swaggerui"
+                     target="_blank" rel="noopener noreferrer"
+                     className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
+                    Obter chave gratuita →
+                  </a>
                 </div>
-              ) : (<div className="text-center py-12 text-muted-foreground"><MapPin className="w-8 h-8 mx-auto mb-3 opacity-40" /><p className="text-sm">Sem dados territoriais.</p></div>)}
+              ) : (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-primary" /> Distribuição por estado
+                  </h3>
+                  <div className="space-y-2">
+                    {Object.entries(policy.uf_distribution)
+                      .sort(([, a], [, b]) => (b as number) - (a as number))
+                      .map(([uf, count]) => (
+                        <div key={uf} className="flex items-center gap-3">
+                          <span className="text-xs font-mono text-muted-foreground w-8">{uf}</span>
+                          <div className="flex-1 bg-muted rounded-full h-5 relative overflow-hidden">
+                            <div
+                              className="h-full bg-primary/20 rounded-full"
+                              style={{ width: `${Math.min(100, ((count as number) / Math.max(...Object.values(policy.uf_distribution) as number[])) * 100)}%` }}
+                            />
+                            <span className="absolute inset-0 flex items-center px-2 text-[10px] font-medium text-foreground">
+                              {count as number} contrato{(count as number) !== 1 ? "s" : ""}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                  {Object.keys(policy.uf_distribution).length < 5 && (
+                    <p className="text-xs text-amber-500 mt-3 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" /> Concentração territorial alta
+                    </p>
+                  )}
+                </div>
+              )}
               {Object.keys(knowledge.institutions || {}).length > 0 && (
                 <div className="bg-card border border-border rounded-xl p-5">
                   <h3 className="text-sm font-semibold text-foreground mb-3">Capacidades Instaladas</h3>

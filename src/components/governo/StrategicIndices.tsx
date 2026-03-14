@@ -65,6 +65,16 @@ export default function StrategicIndices({ indices }: StrategicIndicesProps) {
                 </p>
                 <p className="text-xs font-medium text-foreground mt-1">{idx.label}</p>
                 <p className={`text-[10px] mt-0.5 ${statusColor}`}>{statusLabel}</p>
+                {/* Barra de progresso visual */}
+                <div className="mt-3 h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      idx.alert_level === "critical" ? "bg-destructive" :
+                      idx.alert_level === "warning" ? "bg-amber-500" : "bg-emerald-500"
+                    }`}
+                    style={{ width: `${Math.min(100, idx.value)}%` }}
+                  />
+                </div>
                 {/* Layers used badge */}
                 {idx.layers_used && idx.layers_used.length > 0 && (
                   <div className="flex flex-wrap gap-0.5 mt-2">

@@ -155,6 +155,20 @@ const UniversidadePanel = () => {
             <TabsContent value="relacional"><RelationalGraph data={data} /></TabsContent>
 
             <TabsContent value="captacao" className="space-y-4">
+              {/* Aviso quando sem dados reais de contratos e convênios */}
+              {policy.contracts.length === 0 && policy.convenios.length === 0 && (
+                <div className="bg-card border border-amber-500/20 rounded-xl p-4 col-span-2">
+                  <p className="text-xs font-semibold text-amber-400 mb-1">⚠️ Dados de captação não disponíveis</p>
+                  <p className="text-xs text-muted-foreground">
+                    Para ver contratos e convênios federais desta instituição, configure{" "}
+                    <code className="bg-muted px-1 rounded">TRANSPARENCIA_API_KEY</code> no Supabase.
+                    Obtenha gratuitamente em{" "}
+                    <a href="https://portaldatransparencia.gov.br/api-de-dados/api-swaggerui" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                      portaldatransparencia.gov.br
+                    </a>
+                  </p>
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-card border border-border rounded-xl p-5">
                   <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2"><Landmark className="w-4 h-4 text-primary" /> Licitações</h3>
@@ -199,6 +213,15 @@ const UniversidadePanel = () => {
                   <div className="bg-muted/30 rounded-lg p-4 text-center"><p className="text-3xl font-bold text-accent">{instWithContracts.length}</p><p className="text-[10px] text-muted-foreground">Com contratos</p></div>
                   <div className="bg-muted/30 rounded-lg p-4 text-center"><p className="text-3xl font-bold text-primary">{conversionRate}%</p><p className="text-[10px] text-muted-foreground">Conversão</p></div>
                 </div>
+                {conversionRate === "0" && policy.contracts.length === 0 && (
+                  <div className="flex items-start gap-2 p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                    <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground">
+                      Taxa de conversão não calculável sem dados de contratos. Ative a{" "}
+                      <code className="bg-muted px-1 rounded">TRANSPARENCIA_API_KEY</code> para ver o índice real de conversão U-E.
+                    </p>
+                  </div>
+                )}
                 {instWithContracts.length > 0 && (
                   <div className="space-y-2">
                     <h4 className="text-xs font-semibold text-emerald-600">✓ Com articulação P&D ↔ contratos</h4>
