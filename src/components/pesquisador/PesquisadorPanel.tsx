@@ -87,7 +87,7 @@ const PesquisadorPanel = () => {
   const topPapers = knowledge.papers.slice(0, 10);
   const flagMap: Record<string, string> = { BR: "🇧🇷", US: "🇺🇸", CN: "🇨🇳", DE: "🇩🇪", GB: "🇬🇧", FR: "🇫🇷", JP: "🇯🇵", KR: "🇰🇷", IN: "🇮🇳", CA: "🇨🇦", AU: "🇦🇺", IT: "🇮🇹", ES: "🇪🇸", NL: "🇳🇱", CH: "🇨🇭", SE: "🇸🇪", PT: "🇵🇹" };
 
-  const brPapers = knowledge.international.find(c => c.country_code === "BR")?.count || 0;
+  const _brPapers = knowledge.international.find(c => c.country_code === "BR")?.count || 0;
   const totalPapers = knowledge.total_papers || 0;
   const totalPapersGlobal = (knowledge as any).total_papers_global || totalPapers;
   const brShare = totalPapersGlobal > 0 ? (totalPapers / totalPapersGlobal) * 100 : 0;
