@@ -11,11 +11,17 @@ export interface Paper {
   title: string;
   year: number;
   citations: number;
-  authors: Array<{ name: string; institution: string; country: string }>;
+  authors: Array<{ name: string; institution: string; country: string; orcid?: string }>;
   journal: string;
   is_open_access: boolean;
+  oa_url?: string;
   url: string;
+  doi?: string;
+  abstract?: string;
   concepts: string[];
+  keywords?: string[];
+  grants?: Array<{ funder: string; award: string }>;
+  sdgs?: string[];
 }
 
 export interface MacroIndicator {
