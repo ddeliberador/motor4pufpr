@@ -6,16 +6,12 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// CORREÇÃO: timeout aumentado para 20s + options support
 async function safeFetch(url: string, options?: RequestInit, timeoutMs = 20000): Promise<any> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(url, { signal: controller.signal, ...options });
-    if (!res.ok) {
-      console.warn(`safeFetch ${res.status} for ${url}`);
-      return null;
-    }
+    if (!res.ok) { console.warn(`safeFetch ${res.status} for ${url}`); return null; }
     return await res.json();
   } catch (e) {
     console.warn(`safeFetch failed for ${url}:`, e instanceof Error ? e.message : e);
@@ -25,29 +21,16 @@ async function safeFetch(url: string, options?: RequestInit, timeoutMs = 20000):
   }
 }
 
-// ===== PNCP (Portal Nacional de Contratações Públicas) =====
-// CORREÇÃO: URL e parâmetros corretos da API PNCP v1 + fallback
 async function searchPNCP(query: string) {
-  const data = await safeFetch(
-    `https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?tamanhoPagina=15&pagina=1&q=${encodeURIComponent(query)}`
-  );
-
+  const data = await safeFetch(`https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?tamanhoPagina=15&pagina=1&q=${encodeURIComponent(query)}`);
   if (!data) {
-    const fallback = await safeFetch(
-      `https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " licitação contrato compras públicas")}&rows=5`
-    );
+    const fallback = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " licitação contrato compras públicas")}&rows=5`);
     return (fallback?.result?.results || []).map((pkg: any) => ({
-      object: pkg.title || "",
-      organ: pkg.organization?.title || "",
-      modality: "Dataset PNCP",
-      value: 0,
-      status: "dataset",
-      date: "",
-      uf: "",
+      object: pkg.title || "", organ: pkg.organization?.title || "", modality: "Dataset PNCP",
+      value: 0, status: "dataset", date: "", uf: "",
       url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
     }));
   }
-
   const items = Array.isArray(data) ? data : (data.data || data.content || []);
   return items.slice(0, 15).map((item: any) => ({
     object: item.objetoCompra || item.objeto || "",
@@ -61,199 +44,98 @@ async function searchPNCP(query: string) {
   }));
 }
 
-// ===== Portal da Transparência =====
-// CORREÇÃO CRÍTICA: a API exige header "chave-api" obrigatório
 async function searchTransparencia(query: string) {
   const CHAVE_API = Deno.env.get("TRANSPARENCIA_API_KEY") || "";
-
   if (!CHAVE_API) {
     console.warn("TRANSPARENCIA_API_KEY não configurada — usando fallback dados.gov.br");
-    const fallback = await safeFetch(
-      `https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " convênio transferência federal")}&rows=6`
-    );
+    const fallback = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " convênio transferência federal")}&rows=6`);
     return {
       convenios: (fallback?.result?.results || []).map((pkg: any) => ({
-        object: pkg.title || "",
-        proponent: pkg.organization?.title || "",
-        value: 0,
-        grantor: "",
-        startDate: "",
-        endDate: "",
-        situation: "dataset",
+        object: pkg.title || "", proponent: pkg.organization?.title || "",
+        value: 0, grantor: "", startDate: "", endDate: "", situation: "dataset",
       })),
       sanctions: [],
     };
   }
-
   const headers = { "chave-api": CHAVE_API };
-
   const [convenios, ceis] = await Promise.all([
-    safeFetch(
-      `https://api.portaldatransparencia.gov.br/api-de-dados/convenios?pagina=1&tamanhoPagina=8&objeto=${encodeURIComponent(query)}`,
-      { headers },
-      25000
-    ),
-    safeFetch(
-      `https://api.portaldatransparencia.gov.br/api-de-dados/ceis?pagina=1&tamanhoPagina=5&nomeFantasia=${encodeURIComponent(query)}`,
-      { headers },
-      25000
-    ),
+    safeFetch(`https://api.portaldatransparencia.gov.br/api-de-dados/convenios?pagina=1&tamanhoPagina=8&objeto=${encodeURIComponent(query)}`, { headers }, 25000),
+    safeFetch(`https://api.portaldatransparencia.gov.br/api-de-dados/ceis?pagina=1&tamanhoPagina=5&nomeFantasia=${encodeURIComponent(query)}`, { headers }, 25000),
   ]);
-
   return {
     convenios: (convenios || []).map((c: any) => ({
-      object: c.objeto?.slice(0, 200) || "",
-      proponent: c.proponente?.nome || "",
-      value: c.valor || 0,
-      grantor: c.orgaoSuperior?.nome || "",
-      startDate: c.dataInicioVigencia || "",
-      endDate: c.dataFimVigencia || "",
-      situation: c.situacao || "",
+      object: c.objeto?.slice(0, 200) || "", proponent: c.proponente?.nome || "",
+      value: c.valor || 0, grantor: c.orgaoSuperior?.nome || "",
+      startDate: c.dataInicioVigencia || "", endDate: c.dataFimVigencia || "", situation: c.situacao || "",
     })),
     sanctions: (ceis || []).map((s: any) => ({
-      company: s.nomeFantasia || s.razaoSocial || "",
-      type: s.tipoSancao || "",
-      organ: s.orgaoSancionador?.nome || "",
-      date: s.dataInicioSancao || "",
+      company: s.nomeFantasia || s.razaoSocial || "", type: s.tipoSancao || "",
+      organ: s.orgaoSancionador?.nome || "", date: s.dataInicioSancao || "",
     })),
   };
 }
 
-// ===== SICONFI (Tesouro Nacional) =====
 async function searchSICONFI() {
-  const data = await safeFetch(
-    `https://apidatalake.tesouro.gov.br/ords/siconfi/tt/rgf?an_exercicio=2024&nr_periodo=1&tp_rgf=RGF&id_ente=41`,
-    undefined,
-    25000
-  );
+  const data = await safeFetch(`https://apidatalake.tesouro.gov.br/ords/siconfi/tt/rgf?an_exercicio=2024&nr_periodo=1&tp_rgf=RGF&id_ente=41`, undefined, 25000);
   return (data?.items || []).slice(0, 8).map((item: any) => ({
-    entity: item.instituicao || "",
-    year: item.exercicio || 2024,
-    period: item.periodicidade || "",
-    url: item.anexo || "",
+    entity: item.instituicao || "", year: item.exercicio || 2024, period: item.periodicidade || "", url: item.anexo || "",
   }));
 }
 
-// ===== Querido Diário =====
 async function searchQueridoDiario(query: string) {
-  const data = await safeFetch(
-    `https://queridodiario.ok.org.br/api/gazettes?querystring=${encodeURIComponent(query)}&size=10&sort_by=relevance`
-  );
+  const data = await safeFetch(`https://queridodiario.ok.org.br/api/gazettes?querystring=${encodeURIComponent(query)}&size=10&sort_by=relevance`);
   return (data?.gazettes || []).map((g: any) => ({
-    territory: g.territory_name || "",
-    state: g.state_code || "",
-    date: g.date || "",
-    excerpts: (g.excerpts || []).slice(0, 2),
-    url: g.file_url || "",
+    territory: g.territory_name || "", state: g.state_code || "",
+    date: g.date || "", excerpts: (g.excerpts || []).slice(0, 2), url: g.file_url || "",
   }));
 }
 
-// ===== Financiamento (BNDES/FNDCT/Finep via dados.gov) =====
 async function searchFundingDatasets(query: string) {
-  const data = await safeFetch(
-    `https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " BNDES Finep FNDCT inovação financiamento")}&rows=6`
-  );
+  const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " BNDES Finep FNDCT inovação financiamento")}&rows=6`);
   return (data?.result?.results || []).map((pkg: any) => ({
-    title: pkg.title || "",
-    description: (pkg.notes || "").slice(0, 200),
-    organization: pkg.organization?.title || "",
-    url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
-    structured: false,
+    title: pkg.title || "", description: (pkg.notes || "").slice(0, 200),
+    organization: pkg.organization?.title || "", url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`, structured: false,
   }));
 }
 
-// ===== TCU =====
 async function searchTCU(query: string) {
-  const data = await safeFetch(
-    `https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " TCU controle auditoria")}&rows=4`
-  );
-  return (data?.result?.results || []).map((pkg: any) => ({
-    title: pkg.title || "",
-    description: (pkg.notes || "").slice(0, 200),
-    url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
-    structured: false,
-  }));
+  const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " TCU controle auditoria")}&rows=4`);
+  return (data?.result?.results || []).map((pkg: any) => ({ title: pkg.title || "", description: (pkg.notes || "").slice(0, 200), url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`, structured: false }));
 }
 
-// ===== TSE =====
 async function searchTSE(query: string) {
-  const data = await safeFetch(
-    `https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " TSE eleições financiamento campanha")}&rows=4`
-  );
-  return (data?.result?.results || []).map((pkg: any) => ({
-    title: pkg.title || "",
-    description: (pkg.notes || "").slice(0, 150),
-    url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
-    structured: false,
-  }));
+  const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " TSE eleições financiamento campanha")}&rows=4`);
+  return (data?.result?.results || []).map((pkg: any) => ({ title: pkg.title || "", description: (pkg.notes || "").slice(0, 150), url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`, structured: false }));
 }
 
-// ===== SIOP (Orçamento) =====
 async function searchSIOP(query: string) {
-  const data = await safeFetch(
-    `https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " SIOP orçamento federal execução")}&rows=4`
-  );
-  return (data?.result?.results || []).map((pkg: any) => ({
-    title: pkg.title || "",
-    description: (pkg.notes || "").slice(0, 150),
-    url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
-    structured: false,
-  }));
+  const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " SIOP orçamento federal execução")}&rows=4`);
+  return (data?.result?.results || []).map((pkg: any) => ({ title: pkg.title || "", description: (pkg.notes || "").slice(0, 150), url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`, structured: false }));
 }
 
-// ===== DataJud/CNJ =====
 async function searchDataJud(query: string) {
-  const data = await safeFetch(
-    `https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " CNJ judiciário processos")}&rows=4`
-  );
-  return (data?.result?.results || []).map((pkg: any) => ({
-    title: pkg.title || "",
-    description: (pkg.notes || "").slice(0, 150),
-    url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
-    structured: false,
-  }));
+  const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " CNJ judiciário processos")}&rows=4`);
+  return (data?.result?.results || []).map((pkg: any) => ({ title: pkg.title || "", description: (pkg.notes || "").slice(0, 150), url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`, structured: false }));
 }
 
-// ===== IBAMA =====
 async function searchIBAMA(query: string) {
-  const data = await safeFetch(
-    `https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " IBAMA ambiental licenciamento")}&rows=4`
-  );
-  return (data?.result?.results || []).map((pkg: any) => ({
-    title: pkg.title || "",
-    description: (pkg.notes || "").slice(0, 150),
-    url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
-    structured: false,
-  }));
+  const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " IBAMA ambiental licenciamento")}&rows=4`);
+  return (data?.result?.results || []).map((pkg: any) => ({ title: pkg.title || "", description: (pkg.notes || "").slice(0, 150), url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`, structured: false }));
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const { query, knowledge_total_papers } = await req.json();
-    if (!query) {
-      return new Response(JSON.stringify({ error: "query is required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!query) return new Response(JSON.stringify({ error: "query is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     console.log(`Layer Policy: ${query}`);
     const start = Date.now();
 
     const [pncp, transparencia, siconfi, gazettes, funding, tcu, tse, siop, datajud, ibama] = await Promise.all([
-      searchPNCP(query),
-      searchTransparencia(query),
-      searchSICONFI(),
-      searchQueridoDiario(query),
-      searchFundingDatasets(query),
-      searchTCU(query),
-      searchTSE(query),
-      searchSIOP(query),
-      searchDataJud(query),
-      searchIBAMA(query),
+      searchPNCP(query), searchTransparencia(query), searchSICONFI(), searchQueridoDiario(query),
+      searchFundingDatasets(query), searchTCU(query), searchTSE(query), searchSIOP(query), searchDataJud(query), searchIBAMA(query),
     ]);
 
     const totalContracts = pncp.length;
@@ -261,24 +143,16 @@ Deno.serve(async (req) => {
     const totalContractValue = pncp.reduce((s: number, c: any) => s + (c.value || 0), 0);
     const totalConvenioValue = transparencia.convenios.reduce((s: number, c: any) => s + (c.value || 0), 0);
     const totalInstrumentalValue = totalContractValue + totalConvenioValue;
-
     const papersCount = knowledge_total_papers || 0;
-    const instrumental_intensity = papersCount > 0
-      ? parseFloat(((totalContracts + totalConvenios) / papersCount).toFixed(3))
-      : 0;
+    const instrumental_intensity = papersCount > 0 ? parseFloat(((totalContracts + totalConvenios) / papersCount).toFixed(3)) : 0;
 
     const fiscal_capacity: Record<string, number> = {};
     const uf_distribution: Record<string, number> = {};
     for (const c of pncp) {
-      if (c.uf) {
-        fiscal_capacity[c.uf] = (fiscal_capacity[c.uf] || 0) + (c.value || 0);
-        uf_distribution[c.uf] = (uf_distribution[c.uf] || 0) + 1;
-      }
+      if (c.uf) { fiscal_capacity[c.uf] = (fiscal_capacity[c.uf] || 0) + (c.value || 0); uf_distribution[c.uf] = (uf_distribution[c.uf] || 0) + 1; }
     }
 
-    const spending_effectiveness = papersCount > 0 && totalInstrumentalValue > 0
-      ? Math.round(Math.log10(totalInstrumentalValue / papersCount) * 20 + 50)
-      : 0;
+    const spending_effectiveness = papersCount > 0 && totalInstrumentalValue > 0 ? Math.round(Math.log10(totalInstrumentalValue / papersCount) * 20 + 50) : 0;
 
     const sources: string[] = [];
     if (pncp.length > 0) sources.push("PNCP");
@@ -293,36 +167,17 @@ Deno.serve(async (req) => {
     if (ibama.length > 0) sources.push("IBAMA");
 
     return new Response(JSON.stringify({
-      contracts: pncp,
-      convenios: transparencia.convenios,
-      sanctions: transparencia.sanctions,
-      gazettes,
-      siconfi,
-      funding_datasets: funding,
-      tcu_datasets: tcu,
-      tse_datasets: tse,
-      siop_datasets: siop,
-      datajud_datasets: datajud,
-      ibama_datasets: ibama,
-      total_contracts: totalContracts,
-      total_convenios: totalConvenios,
-      total_contract_value: totalContractValue,
-      total_convenio_value: totalConvenioValue,
-      total_instrumental_value: totalInstrumentalValue,
-      instrumental_intensity,
-      fiscal_capacity,
-      uf_distribution,
-      spending_effectiveness,
-      sources,
+      contracts: pncp, convenios: transparencia.convenios, sanctions: transparencia.sanctions,
+      gazettes, siconfi, funding_datasets: funding, tcu_datasets: tcu, tse_datasets: tse,
+      siop_datasets: siop, datajud_datasets: datajud, ibama_datasets: ibama,
+      total_contracts: totalContracts, total_convenios: totalConvenios,
+      total_contract_value: totalContractValue, total_convenio_value: totalConvenioValue,
+      total_instrumental_value: totalInstrumentalValue, instrumental_intensity,
+      fiscal_capacity, uf_distribution, spending_effectiveness, sources,
       processing_time_ms: Date.now() - start,
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("Layer Policy error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
