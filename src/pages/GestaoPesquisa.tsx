@@ -21,6 +21,7 @@ import { Plus, Trash2, LogOut, BookOpen, Lightbulb, FileText } from "lucide-reac
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import { cn } from "@/lib/utils";
+import { AuthorDocumentsPanel } from "@/components/research/AuthorDocumentsPanel";
 
 type Author = { id: string; name: string; main_work: string | null; thematic_area: string | null; status: string; notes: string | null };
 type Theme = { id: string; name: string; keywords: string | null; progress: number; notes: string | null };
@@ -238,9 +239,9 @@ export default function GestaoPesquisa() {
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {filteredAuthors.map((a) => (
-                <Card key={a.id} className={cn("cursor-pointer transition hover:bg-muted/30", authorBorder(a.status))} onClick={() => cycleAuthor(a)}>
+                <Card key={a.id} className={cn("transition", authorBorder(a.status))}>
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start justify-between gap-2 cursor-pointer" onClick={() => cycleAuthor(a)}>
                       <div className="min-w-0">
                         <div className="font-semibold truncate">{a.name}</div>
                         {a.thematic_area && <div className="text-xs text-muted-foreground mt-0.5">{a.thematic_area}</div>}
@@ -251,7 +252,8 @@ export default function GestaoPesquisa() {
                     </div>
                     {a.main_work && <p className="text-sm mt-2 text-muted-foreground line-clamp-2">{a.main_work}</p>}
                     {a.notes && <p className="text-xs mt-2 text-muted-foreground/80 italic line-clamp-2">{a.notes}</p>}
-                    <Badge variant="outline" className="mt-3 text-xs">{authorLabel[a.status]}</Badge>
+                    <Badge variant="outline" className="mt-3 text-xs cursor-pointer" onClick={() => cycleAuthor(a)}>{authorLabel[a.status]}</Badge>
+                    <AuthorDocumentsPanel authorId={a.id} authorName={a.name} userId={user.id} />
                   </CardContent>
                 </Card>
               ))}
