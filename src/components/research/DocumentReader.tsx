@@ -140,7 +140,7 @@ export function DocumentReader({
         document_id: doc.id,
         color,
         text,
-        page: doc.file_type === "pdf" ? page : null,
+        page,
       })
       .select()
       .single();
