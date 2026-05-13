@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import ReactMarkdown from "react-markdown";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
