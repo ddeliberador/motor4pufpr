@@ -203,6 +203,8 @@ export function DocumentReader({
 
   const isMobile = useIsMobile();
 
+  if (!doc) return null;
+
   const HighlightsList = (
     <>
       {pendingHighlightId && (
