@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import ReactMarkdown from "react-markdown";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
@@ -70,7 +70,36 @@ export function DocumentReader({
   const [color, setColor] = useState("yellow");
   const [pendingNote, setPendingNote] = useState<string>("");
   const [pendingHighlightId, setPendingHighlightId] = useState<string | null>(null);
+  const [fontScale, setFontScale] = useState(1);
+  const [serif, setSerif] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Paginação do Markdown estilo Kindle: ~2200 caracteres por página, quebrando em parágrafos
+  const mdPages = useMemo(() => {
+    if (!mdContent) return [] as string[];
+    const target = Math.round(2200 / fontScale);
+    const blocks = mdContent.split(/\n\n+/);
+    const pages: string[] = [];
+    let buf = "";
+    for (const b of blocks) {
+      if ((buf + "\n\n" + b).length > target && buf) {
+        pages.push(buf);
+        buf = b;
+      } else {
+        buf = buf ? buf + "\n\n" + b : b;
+      }
+    }
+    if (buf) pages.push(buf);
+    return pages;
+  }, [mdContent, fontScale]);
+
+  useEffect(() => {
+    if (doc?.file_type === "md") setNumPages(mdPages.length);
+  }, [mdPages, doc]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [doc?.id]);
 
   useEffect(() => {
     if (!doc) {
@@ -111,7 +140,7 @@ export function DocumentReader({
         document_id: doc.id,
         color,
         text,
-        page: doc.file_type === "pdf" ? page : null,
+        page,
       })
       .select()
       .single();
@@ -189,21 +218,29 @@ export function DocumentReader({
         <div className="flex-1 flex min-h-0">
           {/* Reader pane */}
           <div className="flex-1 flex flex-col min-w-0 border-r">
-            <div className="flex items-center gap-2 px-3 py-2 border-b bg-muted/30">
-              <span className="text-xs text-muted-foreground mr-2">Cor do destaque:</span>
+            <div className="flex items-center gap-2 px-3 py-2 border-b bg-muted/30 flex-wrap">
+              <span className="text-xs text-muted-foreground">Cor:</span>
               {COLORS.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => setColor(c.id)}
-                  className={cn("w-6 h-6 rounded-full ring-offset-2", c.bg, color === c.id && "ring-2", c.ring)}
+                  className={cn("w-5 h-5 rounded-full ring-offset-2", c.bg, color === c.id && "ring-2", c.ring)}
                   aria-label={c.id}
                 />
               ))}
-              <Button size="sm" variant="default" className="ml-auto" onClick={captureSelection}>
-                Destacar seleção
+              <Button size="sm" variant="default" onClick={captureSelection}>Destacar</Button>
+
+              <div className="h-5 w-px bg-border mx-1" />
+              <span className="text-xs text-muted-foreground">Aa</span>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setFontScale((s) => Math.max(0.8, +(s - 0.1).toFixed(2)))}>−</Button>
+              <span className="text-xs font-mono w-8 text-center">{Math.round(fontScale * 100)}%</span>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setFontScale((s) => Math.min(1.6, +(s + 0.1).toFixed(2)))}>+</Button>
+              <Button size="sm" variant="ghost" className="h-7" onClick={() => setSerif((v) => !v)}>
+                {serif ? "Serif" : "Sans"}
               </Button>
-              {doc.file_type === "pdf" && numPages > 0 && (
-                <div className="flex items-center gap-1 ml-2">
+
+              {numPages > 0 && (
+                <div className="flex items-center gap-1 ml-auto">
                   <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPage((p) => Math.max(1, p - 1))}>
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
@@ -214,16 +251,38 @@ export function DocumentReader({
                 </div>
               )}
             </div>
-            <ScrollArea className="flex-1">
-              <div ref={containerRef} className="p-6 flex justify-center">
+            <ScrollArea className="flex-1 bg-muted/40">
+              <div ref={containerRef} className="py-10 px-4 flex justify-center">
                 {doc.file_type === "pdf" && fileUrl && (
-                  <Document file={fileUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
-                    <Page pageNumber={page} width={Math.min(900, (containerRef.current?.clientWidth ?? 800) - 40)} />
-                  </Document>
+                  <div className="bg-white shadow-xl rounded-sm overflow-hidden">
+                    <Document file={fileUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
+                      <Page
+                        pageNumber={page}
+                        width={Math.min(820 * fontScale, (containerRef.current?.clientWidth ?? 800) - 40)}
+                      />
+                    </Document>
+                  </div>
                 )}
-                {doc.file_type === "md" && (
-                  <article className="prose prose-sm dark:prose-invert max-w-3xl">
-                    <ReactMarkdown>{mdContent}</ReactMarkdown>
+                {doc.file_type === "md" && mdPages.length > 0 && (
+                  <article
+                    className={cn(
+                      "bg-card text-card-foreground shadow-xl rounded-sm",
+                      "px-12 py-14 max-w-[680px] w-full min-h-[80vh]",
+                      "prose dark:prose-invert prose-headings:font-semibold",
+                      serif ? "font-serif" : "font-sans",
+                    )}
+                    style={{
+                      fontSize: `${fontScale}rem`,
+                      lineHeight: 1.8,
+                      textAlign: "justify",
+                      hyphens: "auto",
+                      WebkitHyphens: "auto",
+                    } as React.CSSProperties}
+                  >
+                    <ReactMarkdown>{mdPages[Math.min(page, mdPages.length) - 1]}</ReactMarkdown>
+                    <div className="mt-10 pt-4 border-t text-xs text-muted-foreground text-center font-sans not-prose">
+                      {page} / {mdPages.length}
+                    </div>
                   </article>
                 )}
               </div>
