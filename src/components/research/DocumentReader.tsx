@@ -240,15 +240,7 @@ export function DocumentReader({
               </Button>
 
               {numPages > 0 && (
-                <div className="flex items-center gap-1 ml-auto">
-                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPage((p) => Math.max(1, p - 1))}>
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <span className="text-xs font-mono">{page}/{numPages}</span>
-                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPage((p) => Math.min(numPages, p + 1))}>
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
+                <span className="text-xs font-mono ml-auto text-muted-foreground">{numPages} páginas</span>
               )}
             </div>
             <ScrollArea className="flex-1 bg-muted/40">
