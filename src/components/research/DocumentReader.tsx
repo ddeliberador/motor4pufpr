@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronLeft, ChevronRight, Trash2, Download, X } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { ChevronLeft, ChevronRight, Trash2, Download, X, Highlighter } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 import "react-pdf/dist/Page/TextLayer.css";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 
@@ -199,72 +201,142 @@ export function DocumentReader({
     a.click();
   };
 
+  const isMobile = useIsMobile();
+
   if (!doc) return null;
+
+  const HighlightsList = (
+    <>
+      {pendingHighlightId && (
+        <div className="p-3 border-b bg-background">
+          <Textarea
+            placeholder="Adicionar nota ao destaque…"
+            value={pendingNote}
+            onChange={(e) => setPendingNote(e.target.value)}
+            rows={3}
+            className="text-sm"
+          />
+          <div className="flex gap-2 mt-2 justify-end">
+            <Button size="sm" variant="ghost" onClick={() => { setPendingHighlightId(null); setPendingNote(""); }}>Pular</Button>
+            <Button size="sm" onClick={saveNote}>Salvar nota</Button>
+          </div>
+        </div>
+      )}
+      <ScrollArea className="flex-1">
+        <div className="p-3 space-y-2">
+          {highlights.length === 0 && (
+            <p className="text-xs text-muted-foreground text-center py-8">
+              Selecione texto no documento e toque em "Destacar".
+            </p>
+          )}
+          {highlights.map((h) => {
+            const c = COLORS.find((x) => x.id === h.color)!;
+            return (
+              <div key={h.id} className="border rounded-md p-2 bg-background">
+                <div className="flex items-start gap-2">
+                  <span className={cn("inline-block w-2 h-2 rounded-full mt-1.5 shrink-0", c.bg)} />
+                  <div className="flex-1 min-w-0">
+                    <p className={cn("text-sm leading-snug", c.bg, "px-1 rounded")}>{h.text}</p>
+                    {h.note && <p className="text-xs italic text-muted-foreground mt-1">{h.note}</p>}
+                    {h.page && <Badge variant="outline" className="mt-1 text-[10px]">p. {h.page}</Badge>}
+                  </div>
+                  <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => deleteHighlight(h.id)}>
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </ScrollArea>
+    </>
+  );
 
   return (
     <Dialog open={!!doc} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[95vw] w-[95vw] h-[92vh] p-0 flex flex-col">
-        <DialogHeader className="px-4 py-3 border-b shrink-0">
+      <DialogContent className="max-w-[100vw] w-screen h-[100dvh] sm:max-w-[95vw] sm:w-[95vw] sm:h-[92vh] p-0 flex flex-col gap-0 rounded-none sm:rounded-lg">
+        <DialogHeader className="px-3 sm:px-4 py-2 sm:py-3 border-b shrink-0">
           <div className="flex items-center justify-between gap-2">
-            <DialogTitle className="text-base truncate">{doc.title}</DialogTitle>
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={exportMarkdown}><Download className="w-3 h-3 mr-1" />MD</Button>
-              <Button size="sm" variant="outline" onClick={exportBibtex}><Download className="w-3 h-3 mr-1" />BibTeX</Button>
-              <Button size="icon" variant="ghost" onClick={onClose}><X className="w-4 h-4" /></Button>
+            <DialogTitle className="text-sm sm:text-base truncate flex-1 min-w-0">{doc.title}</DialogTitle>
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              <Button size="sm" variant="outline" onClick={exportMarkdown} className="h-8 px-2"><Download className="w-3 h-3 sm:mr-1" /><span className="hidden sm:inline">MD</span></Button>
+              <Button size="sm" variant="outline" onClick={exportBibtex} className="h-8 px-2"><Download className="w-3 h-3 sm:mr-1" /><span className="hidden sm:inline">BibTeX</span></Button>
+              {isMobile && (
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button size="sm" variant="outline" className="h-8 px-2 relative">
+                      <Highlighter className="w-3 h-3" />
+                      {highlights.length > 0 && (
+                        <span className="ml-1 text-[10px] font-mono">{highlights.length}</span>
+                      )}
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-[90vw] sm:w-[400px] p-0 flex flex-col">
+                    <SheetHeader className="px-4 py-3 border-b">
+                      <SheetTitle className="text-sm">Destaques ({highlights.length})</SheetTitle>
+                    </SheetHeader>
+                    {HighlightsList}
+                  </SheetContent>
+                </Sheet>
+              )}
+              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onClose}><X className="w-4 h-4" /></Button>
             </div>
           </div>
         </DialogHeader>
 
         <div className="flex-1 flex min-h-0">
           {/* Reader pane */}
-          <div className="flex-1 flex flex-col min-w-0 border-r">
-            <div className="flex items-center gap-2 px-3 py-2 border-b bg-muted/30 flex-wrap">
-              <span className="text-xs text-muted-foreground">Cor:</span>
+          <div className="flex-1 flex flex-col min-w-0 md:border-r">
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 border-b bg-muted/30 flex-wrap">
+              <span className="text-xs text-muted-foreground hidden sm:inline">Cor:</span>
               {COLORS.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => setColor(c.id)}
-                  className={cn("w-5 h-5 rounded-full ring-offset-2", c.bg, color === c.id && "ring-2", c.ring)}
+                  className={cn("w-6 h-6 sm:w-5 sm:h-5 rounded-full ring-offset-2", c.bg, color === c.id && "ring-2", c.ring)}
                   aria-label={c.id}
                 />
               ))}
-              <Button size="sm" variant="default" onClick={captureSelection}>Destacar</Button>
+              <Button size="sm" variant="default" onClick={captureSelection} className="h-8">
+                <Highlighter className="w-3 h-3 sm:mr-1" />
+                <span className="hidden sm:inline">Destacar</span>
+              </Button>
 
               <div className="h-5 w-px bg-border mx-1" />
               <span className="text-xs text-muted-foreground">Aa</span>
-              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setFontScale((s) => Math.max(0.8, +(s - 0.1).toFixed(2)))}>−</Button>
+              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setFontScale((s) => Math.max(0.8, +(s - 0.1).toFixed(2)))}>−</Button>
               <span className="text-xs font-mono w-8 text-center">{Math.round(fontScale * 100)}%</span>
-              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setFontScale((s) => Math.min(1.6, +(s + 0.1).toFixed(2)))}>+</Button>
-              <Button size="sm" variant="ghost" className="h-7" onClick={() => setSerif((v) => !v)}>
+              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setFontScale((s) => Math.min(1.6, +(s + 0.1).toFixed(2)))}>+</Button>
+              <Button size="sm" variant="ghost" className="h-8 hidden sm:inline-flex" onClick={() => setSerif((v) => !v)}>
                 {serif ? "Serif" : "Sans"}
               </Button>
 
               {numPages > 0 && (
-                <span className="text-xs font-mono ml-auto text-muted-foreground">{numPages} páginas</span>
+                <span className="text-xs font-mono ml-auto text-muted-foreground">{numPages}p</span>
               )}
             </div>
             <ScrollArea className="flex-1 bg-muted/40">
-              <div ref={containerRef} className="py-10 px-4 flex flex-col items-center gap-6">
+              <div ref={containerRef} className="py-4 sm:py-10 px-2 sm:px-4 flex flex-col items-center gap-4 sm:gap-6">
                 {doc.file_type === "pdf" && fileUrl && (
                   <Document
                     file={fileUrl}
                     onLoadSuccess={({ numPages }) => setNumPages(numPages)}
                     loading={<div className="text-sm text-muted-foreground py-20">Carregando PDF…</div>}
                     error={<div className="text-sm text-destructive py-20">Erro ao carregar PDF</div>}
-                    className="flex flex-col items-center gap-6"
+                    className="flex flex-col items-center gap-4 sm:gap-6 w-full"
                   >
                     {Array.from({ length: numPages }, (_, i) => (
                       <div
                         key={i}
                         data-page={i + 1}
-                        className="bg-white shadow-xl rounded-sm overflow-hidden relative"
+                        className="bg-white shadow-xl rounded-sm overflow-hidden relative max-w-full"
                       >
                         <div className="absolute top-2 right-3 text-[10px] font-mono text-muted-foreground bg-white/80 px-1.5 rounded z-10">
                           {i + 1} / {numPages}
                         </div>
                         <Page
                           pageNumber={i + 1}
-                          width={Math.min(820 * fontScale, (containerRef.current?.clientWidth ?? 800) - 40)}
+                          width={Math.min(820 * fontScale, (containerRef.current?.clientWidth ?? 800) - (isMobile ? 16 : 40))}
                           renderTextLayer
                           renderAnnotationLayer={false}
                         />
@@ -278,8 +350,8 @@ export function DocumentReader({
                     data-page={i + 1}
                     className={cn(
                       "bg-card text-card-foreground shadow-xl rounded-sm relative",
-                      "px-12 py-14 max-w-[680px] w-full",
-                      "prose dark:prose-invert prose-headings:font-semibold",
+                      "px-5 py-8 sm:px-12 sm:py-14 max-w-[680px] w-full",
+                      "prose prose-sm sm:prose-base dark:prose-invert prose-headings:font-semibold",
                       serif ? "font-serif" : "font-sans",
                     )}
                     style={{
@@ -300,54 +372,15 @@ export function DocumentReader({
             </ScrollArea>
           </div>
 
-          {/* Highlights pane */}
-          <aside className="w-[340px] shrink-0 flex flex-col bg-muted/20">
-            <div className="px-3 py-2 border-b text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Destaques ({highlights.length})
-            </div>
-            {pendingHighlightId && (
-              <div className="p-3 border-b bg-background">
-                <Textarea
-                  placeholder="Adicionar nota ao destaque…"
-                  value={pendingNote}
-                  onChange={(e) => setPendingNote(e.target.value)}
-                  rows={3}
-                  className="text-sm"
-                />
-                <div className="flex gap-2 mt-2 justify-end">
-                  <Button size="sm" variant="ghost" onClick={() => { setPendingHighlightId(null); setPendingNote(""); }}>Pular</Button>
-                  <Button size="sm" onClick={saveNote}>Salvar nota</Button>
-                </div>
+          {/* Highlights pane (desktop only) */}
+          {!isMobile && (
+            <aside className="w-[340px] shrink-0 flex flex-col bg-muted/20">
+              <div className="px-3 py-2 border-b text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Destaques ({highlights.length})
               </div>
-            )}
-            <ScrollArea className="flex-1">
-              <div className="p-3 space-y-2">
-                {highlights.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center py-8">
-                    Selecione texto no documento e clique em "Destacar seleção".
-                  </p>
-                )}
-                {highlights.map((h) => {
-                  const c = COLORS.find((x) => x.id === h.color)!;
-                  return (
-                    <div key={h.id} className="border rounded-md p-2 bg-background">
-                      <div className="flex items-start gap-2">
-                        <span className={cn("inline-block w-2 h-2 rounded-full mt-1.5 shrink-0", c.bg)} />
-                        <div className="flex-1 min-w-0">
-                          <p className={cn("text-sm leading-snug", c.bg, "px-1 rounded")}>{h.text}</p>
-                          {h.note && <p className="text-xs italic text-muted-foreground mt-1">{h.note}</p>}
-                          {h.page && <Badge variant="outline" className="mt-1 text-[10px]">p. {h.page}</Badge>}
-                        </div>
-                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => deleteHighlight(h.id)}>
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          </aside>
+              {HighlightsList}
+            </aside>
+          )}
         </div>
       </DialogContent>
     </Dialog>
