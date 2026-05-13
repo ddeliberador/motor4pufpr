@@ -11,6 +11,8 @@ import EmpresaPanel from "./components/empresa/EmpresaPanel";
 import Index from "./pages/Index";
 import Conceito from "./pages/Conceito";
 import Documentacao from "./pages/Documentacao";
+import GestaoPesquisa from "./pages/GestaoPesquisa";
+import AuthPage from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +31,8 @@ const App = () => (
           <Route path="/universidade" element={<UniversidadePanel />} />
           <Route path="/empresa" element={<EmpresaPanel />} />
           <Route path="/governo" element={<GovernoPanel />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/gestao-pesquisa" element={<GestaoPesquisa />} />
           <Route path="/camada-ausente" element={<Navigate to="/conceito" replace />} />
           <Route path="/mvp" element={<Navigate to="/pesquisador" replace />} />
           <Route path="*" element={<NotFound />} />

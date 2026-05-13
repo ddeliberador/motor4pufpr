@@ -14,7 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      research_articles: {
+        Row: {
+          created_at: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          status: string
+          title: string
+          user_id: string
+          venue: string | null
+        }
+        Insert: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          title: string
+          user_id: string
+          venue?: string | null
+        }
+        Update: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          title?: string
+          user_id?: string
+          venue?: string | null
+        }
+        Relationships: []
+      }
+      research_authors: {
+        Row: {
+          created_at: string
+          id: string
+          main_work: string | null
+          name: string
+          notes: string | null
+          status: string
+          thematic_area: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          main_work?: string | null
+          name: string
+          notes?: string | null
+          status?: string
+          thematic_area?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          main_work?: string | null
+          name?: string
+          notes?: string | null
+          status?: string
+          thematic_area?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      research_themes: {
+        Row: {
+          created_at: string
+          id: string
+          keywords: string | null
+          name: string
+          notes: string | null
+          progress: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          keywords?: string | null
+          name: string
+          notes?: string | null
+          progress?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          keywords?: string | null
+          name?: string
+          notes?: string | null
+          progress?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
