@@ -80,6 +80,103 @@ export type Database = {
         }
         Relationships: []
       }
+      research_documents: {
+        Row: {
+          author_id: string
+          citation_authors: string | null
+          citation_doi: string | null
+          citation_publisher: string | null
+          citation_title: string | null
+          citation_year: number | null
+          created_at: string
+          file_path: string
+          file_type: string
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          author_id: string
+          citation_authors?: string | null
+          citation_doi?: string | null
+          citation_publisher?: string | null
+          citation_title?: string | null
+          citation_year?: number | null
+          created_at?: string
+          file_path: string
+          file_type: string
+          id?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          author_id?: string
+          citation_authors?: string | null
+          citation_doi?: string | null
+          citation_publisher?: string | null
+          citation_title?: string | null
+          citation_year?: number | null
+          created_at?: string
+          file_path?: string
+          file_type?: string
+          id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_documents_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "research_authors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      research_highlights: {
+        Row: {
+          color: string
+          created_at: string
+          document_id: string
+          id: string
+          note: string | null
+          page: number | null
+          position: Json | null
+          text: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          document_id: string
+          id?: string
+          note?: string | null
+          page?: number | null
+          position?: Json | null
+          text: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          document_id?: string
+          id?: string
+          note?: string | null
+          page?: number | null
+          position?: Json | null
+          text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_highlights_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "research_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       research_themes: {
         Row: {
           created_at: string
