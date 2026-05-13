@@ -21,6 +21,7 @@ import { Plus, Trash2, LogOut, BookOpen, Lightbulb, FileText } from "lucide-reac
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import { cn } from "@/lib/utils";
+import { AuthorDocumentsPanel } from "@/components/research/AuthorDocumentsPanel";
 
 type Author = { id: string; name: string; main_work: string | null; thematic_area: string | null; status: string; notes: string | null };
 type Theme = { id: string; name: string; keywords: string | null; progress: number; notes: string | null };
