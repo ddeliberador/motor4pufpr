@@ -1,10 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Zap } from "lucide-react";
+import { Menu, X, Zap, Lock } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 const Header = () => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -42,6 +44,13 @@ const Header = () => {
               className={`text-sm font-medium transition-colors ${isActive('/documentacao') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Documentação
+            </Link>
+            <Link
+              to={user ? "/gestao-pesquisa" : "/auth"}
+              className={`text-sm font-medium transition-colors flex items-center gap-1 ${isActive('/gestao-pesquisa') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <Lock className="w-3 h-3" />
+              Gestão da Pesquisa
             </Link>
             <Link
               to="/"
@@ -82,6 +91,14 @@ const Header = () => {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/documentacao') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
               >
                 Documentação
+              </Link>
+              <Link
+                to={user ? "/gestao-pesquisa" : "/auth"}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${isActive('/gestao-pesquisa') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+              >
+                <Lock className="w-3 h-3" />
+                Gestão da Pesquisa
               </Link>
               <Link
                 to="/"
