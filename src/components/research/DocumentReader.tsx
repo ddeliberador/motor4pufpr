@@ -240,34 +240,45 @@ export function DocumentReader({
               </Button>
 
               {numPages > 0 && (
-                <div className="flex items-center gap-1 ml-auto">
-                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPage((p) => Math.max(1, p - 1))}>
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <span className="text-xs font-mono">{page}/{numPages}</span>
-                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPage((p) => Math.min(numPages, p + 1))}>
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
+                <span className="text-xs font-mono ml-auto text-muted-foreground">{numPages} páginas</span>
               )}
             </div>
             <ScrollArea className="flex-1 bg-muted/40">
-              <div ref={containerRef} className="py-10 px-4 flex justify-center">
+              <div ref={containerRef} className="py-10 px-4 flex flex-col items-center gap-6">
                 {doc.file_type === "pdf" && fileUrl && (
-                  <div className="bg-white shadow-xl rounded-sm overflow-hidden">
-                    <Document file={fileUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
-                      <Page
-                        pageNumber={page}
-                        width={Math.min(820 * fontScale, (containerRef.current?.clientWidth ?? 800) - 40)}
-                      />
-                    </Document>
-                  </div>
+                  <Document
+                    file={fileUrl}
+                    onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                    loading={<div className="text-sm text-muted-foreground py-20">Carregando PDF…</div>}
+                    error={<div className="text-sm text-destructive py-20">Erro ao carregar PDF</div>}
+                    className="flex flex-col items-center gap-6"
+                  >
+                    {Array.from({ length: numPages }, (_, i) => (
+                      <div
+                        key={i}
+                        data-page={i + 1}
+                        className="bg-white shadow-xl rounded-sm overflow-hidden relative"
+                      >
+                        <div className="absolute top-2 right-3 text-[10px] font-mono text-muted-foreground bg-white/80 px-1.5 rounded z-10">
+                          {i + 1} / {numPages}
+                        </div>
+                        <Page
+                          pageNumber={i + 1}
+                          width={Math.min(820 * fontScale, (containerRef.current?.clientWidth ?? 800) - 40)}
+                          renderTextLayer
+                          renderAnnotationLayer={false}
+                        />
+                      </div>
+                    ))}
+                  </Document>
                 )}
-                {doc.file_type === "md" && mdPages.length > 0 && (
+                {doc.file_type === "md" && mdPages.length > 0 && mdPages.map((content, i) => (
                   <article
+                    key={i}
+                    data-page={i + 1}
                     className={cn(
-                      "bg-card text-card-foreground shadow-xl rounded-sm",
-                      "px-12 py-14 max-w-[680px] w-full min-h-[80vh]",
+                      "bg-card text-card-foreground shadow-xl rounded-sm relative",
+                      "px-12 py-14 max-w-[680px] w-full",
                       "prose dark:prose-invert prose-headings:font-semibold",
                       serif ? "font-serif" : "font-sans",
                     )}
@@ -279,12 +290,12 @@ export function DocumentReader({
                       WebkitHyphens: "auto",
                     } as React.CSSProperties}
                   >
-                    <ReactMarkdown>{mdPages[Math.min(page, mdPages.length) - 1]}</ReactMarkdown>
+                    <ReactMarkdown>{content}</ReactMarkdown>
                     <div className="mt-10 pt-4 border-t text-xs text-muted-foreground text-center font-sans not-prose">
-                      {page} / {mdPages.length}
+                      {i + 1} / {mdPages.length}
                     </div>
                   </article>
-                )}
+                ))}
               </div>
             </ScrollArea>
           </div>
