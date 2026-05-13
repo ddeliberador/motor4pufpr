@@ -70,7 +70,36 @@ export function DocumentReader({
   const [color, setColor] = useState("yellow");
   const [pendingNote, setPendingNote] = useState<string>("");
   const [pendingHighlightId, setPendingHighlightId] = useState<string | null>(null);
+  const [fontScale, setFontScale] = useState(1);
+  const [serif, setSerif] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Paginação do Markdown estilo Kindle: ~2200 caracteres por página, quebrando em parágrafos
+  const mdPages = useMemo(() => {
+    if (!mdContent) return [] as string[];
+    const target = Math.round(2200 / fontScale);
+    const blocks = mdContent.split(/\n\n+/);
+    const pages: string[] = [];
+    let buf = "";
+    for (const b of blocks) {
+      if ((buf + "\n\n" + b).length > target && buf) {
+        pages.push(buf);
+        buf = b;
+      } else {
+        buf = buf ? buf + "\n\n" + b : b;
+      }
+    }
+    if (buf) pages.push(buf);
+    return pages;
+  }, [mdContent, fontScale]);
+
+  useEffect(() => {
+    if (doc?.file_type === "md") setNumPages(mdPages.length);
+  }, [mdPages, doc]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [doc?.id]);
 
   useEffect(() => {
     if (!doc) {
