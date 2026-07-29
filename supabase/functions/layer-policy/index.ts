@@ -88,40 +88,76 @@ async function searchTransparencia(query: string, searchTerms: string[]) {
     };
   }
   const headers = { "chave-api-dados": CHAVE_API, "Accept": "application/json" };
-  const termsToTry = [query, ...searchTerms.filter((t) => t !== query)].slice(0, 2);
+  const TP = "https://api.portaldatransparencia.gov.br/api-de-dados";
+
+  // Termos normalizados para filtragem textual local (a API não filtra por objeto sem período)
+  const norm = (s: string) =>
+    (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const terms = [query, ...searchTerms]
+    .map(norm)
+    .flatMap((t) => t.split(/\s+/).filter((w) => w.length > 3))
+    .filter((v, i, a) => a.indexOf(v) === i)
+    .slice(0, 8);
+
+  const fmt = (d: Date) =>
+    `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+
+  // A API exige janela máxima de 1 mês por consulta — varremos os últimos 12 meses em paralelo
+  const now = new Date();
+  const windows: Array<[string, string]> = [];
+  for (let i = 0; i < 12; i++) {
+    const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+    windows.push([fmt(start), fmt(end)]);
+  }
+
+  const pages = await Promise.all(
+    windows.map(([di, df]) =>
+      safeFetch(
+        `${TP}/convenios?pagina=1&tamanhoPagina=100&dataInicial=${encodeURIComponent(di)}&dataFinal=${encodeURIComponent(df)}`,
+        { headers }, 25000
+      )
+    )
+  );
 
   const allConvenios: any[] = [];
   const seen = new Set<string>();
-  for (const term of termsToTry) {
-    const convenios = await safeFetch(
-      `https://api.portaldatransparencia.gov.br/api-de-dados/convenios?pagina=1&tamanhoPagina=8&objeto=${encodeURIComponent(term)}`,
-      { headers }, 25000
-    );
-    for (const c of (convenios || [])) {
-      const key = c.numero || c.objeto?.slice(0, 40) || "";
-      if (key && !seen.has(key)) {
-        seen.add(key);
-        allConvenios.push({
-          object: c.objeto?.slice(0, 200) || "", proponent: c.proponente?.nome || "",
-          value: c.valor || 0, grantor: c.orgaoSuperior?.nome || "",
-          startDate: c.dataInicioVigencia || "", endDate: c.dataFimVigencia || "", situation: c.situacao || "",
-        });
-      }
+  for (const page of pages) {
+    for (const c of (Array.isArray(page) ? page : [])) {
+      const objeto: string = c?.dimConvenio?.objeto || "";
+      const haystack = norm(`${objeto} ${c?.subfuncao?.descricaoSubfuncap || ""} ${c?.orgao?.nome || ""}`);
+      if (terms.length > 0 && !terms.some((t) => haystack.includes(t))) continue;
+      const key = c?.dimConvenio?.numero || String(c?.id || objeto.slice(0, 40));
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      allConvenios.push({
+        object: objeto.slice(0, 200),
+        proponent: c?.convenente?.nome || c?.convenente?.razaoSocialReceita || "",
+        value: c?.valor || 0,
+        grantor: c?.orgao?.orgaoMaximo?.nome || c?.orgao?.nome || "",
+        startDate: c?.dataInicioVigencia || "",
+        endDate: c?.dataFinalVigencia || "",
+        situation: c?.situacao || "",
+        uf: c?.municipioConvenente?.uf?.nome || "",
+        released: c?.valorLiberado || 0,
+      });
     }
   }
+  allConvenios.sort((a, b) => (b.value || 0) - (a.value || 0));
 
+  // Sanções (CEIS) — filtro por nome do sancionado
   const ceis = await safeFetch(
-    `https://api.portaldatransparencia.gov.br/api-de-dados/ceis?pagina=1&tamanhoPagina=5&nomeFantasia=${encodeURIComponent(query)}`,
+    `${TP}/ceis?pagina=1&tamanhoPagina=15&nomeSancionado=${encodeURIComponent(query)}`,
     { headers }, 25000
   );
 
   return {
-    convenios: allConvenios,
-    sanctions: (ceis || []).map((s: any) => ({
-      company: s.pessoa?.nome || s.nomeFantasiaReceita || s.nomeFantasia || s.razaoSocial || "",
-      type: s.tipoSancao?.descricaoResumida || s.tipoSancao || "",
-      organ: s.orgaoSancionador?.nome || "",
-      date: s.dataInicioSancao || "",
+    convenios: allConvenios.slice(0, 20),
+    sanctions: (Array.isArray(ceis) ? ceis : []).slice(0, 10).map((s: any) => ({
+      company: s?.pessoa?.nome || s?.pessoa?.razaoSocialReceita || s?.nomeFantasiaReceita || "",
+      type: s?.tipoSancao?.descricaoResumida || "",
+      organ: s?.orgaoSancionador?.nome || s?.fonteSancao?.nomeExibicao || "",
+      date: s?.dataInicioSancao || "",
     })),
   };
 }
