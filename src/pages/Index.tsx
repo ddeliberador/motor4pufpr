@@ -21,69 +21,37 @@ const Index = () => {
         <div className="container-wide py-16 md:py-24">
           {/* Hero */}
           <div className="text-center mb-12 md:mb-16">
-            {/* Animated icon with electric pulse */}
+            {/* Icon */}
             <motion.div
               className="relative w-24 h-24 mx-auto mb-8"
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", stiffness: 180, damping: 14, delay: 0.3 }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
             >
-              {/* Pulse shockwaves */}
-              {[1, 2, 3].map((ring) => (
-                <motion.div
-                  key={ring}
-                  className="absolute inset-0 rounded-3xl border-2 border-primary/30"
-                  animate={{
-                    scale: [1, 2 + ring * 0.4],
-                    opacity: [0.6, 0],
-                    borderColor: ["hsl(var(--primary))", "hsl(var(--accent))"],
-                  }}
-                  transition={{ duration: 2, repeat: Infinity, delay: ring * 0.5 }}
-                />
-              ))}
-              {/* Electric glow behind */}
-              <motion.div
+              {/* Glow behind */}
+              <div
                 className="absolute -inset-4 rounded-3xl"
                 style={{
-                  background: "radial-gradient(circle, hsl(var(--primary) / 0.3) 0%, transparent 70%)",
+                  background: "radial-gradient(circle, hsl(var(--primary) / 0.25) 0%, transparent 70%)",
                 }}
-                animate={{
-                  scale: [1, 1.3, 1],
-                  opacity: [0.5, 1, 0.5],
-                }}
-                transition={{ duration: 1.5, repeat: Infinity }}
               />
               <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary via-primary/90 to-accent flex items-center justify-center shadow-2xl shadow-primary/40">
-                <motion.div
-                  animate={{ rotate: [0, 5, -5, 0] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  <Zap className="w-11 h-11 text-primary-foreground drop-shadow-lg" />
-                </motion.div>
+                <Zap className="w-11 h-11 text-primary-foreground drop-shadow-lg" />
               </div>
             </motion.div>
 
             {/* Tagline */}
             <motion.div
               className="inline-flex items-center gap-2 px-5 py-2 mb-6 rounded-full border border-blue-500/30 bg-blue-500/10 backdrop-blur-sm"
-              initial={{ opacity: 0, y: 15, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ delay: 0.6, type: "spring" }}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
             >
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              >
-                <Activity className="w-4 h-4 text-primary" />
-              </motion.div>
+              <Activity className="w-4 h-4 text-primary" />
               <span className="text-xs font-semibold text-blue-300 tracking-widest uppercase">
                 Infraestrutura Pública de Inteligência
               </span>
-              <motion.span
-                className="w-2 h-2 rounded-full bg-accent shadow-lg shadow-accent/50"
-                animate={{ scale: [1, 1.6, 1], opacity: [1, 0.5, 1] }}
-                transition={{ duration: 1, repeat: Infinity }}
-              />
+              <span className="w-2 h-2 rounded-full bg-accent" />
             </motion.div>
 
             <motion.h1
@@ -94,13 +62,9 @@ const Index = () => {
             >
               Qual é o seu papel no
               <br />
-              <motion.span
-                className="bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 bg-[length:200%_auto] bg-clip-text text-transparent"
-                animate={{ backgroundPosition: ["0% center", "200% center"] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-              >
+              <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
                 Sistema de Inovação?
-              </motion.span>
+              </span>
             </motion.h1>
 
             <motion.p
