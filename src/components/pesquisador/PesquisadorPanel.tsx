@@ -549,6 +549,43 @@ const PesquisadorPanel = () => {
                   </div>
                 </div>
               )}
+              {(policy as any).emendas?.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-1">Emendas parlamentares</h3>
+                  <p className="text-[10px] text-muted-foreground mb-3">
+                    Portal da Transparência · {(policy as any).emendas[0]?.contextual ? "funções orçamentárias correlatas" : "aderentes ao tema"}
+                  </p>
+                  <div className="space-y-1">
+                    {(policy as any).emendas.slice(0, 6).map((e: any, i: number) => (
+                      <div key={i} className="py-2 px-3 border-b border-border/30 last:border-0">
+                        <p className="text-xs font-medium text-foreground line-clamp-1">{e.author} — {e.subfunction || e.function}</p>
+                        <div className="flex gap-2 mt-0.5 items-center">
+                          <span className="text-[10px] text-muted-foreground">{e.locality} · {e.year}</span>
+                          {e.paid > 0 && <span className="text-[10px] font-semibold text-accent">R$ {(e.paid / 1e3).toFixed(0)}mil pagos</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(policy as any).budget_execution?.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-1">Execução orçamentária federal em CT&amp;I</h3>
+                  <p className="text-[10px] text-muted-foreground mb-3">Portal da Transparência · MCTI e MEC</p>
+                  <div className="space-y-1">
+                    {(policy as any).budget_execution.slice(0, 8).map((b: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between gap-3 py-2 px-3 border-b border-border/30 last:border-0">
+                        <div className="min-w-0">
+                          <p className="text-xs text-foreground truncate">{b.organ}</p>
+                          <p className="text-[10px] text-muted-foreground">{b.superior} · {b.year}</p>
+                        </div>
+                        <span className="text-xs font-semibold text-primary whitespace-nowrap">R$ {(b.paid / 1e9).toFixed(2)} bi</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {intl.macro_indicators.some(m => m.value !== null) && (
                 <div className="bg-card border border-border rounded-xl p-5">
                   <h3 className="text-sm font-semibold text-foreground mb-3">Contexto macroeconômico</h3>
