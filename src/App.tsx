@@ -30,7 +30,7 @@ const App = () => (
           <Route path="/pesquisador" element={<PesquisadorPanel />} />
           <Route path="/universidade" element={<UniversidadePanel />} />
           <Route path="/empresa" element={<EmpresaPanel />} />
-          <Route path="/governo" element={<GovernoPanel />} />
+          
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/gestao-pesquisa" element={<GestaoPesquisa />} />
           <Route path="/camada-ausente" element={<Navigate to="/conceito" replace />} />
