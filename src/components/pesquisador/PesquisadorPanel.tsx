@@ -15,6 +15,7 @@ import ReactMarkdown from "react-markdown";
 import StrategicIndices from "@/components/governo/StrategicIndices";
 import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetailSheet";
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
+import SidraPanel from "@/components/shared/SidraPanel";
 
 const PesquisadorPanel = () => {
   const config = personaConfigs.pesquisador;
