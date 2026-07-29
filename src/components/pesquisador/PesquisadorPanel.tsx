@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Microscope, Search, ArrowLeft, AlertTriangle, Zap, Globe, BookOpen, Users, GitBranch, TrendingUp, ExternalLink, Beaker, Target, Lightbulb, Briefcase, FlaskConical } from "lucide-react";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
+import { TrlScaleChart } from "@/components/shared/TrlScaleChart";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
