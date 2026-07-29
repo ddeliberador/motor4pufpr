@@ -60,152 +60,179 @@ const CNPQ_TO_SIDRA_AREA: Record<string, string> = {
   "40300005": "4",
 };
 
-// ── 1. PINTEC — % empresas que inovaram por setor ──────────────────────────
+// Casa a divisão CNAE (2 dígitos) com o rótulo das categorias SIDRA,
+// que vêm no formato "35 ELETRICIDADE, GÁS ..." ou "C Indústrias de transformação"
+function matchesDivision(label: string, divisions: string[]): boolean {
+  const m = label.match(/^(\d{2})[\s.]/);
+  if (!m) return false;
+  return divisions.includes(m[1]);
+}
+
+// ── 1. PINTEC — empresas que inovaram por atividade ────────────────────────
+// Tabela 5453 (PINTEC 2017): v630 = total de empresas, v5977 = empresas que inovaram
 async function fetchPintec(cnaeDivisions: string[]) {
   const data = await safeFetch(
-    `${SIDRA}/t/7357/n1/all/v/allxp/p/last%201`
+    `${SIDRA}/t/5453/n1/all/v/630,5977/p/last%201/c696/all`
   );
-  if (!data || !Array.isArray(data)) return null;
+  if (!data || !Array.isArray(data) || data.length < 2) return null;
 
   const rows = data.slice(1);
-  if (!rows.length) return null;
+  const periodo = rows[0]?.D3N || "";
 
-  const relevant = rows.filter((r: any) => {
-    const activity = (r.D2N || "").toLowerCase();
-    return cnaeDivisions.some(div => {
-      const label = CNAE_TO_SIDRA_DIVISION[div]?.toLowerCase() || "";
-      return label && activity.includes(label.split("/")[0].toLowerCase());
-    });
-  });
+  const byActivity: Record<string, any> = {};
+  for (const r of rows) {
+    const act = r.D4N || "";
+    if (!act || r.V === "..." || r.V === "-" || r.V == null) continue;
+    if (!byActivity[act]) byActivity[act] = { atividade: act };
+    const v = Number(r.V);
+    if (r.D2C === "630") byActivity[act].total = v;
+    if (r.D2C === "5977") byActivity[act].inovadoras = v;
+  }
 
-  const sample = relevant.length > 0 ? relevant : rows.slice(0, 5);
+  const all = Object.values(byActivity)
+    .filter((s: any) => s.total > 0 && s.inovadoras >= 0)
+    .map((s: any) => ({
+      atividade: s.atividade,
+      valor: ((s.inovadoras / s.total) * 100).toFixed(1),
+      unidade: "%",
+      empresas: s.total,
+      inovadoras: s.inovadoras,
+    }));
+
+  const relevant = all.filter((s) => matchesDivision(s.atividade, cnaeDivisions));
+  const setores = relevant.length > 0 ? relevant : all.filter((s) => /^(total|[a-z] )/i.test(s.atividade)).slice(0, 5);
+  if (!setores.length) return null;
+
   return {
     fonte: "PINTEC — IBGE",
-    periodo: rows[0]?.D3N || "",
-    descricao: "Empresas que implementaram inovação de produto ou processo",
-    setores: sample.map((r: any) => ({
-      atividade: r.D2N || "",
-      valor: r.V || "",
-      unidade: r.MN || "%",
-    })).filter((s: any) => s.valor && s.valor !== "..."),
-    url: "https://sidra.ibge.gov.br/tabela/6829",
+    periodo,
+    descricao: "Taxa de empresas que implementaram inovação de produto e/ou processo",
+    setores: setores.slice(0, 8),
+    url: "https://sidra.ibge.gov.br/tabela/5453",
   };
 }
 
 // ── 2. CEMPRE — empresas e pessoal por atividade ──────────────────────────
+// Tabela 992: v2585 = nº de empresas, v707 = pessoal ocupado total
 async function fetchCempre(cnaeDivisions: string[]) {
   const data = await safeFetch(
-    `${SIDRA}/t/992/n1/all/v/29,179/p/last%201`
+    `${SIDRA}/t/992/n1/all/v/2585,707/p/last%201/c12762/all`
   );
-  if (!data || !Array.isArray(data)) return null;
+  if (!data || !Array.isArray(data) || data.length < 2) return null;
 
   const rows = data.slice(1);
-  const relevant = rows.filter((r: any) => {
-    const activity = (r.D2N || "").toLowerCase();
-    return cnaeDivisions.some(div => {
-      const label = CNAE_TO_SIDRA_DIVISION[div]?.toLowerCase() || "";
-      return label && activity.includes(label.split("/")[0].toLowerCase());
-    });
-  });
-
-  const sample = relevant.length > 0 ? relevant.slice(0, 5) : rows.slice(0, 5);
+  const periodo = rows[0]?.D3N || "";
 
   const byActivity: Record<string, any> = {};
-  for (const r of sample) {
-    const act = r.D2N || "Setor";
+  for (const r of rows) {
+    const act = r.D4N || "";
+    if (!act || r.V === "..." || r.V === "-" || r.V == null) continue;
     if (!byActivity[act]) byActivity[act] = { atividade: act };
-    if (r.V1N === "Número de unidades locais" || r.D4N?.includes("29")) {
-      byActivity[act].empresas = r.V;
-    } else {
-      byActivity[act].pessoal = r.V;
-    }
+    if (r.D2C === "2585") byActivity[act].empresas = Number(r.V).toLocaleString("pt-BR");
+    if (r.D2C === "707") byActivity[act].pessoal = Number(r.V).toLocaleString("pt-BR");
   }
+
+  const all = Object.values(byActivity).filter((s: any) => s.empresas || s.pessoal);
+  const relevant = all.filter((s: any) => matchesDivision(s.atividade, cnaeDivisions));
+  const setores = relevant.length > 0 ? relevant : all.slice(0, 5);
+  if (!setores.length) return null;
 
   return {
     fonte: "CEMPRE — IBGE",
-    periodo: rows[0]?.D3N || "",
+    periodo,
     descricao: "Empresas ativas e pessoal ocupado por atividade econômica",
-    setores: Object.values(byActivity).filter((s: any) => s.empresas || s.pessoal),
+    setores: setores.slice(0, 8),
     url: "https://sidra.ibge.gov.br/tabela/992",
   };
 }
 
-// ── 3. Pós-graduação — Titulados por área ──────────────────────────────────
+// ── 3. Capacidade formativa — população com ensino superior ────────────────
+// Tabela 10367 (PNAD Contínua anual): população por nível de instrução
 async function fetchPosGraduacao(_cnpqAreas: string[]) {
-  // Tabela 7301: Funções docentes na educação superior por grau de formação
   const data = await safeFetch(
-    `${SIDRA}/t/7301/n1/all/v/allxp/p/last%203`
+    `${SIDRA}/t/10367/n1/all/v/606/p/last%203/c1568/11631,11632`
   );
-  if (!data || !Array.isArray(data)) return null;
+  if (!data || !Array.isArray(data) || data.length < 2) return null;
 
-  const rows = data.slice(1).filter((r: any) => r.V && r.V !== "...");
+  const rows = data.slice(1).filter((r: any) => r.V && r.V !== "..." && r.V !== "-");
   if (!rows.length) return null;
 
   const byArea: Record<string, any[]> = {};
   for (const r of rows) {
-    const area = r.D2N || r.D3N || "Geral";
+    const area = r.D4N || "Geral";
     if (!byArea[area]) byArea[area] = [];
-    byArea[area].push({ ano: r.D3N || r.D4N || "", valor: r.V });
+    byArea[area].push({ ano: r.D3N || "", valor: `${Number(r.V).toLocaleString("pt-BR")} mil` });
   }
 
   const areas = Object.entries(byArea)
-    .filter(([, s]) => s.some((x) => x.valor && x.valor !== "..."))
-    .slice(0, 8)
-    .map(([area, series]) => ({ area, series: series.slice(0, 2) }));
+    .map(([area, series]) => ({ area, series: series.slice(-3).reverse() }))
+    .slice(0, 8);
 
   if (!areas.length) return null;
 
   return {
-    fonte: "Censo Ed. Superior/INEP via SIDRA — IBGE",
-    descricao: "Docentes da educação superior por grau de formação",
+    fonte: "PNAD Contínua — IBGE",
+    anos: [...new Set(rows.map((r: any) => r.D3N))].slice(-3),
+    descricao: "População por nível de instrução superior (estoque de capital humano qualificado)",
     areas,
-    url: "https://sidra.ibge.gov.br/tabela/7301",
+    url: "https://sidra.ibge.gov.br/tabela/10367",
   };
 }
 
-
 // ── 4. PIB setorial ────────────────────────────────────────────────────────
+// Tabela 1846 (Contas Nacionais Trimestrais): valores correntes por setor
 async function fetchPibSetorial() {
   const data = await safeFetch(
-    `${SIDRA}/t/1846/n1/all/v/allxp/p/last%205`
+    `${SIDRA}/t/1846/n1/all/v/585/p/last%204/c11255/90687,90691,90696,90707`
   );
-  if (!data || !Array.isArray(data)) return null;
+  if (!data || !Array.isArray(data) || data.length < 2) return null;
 
-  const rows = data.slice(1).filter((r: any) => r.V && r.V !== "...");
+  const rows = data.slice(1).filter((r: any) => r.V && r.V !== "..." && r.V !== "-");
   if (!rows.length) return null;
 
   return {
-    fonte: "SCN — IBGE",
-    descricao: "PIB e componentes da oferta (Agropecuária, Indústria, Serviços)",
-    series: rows.slice(0, 10).map((r: any) => ({
-      componente: r.D2N || "",
+    fonte: "Contas Nacionais Trimestrais — IBGE",
+    descricao: "PIB e valor adicionado por setor (Agropecuária, Indústria, Serviços)",
+    series: rows.slice(-12).map((r: any) => ({
+      componente: r.D4N || "",
       periodo: r.D3N || "",
-      valor: r.V || "",
-      unidade: r.MN || "R$ milhões",
+      valor: Number(r.V).toLocaleString("pt-BR"),
+      unidade: r.MN || "Milhões de Reais",
     })),
-    url: "https://sidra.ibge.gov.br/tabela/6784",
+    url: "https://sidra.ibge.gov.br/tabela/1846",
   };
 }
 
-// ── 5. Graduados por área ─────────────────────────────────────────────────
+// ── 5. Distribuição territorial da população com superior completo ─────────
+// Tabela 10367 por UF (N3)
 async function fetchGraduacao() {
   const data = await safeFetch(
-    `${SIDRA}/t/9163/n1/all/v/allxp/p/last%202`
+    `${SIDRA}/t/10367/n3/all/v/606/p/last%201/c1568/11632`
   );
-  if (!data || !Array.isArray(data)) return null;
+  if (!data || !Array.isArray(data) || data.length < 2) return null;
 
-  const rows = data.slice(1).filter((r: any) => r.V && r.V !== "...");
-  return {
-    fonte: "Censo da Educação Superior/INEP via SIDRA",
-    descricao: "Matrículas em cursos de graduação presencial por área geral",
-    areas: rows.slice(0, 10).map((r: any) => ({
-      area: r.D2N || "",
+  const rows = data.slice(1).filter((r: any) => r.V && r.V !== "..." && r.V !== "-");
+  if (!rows.length) return null;
+
+  const areas = rows
+    .map((r: any) => ({
+      area: r.D1N || "",
       periodo: r.D3N || "",
-      valor: r.V || "",
-    })),
-    url: "https://sidra.ibge.gov.br/tabela/1616",
+      valor: `${Number(r.V).toLocaleString("pt-BR")} mil`,
+      raw: Number(r.V),
+    }))
+    .sort((a: any, b: any) => b.raw - a.raw)
+    .slice(0, 10)
+    .map(({ raw: _raw, ...rest }: any) => rest);
+
+  return {
+    fonte: "PNAD Contínua — IBGE",
+    descricao: "População com ensino superior completo por unidade da federação",
+    areas,
+    url: "https://sidra.ibge.gov.br/tabela/10367",
   };
 }
+
 
 // ── Orquestrador ────────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
