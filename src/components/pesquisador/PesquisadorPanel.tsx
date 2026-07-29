@@ -262,7 +262,7 @@ const PesquisadorPanel = () => {
                         <p className="text-xs font-medium text-foreground">{a.area}</p>
                         <div className="flex gap-3 mt-0.5">
                           {a.series.slice(0, 2).map((s: any, j: number) => (
-                            <span key={j} className="text-[10px] text-muted-foreground">{s.ano}: <strong className="text-foreground">{s.valor}</strong> titulados</span>
+                            <span key={j} className="text-[10px] text-muted-foreground">{s.ano}: <strong className="text-foreground">{s.valor}</strong> pessoas</span>
                           ))}
                         </div>
                       </div>
