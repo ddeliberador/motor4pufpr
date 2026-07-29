@@ -203,7 +203,7 @@ const EmpresaPanel = () => {
             <TabsContent value="oportunidade" className="space-y-4">
               <div className="bg-card border border-border rounded-xl p-5 space-y-4">
                 <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Target className="w-4 h-4 text-primary" /> Maturidade Tecnológica (TRL)</h3>
-                <div className="flex items-center gap-3"><div className="flex-1 bg-muted rounded-full h-4 relative overflow-hidden"><div className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 rounded-full transition-all" style={{ width: `${(trlEstimate / 9) * 100}%` }} /></div><span className="text-lg font-bold text-foreground">{trlEstimate}/9</span></div>
+                <TrlScaleChart level={trlEstimate} label={trlLabel} compact />
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                   {[
                     { label: "Papers científicos", ok: trlSignals.has_papers },
