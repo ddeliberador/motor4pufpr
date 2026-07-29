@@ -99,71 +99,65 @@ async function callAnthropicAPI(systemPrompt: string, userMessage: string, apiKe
 function buildSystemPrompt(personaKey: string, pq: PersonaConfig, indices: any, layers: any, entityContext: any, searchData: any): string {
   let entityStr = "";
   if (entityContext?.entityName) {
-    if (personaKey === "universidade") entityStr = `\nENTIDADE: "${entityContext.entityName}". Verifique se aparece nos dados e posicione em relação às demais.`;
-    else if (personaKey === "empresa") entityStr = `\nENTIDADE: "${entityContext.entityName}". Situe no ecossistema: parceiros acadêmicos, concorrentes, instrumentos disponíveis.`;
-    else if (personaKey === "governo") {
-      const loc = entityContext.location || "";
-      entityStr = `\nESCOPO: Governo ${entityContext.govLevel || "federal"}${loc ? ` — ${loc}` : ""}. Priorize dados de ${loc || "todo o Brasil"}.`;
-    }
+    if (personaKey === "universidade") entityStr = `\nINSTITUIÇÃO ANALISADA: "${entityContext.entityName}". Use o campo positioning.rank e positioning.gap_to_leader dos insights para situar esta instituição.`;
+    else if (personaKey === "empresa") entityStr = `\nEMPRESA: "${entityContext.entityName}". Use best_partner e make_or_buy dos insights como base da análise.`;
+    else if (personaKey === "governo") entityStr = `\nESCOPO: Governo ${entityContext.govLevel || "federal"}${entityContext.location ? ` — ${entityContext.location}` : ""}. Priorize territorial.signal e prescription.primary dos insights.`;
   }
+
   const gt = indices.gt || {}, cd = indices.cd || {}, aue = indices.aue || {}, ei = indices.ei || {};
-  const k = layers.knowledge || {}, t = layers.technology || {}, p = layers.policy || {}, i = layers.international || {};
+  const pi = searchData.persona_insights || {};
+
+  // Serializa apenas os insights relevantes para esta persona
+  const insightsJson = JSON.stringify(pi, null, 0).slice(0, 2000);
 
   return `Você é o Motor 4P — sistema de inteligência estratégica do sistema de inovação brasileiro.
 
 PERSONA: ${pq.context}.${entityStr}
-FOCO: ${pq.outputFocus}
 
-━━━ ÍNDICES ESTRATÉGICOS CRUZADOS ━━━
-• GT — Gap de Tradução: ${gt.value ?? "N/D"}/100 ${gt.alert_level === "critical" ? "🚨 CRÍTICO" : gt.alert_level === "warning" ? "⚠️ ALERTA" : "✓"}
-  Fórmula: ${gt.formula || "papers / (contratos + convênios + repos) × 10"} | Camadas: ${gt.layers_used?.join(" × ") || "1×2×3"}
-• CD — Dependência Externa: ${cd.value ?? "N/D"}% ${cd.alert_level === "critical" ? "🚨 CRÍTICO" : cd.alert_level === "warning" ? "⚠️ ALERTA" : "✓"} | Camadas: ${cd.layers_used?.join(" × ") || "4×1"}
-• AUE — Articulação U-E: ${aue.value ?? "N/D"}% ${aue.alert_level === "critical" ? "🚨 CRÍTICO — baixíssima articulação" : aue.alert_level === "warning" ? "⚠️ ALERTA" : "✓"} | Camadas: ${aue.layers_used?.join(" × ") || "1×3"}
-• EI — Efetividade Instrumental: ${ei.value ?? "N/D"}/100 ${ei.alert_level === "critical" ? "🚨 CRÍTICO" : ei.alert_level === "warning" ? "⚠️ ALERTA" : "✓"} | Camadas: ${ei.layers_used?.join(" × ") || "3×1"}
+━━━ INSIGHTS PRÉ-CALCULADOS (USE ESTES — não invente dados) ━━━
+${insightsJson}
 
-━━━ DADOS POR CAMADA ━━━
-Camada 1 — Conhecimento: ${k.total_papers || 0} papers BR | densidade=${k.density || 0} | HHI=${k.concentration || 0} | especialização=${k.specialization || 0}%
-  Conceitos: ${(k.concepts || []).slice(0, 5).map((c: any) => c.name).join(", ") || "n/d"}
-  Instituições: ${Object.entries(k.institutions || {}).slice(0, 5).map(([n, v]) => `${n}(${v})`).join(", ") || "n/d"}
-Camada 2 — Tecnologia: ${t.github_repos?.length || 0} repos | estrelas=${t.total_stars || 0} | TRL=${t.trl_estimate || "?"}(${t.trl_label || "?"})
-  Linguagens: ${Object.entries(t.language_distribution || {}).slice(0, 4).map(([k, v]) => `${k}(${v})`).join(", ") || "n/d"}
-Camada 3 — Política: ${p.total_contracts || 0} contratos(R$${((p.total_contract_value || 0) / 1e6).toFixed(1)}M) | ${p.total_convenios || 0} convênios(R$${((p.total_convenio_value || 0) / 1e6).toFixed(1)}M)
-  UFs: ${JSON.stringify(p.uf_distribution || {})} | intensidade=${p.instrumental_intensity || 0}
-Camada 4 — Internacional: dependência=${i.dependency_index || 0}% | share BR=${i.br_share || 0}% | inserção=${i.global_insertion || 0}% | países=${i.countries_with_coauthorship || 0}
+━━━ ÍNDICES ESTRUTURAIS ━━━
+GT=${gt.value ?? "N/D"}/100 ${gt.alert_level === "critical" ? "🚨" : gt.alert_level === "warning" ? "⚠️" : "✓"} | CD=${cd.value ?? "N/D"}% ${cd.alert_level === "critical" ? "🚨" : ""} | AUE=${aue.value ?? "N/D"}% ${aue.alert_level === "critical" ? "🚨" : ""} | EI=${ei.value ?? "N/D"}/100
 
-Fontes: ${searchData.meta?.sources?.join(", ") || "múltiplas"}
-
-━━━ ESTRUTURA DA RESPOSTA ━━━
+━━━ ESTRUTURA OBRIGATÓRIA ━━━
 ## 1. ${pq.questions[0]}
-[resposta]
 ## 2. ${pq.questions[1]}
-[resposta]
 ## 3. ${pq.questions[2]}
-[resposta]
 
-REGRAS:
-1. USE GT/CD/AUE/EI com valores concretos
-2. CITE NÚMEROS dos dados (papers, contratos, repos, valores em R$)
-3. CRUZE camadas — explique quando dado de uma camada ilumina outra
-4. PRESCREVA — termine cada seção com 2-3 ações concretas numeradas
-5. **negrito** para alertas e números-chave
-6. GT>70 → alerte gap de tradução | CD>60 → dependência estratégica | AUE<20 → desarticulação U-E`;
+REGRAS INVIOLÁVEIS:
+1. CITE os valores dos insights pré-calculados (signal, index, papers, ratio, decision)
+2. NÃO invente dados que não estão nos insights ou índices
+3. PRESCREVA ações concretas numeradas ao final de cada seção (1, 2, 3)
+4. Use **negrito** para números-chave e alertas
+5. Para governo: cite sempre prescription.primary e justifique com trl_justification
+6. Para empresa: cite sempre make_or_buy.decision e best_partner.signal
+7. Para pesquisador: cite sempre saturation.signal e nicho.signal
+8. Para universidade: cite sempre conversion.signal e positioning.signal
+9. Máximo 3 parágrafos por seção — seja direto e prescritivo`;
 }
 
 function buildUserMessage(searchData: any, layers: any): string {
   const k = layers.knowledge || {}, t = layers.technology || {}, p = layers.policy || {}, i = layers.international || {};
-  return `Análise para "${searchData.query}" — ${searchData.meta?.source_count || "múltiplas"} fontes:\n\n${JSON.stringify({
-    query: searchData.query, stats: searchData.stats, indices: searchData.indices,
-    top_papers: (k.papers || []).slice(0, 8).map((p: any) => ({ title: p.title, year: p.year, citations: p.citations, authors: p.authors?.slice(0, 2).map((a: any) => `${a.name}(${a.institution})`), journal: p.journal })),
-    institutions: k.institutions, concepts: k.concepts?.slice(0, 10),
-    github_repos: t.github_repos?.slice(0, 5).map((r: any) => ({ name: r.name, stars: r.stars, language: r.language })),
-    trl: { estimate: t.trl_estimate, label: t.trl_label, signals: t.trl_signals },
-    contracts: (p.contracts || []).slice(0, 6).map((c: any) => ({ object: c.object?.slice(0, 100), organ: c.organ, value: c.value, uf: c.uf })),
-    convenios: (p.convenios || []).slice(0, 4),
-    macro: (i.macro_indicators || []).filter((m: any) => m.value !== null).map((m: any) => ({ name: m.name, value: m.value, unit: m.unit, variation: m.variation })),
-    countries: i.country_distribution,
+  const pi = searchData.persona_insights || {};
+  return `Análise para "${searchData.query}":\n\n${JSON.stringify({
+    query: searchData.query,
+    stats: searchData.stats,
+    indices: searchData.indices,
+    persona_insights: pi,
+    top_papers: (k.papers || []).slice(0, 5).map((p: any) => ({
+      title: p.title, year: p.year, citations: p.citations,
+      authors: p.authors?.slice(0, 2).map((a: any) => `${a.name}(${a.institution})`),
+      grants: p.grants?.map((g: any) => g.funder).slice(0, 2),
+    })),
+    top_concepts: k.concepts?.slice(0, 8),
+    top_institutions: Object.entries(k.institutions || {}).slice(0, 6).map(([n, v]) => `${n}:${v}`),
+    trl: { estimate: t.trl_estimate, label: t.trl_label },
+    contracts_sample: (p.contracts || []).slice(0, 4).map((c: any) => ({ object: c.object?.slice(0, 80), organ: c.organ, value: c.value, uf: c.uf })),
+    top_repos: t.github_repos?.slice(0, 4).map((r: any) => ({ name: r.name, stars: r.stars })),
   }, null, 0)}`;
 }
+
 
 function parseThreeSections(text: string): string[] {
   const idxs: number[] = [];
