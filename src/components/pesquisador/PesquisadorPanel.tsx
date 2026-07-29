@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Microscope, Search, ArrowLeft, AlertTriangle, Zap, Globe, BookOpen, Users, GitBranch, TrendingUp, ExternalLink, Beaker, Target, Lightbulb, Briefcase, FlaskConical } from "lucide-react";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
+import { TrlScaleChart } from "@/components/shared/TrlScaleChart";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -176,6 +177,7 @@ const PesquisadorPanel = () => {
               <TabsTrigger value="saturacao" className="text-xs rounded-lg">📊 Saturação</TabsTrigger>
               <TabsTrigger value="papers" className="text-xs rounded-lg">📄 Papers ({data.stats.papers})</TabsTrigger>
               <TabsTrigger value="empregabilidade" className="text-xs rounded-lg">💼 Empregabilidade</TabsTrigger>
+              <TabsTrigger value="trl" className="text-xs rounded-lg">📈 Maturidade TRL</TabsTrigger>
               <TabsTrigger value="lacunas" className="text-xs rounded-lg">🎯 Lacunas</TabsTrigger>
               <TabsTrigger value="financiamento" className="text-xs rounded-lg">💰 Financiamento</TabsTrigger>
               <TabsTrigger value="icts" className="text-xs rounded-lg">🏛️ ICTs Nacionais</TabsTrigger>
@@ -327,6 +329,29 @@ const PesquisadorPanel = () => {
                       <p className="text-xs font-medium text-foreground line-clamp-1">{p.title}</p>
                       <div className="flex items-center gap-3 mt-1"><span className="text-[10px] text-muted-foreground">{p.year}</span><span className="text-[10px] font-semibold text-primary">{p.citations} citações</span><span className="text-[10px] text-muted-foreground truncate">{p.authors[0]?.name}</span>{p.is_open_access && <span className="text-[9px] px-1 py-0.5 bg-emerald-500/10 text-emerald-600 rounded">OA</span>}</div>
                     </button>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* MATURIDADE TECNOLÓGICA (TRL) */}
+            <TabsContent value="trl" className="space-y-4">
+              <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><TrendingUp className="w-4 h-4 text-primary" /> Maturidade tecnológica do objeto pesquisado</h3>
+                <p className="text-[10px] text-muted-foreground">Estimativa a partir de sinais reais: volume de publicações, repositórios de código, patentes/datasets, emprego formal e contratos públicos.</p>
+                <TrlScaleChart level={technology.trl_estimate || 0} label={technology.trl_label} />
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                  {[
+                    { label: "Papers científicos", ok: technology.trl_signals?.has_papers },
+                    { label: "Código aberto", ok: technology.trl_signals?.has_repos },
+                    { label: "Patentes/dados", ok: technology.trl_signals?.has_patents },
+                    { label: "Emprego formal", ok: technology.trl_signals?.has_employment },
+                    { label: "Alta visibilidade", ok: technology.trl_signals?.high_stars },
+                  ].map((s, i) => (
+                    <div key={i} className={`text-center p-2 rounded-lg ${s.ok ? "bg-emerald-500/5 border border-emerald-500/20" : "bg-muted/30 border border-border"}`}>
+                      <span className="text-lg">{s.ok ? "✓" : "—"}</span>
+                      <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                    </div>
                   ))}
                 </div>
               </div>
