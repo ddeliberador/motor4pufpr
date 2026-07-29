@@ -6,6 +6,166 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// CBO local — fallback quando o Railway não retorna cbo_codes
+// Referência: CBO 2002 (MTE)
+const CBO_KEYWORD_MAP: Record<string, Array<{ code: string; description: string; area: string }>> = {
+  "bateria": [
+    { code: "2143-30", description: "Engenheiro eletricista", area: "Engenharia" },
+    { code: "3141-05", description: "Técnico em eletrotécnica", area: "Técnico" },
+    { code: "2112-10", description: "Físico", area: "Pesquisa" },
+    { code: "2113-10", description: "Químico industrial", area: "Química" },
+  ],
+  "litio": [
+    { code: "2143-30", description: "Engenheiro eletricista", area: "Engenharia" },
+    { code: "2113-10", description: "Químico industrial", area: "Química" },
+    { code: "3141-05", description: "Técnico em eletrotécnica", area: "Técnico" },
+  ],
+  "sodio": [
+    { code: "2143-30", description: "Engenheiro eletricista", area: "Engenharia" },
+    { code: "2113-10", description: "Químico industrial", area: "Química" },
+  ],
+  "energia": [
+    { code: "2143-30", description: "Engenheiro eletricista", area: "Engenharia" },
+    { code: "3141-05", description: "Técnico em eletrotécnica", area: "Técnico" },
+    { code: "3141-30", description: "Técnico em energias renováveis", area: "Técnico" },
+    { code: "2122-30", description: "Engenheiro de energias renováveis", area: "Engenharia" },
+  ],
+  "solar": [
+    { code: "2122-30", description: "Engenheiro de energias renováveis", area: "Engenharia" },
+    { code: "3141-30", description: "Técnico em energias renováveis", area: "Técnico" },
+    { code: "2112-20", description: "Físico (energia solar)", area: "Pesquisa" },
+  ],
+  "hidrogenio": [
+    { code: "2143-15", description: "Engenheiro químico", area: "Engenharia" },
+    { code: "2113-10", description: "Químico industrial", area: "Química" },
+    { code: "2122-30", description: "Engenheiro de energias renováveis", area: "Engenharia" },
+  ],
+  "inteligencia": [
+    { code: "2124-05", description: "Analista de sistemas computacionais", area: "TI" },
+    { code: "2124-20", description: "Engenheiro de software", area: "TI" },
+    { code: "2523-10", description: "Cientista de dados", area: "TI" },
+    { code: "2124-10", description: "Analista de desenvolvimento de sistemas", area: "TI" },
+  ],
+  "artificial": [
+    { code: "2124-05", description: "Analista de sistemas computacionais", area: "TI" },
+    { code: "2124-20", description: "Engenheiro de software", area: "TI" },
+    { code: "2523-10", description: "Cientista de dados", area: "TI" },
+  ],
+  "software": [
+    { code: "2124-20", description: "Engenheiro de software", area: "TI" },
+    { code: "2124-10", description: "Analista de desenvolvimento de sistemas", area: "TI" },
+    { code: "3172-20", description: "Técnico em informática", area: "Técnico" },
+  ],
+  "semicondutor": [
+    { code: "2122-05", description: "Engenheiro eletrônico", area: "Engenharia" },
+    { code: "3172-10", description: "Técnico em eletrônica", area: "Técnico" },
+    { code: "2112-05", description: "Físico", area: "Pesquisa" },
+  ],
+  "chip": [
+    { code: "2122-05", description: "Engenheiro eletrônico", area: "Engenharia" },
+    { code: "3172-10", description: "Técnico em eletrônica", area: "Técnico" },
+  ],
+  "robotica": [
+    { code: "2122-10", description: "Engenheiro de controle e automação", area: "Engenharia" },
+    { code: "3141-05", description: "Técnico em mecatrônica", area: "Técnico" },
+    { code: "7843-10", description: "Operador de robótica industrial", area: "Operacional" },
+  ],
+  "automacao": [
+    { code: "2122-10", description: "Engenheiro de controle e automação", area: "Engenharia" },
+    { code: "3141-05", description: "Técnico em mecatrônica", area: "Técnico" },
+    { code: "2143-05", description: "Engenheiro mecânico", area: "Engenharia" },
+  ],
+  "biotecnologia": [
+    { code: "2234-05", description: "Biólogo", area: "Ciências biológicas" },
+    { code: "3222-10", description: "Técnico em biotecnologia", area: "Técnico" },
+    { code: "2112-15", description: "Biofísico", area: "Pesquisa" },
+  ],
+  "crispr": [
+    { code: "2234-05", description: "Biólogo", area: "Ciências biológicas" },
+    { code: "3222-10", description: "Técnico em biotecnologia", area: "Técnico" },
+  ],
+  "grafeno": [
+    { code: "2112-10", description: "Físico (nanomateriais)", area: "Pesquisa" },
+    { code: "2113-15", description: "Químico (nanoquímica)", area: "Química" },
+    { code: "2122-25", description: "Engenheiro de materiais", area: "Engenharia" },
+  ],
+  "nanotecnologia": [
+    { code: "2112-10", description: "Físico (nanomateriais)", area: "Pesquisa" },
+    { code: "2113-15", description: "Químico (nanoquímica)", area: "Química" },
+    { code: "2122-25", description: "Engenheiro de materiais", area: "Engenharia" },
+    { code: "3131-35", description: "Técnico em nanotecnologia", area: "Técnico" },
+  ],
+  "farmaco": [
+    { code: "2236-05", description: "Farmacêutico", area: "Saúde" },
+    { code: "2236-25", description: "Farmacêutico industrial", area: "Saúde" },
+    { code: "3222-20", description: "Técnico em farmácia", area: "Técnico" },
+  ],
+  "medicamento": [
+    { code: "2236-05", description: "Farmacêutico", area: "Saúde" },
+    { code: "2236-25", description: "Farmacêutico industrial", area: "Saúde" },
+    { code: "3222-20", description: "Técnico em farmácia", area: "Técnico" },
+  ],
+  "biomaterial": [
+    { code: "2236-10", description: "Biomédico", area: "Saúde" },
+    { code: "2234-15", description: "Engenheiro biomédico", area: "Engenharia" },
+    { code: "3222-05", description: "Técnico de laboratório", area: "Técnico" },
+  ],
+  "telecomunicacao": [
+    { code: "2122-15", description: "Engenheiro de telecomunicações", area: "Engenharia" },
+    { code: "3172-05", description: "Técnico em telecomunicações", area: "Técnico" },
+    { code: "2523-05", description: "Analista de redes", area: "TI" },
+  ],
+  "iot": [
+    { code: "2122-15", description: "Engenheiro de telecomunicações", area: "Engenharia" },
+    { code: "3172-15", description: "Técnico em redes de computadores", area: "Técnico" },
+    { code: "2124-05", description: "Analista de sistemas computacionais", area: "TI" },
+  ],
+  "aeronave": [
+    { code: "2143-20", description: "Engenheiro aeronáutico", area: "Engenharia" },
+    { code: "3143-10", description: "Técnico em mecânica aeronáutica", area: "Técnico" },
+    { code: "3143-05", description: "Técnico em aviônica", area: "Técnico" },
+  ],
+  "drone": [
+    { code: "2143-20", description: "Engenheiro aeronáutico", area: "Engenharia" },
+    { code: "3143-05", description: "Técnico em aviônica", area: "Técnico" },
+    { code: "2122-10", description: "Engenheiro de controle e automação", area: "Engenharia" },
+  ],
+  "mineracao": [
+    { code: "2143-10", description: "Engenheiro de minas", area: "Engenharia" },
+    { code: "3132-05", description: "Técnico em mineração", area: "Técnico" },
+    { code: "7121-05", description: "Operador de mineração", area: "Operacional" },
+  ],
+  "aco": [
+    { code: "2143-25", description: "Engenheiro metalúrgico", area: "Engenharia" },
+    { code: "3131-25", description: "Técnico em metalurgia", area: "Técnico" },
+    { code: "7231-25", description: "Operador de processos metalúrgicos", area: "Operacional" },
+  ],
+  "quimico": [
+    { code: "2113-10", description: "Químico industrial", area: "Química" },
+    { code: "3131-10", description: "Técnico em química", area: "Técnico" },
+    { code: "2143-15", description: "Engenheiro químico", area: "Engenharia" },
+  ],
+};
+
+function resolveCboFromQuery(query: string): Array<{ code: string; description: string; area: string }> {
+  const terms = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/\s+/);
+  const seen = new Set<string>();
+  const result: Array<{ code: string; description: string; area: string }> = [];
+  for (const term of terms) {
+    for (const [keyword, cbos] of Object.entries(CBO_KEYWORD_MAP)) {
+      if (term.includes(keyword) || keyword.includes(term)) {
+        for (const cbo of cbos) {
+          if (!seen.has(cbo.code)) {
+            seen.add(cbo.code);
+            result.push(cbo);
+          }
+        }
+      }
+    }
+  }
+  return result.slice(0, 6);
+}
+
 async function safeFetch(url: string, options?: RequestInit, timeoutMs = 20000): Promise<any> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -123,15 +283,95 @@ async function searchANVISA(query: string) {
   }));
 }
 
+async function fetchCaged(
+  cboCodes: Array<{ code: string; description: string; area?: string }>,
+  apiKey: string
+): Promise<any> {
+  const today = new Date();
+  const start = new Date(today.getFullYear() - 1, today.getMonth(), 1);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const competenciaInicio = `${start.getFullYear()}${pad(start.getMonth() + 1)}`;
+  const competenciaFim = `${today.getFullYear()}${pad(today.getMonth() + 1)}`;
+
+  const results: any[] = [];
+
+  for (const cbo of cboCodes.slice(0, 4)) {
+    const cboNum = cbo.code.replace("-", "");
+    try {
+      const data = await safeFetch(
+        `https://api.portaldatransparencia.gov.br/api-de-dados/caged-mensal?codigoCbo=${cboNum}&competenciaInicio=${competenciaInicio}&competenciaFim=${competenciaFim}&pagina=1&tamanhoPagina=100`,
+        { headers: { "chave-api-dados": apiKey, "Accept": "application/json" } },
+        20000
+      );
+
+      const items: any[] = Array.isArray(data) ? data : (data?.data || []);
+      if (!items.length) continue;
+
+      const admissoes = items.reduce((s: number, i: any) => s + (parseInt(i.admissoes || i.quantidadeAdmitidos || "0") || 0), 0);
+      const demissoes = items.reduce((s: number, i: any) => s + (parseInt(i.demissoes || i.quantidadeDesligados || "0") || 0), 0);
+      const saldo = admissoes - demissoes;
+
+      // Distribuição por UF
+      const ufDist: Record<string, number> = {};
+      for (const item of items) {
+        const uf = item.uf || item.siglaUf || item.municipioUf || "";
+        const s = parseInt(item.saldo || "0") || 0;
+        if (uf && s !== 0) ufDist[uf] = (ufDist[uf] || 0) + s;
+      }
+      const topUfs = Object.entries(ufDist)
+        .sort(([, a], [, b]) => (b as number) - (a as number))
+        .slice(0, 5)
+        .map(([uf, s]) => ({ uf, saldo: s }));
+
+      results.push({
+        cbo: cbo.code,
+        descricao: cbo.description,
+        area: cbo.area || "",
+        admissoes,
+        demissoes,
+        saldo,
+        tendencia: saldo > 50 ? "crescimento" : saldo < -50 ? "retração" : "estável",
+        top_ufs: topUfs,
+        meses: Math.round((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30)),
+      });
+    } catch (e) {
+      console.warn(`CAGED erro CBO ${cbo.code}:`, e instanceof Error ? e.message : e);
+    }
+  }
+
+  if (!results.length) return null;
+
+  const totalSaldo = results.reduce((s, r) => s + r.saldo, 0);
+  const totalAdmissoes = results.reduce((s, r) => s + r.admissoes, 0);
+  const totalDemissoes = results.reduce((s, r) => s + r.demissoes, 0);
+
+  return {
+    cbo_results: results,
+    summary: {
+      total_saldo: totalSaldo,
+      total_admissoes: totalAdmissoes,
+      total_demissoes: totalDemissoes,
+      tendencia_geral: totalSaldo > 50 ? "crescimento" : totalSaldo < -50 ? "retração" : "estável",
+      periodo: `${competenciaInicio.slice(0,4)}-${competenciaInicio.slice(4)} a ${competenciaFim.slice(0,4)}-${competenciaFim.slice(4)}`,
+      cbos_consultados: results.length,
+    },
+    source: "Novo CAGED — Portal da Transparência / MTE",
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { query, knowledge_papers, knowledge_total_papers, search_terms, ipc_codes } = await req.json();
+    const { query, knowledge_papers, knowledge_total_papers, search_terms, ipc_codes, cbo_codes } = await req.json();
     if (!query) return new Response(JSON.stringify({ error: "query is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const searchTerms: string[] = Array.isArray(search_terms) && search_terms.length > 0 ? search_terms : [query];
     const ipcCodes: string[] = Array.isArray(ipc_codes) ? ipc_codes : [];
+
+    // Resolve CBOs: prioridade para os vindos da ontologia Railway, fallback para mapeamento local
+    const cbosFromOntology: Array<{ code: string; description: string; area?: string }> =
+      Array.isArray(cbo_codes) && cbo_codes.length > 0 ? cbo_codes : resolveCboFromQuery(query);
 
     console.log(`Layer Technology: ${query} | termos: ${searchTerms.join(", ")} | IPC: ${ipcCodes.length}`);
     const start = Date.now();
@@ -255,8 +495,24 @@ Deno.serve(async (req) => {
     if (transportes.length > 0) sources.push("Transportes");
     if (anvisa.length > 0) sources.push("ANVISA");
 
+    // Novo CAGED — busca por CBO se API key disponível
+    const TRANSP_KEY = Deno.env.get("TRANSPARENCIA_API_KEY");
+    let cagedData = null;
+    if (TRANSP_KEY && cbosFromOntology.length > 0) {
+      try {
+        cagedData = await fetchCaged(cbosFromOntology, TRANSP_KEY);
+        if (cagedData) console.log(`CAGED: ${cagedData.cbo_results?.length || 0} CBOs, saldo ${cagedData.summary?.total_saldo}`);
+      } catch (e) {
+        console.warn("CAGED falhou:", e instanceof Error ? e.message : e);
+      }
+    }
+    if (cagedData) sources.push("Novo CAGED/MTE");
+
     return new Response(JSON.stringify({
-      github_repos: github, github_global_repos: globalRepos, patent_datasets: inpi, employment_datasets: rais,
+      github_repos: github,
+      caged_data: cagedData,
+      cbo_codes_used: cbosFromOntology,
+      github_global_repos: globalRepos, patent_datasets: inpi, employment_datasets: rais,
       innovation_datasets: embrapii, cnpj_qsa_datasets: cnpj_qsa,
       transport_datasets: transportes, anvisa_datasets: anvisa,
       tech_density, trl_estimate, trl_label, trl_faixa, trl_confidence, trl_rationale,
