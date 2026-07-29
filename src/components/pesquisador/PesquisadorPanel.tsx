@@ -498,34 +498,14 @@ const PesquisadorPanel = () => {
 
             {/* FINANCIAMENTO */}
             <TabsContent value="financiamento" className="space-y-4">
-              {/* Estado vazio — sem dados de financiamento */}
+              {/* Estado vazio — sem instrumentos federais para o termo */}
               {policy.contracts.length === 0 && policy.convenios.length === 0 && (
-                <div className="bg-card border border-amber-500/20 rounded-xl p-5 space-y-3">
-                  <div className="flex items-start gap-3">
-                    <span className="text-xl">💡</span>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground mb-1">Como ativar dados de financiamento</p>
-                      <p className="text-xs text-muted-foreground mb-3">
-                        Contratos e convênios federais requerem a chave da API do Portal da Transparência.
-                        É gratuita e leva menos de 5 minutos para obter.
-                      </p>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">1</span>
-                          Acesse <a href="https://portaldatransparencia.gov.br/api-de-dados/api-swaggerui" target="_blank" rel="noopener noreferrer" className="text-primary underline">portaldatransparencia.gov.br/api-de-dados</a> e solicite a chave
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">2</span>
-                          No Supabase → Settings → Edge Functions → Secrets, adicione <code className="bg-muted px-1 rounded">TRANSPARENCIA_API_KEY</code>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">3</span>
-                          Republique o projeto — contratos e convênios aparecerão aqui
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  {/* Datasets de fomento como fallback útil */}
+                <div className="bg-card border border-border rounded-xl p-5 space-y-3">
+                  <p className="text-sm font-semibold text-foreground">Nenhum contrato ou convênio federal encontrado para este termo</p>
+                  <p className="text-xs text-muted-foreground">
+                    A busca cobre PNCP e Portal da Transparência (convênios, contratos MCTI/MEC e emendas parlamentares).
+                    Termos muito específicos podem não aparecer no objeto dos instrumentos — tente uma formulação mais ampla.
+                  </p>
                   {policy.funding_datasets && policy.funding_datasets.length > 0 && (
                     <div className="pt-3 border-t border-border/50">
                       <p className="text-xs font-semibold text-foreground mb-2">Datasets de fomento disponíveis (BNDES/Finep/FNDCT)</p>
@@ -542,6 +522,7 @@ const PesquisadorPanel = () => {
                   )}
                 </div>
               )}
+
               {policy.contracts.length > 0 && (
                 <div className="bg-card border border-border rounded-xl p-5">
                   <h3 className="text-sm font-semibold text-foreground mb-3">Licitações públicas relacionadas</h3>
@@ -568,6 +549,43 @@ const PesquisadorPanel = () => {
                   </div>
                 </div>
               )}
+              {(policy as any).emendas?.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-1">Emendas parlamentares</h3>
+                  <p className="text-[10px] text-muted-foreground mb-3">
+                    Portal da Transparência · {(policy as any).emendas[0]?.contextual ? "funções orçamentárias correlatas" : "aderentes ao tema"}
+                  </p>
+                  <div className="space-y-1">
+                    {(policy as any).emendas.slice(0, 6).map((e: any, i: number) => (
+                      <div key={i} className="py-2 px-3 border-b border-border/30 last:border-0">
+                        <p className="text-xs font-medium text-foreground line-clamp-1">{e.author} — {e.subfunction || e.function}</p>
+                        <div className="flex gap-2 mt-0.5 items-center">
+                          <span className="text-[10px] text-muted-foreground">{e.locality} · {e.year}</span>
+                          {e.paid > 0 && <span className="text-[10px] font-semibold text-accent">R$ {(e.paid / 1e3).toFixed(0)}mil pagos</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(policy as any).budget_execution?.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-1">Execução orçamentária federal em CT&amp;I</h3>
+                  <p className="text-[10px] text-muted-foreground mb-3">Portal da Transparência · MCTI e MEC</p>
+                  <div className="space-y-1">
+                    {(policy as any).budget_execution.slice(0, 8).map((b: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between gap-3 py-2 px-3 border-b border-border/30 last:border-0">
+                        <div className="min-w-0">
+                          <p className="text-xs text-foreground truncate">{b.organ}</p>
+                          <p className="text-[10px] text-muted-foreground">{b.superior} · {b.year}</p>
+                        </div>
+                        <span className="text-xs font-semibold text-primary whitespace-nowrap">R$ {(b.paid / 1e9).toFixed(2)} bi</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {intl.macro_indicators.some(m => m.value !== null) && (
                 <div className="bg-card border border-border rounded-xl p-5">
                   <h3 className="text-sm font-semibold text-foreground mb-3">Contexto macroeconômico</h3>

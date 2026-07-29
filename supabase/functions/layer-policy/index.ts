@@ -84,8 +84,10 @@ async function searchTransparencia(query: string, searchTerms: string[]) {
         object: pkg.title || "", proponent: pkg.organization?.title || "",
         value: 0, grantor: "", startDate: "", endDate: "", situation: "dataset",
       })),
+      emendas: [], federal_contracts: [], budget_execution: [],
       sanctions: [],
     };
+
   }
   const headers = { "chave-api-dados": CHAVE_API, "Accept": "application/json" };
   const TP = "https://api.portaldatransparencia.gov.br/api-de-dados";
@@ -138,7 +140,7 @@ async function searchTransparencia(query: string, searchTerms: string[]) {
         startDate: c?.dataInicioVigencia || "",
         endDate: c?.dataFinalVigencia || "",
         situation: c?.situacao || "",
-        uf: c?.municipioConvenente?.uf?.nome || "",
+        uf: c?.municipioConvenente?.uf?.sigla || c?.municipioConvenente?.uf?.nome || "",
         released: c?.valorLiberado || 0,
       });
     }
@@ -146,13 +148,144 @@ async function searchTransparencia(query: string, searchTerms: string[]) {
   allConvenios.sort((a, b) => (b.value || 0) - (a.value || 0));
 
   // Sanções (CEIS) — filtro por nome do sancionado
-  const ceis = await safeFetch(
+  const ceisP = safeFetch(
     `${TP}/ceis?pagina=1&tamanhoPagina=15&nomeSancionado=${encodeURIComponent(query)}`,
     { headers }, 25000
   );
 
+  // Emendas parlamentares (ano corrente e anterior) — filtro local por função/subfunção/localidade
+  const years = [now.getFullYear(), now.getFullYear() - 1];
+  const emendasP = Promise.all(
+    years.flatMap((y) => [1, 2].map((p) =>
+      safeFetch(`${TP}/emendas?ano=${y}&pagina=${p}`, { headers }, 25000)
+    ))
+  );
+
+  // Contratos federais de CT&I (MCTI 24000, MEC 26000) nos últimos 6 meses
+  const orgaos = ["24000", "26000"];
+  const contratosP = Promise.all(
+    orgaos.flatMap((o) =>
+      windows.slice(0, 6).map(([di, df]) =>
+        safeFetch(
+          `${TP}/contratos?dataInicial=${encodeURIComponent(di)}&dataFinal=${encodeURIComponent(df)}&codigoOrgao=${o}&pagina=1`,
+          { headers }, 25000
+        )
+      )
+    )
+  );
+
+  // Execução orçamentária por órgão (MCTI e MEC)
+  const despesasP = Promise.all(
+    orgaos.map((o) =>
+      safeFetch(`${TP}/despesas/por-orgao?ano=${now.getFullYear() - 1}&orgaoSuperior=${o}&pagina=1`, { headers }, 25000)
+    )
+  );
+
+  const [ceis, emendasPages, contratosPages, despesasPages] = await Promise.all([
+    ceisP, emendasP, contratosP, despesasP,
+  ]);
+
+  const toNum = (v: any) =>
+    typeof v === "number" ? v : parseFloat(String(v || "0").replace(/\./g, "").replace(",", ".")) || 0;
+
+  // --- Emendas ---
+  const emendas: any[] = [];
+  const seenEmenda = new Set<string>();
+  for (const page of emendasPages) {
+    for (const e of (Array.isArray(page) ? page : [])) {
+      const haystack = norm(`${e?.funcao || ""} ${e?.subfuncao || ""} ${e?.localidadeDoGasto || ""}`);
+      if (terms.length > 0 && !terms.some((t) => haystack.includes(t))) continue;
+      const key = e?.codigoEmenda || `${e?.nomeAutor}-${e?.numeroEmenda}-${e?.ano}`;
+      if (!key || seenEmenda.has(key)) continue;
+      seenEmenda.add(key);
+      emendas.push({
+        code: e?.codigoEmenda || "",
+        year: e?.ano || null,
+        author: e?.nomeAutor || e?.autor || "",
+        type: e?.tipoEmenda || "",
+        locality: e?.localidadeDoGasto || "",
+        uf: (e?.localidadeDoGasto || "").split("-").pop()?.trim() || "",
+        function: e?.funcao || "",
+        subfunction: e?.subfuncao || "",
+        committed: toNum(e?.valorEmpenhado),
+        paid: toNum(e?.valorPago),
+      });
+    }
+  }
+  emendas.sort((a, b) => b.paid - a.paid);
+
+  // Se o tema não casa com nenhuma função orçamentária, mostra emendas das funções
+  // ligadas a CT&I como referência de contexto instrumental
+  if (emendas.length === 0) {
+    const ctiFuncoes = ["ciencia", "tecnologia", "educacao", "industria", "energia", "agricultura", "saude", "comunicacoes"];
+    for (const page of emendasPages) {
+      for (const e of (Array.isArray(page) ? page : [])) {
+        if (!ctiFuncoes.some((f) => norm(e?.funcao || "").includes(f))) continue;
+        const key = e?.codigoEmenda || `${e?.nomeAutor}-${e?.numeroEmenda}-${e?.ano}`;
+        if (!key || seenEmenda.has(key)) continue;
+        seenEmenda.add(key);
+        emendas.push({
+          code: e?.codigoEmenda || "", year: e?.ano || null,
+          author: e?.nomeAutor || e?.autor || "", type: e?.tipoEmenda || "",
+          locality: e?.localidadeDoGasto || "",
+          uf: (e?.localidadeDoGasto || "").split("-").pop()?.trim() || "",
+          function: e?.funcao || "", subfunction: e?.subfuncao || "",
+          committed: toNum(e?.valorEmpenhado), paid: toNum(e?.valorPago),
+          contextual: true,
+        });
+      }
+    }
+    emendas.sort((a, b) => b.paid - a.paid);
+  }
+
+
+  // --- Contratos federais CT&I ---
+  const federalContracts: any[] = [];
+  const seenContract = new Set<string>();
+  for (const page of contratosPages) {
+    for (const c of (Array.isArray(page) ? page : [])) {
+      const objeto: string = (c?.objeto || "").replace(/^Objeto:\s*/i, "");
+      const haystack = norm(`${objeto} ${c?.unidadeGestora?.nome || ""}`);
+      if (terms.length > 0 && !terms.some((t) => haystack.includes(t))) continue;
+      const key = String(c?.id || c?.numero || objeto.slice(0, 40));
+      if (seenContract.has(key)) continue;
+      seenContract.add(key);
+      federalContracts.push({
+        object: objeto.slice(0, 250),
+        organ: c?.unidadeGestora?.orgaoMaximo?.nome || c?.unidadeGestora?.nome || "",
+        unit: c?.unidadeGestora?.nome || "",
+        supplier: c?.fornecedor?.nome || c?.fornecedor?.razaoSocialReceita || "",
+        value: toNum(c?.valorInicialCompra ?? c?.valorFinalCompra ?? c?.valorInicial),
+        modality: c?.modalidadeCompra || "",
+        status: c?.situacaoContrato || "",
+        date: c?.dataAssinatura || c?.dataPublicacaoDOU || "",
+        number: c?.numero || "",
+      });
+    }
+  }
+  federalContracts.sort((a, b) => b.value - a.value);
+
+  // --- Execução orçamentária ---
+  const budget: any[] = [];
+  for (const page of despesasPages) {
+    for (const d of (Array.isArray(page) ? page : []).slice(0, 12)) {
+      budget.push({
+        year: d?.ano || null,
+        organ: d?.orgao || "",
+        superior: d?.orgaoSuperior || "",
+        committed: toNum(d?.empenhado),
+        settled: toNum(d?.liquidado),
+        paid: toNum(d?.pago),
+      });
+    }
+  }
+  budget.sort((a, b) => b.paid - a.paid);
+
   return {
     convenios: allConvenios.slice(0, 20),
+    emendas: emendas.slice(0, 20),
+    federal_contracts: federalContracts.slice(0, 20),
+    budget_execution: budget.slice(0, 12),
     sanctions: (Array.isArray(ceis) ? ceis : []).slice(0, 10).map((s: any) => ({
       company: s?.pessoa?.nome || s?.pessoa?.razaoSocialReceita || s?.nomeFantasiaReceita || "",
       type: s?.tipoSancao?.descricaoResumida || "",
@@ -161,6 +294,7 @@ async function searchTransparencia(query: string, searchTerms: string[]) {
     })),
   };
 }
+
 
 async function searchSICONFI() {
   const data = await safeFetch(`https://apidatalake.tesouro.gov.br/ords/siconfi/tt/rgf?an_exercicio=2024&nr_periodo=1&tp_rgf=RGF&id_ente=41`, undefined, 25000);
@@ -228,25 +362,37 @@ Deno.serve(async (req) => {
       searchFundingDatasets(query), searchTCU(query), searchTSE(query), searchSIOP(query), searchDataJud(query), searchIBAMA(query),
     ]);
 
-    const totalContracts = pncp.length;
+    const emendas = transparencia.emendas || [];
+    const federalContracts = transparencia.federal_contracts || [];
+    const budgetExecution = transparencia.budget_execution || [];
+
+    const totalContracts = pncp.length + federalContracts.length;
     const totalConvenios = transparencia.convenios.length;
-    const totalContractValue = pncp.reduce((s: number, c: any) => s + (c.value || 0), 0);
+    const totalContractValue =
+      pncp.reduce((s: number, c: any) => s + (c.value || 0), 0) +
+      federalContracts.reduce((s: number, c: any) => s + (c.value || 0), 0);
     const totalConvenioValue = transparencia.convenios.reduce((s: number, c: any) => s + (c.value || 0), 0);
-    const totalInstrumentalValue = totalContractValue + totalConvenioValue;
+    const totalEmendasValue = emendas.reduce((s: number, e: any) => s + (e.paid || 0), 0);
+    const totalInstrumentalValue = totalContractValue + totalConvenioValue + totalEmendasValue;
     const papersCount = knowledge_total_papers || 0;
-    const instrumental_intensity = papersCount > 0 ? parseFloat(((totalContracts + totalConvenios) / papersCount).toFixed(3)) : 0;
+    const instrumental_intensity = papersCount > 0 ? parseFloat(((totalContracts + totalConvenios + emendas.length) / papersCount).toFixed(3)) : 0;
 
     const fiscal_capacity: Record<string, number> = {};
     const uf_distribution: Record<string, number> = {};
-    for (const c of pncp) {
-      if (c.uf) { fiscal_capacity[c.uf] = (fiscal_capacity[c.uf] || 0) + (c.value || 0); uf_distribution[c.uf] = (uf_distribution[c.uf] || 0) + 1; }
-    }
+    const bump = (uf: string, value: number) => {
+      if (!uf || uf.length > 20) return;
+      fiscal_capacity[uf] = (fiscal_capacity[uf] || 0) + (value || 0);
+      uf_distribution[uf] = (uf_distribution[uf] || 0) + 1;
+    };
+    for (const c of pncp) bump(c.uf, c.value);
+    for (const c of transparencia.convenios) bump(c.uf, c.value);
+    for (const e of emendas) bump(e.uf, e.paid);
 
     const spending_effectiveness = papersCount > 0 && totalInstrumentalValue > 0 ? Math.round(Math.log10(totalInstrumentalValue / papersCount) * 20 + 50) : 0;
 
     const sources: string[] = [];
     if (pncp.length > 0) sources.push("PNCP");
-    if (transparencia.convenios.length > 0 || transparencia.sanctions.length > 0) sources.push("Transparência");
+    if (transparencia.convenios.length > 0 || transparencia.sanctions.length > 0 || emendas.length > 0 || federalContracts.length > 0 || budgetExecution.length > 0) sources.push("Portal da Transparência");
     if (siconfi.length > 0) sources.push("SICONFI");
     if (gazettes.length > 0) sources.push("Querido Diário");
     if (funding.length > 0) sources.push("BNDES/FNDCT");
@@ -257,13 +403,16 @@ Deno.serve(async (req) => {
     if (ibama.length > 0) sources.push("IBAMA");
 
     return new Response(JSON.stringify({
-      contracts: pncp, convenios: transparencia.convenios, sanctions: transparencia.sanctions,
+      contracts: [...pncp, ...federalContracts], convenios: transparencia.convenios, sanctions: transparencia.sanctions,
+      emendas, federal_contracts: federalContracts, budget_execution: budgetExecution,
       gazettes, siconfi, funding_datasets: funding, tcu_datasets: tcu, tse_datasets: tse,
       siop_datasets: siop, datajud_datasets: datajud, ibama_datasets: ibama,
       total_contracts: totalContracts, total_convenios: totalConvenios,
+      total_emendas: emendas.length, total_emendas_value: totalEmendasValue,
       total_contract_value: totalContractValue, total_convenio_value: totalConvenioValue,
       total_instrumental_value: totalInstrumentalValue, instrumental_intensity,
       fiscal_capacity, uf_distribution, spending_effectiveness, sources,
+
       processing_time_ms: Date.now() - start,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {

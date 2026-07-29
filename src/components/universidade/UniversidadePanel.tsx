@@ -180,17 +180,17 @@ const UniversidadePanel = () => {
               {/* Aviso quando sem dados reais de contratos e convênios */}
               {policy.contracts.length === 0 && policy.convenios.length === 0 && (
                 <div className="bg-card border border-amber-500/20 rounded-xl p-4 col-span-2">
-                  <p className="text-xs font-semibold text-amber-400 mb-1">⚠️ Dados de captação não disponíveis</p>
+                  <p className="text-xs font-semibold text-amber-400 mb-1">⚠️ Sem instrumentos federais para este termo</p>
                   <p className="text-xs text-muted-foreground">
-                    Para ver contratos e convênios federais desta instituição, configure{" "}
-                    <code className="bg-muted px-1 rounded">TRANSPARENCIA_API_KEY</code> no Supabase.
-                    Obtenha gratuitamente em{" "}
-                    <a href="https://portaldatransparencia.gov.br/api-de-dados/api-swaggerui" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                    Consultamos PNCP e Portal da Transparência (convênios, contratos MCTI/MEC e emendas) e não houve
+                    correspondência no objeto dos instrumentos. Tente um termo mais amplo ou consulte diretamente em{" "}
+                    <a href="https://portaldatransparencia.gov.br/convenios" target="_blank" rel="noopener noreferrer" className="text-primary underline">
                       portaldatransparencia.gov.br
                     </a>
                   </p>
                 </div>
               )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-card border border-border rounded-xl p-5">
                   <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2"><Landmark className="w-4 h-4 text-primary" /> Licitações</h3>
@@ -239,9 +239,10 @@ const UniversidadePanel = () => {
                   <div className="flex items-start gap-2 p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
                     <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                     <p className="text-xs text-muted-foreground">
-                      Taxa de conversão não calculável sem dados de contratos. Ative a{" "}
-                      <code className="bg-muted px-1 rounded">TRANSPARENCIA_API_KEY</code> para ver o índice real de conversão U-E.
+                      Taxa de conversão não calculável: nenhum contrato público (PNCP ou Portal da Transparência)
+                      foi associado às instituições identificadas para este termo.
                     </p>
+
                   </div>
                 )}
                 {instWithContracts.length > 0 && (

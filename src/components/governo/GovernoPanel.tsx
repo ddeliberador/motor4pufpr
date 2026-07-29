@@ -278,14 +278,16 @@ const GovernoPanel = () => {
                     Mapa territorial indisponível
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    A distribuição por UF (estado) é calculada a partir dos contratos do PNCP e convênios do Portal da Transparência.
-                    Para ativar, configure o secret <code className="bg-muted px-1 rounded">TRANSPARENCIA_API_KEY</code> no Supabase.
+                    A distribuição por UF é calculada a partir dos contratos do PNCP, convênios e emendas
+                    parlamentares do Portal da Transparência. Não foram encontrados instrumentos com
+                    localização identificada para este termo.
                   </p>
-                  <a href="https://portaldatransparencia.gov.br/api-de-dados/api-swaggerui"
+                  <a href="https://portaldatransparencia.gov.br/convenios"
                      target="_blank" rel="noopener noreferrer"
                      className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
-                    Obter chave gratuita →
+                    Consultar no Portal da Transparência →
                   </a>
+
                 </div>
               ) : (
                 <div className="bg-card border border-border rounded-xl p-5">
