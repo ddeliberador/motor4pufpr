@@ -87,7 +87,7 @@ async function searchTransparencia(query: string, searchTerms: string[]) {
       sanctions: [],
     };
   }
-  const headers = { "chave-api": CHAVE_API };
+  const headers = { "chave-api-dados": CHAVE_API, "Accept": "application/json" };
   const termsToTry = [query, ...searchTerms.filter((t) => t !== query)].slice(0, 2);
 
   const allConvenios: any[] = [];
