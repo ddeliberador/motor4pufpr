@@ -63,7 +63,7 @@ const CNPQ_TO_SIDRA_AREA: Record<string, string> = {
 // ── 1. PINTEC — % empresas que inovaram por setor ──────────────────────────
 async function fetchPintec(cnaeDivisions: string[]) {
   const data = await safeFetch(
-    `${SIDRA}/t/6829/n1/all/v/allxp/p/last%201/c12762/allxt`
+    `${SIDRA}/t/7357/n1/all/v/allxp/p/last%201`
   );
   if (!data || !Array.isArray(data)) return null;
 
@@ -95,7 +95,7 @@ async function fetchPintec(cnaeDivisions: string[]) {
 // ── 2. CEMPRE — empresas e pessoal por atividade ──────────────────────────
 async function fetchCempre(cnaeDivisions: string[]) {
   const data = await safeFetch(
-    `${SIDRA}/t/992/n1/all/v/29,179/p/last%201/c12762/allxt`
+    `${SIDRA}/t/992/n1/all/v/29,179/p/last%201`
   );
   if (!data || !Array.isArray(data)) return null;
 
@@ -132,43 +132,42 @@ async function fetchCempre(cnaeDivisions: string[]) {
 
 // ── 3. Pós-graduação — Titulados por área ──────────────────────────────────
 async function fetchPosGraduacao(_cnpqAreas: string[]) {
+  // Tabela 7301: Funções docentes na educação superior por grau de formação
   const data = await safeFetch(
-    `${SIDRA}/t/4156/n1/all/v/allxp/p/last%203`
+    `${SIDRA}/t/7301/n1/all/v/allxp/p/last%203`
   );
   if (!data || !Array.isArray(data)) return null;
 
-  const rows = data.slice(1);
+  const rows = data.slice(1).filter((r: any) => r.V && r.V !== "...");
   if (!rows.length) return null;
 
-  const anos = [...new Set(rows.map((r: any) => r.D3N))].slice(0, 3);
   const byArea: Record<string, any[]> = {};
   for (const r of rows) {
-    const area = r.D2N || "Geral";
+    const area = r.D2N || r.D3N || "Geral";
     if (!byArea[area]) byArea[area] = [];
-    byArea[area].push({ ano: r.D3N, valor: r.V, grau: r.D4N });
+    byArea[area].push({ ano: r.D3N || r.D4N || "", valor: r.V });
   }
 
   const areas = Object.entries(byArea)
-    .filter(([, series]) => series.some((s) => s.valor && s.valor !== "..."))
+    .filter(([, s]) => s.some((x) => x.valor && x.valor !== "..."))
     .slice(0, 8)
-    .map(([area, series]) => ({
-      area,
-      series: series.filter((s) => s.valor && s.valor !== "...").slice(0, 3),
-    }));
+    .map(([area, series]) => ({ area, series: series.slice(0, 2) }));
+
+  if (!areas.length) return null;
 
   return {
-    fonte: "PNPG/CAPES via SIDRA — IBGE",
-    anos,
-    descricao: "Titulados em mestrado e doutorado por grande área do conhecimento",
+    fonte: "Censo Ed. Superior/INEP via SIDRA — IBGE",
+    descricao: "Docentes da educação superior por grau de formação",
     areas,
-    url: "https://sidra.ibge.gov.br/tabela/4156",
+    url: "https://sidra.ibge.gov.br/tabela/7301",
   };
 }
+
 
 // ── 4. PIB setorial ────────────────────────────────────────────────────────
 async function fetchPibSetorial() {
   const data = await safeFetch(
-    `${SIDRA}/t/6784/n1/all/v/9318/p/last%205`
+    `${SIDRA}/t/1846/n1/all/v/allxp/p/last%205`
   );
   if (!data || !Array.isArray(data)) return null;
 
@@ -191,7 +190,7 @@ async function fetchPibSetorial() {
 // ── 5. Graduados por área ─────────────────────────────────────────────────
 async function fetchGraduacao() {
   const data = await safeFetch(
-    `${SIDRA}/t/1616/n1/all/v/allxp/p/last%202`
+    `${SIDRA}/t/9163/n1/all/v/allxp/p/last%202`
   );
   if (!data || !Array.isArray(data)) return null;
 
