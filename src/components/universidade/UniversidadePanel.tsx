@@ -239,9 +239,10 @@ const UniversidadePanel = () => {
                   <div className="flex items-start gap-2 p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
                     <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                     <p className="text-xs text-muted-foreground">
-                      Taxa de conversão não calculável sem dados de contratos. Ative a{" "}
-                      <code className="bg-muted px-1 rounded">TRANSPARENCIA_API_KEY</code> para ver o índice real de conversão U-E.
+                      Taxa de conversão não calculável: nenhum contrato público (PNCP ou Portal da Transparência)
+                      foi associado às instituições identificadas para este termo.
                     </p>
+
                   </div>
                 )}
                 {instWithContracts.length > 0 && (
