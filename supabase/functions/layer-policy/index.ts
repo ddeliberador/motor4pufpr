@@ -140,7 +140,7 @@ async function searchTransparencia(query: string, searchTerms: string[]) {
         startDate: c?.dataInicioVigencia || "",
         endDate: c?.dataFinalVigencia || "",
         situation: c?.situacao || "",
-        uf: c?.municipioConvenente?.uf?.nome || "",
+        uf: c?.municipioConvenente?.uf?.sigla || c?.municipioConvenente?.uf?.nome || "",
         released: c?.valorLiberado || 0,
       });
     }
