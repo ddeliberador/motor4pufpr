@@ -337,25 +337,37 @@ Deno.serve(async (req) => {
       searchFundingDatasets(query), searchTCU(query), searchTSE(query), searchSIOP(query), searchDataJud(query), searchIBAMA(query),
     ]);
 
-    const totalContracts = pncp.length;
+    const emendas = transparencia.emendas || [];
+    const federalContracts = transparencia.federal_contracts || [];
+    const budgetExecution = transparencia.budget_execution || [];
+
+    const totalContracts = pncp.length + federalContracts.length;
     const totalConvenios = transparencia.convenios.length;
-    const totalContractValue = pncp.reduce((s: number, c: any) => s + (c.value || 0), 0);
+    const totalContractValue =
+      pncp.reduce((s: number, c: any) => s + (c.value || 0), 0) +
+      federalContracts.reduce((s: number, c: any) => s + (c.value || 0), 0);
     const totalConvenioValue = transparencia.convenios.reduce((s: number, c: any) => s + (c.value || 0), 0);
-    const totalInstrumentalValue = totalContractValue + totalConvenioValue;
+    const totalEmendasValue = emendas.reduce((s: number, e: any) => s + (e.paid || 0), 0);
+    const totalInstrumentalValue = totalContractValue + totalConvenioValue + totalEmendasValue;
     const papersCount = knowledge_total_papers || 0;
-    const instrumental_intensity = papersCount > 0 ? parseFloat(((totalContracts + totalConvenios) / papersCount).toFixed(3)) : 0;
+    const instrumental_intensity = papersCount > 0 ? parseFloat(((totalContracts + totalConvenios + emendas.length) / papersCount).toFixed(3)) : 0;
 
     const fiscal_capacity: Record<string, number> = {};
     const uf_distribution: Record<string, number> = {};
-    for (const c of pncp) {
-      if (c.uf) { fiscal_capacity[c.uf] = (fiscal_capacity[c.uf] || 0) + (c.value || 0); uf_distribution[c.uf] = (uf_distribution[c.uf] || 0) + 1; }
-    }
+    const bump = (uf: string, value: number) => {
+      if (!uf || uf.length > 20) return;
+      fiscal_capacity[uf] = (fiscal_capacity[uf] || 0) + (value || 0);
+      uf_distribution[uf] = (uf_distribution[uf] || 0) + 1;
+    };
+    for (const c of pncp) bump(c.uf, c.value);
+    for (const c of transparencia.convenios) bump(c.uf, c.value);
+    for (const e of emendas) bump(e.uf, e.paid);
 
     const spending_effectiveness = papersCount > 0 && totalInstrumentalValue > 0 ? Math.round(Math.log10(totalInstrumentalValue / papersCount) * 20 + 50) : 0;
 
     const sources: string[] = [];
     if (pncp.length > 0) sources.push("PNCP");
-    if (transparencia.convenios.length > 0 || transparencia.sanctions.length > 0) sources.push("Transparência");
+    if (transparencia.convenios.length > 0 || transparencia.sanctions.length > 0 || emendas.length > 0 || federalContracts.length > 0 || budgetExecution.length > 0) sources.push("Portal da Transparência");
     if (siconfi.length > 0) sources.push("SICONFI");
     if (gazettes.length > 0) sources.push("Querido Diário");
     if (funding.length > 0) sources.push("BNDES/FNDCT");
@@ -366,13 +378,16 @@ Deno.serve(async (req) => {
     if (ibama.length > 0) sources.push("IBAMA");
 
     return new Response(JSON.stringify({
-      contracts: pncp, convenios: transparencia.convenios, sanctions: transparencia.sanctions,
+      contracts: [...pncp, ...federalContracts], convenios: transparencia.convenios, sanctions: transparencia.sanctions,
+      emendas, federal_contracts: federalContracts, budget_execution: budgetExecution,
       gazettes, siconfi, funding_datasets: funding, tcu_datasets: tcu, tse_datasets: tse,
       siop_datasets: siop, datajud_datasets: datajud, ibama_datasets: ibama,
       total_contracts: totalContracts, total_convenios: totalConvenios,
+      total_emendas: emendas.length, total_emendas_value: totalEmendasValue,
       total_contract_value: totalContractValue, total_convenio_value: totalConvenioValue,
       total_instrumental_value: totalInstrumentalValue, instrumental_intensity,
       fiscal_capacity, uf_distribution, spending_effectiveness, sources,
+
       processing_time_ms: Date.now() - start,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
