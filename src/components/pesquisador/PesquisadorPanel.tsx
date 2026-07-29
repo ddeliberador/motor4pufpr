@@ -333,6 +333,29 @@ const PesquisadorPanel = () => {
               </div>
             </TabsContent>
 
+            {/* MATURIDADE TECNOLÓGICA (TRL) */}
+            <TabsContent value="trl" className="space-y-4">
+              <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><TrendingUp className="w-4 h-4 text-primary" /> Maturidade tecnológica do objeto pesquisado</h3>
+                <p className="text-[10px] text-muted-foreground">Estimativa a partir de sinais reais: volume de publicações, repositórios de código, patentes/datasets, emprego formal e contratos públicos.</p>
+                <TrlScaleChart level={technology.trl_estimate || 0} label={technology.trl_label} />
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                  {[
+                    { label: "Papers científicos", ok: technology.trl_signals?.has_papers },
+                    { label: "Código aberto", ok: technology.trl_signals?.has_repos },
+                    { label: "Patentes/dados", ok: technology.trl_signals?.has_patents },
+                    { label: "Emprego formal", ok: technology.trl_signals?.has_employment },
+                    { label: "Alta visibilidade", ok: technology.trl_signals?.high_stars },
+                  ].map((s, i) => (
+                    <div key={i} className={`text-center p-2 rounded-lg ${s.ok ? "bg-emerald-500/5 border border-emerald-500/20" : "bg-muted/30 border border-border"}`}>
+                      <span className="text-lg">{s.ok ? "✓" : "—"}</span>
+                      <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+
             {/* EMPREGABILIDADE (RAIS/CAGED) */}
             <TabsContent value="empregabilidade" className="space-y-4">
               <div className="bg-card border border-border rounded-xl p-5 space-y-4">
