@@ -146,13 +146,119 @@ async function searchTransparencia(query: string, searchTerms: string[]) {
   allConvenios.sort((a, b) => (b.value || 0) - (a.value || 0));
 
   // Sanções (CEIS) — filtro por nome do sancionado
-  const ceis = await safeFetch(
+  const ceisP = safeFetch(
     `${TP}/ceis?pagina=1&tamanhoPagina=15&nomeSancionado=${encodeURIComponent(query)}`,
     { headers }, 25000
   );
 
+  // Emendas parlamentares (ano corrente e anterior) — filtro local por função/subfunção/localidade
+  const years = [now.getFullYear(), now.getFullYear() - 1];
+  const emendasP = Promise.all(
+    years.flatMap((y) => [1, 2].map((p) =>
+      safeFetch(`${TP}/emendas?ano=${y}&pagina=${p}`, { headers }, 25000)
+    ))
+  );
+
+  // Contratos federais de CT&I (MCTI 24000, MEC 26000) nos últimos 6 meses
+  const orgaos = ["24000", "26000"];
+  const contratosP = Promise.all(
+    orgaos.flatMap((o) =>
+      windows.slice(0, 6).map(([di, df]) =>
+        safeFetch(
+          `${TP}/contratos?dataInicial=${encodeURIComponent(di)}&dataFinal=${encodeURIComponent(df)}&codigoOrgao=${o}&pagina=1`,
+          { headers }, 25000
+        )
+      )
+    )
+  );
+
+  // Execução orçamentária por órgão (MCTI e MEC)
+  const despesasP = Promise.all(
+    orgaos.map((o) =>
+      safeFetch(`${TP}/despesas/por-orgao?ano=${now.getFullYear() - 1}&orgaoSuperior=${o}&pagina=1`, { headers }, 25000)
+    )
+  );
+
+  const [ceis, emendasPages, contratosPages, despesasPages] = await Promise.all([
+    ceisP, emendasP, contratosP, despesasP,
+  ]);
+
+  const toNum = (v: any) =>
+    typeof v === "number" ? v : parseFloat(String(v || "0").replace(/\./g, "").replace(",", ".")) || 0;
+
+  // --- Emendas ---
+  const emendas: any[] = [];
+  const seenEmenda = new Set<string>();
+  for (const page of emendasPages) {
+    for (const e of (Array.isArray(page) ? page : [])) {
+      const haystack = norm(`${e?.funcao || ""} ${e?.subfuncao || ""} ${e?.localidadeDoGasto || ""}`);
+      if (terms.length > 0 && !terms.some((t) => haystack.includes(t))) continue;
+      const key = e?.codigoEmenda || `${e?.nomeAutor}-${e?.numeroEmenda}-${e?.ano}`;
+      if (!key || seenEmenda.has(key)) continue;
+      seenEmenda.add(key);
+      emendas.push({
+        code: e?.codigoEmenda || "",
+        year: e?.ano || null,
+        author: e?.nomeAutor || e?.autor || "",
+        type: e?.tipoEmenda || "",
+        locality: e?.localidadeDoGasto || "",
+        uf: (e?.localidadeDoGasto || "").split("-").pop()?.trim() || "",
+        function: e?.funcao || "",
+        subfunction: e?.subfuncao || "",
+        committed: toNum(e?.valorEmpenhado),
+        paid: toNum(e?.valorPago),
+      });
+    }
+  }
+  emendas.sort((a, b) => b.paid - a.paid);
+
+  // --- Contratos federais CT&I ---
+  const federalContracts: any[] = [];
+  const seenContract = new Set<string>();
+  for (const page of contratosPages) {
+    for (const c of (Array.isArray(page) ? page : [])) {
+      const objeto: string = (c?.objeto || "").replace(/^Objeto:\s*/i, "");
+      const haystack = norm(`${objeto} ${c?.unidadeGestora?.nome || ""}`);
+      if (terms.length > 0 && !terms.some((t) => haystack.includes(t))) continue;
+      const key = String(c?.id || c?.numero || objeto.slice(0, 40));
+      if (seenContract.has(key)) continue;
+      seenContract.add(key);
+      federalContracts.push({
+        object: objeto.slice(0, 250),
+        organ: c?.unidadeGestora?.orgaoMaximo?.nome || c?.unidadeGestora?.nome || "",
+        unit: c?.unidadeGestora?.nome || "",
+        supplier: c?.fornecedor?.nome || c?.fornecedor?.razaoSocialReceita || "",
+        value: toNum(c?.valorInicialCompra ?? c?.valorFinalCompra ?? c?.valorInicial),
+        modality: c?.modalidadeCompra || "",
+        status: c?.situacaoContrato || "",
+        date: c?.dataAssinatura || c?.dataPublicacaoDOU || "",
+        number: c?.numero || "",
+      });
+    }
+  }
+  federalContracts.sort((a, b) => b.value - a.value);
+
+  // --- Execução orçamentária ---
+  const budget: any[] = [];
+  for (const page of despesasPages) {
+    for (const d of (Array.isArray(page) ? page : []).slice(0, 12)) {
+      budget.push({
+        year: d?.ano || null,
+        organ: d?.orgao || "",
+        superior: d?.orgaoSuperior || "",
+        committed: toNum(d?.empenhado),
+        settled: toNum(d?.liquidado),
+        paid: toNum(d?.pago),
+      });
+    }
+  }
+  budget.sort((a, b) => b.paid - a.paid);
+
   return {
     convenios: allConvenios.slice(0, 20),
+    emendas: emendas.slice(0, 20),
+    federal_contracts: federalContracts.slice(0, 20),
+    budget_execution: budget.slice(0, 12),
     sanctions: (Array.isArray(ceis) ? ceis : []).slice(0, 10).map((s: any) => ({
       company: s?.pessoa?.nome || s?.pessoa?.razaoSocialReceita || s?.nomeFantasiaReceita || "",
       type: s?.tipoSancao?.descricaoResumida || "",
@@ -161,6 +267,7 @@ async function searchTransparencia(query: string, searchTerms: string[]) {
     })),
   };
 }
+
 
 async function searchSICONFI() {
   const data = await safeFetch(`https://apidatalake.tesouro.gov.br/ords/siconfi/tt/rgf?an_exercicio=2024&nr_periodo=1&tp_rgf=RGF&id_ente=41`, undefined, 25000);
