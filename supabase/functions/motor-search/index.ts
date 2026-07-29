@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { query } = await req.json();
+    const { query, selectedCnaes } = await req.json();
     if (!query) {
       return new Response(JSON.stringify({ error: "query is required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -167,24 +167,43 @@ Deno.serve(async (req) => {
     console.log(`Motor 4P Orchestrator: ${query}`);
     const start = Date.now();
 
-    // STEP 1: Knowledge layer first (other layers depend on it)
-    const knowledge = await invokeLayer("layer-knowledge", { query });
+    // STEP 0: Tradução ontológica (NCM, CNAE, IPC, CNPq)
+    const ontology = await fetchOntologyMapping(query);
+    if (ontology) {
+      console.log(`Ontologia: ${ontology.ncm_codes?.length || 0} NCM, ${ontology.cnae_codes?.length || 0} CNAE, ${ontology.ipc_codes?.length || 0} IPC — confiança ${ontology.confidence}`);
+    }
 
-    // STEP 2: Remaining 3 layers in parallel, passing knowledge data
+    const searchTerms: string[] = ontology?.search_terms?.length ? ontology.search_terms : [query];
+    const ncmCodes = ontology?.ncm_codes || [];
+    const ipcCodes = (ontology?.ipc_codes || []).map((c) => c.code);
+    // CNAEs selecionados pelo usuário têm prioridade sobre os inferidos
+    const cnaeCodes: string[] = Array.isArray(selectedCnaes) && selectedCnaes.length > 0
+      ? selectedCnaes
+      : (ontology?.cnae_codes || []).map((c) => c.code);
+
+    // STEP 1: Knowledge layer first (other layers depend on it)
+    const knowledge = await invokeLayer("layer-knowledge", { query, search_terms: searchTerms });
+
+    // STEP 2: Remaining 3 layers in parallel, passing knowledge + ontology data
     const [technology, policy, international] = await Promise.all([
       invokeLayer("layer-technology", {
         query,
         knowledge_papers: knowledge?.papers?.length || 0,
         knowledge_total_papers: knowledge?.total_papers || 0,
+        search_terms: searchTerms,
+        ipc_codes: ipcCodes,
       }),
       invokeLayer("layer-policy", {
         query,
         knowledge_total_papers: knowledge?.total_papers || 0,
+        search_terms: searchTerms,
+        cnae_codes: cnaeCodes,
       }),
       invokeLayer("layer-international", {
         query,
         knowledge_international: knowledge?.international || [],
         knowledge_total_papers: knowledge?.total_papers || 0,
+        ncm_codes: ncmCodes,
       }),
     ]);
 
