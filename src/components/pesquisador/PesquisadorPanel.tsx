@@ -176,6 +176,7 @@ const PesquisadorPanel = () => {
               <TabsTrigger value="saturacao" className="text-xs rounded-lg">📊 Saturação</TabsTrigger>
               <TabsTrigger value="papers" className="text-xs rounded-lg">📄 Papers ({data.stats.papers})</TabsTrigger>
               <TabsTrigger value="empregabilidade" className="text-xs rounded-lg">💼 Empregabilidade</TabsTrigger>
+              <TabsTrigger value="trl" className="text-xs rounded-lg">📈 Maturidade TRL</TabsTrigger>
               <TabsTrigger value="lacunas" className="text-xs rounded-lg">🎯 Lacunas</TabsTrigger>
               <TabsTrigger value="financiamento" className="text-xs rounded-lg">💰 Financiamento</TabsTrigger>
               <TabsTrigger value="icts" className="text-xs rounded-lg">🏛️ ICTs Nacionais</TabsTrigger>
