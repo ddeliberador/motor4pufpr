@@ -8,7 +8,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CnaeSelectionModal, type CnaeCode } from "@/components/mvp";
 import { personaConfigs } from "@/config/personas";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
@@ -85,7 +85,8 @@ const PesquisadorPanel = () => {
   };
 
   const handleCnaeConfirm = async (selected: CnaeCode[]) => { setSelectedCnaes(selected); setShowCnaeModal(false); setHasSearched(true); await search(pendingSearchQuery, "pesquisador"); };
-  const handleNewSearch = () => { setHasSearched(false); setSearchQuery(""); setSelectedCnaes([]); setActiveTab("panorama"); };
+  const navigate = useNavigate();
+  const handleNewSearch = () => { navigate("/"); };
 
   // Pre-search landing page
   if (!hasSearched) {

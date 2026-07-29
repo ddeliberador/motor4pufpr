@@ -7,7 +7,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CnaeSelectionModal, type CnaeCode } from "@/components/mvp";
 import { personaConfigs } from "@/config/personas";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
@@ -119,7 +119,8 @@ const EmpresaPanel = () => {
     await search(pendingSearchQuery, "empresa", { entityName: companyName });
     searchCompetitors(pendingSearchQuery);
   };
-  const handleNewSearch = () => { setHasSearched(false); setSearchQuery(""); setSelectedCnaes([]); setActiveTab("oportunidade"); setCompetitors(null); };
+  const navigate = useNavigate();
+  const handleNewSearch = () => { navigate("/"); };
 
   if (!hasSearched) {
     return (
