@@ -28,13 +28,18 @@ async function searchOpenAlex(query: string) {
   const encoded = encodeURIComponent(query);
   const headers = { "User-Agent": "Motor4P-UFPR/1.0 (mailto:pesquisa@ufpr.br)" };
 
+  // Chamada 1: dados básicos — rápida e confiável
   const [papersData, intlData, conceptsData, totalGlobalData] = await Promise.all([
-    safeFetch(`https://api.openalex.org/works?search=${encoded}&filter=institutions.country_code:BR&per_page=15&sort=cited_by_count:desc&select=id,title,publication_year,cited_by_count,authorships,primary_location,open_access,concepts,keywords,grants,abstract_inverted_index,doi,sustainable_development_goals`, { headers }),
+    safeFetch(
+      `https://api.openalex.org/works?search=${encoded}&filter=institutions.country_code:BR&per_page=15&sort=cited_by_count:desc&select=id,title,publication_year,cited_by_count,authorships,primary_location,open_access,concepts,doi`,
+      { headers }
+    ),
     safeFetch(`https://api.openalex.org/works?search=${encoded}&group_by=authorships.institutions.country_code&per_page=15`, { headers }),
     safeFetch(`https://api.openalex.org/works?search=${encoded}&group_by=concepts.id&per_page=20`, { headers }),
     safeFetch(`https://api.openalex.org/works?search=${encoded}&per_page=1`, { headers }),
   ]);
 
+  // Mapeamento básico dos papers
   const papers = (papersData?.results || []).map((w: any) => ({
     id: w.id?.replace("https://openalex.org/", "") || "",
     title: w.title || "",
@@ -49,17 +54,40 @@ async function searchOpenAlex(query: string) {
     journal: w.primary_location?.source?.display_name || "",
     is_open_access: w.open_access?.is_oa || false,
     oa_url: w.open_access?.oa_url || "",
-    url: w.primary_location?.landing_page_url || w.id || "",
+    url: w.primary_location?.landing_page_url || (w.doi ? `https://doi.org/${w.doi.replace("https://doi.org/", "")}` : w.id) || "",
     doi: w.doi?.replace("https://doi.org/", "") || "",
-    abstract: decodeAbstract(w.abstract_inverted_index),
+    abstract: "",
     concepts: (w.concepts || []).slice(0, 8).map((c: any) => c.display_name),
-    keywords: (w.keywords || []).slice(0, 6).map((k: any) => k.display_name || k.keyword || ""),
-    grants: (w.grants || []).slice(0, 4).map((g: any) => ({
-      funder: g.funder_display_name || "",
-      award: g.award_id || "",
-    })),
-    sdgs: (w.sustainable_development_goals || []).slice(0, 3).map((s: any) => s.display_name || ""),
+    keywords: [] as string[],
+    grants: [] as any[],
+    sdgs: [] as string[],
   }));
+
+  // Chamada 2: enriquecimento dos top 5 com abstract + grants
+  if (papers.length > 0) {
+    const topIds = papers.slice(0, 5).map((p: any) => p.id).filter(Boolean);
+    const enriched = await safeFetch(
+      `https://api.openalex.org/works?filter=openalex_id:${topIds.join("|")}&select=id,abstract_inverted_index,keywords,grants,sustainable_development_goals`,
+      { headers },
+      15000
+    );
+    if (enriched?.results) {
+      const enrichMap: Record<string, any> = {};
+      for (const w of enriched.results) {
+        const id = w.id?.replace("https://openalex.org/", "");
+        if (id) enrichMap[id] = w;
+      }
+      for (const p of papers) {
+        const e = enrichMap[p.id];
+        if (e) {
+          p.abstract = decodeAbstract(e.abstract_inverted_index);
+          p.keywords = (e.keywords || []).slice(0, 6).map((k: any) => k.display_name || k.keyword || "");
+          p.grants = (e.grants || []).slice(0, 4).map((g: any) => ({ funder: g.funder_display_name || "", award: g.award_id || "" }));
+          p.sdgs = (e.sustainable_development_goals || []).slice(0, 3).map((s: any) => s.display_name || "");
+        }
+      }
+    }
+  }
 
   const institutionCounts: Record<string, number> = {};
   for (const p of papers) {
@@ -68,10 +96,19 @@ async function searchOpenAlex(query: string) {
     }
   }
 
+  // Bug 2 fix: country_code pode vir como URL completa — extrair só o código ISO
   const international = (intlData?.group_by || [])
     .filter((g: any) => g.key && g.key !== "unknown")
     .slice(0, 15)
-    .map((g: any) => ({ country_code: g.key, count: g.count }));
+    .map((g: any) => {
+      const rawKey = g.key as string;
+      const countryCode = rawKey.includes("/countries/")
+        ? rawKey.split("/countries/")[1]
+        : rawKey.length === 2 ? rawKey : null;
+      if (!countryCode) return null;
+      return { country_code: countryCode.toUpperCase(), count: g.count };
+    })
+    .filter(Boolean);
 
   const concepts = (conceptsData?.group_by || [])
     .filter((g: any) => g.key_display_name)
@@ -87,6 +124,7 @@ async function searchOpenAlex(query: string) {
     totalPapersGlobal: totalGlobalData?.meta?.count || papersData?.meta?.count || papers.length,
   };
 }
+
 
 async function searchCAPES(query: string) {
   const data = await safeFetch(`https://dadosabertos.capes.gov.br/api/3/action/package_search?q=${encodeURIComponent(query)}&rows=6`);
