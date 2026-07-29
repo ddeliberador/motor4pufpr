@@ -8,6 +8,8 @@ interface IndexData {
   formula: string;
   layers_used?: string[];
   alert_level?: "normal" | "warning" | "critical";
+  basis?: string;
+  confidence?: "high" | "medium" | "low";
 }
 
 interface StrategicIndicesProps {
@@ -64,7 +66,9 @@ export default function StrategicIndices({ indices }: StrategicIndicesProps) {
                   </span>
                 </p>
                 <p className="text-xs font-medium text-foreground mt-1">{idx.label}</p>
-                <p className={`text-[10px] mt-0.5 ${statusColor}`}>{statusLabel}</p>
+                <p className={`text-[10px] mt-0.5 ${idx.basis ? "text-muted-foreground" : statusColor}`}>
+                  {idx.basis || statusLabel}
+                </p>
                 {/* Barra de progresso visual */}
                 <div className="mt-3 h-1.5 bg-muted rounded-full overflow-hidden">
                   <div
@@ -75,6 +79,13 @@ export default function StrategicIndices({ indices }: StrategicIndicesProps) {
                     style={{ width: `${Math.min(100, idx.value)}%` }}
                   />
                 </div>
+                {/* Indicador de confiança */}
+                {idx.confidence === "medium" && (
+                  <p className="text-[9px] mt-1 text-muted-foreground">estimado</p>
+                )}
+                {idx.confidence === "low" && (
+                  <p className="text-[9px] mt-1 text-amber-500">dados insuficientes</p>
+                )}
                 {/* Layers used badge */}
                 {idx.layers_used && idx.layers_used.length > 0 && (
                   <div className="flex flex-wrap gap-0.5 mt-2">
