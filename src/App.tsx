@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import PesquisadorPanel from "./components/pesquisador/PesquisadorPanel";
 import UniversidadePanel from "./components/universidade/UniversidadePanel";
 import EmpresaPanel from "./components/empresa/EmpresaPanel";
+import GovernoPanel from "./components/governo/GovernoPanel";
 import Index from "./pages/Index";
 import Conceito from "./pages/Conceito";
 import Documentacao from "./pages/Documentacao";
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/pesquisador" element={<PesquisadorPanel />} />
           <Route path="/universidade" element={<UniversidadePanel />} />
           <Route path="/empresa" element={<EmpresaPanel />} />
+          <Route path="/governo" element={<GovernoPanel />} />
           
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/gestao-pesquisa" element={<GestaoPesquisa />} />
