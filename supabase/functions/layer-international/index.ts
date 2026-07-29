@@ -226,6 +226,7 @@ Deno.serve(async (req) => {
       macro_indicators: bcb,
       ipeadata_series: ipeadata,
       comex_datasets: comex,
+      ncm_codes: ncmCodes,
       b3cvm_datasets: b3cvm,
       previdencia_datasets: previdencia,
       ans_datasets: ans,
