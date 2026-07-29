@@ -255,7 +255,12 @@ export function useMotorSearch() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const search = useCallback(async (query: string, persona: string = "pesquisador", entityContext?: EntityContext) => {
+  const search = useCallback(async (
+    query: string,
+    persona: string = "pesquisador",
+    entityContext?: EntityContext,
+    selectedCnaes?: string[],
+  ) => {
     if (!query.trim()) return;
     setIsLoading(true);
     setError(null);
@@ -265,7 +270,7 @@ export function useMotorSearch() {
     try {
       const { data: searchResult, error: searchError } = await supabase.functions.invoke(
         "motor-search",
-        { body: { query } }
+        { body: { query, selectedCnaes: selectedCnaes || [] } }
       );
 
       if (searchError) throw searchError;
