@@ -61,13 +61,9 @@ const GraphNodes = () => {
         const from = nodes[edge.from].pos;
         const to = nodes[edge.to]?.pos;
         if (!to) return null;
-        const points = [from, to];
-        const geo = new THREE.BufferGeometry().setFromPoints(points);
-        return (
-          <line key={`edge-${i}`} geometry={geo}>
-            <lineBasicMaterial color="#334155" transparent opacity={0.18} />
-          </line>
-        );
+        const geo = new THREE.BufferGeometry().setFromPoints([from, to]);
+        const mat = new THREE.LineBasicMaterial({ color: "#334155", transparent: true, opacity: 0.18 });
+        return <primitive key={`edge-${i}`} object={new THREE.Line(geo, mat)} />;
       })}
       {/* Nós */}
       {nodes.map((node, i) => (
