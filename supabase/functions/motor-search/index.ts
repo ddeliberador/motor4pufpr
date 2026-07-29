@@ -528,7 +528,7 @@ Deno.serve(async (req) => {
     const knowledge = await invokeLayer("layer-knowledge", { query, search_terms: searchTerms });
 
     // STEP 2: Remaining 3 layers in parallel, passing knowledge + ontology data
-    const [technology, policy, international] = await Promise.all([
+    const [technology, policy, international, sidra] = await Promise.all([
       invokeLayer("layer-technology", {
         query,
         knowledge_papers: knowledge?.papers?.length || 0,
@@ -549,7 +549,14 @@ Deno.serve(async (req) => {
         knowledge_total_papers: knowledge?.total_papers || 0,
         ncm_codes: ncmCodes,
       }),
+      invokeLayer("layer-sidra", {
+        query,
+        cnae_codes: cnaeCodes,
+        cnpq_areas: ontology?.cnpq_areas || [],
+        persona: "all",
+      }),
     ]);
+
 
     // STEP 3: Cross-layer indices
     const indices = computeCrossLayerIndices(knowledge, technology, policy, international);
