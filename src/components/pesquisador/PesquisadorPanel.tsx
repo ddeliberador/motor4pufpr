@@ -52,6 +52,20 @@ const PesquisadorPanel = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Busca ICTs nacionais quando os dados chegam
+  useEffect(() => {
+    if (!data?.query || icts !== null || isLoadingIcts) return;
+    setIsLoadingIcts(true);
+    supabase.functions.invoke("ict-search", { body: { query: data.query } })
+      .then(({ data: result }) => {
+        if (result && !result.error) setIcts(result);
+      })
+      .catch(console.warn)
+      .finally(() => setIsLoadingIcts(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.query]);
+
   const { searchCnaes, isLoading: isLoadingCnaes } = useCnaeSearch();
 
   const openDetail = useCallback((item: DetailItem) => { setDetailItem(item); setDetailOpen(true); }, []);
