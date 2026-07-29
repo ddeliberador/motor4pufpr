@@ -184,6 +184,22 @@ export interface InternationalLayer {
   sources: string[];
 }
 
+// ===== Ontology =====
+export interface OntologyCode {
+  code: string;
+  description: string;
+}
+
+export interface OntologyMeta {
+  ncm_codes: OntologyCode[];
+  cnae_codes: OntologyCode[];
+  ipc_codes: OntologyCode[];
+  cnpq_areas: Array<{ code: string; name: string }>;
+  search_terms: string[];
+  confidence: number;
+  available: boolean;
+}
+
 // ===== Full Result =====
 export interface MotorSearchResult {
   query: string;
@@ -194,6 +210,7 @@ export interface MotorSearchResult {
     international: InternationalLayer;
   };
   indices: StrategicIndices;
+  ontology?: OntologyMeta;
   stats: {
     papers: number;
     institutions: number;
@@ -211,6 +228,7 @@ export interface MotorSearchResult {
     processing_time_ms: number;
     sources: string[];
     source_count: number;
+    ontology_used?: boolean;
   };
 }
 
