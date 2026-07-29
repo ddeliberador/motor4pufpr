@@ -214,6 +214,31 @@ async function searchTransparencia(query: string, searchTerms: string[]) {
   }
   emendas.sort((a, b) => b.paid - a.paid);
 
+  // Se o tema não casa com nenhuma função orçamentária, mostra emendas das funções
+  // ligadas a CT&I como referência de contexto instrumental
+  if (emendas.length === 0) {
+    const ctiFuncoes = ["ciencia", "tecnologia", "educacao", "industria", "energia", "agricultura", "saude", "comunicacoes"];
+    for (const page of emendasPages) {
+      for (const e of (Array.isArray(page) ? page : [])) {
+        if (!ctiFuncoes.some((f) => norm(e?.funcao || "").includes(f))) continue;
+        const key = e?.codigoEmenda || `${e?.nomeAutor}-${e?.numeroEmenda}-${e?.ano}`;
+        if (!key || seenEmenda.has(key)) continue;
+        seenEmenda.add(key);
+        emendas.push({
+          code: e?.codigoEmenda || "", year: e?.ano || null,
+          author: e?.nomeAutor || e?.autor || "", type: e?.tipoEmenda || "",
+          locality: e?.localidadeDoGasto || "",
+          uf: (e?.localidadeDoGasto || "").split("-").pop()?.trim() || "",
+          function: e?.funcao || "", subfunction: e?.subfuncao || "",
+          committed: toNum(e?.valorEmpenhado), paid: toNum(e?.valorPago),
+          contextual: true,
+        });
+      }
+    }
+    emendas.sort((a, b) => b.paid - a.paid);
+  }
+
+
   // --- Contratos federais CT&I ---
   const federalContracts: any[] = [];
   const seenContract = new Set<string>();
