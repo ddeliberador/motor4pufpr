@@ -21,27 +21,57 @@ async function safeFetch(url: string, options?: RequestInit, timeoutMs = 20000):
   }
 }
 
-async function searchPNCP(query: string) {
-  const data = await safeFetch(`https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?tamanhoPagina=15&pagina=1&q=${encodeURIComponent(query)}`);
-  if (!data) {
-    const fallback = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " licitação contrato compras públicas")}&rows=5`);
+async function searchPNCP(query: string, searchTerms: string[], cnaeCodes: string[]) {
+  // Tenta múltiplos termos de busca e agrega resultados únicos
+  const allResults: any[] = [];
+  const seenIds = new Set<string>();
+
+  // Busca com cada termo expandido (máx 3 para não sobrecarregar)
+  const termsToTry = [query, ...searchTerms.filter((t) => t !== query)].slice(0, 3);
+
+  for (const term of termsToTry) {
+    const data = await safeFetch(
+      `https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?tamanhoPagina=10&pagina=1&q=${encodeURIComponent(term)}`
+    );
+    const items = Array.isArray(data) ? data : (data?.data || data?.content || []);
+    for (const item of items) {
+      const id = item.id || item.numeroCompra || JSON.stringify(item).slice(0, 40);
+      if (!seenIds.has(id)) {
+        seenIds.add(id);
+        allResults.push({
+          object: item.objetoCompra || item.objeto || "",
+          organ: item.orgaoEntidade?.razaoSocial || item.nomeOrgao || "",
+          modality: item.modalidadeNome || item.modalidade || "",
+          value: item.valorTotalEstimado || item.valorTotal || 0,
+          status: item.situacaoCompra || item.situacao || "",
+          date: item.dataPublicacao || item.dataCadastramento || "",
+          uf: item.unidadeOrgao?.ufSigla || item.uf || "",
+          url: item.linkSistemaOrigem || item.linkPublicacao || `https://pncp.gov.br/app/editais?q=${encodeURIComponent(term)}`,
+          search_term_used: term,
+        });
+      }
+    }
+  }
+
+  // Fallback se nenhum resultado
+  if (allResults.length === 0) {
+    const fallback = await safeFetch(
+      `https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " licitação contrato compras públicas ciência tecnologia")}&rows=5`
+    );
     return (fallback?.result?.results || []).map((pkg: any) => ({
-      object: pkg.title || "", organ: pkg.organization?.title || "", modality: "Dataset PNCP",
-      value: 0, status: "dataset", date: "", uf: "",
+      object: pkg.title || "",
+      organ: pkg.organization?.title || "",
+      modality: "Dataset",
+      value: 0,
+      status: "dataset",
+      date: "",
+      uf: "",
       url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
+      search_term_used: query,
     }));
   }
-  const items = Array.isArray(data) ? data : (data.data || data.content || []);
-  return items.slice(0, 15).map((item: any) => ({
-    object: item.objetoCompra || item.objeto || "",
-    organ: item.orgaoEntidade?.razaoSocial || item.nomeOrgao || "",
-    modality: item.modalidadeNome || item.modalidade || "",
-    value: item.valorTotalEstimado || item.valorTotal || 0,
-    status: item.situacaoCompra || item.situacao || "",
-    date: item.dataPublicacao || item.dataCadastramento || "",
-    uf: item.unidadeOrgao?.ufSigla || item.uf || "",
-    url: item.linkSistemaOrigem || item.linkPublicacao || `https://pncp.gov.br/app/editais?q=${encodeURIComponent(query)}`,
-  }));
+
+  return allResults.slice(0, 15);
 }
 
 async function searchTransparencia(query: string) {

@@ -8,6 +8,41 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const RAILWAY_API_URL = Deno.env.get("RAILWAY_API_URL") || "https://motor4pufpr-production.up.railway.app/api/v1";
+
+interface OntologyMapping {
+  query: string;
+  ncm_codes: Array<{ code: string; description: string }>;
+  cnae_codes: Array<{ code: string; description: string }>;
+  ipc_codes: Array<{ code: string; description: string }>;
+  cnpq_areas: Array<{ code: string; name: string }>;
+  search_terms: string[];
+  confidence: number;
+}
+
+// Busca tradução ontológica do backend Python (NCM, CNAE, IPC, CNPq)
+async function fetchOntologyMapping(query: string): Promise<OntologyMapping | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000); // 10s max
+  try {
+    const res = await fetch(`${RAILWAY_API_URL}/ontology/translate`, {
+      method: "POST",
+      signal: controller.signal,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query }),
+    });
+    if (!res.ok) {
+      console.warn(`OntologyEngine ${res.status} — usando busca por texto`);
+      return null;
+    }
+    return await res.json();
+  } catch (e) {
+    console.warn("OntologyEngine indisponível:", e instanceof Error ? e.message : e);
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 async function invokeLayer(name: string, body: Record<string, any>): Promise<any> {
   const controller = new AbortController();

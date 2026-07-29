@@ -21,16 +21,58 @@ async function safeFetch(url: string, options?: RequestInit, timeoutMs = 20000):
   }
 }
 
-async function searchGitHub(query: string) {
+async function searchGitHub(query: string, searchTerms: string[]) {
   const ghToken = Deno.env.get("GITHUB_TOKEN") || "";
   const ghHeaders: Record<string, string> = { "User-Agent": "Motor4P-UFPR" };
   if (ghToken) ghHeaders["Authorization"] = `token ${ghToken}`;
-  const data = await safeFetch(`https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=stars&per_page=10`, { headers: ghHeaders });
-  return (data?.items || []).map((r: any) => ({
-    name: r.full_name || "", description: (r.description || "").slice(0, 150),
-    stars: r.stargazers_count || 0, language: r.language || "",
-    url: r.html_url || "", updated: r.updated_at?.split("T")[0] || "", forks: r.forks_count || 0,
-  }));
+
+  // GitHub funciona melhor com termos em inglês
+  // Os search_terms do ontology_engine já incluem a versão em inglês
+  const allRepos: any[] = [];
+  const seenNames = new Set<string>();
+
+  const termsToTry = [query, ...searchTerms.filter((t) => t !== query)].slice(0, 3);
+
+  for (const term of termsToTry) {
+    const data = await safeFetch(
+      `https://api.github.com/search/repositories?q=${encodeURIComponent(term + " Brazil OR Brasil")}&sort=stars&per_page=8`,
+      { headers: ghHeaders }
+    );
+    for (const r of (data?.items || [])) {
+      if (!seenNames.has(r.full_name)) {
+        seenNames.add(r.full_name);
+        allRepos.push({
+          name: r.full_name || "",
+          description: (r.description || "").slice(0, 150),
+          stars: r.stargazers_count || 0,
+          language: r.language || "",
+          url: r.html_url || "",
+          updated: r.updated_at?.split("T")[0] || "",
+          forks: r.forks_count || 0,
+        });
+      }
+    }
+  }
+
+  // Segundo passo: busca sem filtro Brasil para comparação global
+  const globalData = await safeFetch(
+    `https://api.github.com/search/repositories?q=${encodeURIComponent(termsToTry[0])}&sort=stars&per_page=5`,
+    { headers: ghHeaders }
+  );
+  const globalRepos = (globalData?.items || [])
+    .filter((r: any) => !seenNames.has(r.full_name))
+    .map((r: any) => ({
+      name: r.full_name || "",
+      description: (r.description || "").slice(0, 150),
+      stars: r.stargazers_count || 0,
+      language: r.language || "",
+      url: r.html_url || "",
+      updated: r.updated_at?.split("T")[0] || "",
+      forks: r.forks_count || 0,
+      is_global: true,
+    }));
+
+  return { br_repos: allRepos.slice(0, 10), global_repos: globalRepos.slice(0, 5) };
 }
 
 async function searchINPI(query: string) {
