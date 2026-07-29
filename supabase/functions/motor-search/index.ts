@@ -16,6 +16,7 @@ interface OntologyMapping {
   cnae_codes: Array<{ code: string; description: string }>;
   ipc_codes: Array<{ code: string; description: string }>;
   cnpq_areas: Array<{ code: string; name: string }>;
+  cbo_codes: Array<{ code: string; description: string; area?: string }>;
   search_terms: string[];
   confidence: number;
 }
@@ -521,6 +522,7 @@ Deno.serve(async (req) => {
     const cnaeCodes: string[] = Array.isArray(selectedCnaes) && selectedCnaes.length > 0
       ? selectedCnaes
       : (ontology?.cnae_codes || []).map((c) => c.code);
+    const cboCodes = ontology?.cbo_codes || [];
 
     // STEP 1: Knowledge layer first (other layers depend on it)
     const knowledge = await invokeLayer("layer-knowledge", { query, search_terms: searchTerms });
@@ -533,6 +535,7 @@ Deno.serve(async (req) => {
         knowledge_total_papers: knowledge?.total_papers || 0,
         search_terms: searchTerms,
         ipc_codes: ipcCodes,
+        cbo_codes: cboCodes,
       }),
       invokeLayer("layer-policy", {
         query,
@@ -603,6 +606,7 @@ Deno.serve(async (req) => {
             cnae_codes: ontology.cnae_codes || [],
             ipc_codes: ontology.ipc_codes || [],
             cnpq_areas: ontology.cnpq_areas || [],
+            cbo_codes: ontology.cbo_codes || [],
             search_terms: ontology.search_terms || [],
             confidence: ontology.confidence ?? 0,
             available: true,
