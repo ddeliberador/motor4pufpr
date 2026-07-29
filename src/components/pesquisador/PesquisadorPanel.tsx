@@ -855,6 +855,13 @@ const PesquisadorPanel = () => {
               )}
             </TabsContent>
 
+            {/* ESTRUTURA IBGE / SIDRA */}
+            <TabsContent value="sidra" className="space-y-4">
+              <SidraPanel sidra={(data.layers as any).sidra} />
+            </TabsContent>
+
+
+
 
             {/* ICTs NACIONAIS */}
             <TabsContent value="icts" className="space-y-4">
