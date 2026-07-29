@@ -118,8 +118,10 @@ async function searchTransparencia(query: string, searchTerms: string[]) {
   return {
     convenios: allConvenios,
     sanctions: (ceis || []).map((s: any) => ({
-      company: s.nomeFantasia || s.razaoSocial || "", type: s.tipoSancao || "",
-      organ: s.orgaoSancionador?.nome || "", date: s.dataInicioSancao || "",
+      company: s.pessoa?.nome || s.nomeFantasiaReceita || s.nomeFantasia || s.razaoSocial || "",
+      type: s.tipoSancao?.descricaoResumida || s.tipoSancao || "",
+      organ: s.orgaoSancionador?.nome || "",
+      date: s.dataInicioSancao || "",
     })),
   };
 }
