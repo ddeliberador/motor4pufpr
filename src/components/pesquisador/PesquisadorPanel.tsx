@@ -558,6 +558,106 @@ const PesquisadorPanel = () => {
               )}
             </TabsContent>
 
+            {/* ICTs NACIONAIS */}
+            <TabsContent value="icts" className="space-y-4">
+              {isLoadingIcts ? (
+                <div className="flex items-center justify-center py-12 gap-3">
+                  <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                  <span className="text-sm text-muted-foreground">Identificando ICTs nacionais em {data.query}...</span>
+                </div>
+              ) : icts ? (
+                <div className="space-y-4">
+                  {icts.overview && (
+                    <div className="bg-card border border-border rounded-xl p-5">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Ecossistema brasileiro</p>
+                      <p className="text-sm text-foreground leading-relaxed">{icts.overview}</p>
+                    </div>
+                  )}
+
+                  {icts.icts?.length > 0 ? (
+                    <div className="bg-card border border-border rounded-xl p-5 space-y-3">
+                      <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <FlaskConical className="w-4 h-4 text-primary" />
+                        Centros e Institutos de P&D ({icts.icts.length})
+                      </h3>
+                      <div className="space-y-3">
+                        {icts.icts.map((ict: any, i: number) => (
+                          <div key={i} className="border border-border/50 rounded-lg p-4 hover:border-border transition-colors">
+                            <div className="flex items-start justify-between gap-3 mb-2">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2 flex-wrap mb-1">
+                                  <p className="text-sm font-semibold text-foreground">{ict.name}</p>
+                                  {ict.acronym && (
+                                    <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary rounded font-mono">{ict.acronym}</span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                                  {ict.city && ict.state && <span>📍 {ict.city}/{ict.state}</span>}
+                                  {ict.type && <span className="px-1.5 py-0.5 bg-muted rounded">{ict.type}</span>}
+                                  {ict.ministerio && <span className="text-muted-foreground/60">{ict.ministerio}</span>}
+                                </div>
+                              </div>
+                              {ict.url && (
+                                <a
+                                  href={ict.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex-shrink-0 flex items-center gap-1 text-[10px] text-primary hover:underline"
+                                >
+                                  <ExternalLink className="w-3 h-3" />
+                                  site
+                                </a>
+                              )}
+                            </div>
+                            {ict.focus && (
+                              <p className="text-xs text-muted-foreground border-t border-border/30 pt-2 mt-2">{ict.focus}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-card border border-border rounded-xl p-8 text-center">
+                      <FlaskConical className="w-8 h-8 mx-auto mb-3 text-muted-foreground/40" />
+                      <p className="text-sm text-muted-foreground">Nenhum ICT nacional identificado para este tema específico.</p>
+                      <p className="text-xs text-muted-foreground mt-1">Tente um termo mais amplo ou verifique a aba Panorama.</p>
+                    </div>
+                  )}
+
+                  {icts.networks?.length > 0 && (
+                    <div className="bg-card border border-border rounded-xl p-5 space-y-3">
+                      <h3 className="text-sm font-semibold text-foreground">Redes e Programas Nacionais</h3>
+                      <div className="space-y-2">
+                        {icts.networks.map((net: any, i: number) => (
+                          <div key={i} className="flex items-start justify-between gap-3 py-2 border-b border-border/30 last:border-0">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium text-foreground">{net.name}</p>
+                              {net.description && <p className="text-[10px] text-muted-foreground mt-0.5">{net.description}</p>}
+                            </div>
+                            {net.url && (
+                              <a href={net.url} target="_blank" rel="noopener noreferrer"
+                                 className="flex-shrink-0 flex items-center gap-1 text-[10px] text-primary hover:underline">
+                                <ExternalLink className="w-3 h-3" />
+                                acessar
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-[9px] text-muted-foreground text-center">
+                    Dados gerados por IA com base em fontes públicas — verifique os links antes de usar
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center py-12">
+                  <p className="text-sm text-muted-foreground">Clique na aba para carregar os ICTs nacionais.</p>
+                </div>
+              )}
+            </TabsContent>
+
             {/* PRESCRIÇÃO IA */}
             <TabsContent value="prescricao" className="space-y-4">
               {isAnalyzing ? (
