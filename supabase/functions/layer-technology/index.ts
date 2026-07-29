@@ -21,16 +21,58 @@ async function safeFetch(url: string, options?: RequestInit, timeoutMs = 20000):
   }
 }
 
-async function searchGitHub(query: string) {
+async function searchGitHub(query: string, searchTerms: string[]) {
   const ghToken = Deno.env.get("GITHUB_TOKEN") || "";
   const ghHeaders: Record<string, string> = { "User-Agent": "Motor4P-UFPR" };
   if (ghToken) ghHeaders["Authorization"] = `token ${ghToken}`;
-  const data = await safeFetch(`https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=stars&per_page=10`, { headers: ghHeaders });
-  return (data?.items || []).map((r: any) => ({
-    name: r.full_name || "", description: (r.description || "").slice(0, 150),
-    stars: r.stargazers_count || 0, language: r.language || "",
-    url: r.html_url || "", updated: r.updated_at?.split("T")[0] || "", forks: r.forks_count || 0,
-  }));
+
+  // GitHub funciona melhor com termos em inglês
+  // Os search_terms do ontology_engine já incluem a versão em inglês
+  const allRepos: any[] = [];
+  const seenNames = new Set<string>();
+
+  const termsToTry = [query, ...searchTerms.filter((t) => t !== query)].slice(0, 3);
+
+  for (const term of termsToTry) {
+    const data = await safeFetch(
+      `https://api.github.com/search/repositories?q=${encodeURIComponent(term + " Brazil OR Brasil")}&sort=stars&per_page=8`,
+      { headers: ghHeaders }
+    );
+    for (const r of (data?.items || [])) {
+      if (!seenNames.has(r.full_name)) {
+        seenNames.add(r.full_name);
+        allRepos.push({
+          name: r.full_name || "",
+          description: (r.description || "").slice(0, 150),
+          stars: r.stargazers_count || 0,
+          language: r.language || "",
+          url: r.html_url || "",
+          updated: r.updated_at?.split("T")[0] || "",
+          forks: r.forks_count || 0,
+        });
+      }
+    }
+  }
+
+  // Segundo passo: busca sem filtro Brasil para comparação global
+  const globalData = await safeFetch(
+    `https://api.github.com/search/repositories?q=${encodeURIComponent(termsToTry[0])}&sort=stars&per_page=5`,
+    { headers: ghHeaders }
+  );
+  const globalRepos = (globalData?.items || [])
+    .filter((r: any) => !seenNames.has(r.full_name))
+    .map((r: any) => ({
+      name: r.full_name || "",
+      description: (r.description || "").slice(0, 150),
+      stars: r.stargazers_count || 0,
+      language: r.language || "",
+      url: r.html_url || "",
+      updated: r.updated_at?.split("T")[0] || "",
+      forks: r.forks_count || 0,
+      is_global: true,
+    }));
+
+  return { br_repos: allRepos.slice(0, 10), global_repos: globalRepos.slice(0, 5) };
 }
 
 async function searchINPI(query: string) {
@@ -85,19 +127,26 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { query, knowledge_papers, knowledge_total_papers } = await req.json();
+    const { query, knowledge_papers, knowledge_total_papers, search_terms, ipc_codes } = await req.json();
     if (!query) return new Response(JSON.stringify({ error: "query is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    console.log(`Layer Technology: ${query}`);
+    const searchTerms: string[] = Array.isArray(search_terms) && search_terms.length > 0 ? search_terms : [query];
+    const ipcCodes: string[] = Array.isArray(ipc_codes) ? ipc_codes : [];
+
+    console.log(`Layer Technology: ${query} | termos: ${searchTerms.join(", ")} | IPC: ${ipcCodes.length}`);
     const start = Date.now();
 
-    const [github, inpi, rais, embrapii, cnpj_qsa, transportes, anvisa] = await Promise.all([
-      searchGitHub(query), searchINPI(query), searchRAIS(query), searchEmbrapiiFinep(query),
+    const [githubResult, inpi, rais, embrapii, cnpj_qsa, transportes, anvisa] = await Promise.all([
+      searchGitHub(query, searchTerms), searchINPI(query), searchRAIS(query), searchEmbrapiiFinep(query),
       searchCNPJQSA(query), searchTransportes(query), searchANVISA(query),
     ]);
 
+    const github = githubResult.br_repos;
+    const globalRepos = githubResult.global_repos;
+
     const totalRepos = github.length;
     const totalStars = github.reduce((s: number, r: any) => s + (r.stars || 0), 0);
+    const globalStars = globalRepos.reduce((s: number, r: any) => s + (r.stars || 0), 0);
     const patentDatasets = inpi.length;
     const employmentDatasets = rais.length;
     const tech_density = totalRepos + patentDatasets;
@@ -128,12 +177,14 @@ Deno.serve(async (req) => {
     if (anvisa.length > 0) sources.push("ANVISA");
 
     return new Response(JSON.stringify({
-      github_repos: github, patent_datasets: inpi, employment_datasets: rais,
+      github_repos: github, github_global_repos: globalRepos, patent_datasets: inpi, employment_datasets: rais,
       innovation_datasets: embrapii, cnpj_qsa_datasets: cnpj_qsa,
       transport_datasets: transportes, anvisa_datasets: anvisa,
       tech_density, trl_estimate, trl_label, trl_signals: signals,
       science_to_patent, language_distribution: languageDistribution,
-      total_stars: totalStars, sources, processing_time_ms: Date.now() - start,
+      total_stars: totalStars, global_total_stars: globalStars,
+      ipc_codes: ipcCodes, search_terms_used: searchTerms,
+      sources, processing_time_ms: Date.now() - start,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("Layer Technology error:", error);

@@ -8,6 +8,41 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const RAILWAY_API_URL = Deno.env.get("RAILWAY_API_URL") || "https://motor4pufpr-production.up.railway.app/api/v1";
+
+interface OntologyMapping {
+  query: string;
+  ncm_codes: Array<{ code: string; description: string }>;
+  cnae_codes: Array<{ code: string; description: string }>;
+  ipc_codes: Array<{ code: string; description: string }>;
+  cnpq_areas: Array<{ code: string; name: string }>;
+  search_terms: string[];
+  confidence: number;
+}
+
+// Busca tradução ontológica do backend Python (NCM, CNAE, IPC, CNPq)
+async function fetchOntologyMapping(query: string): Promise<OntologyMapping | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000); // 10s max
+  try {
+    const res = await fetch(`${RAILWAY_API_URL}/ontology/translate`, {
+      method: "POST",
+      signal: controller.signal,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query }),
+    });
+    if (!res.ok) {
+      console.warn(`OntologyEngine ${res.status} — usando busca por texto`);
+      return null;
+    }
+    return await res.json();
+  } catch (e) {
+    console.warn("OntologyEngine indisponível:", e instanceof Error ? e.message : e);
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 async function invokeLayer(name: string, body: Record<string, any>): Promise<any> {
   const controller = new AbortController();
@@ -122,7 +157,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { query } = await req.json();
+    const { query, selectedCnaes } = await req.json();
     if (!query) {
       return new Response(JSON.stringify({ error: "query is required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -132,24 +167,43 @@ Deno.serve(async (req) => {
     console.log(`Motor 4P Orchestrator: ${query}`);
     const start = Date.now();
 
-    // STEP 1: Knowledge layer first (other layers depend on it)
-    const knowledge = await invokeLayer("layer-knowledge", { query });
+    // STEP 0: Tradução ontológica (NCM, CNAE, IPC, CNPq)
+    const ontology = await fetchOntologyMapping(query);
+    if (ontology) {
+      console.log(`Ontologia: ${ontology.ncm_codes?.length || 0} NCM, ${ontology.cnae_codes?.length || 0} CNAE, ${ontology.ipc_codes?.length || 0} IPC — confiança ${ontology.confidence}`);
+    }
 
-    // STEP 2: Remaining 3 layers in parallel, passing knowledge data
+    const searchTerms: string[] = ontology?.search_terms?.length ? ontology.search_terms : [query];
+    const ncmCodes = ontology?.ncm_codes || [];
+    const ipcCodes = (ontology?.ipc_codes || []).map((c) => c.code);
+    // CNAEs selecionados pelo usuário têm prioridade sobre os inferidos
+    const cnaeCodes: string[] = Array.isArray(selectedCnaes) && selectedCnaes.length > 0
+      ? selectedCnaes
+      : (ontology?.cnae_codes || []).map((c) => c.code);
+
+    // STEP 1: Knowledge layer first (other layers depend on it)
+    const knowledge = await invokeLayer("layer-knowledge", { query, search_terms: searchTerms });
+
+    // STEP 2: Remaining 3 layers in parallel, passing knowledge + ontology data
     const [technology, policy, international] = await Promise.all([
       invokeLayer("layer-technology", {
         query,
         knowledge_papers: knowledge?.papers?.length || 0,
         knowledge_total_papers: knowledge?.total_papers || 0,
+        search_terms: searchTerms,
+        ipc_codes: ipcCodes,
       }),
       invokeLayer("layer-policy", {
         query,
         knowledge_total_papers: knowledge?.total_papers || 0,
+        search_terms: searchTerms,
+        cnae_codes: cnaeCodes,
       }),
       invokeLayer("layer-international", {
         query,
         knowledge_international: knowledge?.international || [],
         knowledge_total_papers: knowledge?.total_papers || 0,
+        ncm_codes: ncmCodes,
       }),
     ]);
 
@@ -195,10 +249,22 @@ Deno.serve(async (req) => {
       },
       indices,
       stats,
+      ontology: ontology
+        ? {
+            ncm_codes: ontology.ncm_codes || [],
+            cnae_codes: ontology.cnae_codes || [],
+            ipc_codes: ontology.ipc_codes || [],
+            cnpq_areas: ontology.cnpq_areas || [],
+            search_terms: ontology.search_terms || [],
+            confidence: ontology.confidence ?? 0,
+            available: true,
+          }
+        : { ncm_codes: [], cnae_codes: [], ipc_codes: [], cnpq_areas: [], search_terms: [query], confidence: 0, available: false },
       meta: {
         processing_time_ms: processingTime,
         sources: uniqueSources,
         source_count: uniqueSources.length,
+        ontology_used: !!ontology,
       },
     };
 

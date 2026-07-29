@@ -68,15 +68,57 @@ async function searchIPEAData(query: string) {
   return [...withValues, ...series.slice(6).map((s: any) => ({ ...s, values: [], lastValue: null }))];
 }
 
-// ===== COMEX =====
-async function searchCOMEX(query: string) {
-  const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " exportação importação comércio exterior")}&rows=5&fq=organization:ministerio-do-desenvolvimento-industria-comercio-e-servicos`);
-  return (data?.result?.results || []).map((pkg: any) => ({
-    title: pkg.title || "",
-    description: (pkg.notes || "").slice(0, 200),
-    url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
-    structured: false,
-  }));
+// ===== COMEX (busca por códigos NCM quando disponíveis) =====
+async function searchCOMEX(query: string, ncmCodes: Array<{ code: string; description: string }>) {
+  const results: any[] = [];
+
+  // Se temos códigos NCM, busca dados reais de comércio exterior
+  if (ncmCodes.length > 0) {
+    const year = new Date().getFullYear() - 1;
+    for (const ncm of ncmCodes.slice(0, 3)) {
+      const data = await safeFetch(
+        `https://api-comexstat.mdic.gov.br/general?filter=ncm:${ncm.code}&period=${year}01-${year}12&monthDetail=false&metrics=metricFOB,metricKG`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        },
+        15000
+      );
+      const list = data?.data?.list || [];
+      if (list.length > 0) {
+        const totalFOB = list.reduce((s: number, r: any) => s + (Number(r.metricFOB) || 0), 0);
+        results.push({
+          title: `NCM ${ncm.code} — ${ncm.description}`,
+          description: `Comércio exterior ${year}: US$ ${totalFOB.toLocaleString("pt-BR")} FOB`,
+          url: `https://comexstat.mdic.gov.br/pt/geral`,
+          ncm_code: ncm.code,
+          value_fob: totalFOB,
+          structured: true,
+        });
+      } else {
+        results.push({
+          title: `NCM ${ncm.code} — ${ncm.description}`,
+          description: "Código NCM identificado pela tradução ontológica (sem série anual retornada)",
+          url: `https://comexstat.mdic.gov.br/pt/geral`,
+          ncm_code: ncm.code,
+          structured: true,
+        });
+      }
+    }
+  }
+
+  // Complementa com datasets abertos
+  const data = await safeFetch(`https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " exportação importação comércio exterior")}&rows=5`);
+  for (const pkg of (data?.result?.results || [])) {
+    results.push({
+      title: pkg.title || "",
+      description: (pkg.notes || "").slice(0, 200),
+      url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
+      structured: false,
+    });
+  }
+
+  return results;
 }
 
 // ===== B3 / CVM (mercado de capitais) =====
@@ -125,20 +167,22 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { query, knowledge_international, knowledge_total_papers } = await req.json();
+    const { query, knowledge_international, knowledge_total_papers, ncm_codes } = await req.json();
     if (!query) {
       return new Response(JSON.stringify({ error: "query is required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log(`Layer International: ${query}`);
+    const ncmCodes: Array<{ code: string; description: string }> = Array.isArray(ncm_codes) ? ncm_codes : [];
+
+    console.log(`Layer International: ${query} | NCM: ${ncmCodes.length}`);
     const start = Date.now();
 
     const [bcb, ipeadata, comex, b3cvm, previdencia, ans, ana] = await Promise.all([
       getBCBSnapshot(),
       searchIPEAData(query),
-      searchCOMEX(query),
+      searchCOMEX(query, ncmCodes),
       searchB3CVM(query),
       searchPrevidencia(query),
       searchANS(query),
@@ -182,6 +226,7 @@ Deno.serve(async (req) => {
       macro_indicators: bcb,
       ipeadata_series: ipeadata,
       comex_datasets: comex,
+      ncm_codes: ncmCodes,
       b3cvm_datasets: b3cvm,
       previdencia_datasets: previdencia,
       ans_datasets: ans,
