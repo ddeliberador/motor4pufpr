@@ -238,7 +238,39 @@ const PesquisadorPanel = () => {
               {knowledge.resolved_institutions && Object.keys(knowledge.resolved_institutions).length > 0 && (
                 <EntityResolutionCard resolvedInstitutions={knowledge.resolved_institutions} />
               )}
+
+              {/* Pós-graduação SIDRA — relevante para pesquisador */}
+              {(data.layers as any).sidra?.pos_graduacao?.areas?.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <Users className="w-4 h-4 text-primary" />
+                      Capacidade formativa nacional
+                    </h3>
+                    <a href={(data.layers as any).sidra.pos_graduacao.url} target="_blank" rel="noopener noreferrer"
+                       className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                      <ExternalLink className="w-3 h-3" /> SIDRA/IBGE
+                    </a>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mb-3">
+                    {(data.layers as any).sidra.pos_graduacao.descricao}
+                  </p>
+                  <div className="space-y-1.5">
+                    {(data.layers as any).sidra.pos_graduacao.areas.slice(0, 6).map((a: any, i: number) => (
+                      <div key={i} className="px-3 py-2 bg-muted/30 rounded-lg">
+                        <p className="text-xs font-medium text-foreground">{a.area}</p>
+                        <div className="flex gap-3 mt-0.5">
+                          {a.series.slice(0, 2).map((s: any, j: number) => (
+                            <span key={j} className="text-[10px] text-muted-foreground">{s.ano}: <strong className="text-foreground">{s.valor}</strong> titulados</span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </TabsContent>
+
             <TabsContent value="saturacao" className="space-y-4">
               <div className="bg-card border border-border rounded-xl p-5 space-y-4">
                 <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Target className="w-4 h-4 text-primary" /> Mapa de Saturação Temática</h3>
@@ -774,7 +806,60 @@ const PesquisadorPanel = () => {
                   </div>
                 </div>
               )}
+
+              {/* SIDRA — dados estruturais IBGE */}
+              {(data.layers as any).sidra?.pintec?.setores?.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-foreground">
+                      Inovação no setor — PINTEC/IBGE
+                    </h3>
+                    <a href={(data.layers as any).sidra.pintec.url} target="_blank" rel="noopener noreferrer"
+                       className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                      <ExternalLink className="w-3 h-3" /> SIDRA
+                    </a>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mb-3">
+                    {(data.layers as any).sidra.pintec.descricao} · {(data.layers as any).sidra.pintec.periodo}
+                  </p>
+                  <div className="space-y-1.5">
+                    {(data.layers as any).sidra.pintec.setores.slice(0, 6).map((s: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg">
+                        <span className="text-xs text-foreground truncate flex-1">{s.atividade}</span>
+                        <span className="text-xs font-bold text-primary ml-2 flex-shrink-0">{s.valor}{s.unidade === "%" ? "%" : ""}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(data.layers as any).sidra?.cempre?.setores?.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-foreground">Empresas no setor — CEMPRE/IBGE</h3>
+                    <a href={(data.layers as any).sidra.cempre.url} target="_blank" rel="noopener noreferrer"
+                       className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                      <ExternalLink className="w-3 h-3" /> SIDRA
+                    </a>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mb-3">
+                    {(data.layers as any).sidra.cempre.descricao} · {(data.layers as any).sidra.cempre.periodo}
+                  </p>
+                  <div className="space-y-1.5">
+                    {(data.layers as any).sidra.cempre.setores.slice(0, 5).map((s: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg">
+                        <span className="text-xs text-foreground truncate flex-1">{s.atividade}</span>
+                        <div className="flex gap-3 flex-shrink-0 ml-2">
+                          {s.empresas && <span className="text-[10px] text-muted-foreground">{s.empresas} emp.</span>}
+                          {s.pessoal && <span className="text-[10px] font-semibold text-primary">{s.pessoal} pessoas</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </TabsContent>
+
 
             {/* ICTs NACIONAIS */}
             <TabsContent value="icts" className="space-y-4">
