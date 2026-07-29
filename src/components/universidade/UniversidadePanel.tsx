@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Landmark, Search, ArrowLeft, AlertTriangle, Zap, Globe, BookOpen, Building2, Award, Link2 } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
@@ -29,6 +29,27 @@ const UniversidadePanel = () => {
   const [detailOpen, setDetailOpen] = useState(false);
 
   const { search, data, analysis, isLoading, isAnalyzing, error } = useMotorSearch();
+
+  // Lê query pré-preenchida vinda da busca unificada
+  useEffect(() => {
+    const savedQuery = sessionStorage.getItem("motor4p_query");
+    const savedPersona = sessionStorage.getItem("motor4p_persona");
+    const savedCnaes = sessionStorage.getItem("motor4p_cnaes");
+    const expectedPersona = "universidade";
+
+    if (savedQuery && savedPersona === expectedPersona) {
+      sessionStorage.removeItem("motor4p_query");
+      sessionStorage.removeItem("motor4p_persona");
+      sessionStorage.removeItem("motor4p_cnaes");
+
+      const cnaes: CnaeCode[] = savedCnaes ? JSON.parse(savedCnaes) : [];
+      setSearchQuery(savedQuery);
+      setSelectedCnaes(cnaes);
+      setHasSearched(true);
+      search(savedQuery, expectedPersona, undefined, cnaes.map((c) => c.code));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const { searchCnaes, isLoading: isLoadingCnaes } = useCnaeSearch();
 
   const openDetail = useCallback((item: DetailItem) => { setDetailItem(item); setDetailOpen(true); }, []);
