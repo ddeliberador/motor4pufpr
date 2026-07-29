@@ -127,19 +127,26 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { query, knowledge_papers, knowledge_total_papers } = await req.json();
+    const { query, knowledge_papers, knowledge_total_papers, search_terms, ipc_codes } = await req.json();
     if (!query) return new Response(JSON.stringify({ error: "query is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    console.log(`Layer Technology: ${query}`);
+    const searchTerms: string[] = Array.isArray(search_terms) && search_terms.length > 0 ? search_terms : [query];
+    const ipcCodes: string[] = Array.isArray(ipc_codes) ? ipc_codes : [];
+
+    console.log(`Layer Technology: ${query} | termos: ${searchTerms.join(", ")} | IPC: ${ipcCodes.length}`);
     const start = Date.now();
 
-    const [github, inpi, rais, embrapii, cnpj_qsa, transportes, anvisa] = await Promise.all([
-      searchGitHub(query), searchINPI(query), searchRAIS(query), searchEmbrapiiFinep(query),
+    const [githubResult, inpi, rais, embrapii, cnpj_qsa, transportes, anvisa] = await Promise.all([
+      searchGitHub(query, searchTerms), searchINPI(query), searchRAIS(query), searchEmbrapiiFinep(query),
       searchCNPJQSA(query), searchTransportes(query), searchANVISA(query),
     ]);
 
+    const github = githubResult.br_repos;
+    const globalRepos = githubResult.global_repos;
+
     const totalRepos = github.length;
     const totalStars = github.reduce((s: number, r: any) => s + (r.stars || 0), 0);
+    const globalStars = globalRepos.reduce((s: number, r: any) => s + (r.stars || 0), 0);
     const patentDatasets = inpi.length;
     const employmentDatasets = rais.length;
     const tech_density = totalRepos + patentDatasets;
@@ -170,12 +177,14 @@ Deno.serve(async (req) => {
     if (anvisa.length > 0) sources.push("ANVISA");
 
     return new Response(JSON.stringify({
-      github_repos: github, patent_datasets: inpi, employment_datasets: rais,
+      github_repos: github, github_global_repos: globalRepos, patent_datasets: inpi, employment_datasets: rais,
       innovation_datasets: embrapii, cnpj_qsa_datasets: cnpj_qsa,
       transport_datasets: transportes, anvisa_datasets: anvisa,
       tech_density, trl_estimate, trl_label, trl_signals: signals,
       science_to_patent, language_distribution: languageDistribution,
-      total_stars: totalStars, sources, processing_time_ms: Date.now() - start,
+      total_stars: totalStars, global_total_stars: globalStars,
+      ipc_codes: ipcCodes, search_terms_used: searchTerms,
+      sources, processing_time_ms: Date.now() - start,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("Layer Technology error:", error);
