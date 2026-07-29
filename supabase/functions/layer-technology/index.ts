@@ -283,81 +283,65 @@ async function searchANVISA(query: string) {
   }));
 }
 
+// Novo CAGED (MTE) via IPEAData — séries mensais nacionais de admissões,
+// desligamentos e saldo. O Portal da Transparência NÃO expõe CAGED.
 async function fetchCaged(
-  cboCodes: Array<{ code: string; description: string; area?: string }>,
-  apiKey: string
+  cboCodes: Array<{ code: string; description: string; area?: string }>
 ): Promise<any> {
-  const today = new Date();
-  const start = new Date(today.getFullYear() - 1, today.getMonth(), 1);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const competenciaInicio = `${start.getFullYear()}${pad(start.getMonth() + 1)}`;
-  const competenciaFim = `${today.getFullYear()}${pad(today.getMonth() + 1)}`;
+  const SERIES: Record<string, string> = {
+    admissoes: "CAGED12_ADMISN12",
+    demissoes: "CAGED12_DESLIGN12",
+    saldo: "CAGED12_SALDON12",
+  };
 
-  const results: any[] = [];
+  const fetchSerie = async (code: string) => {
+    const data = await safeFetch(
+      `http://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='${code}')`,
+      { headers: { Accept: "application/json" } },
+      20000
+    );
+    const rows: any[] = data?.value || [];
+    return rows
+      .filter((r) => r.VALVALOR != null)
+      .map((r) => ({ data: String(r.VALDATA).slice(0, 7), valor: Number(r.VALVALOR) }))
+      .slice(-12);
+  };
 
-  for (const cbo of cboCodes.slice(0, 4)) {
-    const cboNum = cbo.code.replace("-", "");
-    try {
-      const data = await safeFetch(
-        `https://api.portaldatransparencia.gov.br/api-de-dados/caged-mensal?codigoCbo=${cboNum}&competenciaInicio=${competenciaInicio}&competenciaFim=${competenciaFim}&pagina=1&tamanhoPagina=100`,
-        { headers: { "chave-api-dados": apiKey, "Accept": "application/json" } },
-        20000
-      );
-
-      const items: any[] = Array.isArray(data) ? data : (data?.data || []);
-      if (!items.length) continue;
-
-      const admissoes = items.reduce((s: number, i: any) => s + (parseInt(i.admissoes || i.quantidadeAdmitidos || "0") || 0), 0);
-      const demissoes = items.reduce((s: number, i: any) => s + (parseInt(i.demissoes || i.quantidadeDesligados || "0") || 0), 0);
-      const saldo = admissoes - demissoes;
-
-      // Distribuição por UF
-      const ufDist: Record<string, number> = {};
-      for (const item of items) {
-        const uf = item.uf || item.siglaUf || item.municipioUf || "";
-        const s = parseInt(item.saldo || "0") || 0;
-        if (uf && s !== 0) ufDist[uf] = (ufDist[uf] || 0) + s;
-      }
-      const topUfs = Object.entries(ufDist)
-        .sort(([, a], [, b]) => (b as number) - (a as number))
-        .slice(0, 5)
-        .map(([uf, s]) => ({ uf, saldo: s }));
-
-      results.push({
-        cbo: cbo.code,
-        descricao: cbo.description,
-        area: cbo.area || "",
-        admissoes,
-        demissoes,
-        saldo,
-        tendencia: saldo > 50 ? "crescimento" : saldo < -50 ? "retração" : "estável",
-        top_ufs: topUfs,
-        meses: Math.round((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30)),
-      });
-    } catch (e) {
-      console.warn(`CAGED erro CBO ${cbo.code}:`, e instanceof Error ? e.message : e);
-    }
+  let admissoes: any[] = [], demissoes: any[] = [], saldo: any[] = [];
+  try {
+    [admissoes, demissoes, saldo] = await Promise.all([
+      fetchSerie(SERIES.admissoes),
+      fetchSerie(SERIES.demissoes),
+      fetchSerie(SERIES.saldo),
+    ]);
+  } catch (e) {
+    console.warn("CAGED/IPEA falhou:", e instanceof Error ? e.message : e);
+    return null;
   }
 
-  if (!results.length) return null;
+  if (!saldo.length) return null;
 
-  const totalSaldo = results.reduce((s, r) => s + r.saldo, 0);
-  const totalAdmissoes = results.reduce((s, r) => s + r.admissoes, 0);
-  const totalDemissoes = results.reduce((s, r) => s + r.demissoes, 0);
+  const sum = (arr: any[]) => arr.reduce((s, r) => s + r.valor, 0);
+  const totalSaldo = Math.round(sum(saldo));
+  const ultimos3 = saldo.slice(-3).reduce((s, r) => s + r.valor, 0);
 
   return {
-    cbo_results: results,
-    summary: {
+    nacional: {
+      periodo: `${saldo[0].data} a ${saldo[saldo.length - 1].data}`,
+      total_admissoes: Math.round(sum(admissoes)),
+      total_demissoes: Math.round(sum(demissoes)),
       total_saldo: totalSaldo,
-      total_admissoes: totalAdmissoes,
-      total_demissoes: totalDemissoes,
-      tendencia_geral: totalSaldo > 50 ? "crescimento" : totalSaldo < -50 ? "retração" : "estável",
-      periodo: `${competenciaInicio.slice(0,4)}-${competenciaInicio.slice(4)} a ${competenciaFim.slice(0,4)}-${competenciaFim.slice(4)}`,
-      cbos_consultados: results.length,
+      tendencia_geral: ultimos3 > 0 ? "crescimento" : ultimos3 < 0 ? "retração" : "estável",
+      serie_saldo: saldo,
     },
-    source: "Novo CAGED — Portal da Transparência / MTE",
+    ocupacoes: cboCodes.slice(0, 6),
+    escopo:
+      "Saldo agregado do mercado formal brasileiro (todas as atividades). O recorte por ocupação exige os microdados do Novo CAGED, que não têm API pública.",
+    source: "Novo CAGED — MTE, via IPEAData",
+    url: "http://www.ipeadata.gov.br/",
   };
 }
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -495,17 +479,15 @@ Deno.serve(async (req) => {
     if (transportes.length > 0) sources.push("Transportes");
     if (anvisa.length > 0) sources.push("ANVISA");
 
-    // Novo CAGED — busca por CBO se API key disponível
-    const TRANSP_KEY = Deno.env.get("TRANSPARENCIA_API_KEY");
+    // Novo CAGED — série nacional (IPEAData), sem dependência de API key
     let cagedData = null;
-    if (TRANSP_KEY && cbosFromOntology.length > 0) {
-      try {
-        cagedData = await fetchCaged(cbosFromOntology, TRANSP_KEY);
-        if (cagedData) console.log(`CAGED: ${cagedData.cbo_results?.length || 0} CBOs, saldo ${cagedData.summary?.total_saldo}`);
-      } catch (e) {
-        console.warn("CAGED falhou:", e instanceof Error ? e.message : e);
-      }
+    try {
+      cagedData = await fetchCaged(cbosFromOntology);
+      if (cagedData) console.log(`CAGED: saldo 12m ${cagedData.nacional?.total_saldo}`);
+    } catch (e) {
+      console.warn("CAGED falhou:", e instanceof Error ? e.message : e);
     }
+
     if (cagedData) sources.push("Novo CAGED/MTE");
 
     return new Response(JSON.stringify({
