@@ -178,6 +178,7 @@ const PesquisadorPanel = () => {
               <TabsTrigger value="empregabilidade" className="text-xs rounded-lg">💼 Empregabilidade</TabsTrigger>
               <TabsTrigger value="lacunas" className="text-xs rounded-lg">🎯 Lacunas</TabsTrigger>
               <TabsTrigger value="financiamento" className="text-xs rounded-lg">💰 Financiamento</TabsTrigger>
+              <TabsTrigger value="icts" className="text-xs rounded-lg">🏛️ ICTs Nacionais</TabsTrigger>
               <TabsTrigger value="prescricao" className="text-xs rounded-lg">🧠 IA {isAnalyzing && "…"}</TabsTrigger>
             </TabsList>
 
