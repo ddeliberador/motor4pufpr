@@ -480,6 +480,12 @@ Deno.serve(async (req) => {
     // STEP 3: Cross-layer indices
     const indices = computeCrossLayerIndices(knowledge, technology, policy, international);
 
+    // STEP 4: Persona-specific insights (deterministic, pre-calculated)
+    const personaInsights = computePersonaInsights(
+      "pesquisador", // será sobrescrito pelo motor-analysis por persona
+      knowledge, technology, policy, international, indices
+    );
+
     // Aggregate stats
     const stats = {
       papers: knowledge?.total_papers || 0,
