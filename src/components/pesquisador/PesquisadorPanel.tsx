@@ -357,61 +357,145 @@ const PesquisadorPanel = () => {
               </div>
             </TabsContent>
 
-            {/* EMPREGABILIDADE (RAIS/CAGED) */}
+            {/* EMPREGABILIDADE */}
             <TabsContent value="empregabilidade" className="space-y-4">
+              {/* Card principal — TRL como âncora de mercado */}
               <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Briefcase className="w-4 h-4 text-primary" /> Mercado de trabalho neste campo</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <div className="bg-muted/30 rounded-lg p-3 text-center">
-                    <p className="text-2xl font-bold text-foreground">{technology.employment_datasets?.length || 0}</p>
-                    <p className="text-[10px] text-muted-foreground">Datasets RAIS/CAGED</p>
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-primary" /> Mercado de trabalho neste campo
+                </h3>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-muted/30 rounded-lg p-4">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Maturidade tecnológica</p>
+                    <p className="text-3xl font-bold text-foreground font-mono">{(technology as any).trl_estimate || "—"}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{(technology as any).trl_label || "Sem dados"}</p>
+                    {(technology as any).trl_confidence && (
+                      <p className={`text-[9px] mt-1 ${
+                        (technology as any).trl_confidence === "high" ? "text-emerald-600"
+                        : (technology as any).trl_confidence === "medium" ? "text-muted-foreground"
+                        : "text-amber-500"
+                      }`}>
+                        {(technology as any).trl_confidence === "high" ? "confiança alta"
+                         : (technology as any).trl_confidence === "medium" ? "estimado"
+                         : "dados insuficientes"}
+                      </p>
+                    )}
                   </div>
-                  <div className="bg-muted/30 rounded-lg p-3 text-center">
-                    <p className="text-2xl font-bold text-foreground">{technology.trl_estimate || 0}</p>
-                    <p className="text-[10px] text-muted-foreground">TRL (maturidade)</p>
-                  </div>
-                  <div className="bg-muted/30 rounded-lg p-3 text-center">
-                    <p className="text-2xl font-bold text-foreground">{technology.patent_datasets?.length || 0}</p>
-                    <p className="text-[10px] text-muted-foreground">Datasets patentes</p>
+                  <div className="bg-muted/30 rounded-lg p-4">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Repos de código aberto</p>
+                    <p className="text-3xl font-bold text-foreground font-mono">{data.stats.github_repos}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {technology.total_stars > 0 ? `${technology.total_stars.toLocaleString()} stars no total` : "GitHub"}
+                    </p>
                   </div>
                 </div>
-                {technology.trl_estimate >= 6 && (
-                  <div className="flex items-start gap-2 p-2.5 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
-                    <Briefcase className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-foreground"><strong>Alta empregabilidade potencial:</strong> TRL {technology.trl_estimate} indica que o campo já tem aplicações comerciais e demanda por profissionais.</p>
+
+                {(technology as any).trl_rationale && (
+                  <div className="bg-muted/20 rounded-lg px-4 py-3 border-l-2 border-primary/30">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Base da classificação</p>
+                    <p className="text-xs text-foreground">{(technology as any).trl_rationale}</p>
                   </div>
                 )}
-                {technology.trl_estimate < 4 && (
-                  <div className="flex items-start gap-2 p-2.5 bg-amber-500/5 border border-amber-500/20 rounded-lg">
-                    <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-foreground"><strong>Campo ainda acadêmico:</strong> TRL {technology.trl_estimate} — empregabilidade concentrada em pesquisa. Oportunidade de ser pioneiro.</p>
-                  </div>
-                )}
-                {technology.employment_datasets && technology.employment_datasets.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-semibold text-foreground">Datasets de emprego formal (RAIS/CAGED)</h4>
-                    {technology.employment_datasets.map((d, i) => (
-                      <a key={i} href={d.url} target="_blank" rel="noopener noreferrer" className="block px-3 py-2 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
-                        <p className="text-xs font-medium text-foreground line-clamp-1">{d.title}</p>
-                        <p className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">{d.description}</p>
-                        <span className="text-[9px] text-primary mt-0.5 inline-block">↗ Acessar dataset</span>
-                      </a>
-                    ))}
-                  </div>
-                )}
-                {technology.innovation_datasets && technology.innovation_datasets.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-semibold text-foreground">Fomento à inovação (Embrapii/Finep)</h4>
-                    {technology.innovation_datasets.slice(0, 4).map((d, i) => (
-                      <a key={i} href={d.url} target="_blank" rel="noopener noreferrer" className="block px-3 py-2 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
-                        <p className="text-xs font-medium text-foreground line-clamp-1">{d.title}</p>
-                        <span className="text-[9px] text-primary">↗ Acessar</span>
-                      </a>
-                    ))}
-                  </div>
-                )}
+
+                {(() => {
+                  const trl = (technology as any).trl_estimate || 0;
+                  const faixa = (technology as any).trl_faixa || 1;
+                  if (faixa === 3) return (
+                    <div className="flex items-start gap-2 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+                      <Briefcase className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-semibold text-foreground">Campo com mercado de trabalho ativo</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">TRL {trl} indica tecnologia em estágio de demonstração ou mercado. Há demanda por engenheiros, pesquisadores aplicados e especialistas em produto.</p>
+                      </div>
+                    </div>
+                  );
+                  if (faixa === 2) return (
+                    <div className="flex items-start gap-2 p-3 bg-blue-500/5 border border-blue-500/20 rounded-lg">
+                      <Briefcase className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-semibold text-foreground">Campo em desenvolvimento — oportunidade para pioneiros</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">TRL {trl} indica prototipagem e validação laboratorial. Mercado de trabalho emergente, concentrado em P&D aplicado e startups deep tech.</p>
+                      </div>
+                    </div>
+                  );
+                  return (
+                    <div className="flex items-start gap-2 p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                      <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-semibold text-foreground">Campo em pesquisa básica — mercado ainda acadêmico</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">TRL {trl} indica que a tecnologia ainda está em fase fundamental. Empregabilidade concentrada em grupos de pesquisa e pós-graduação.</p>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
+
+              {/* Financiadores identificados nos papers */}
+              {(() => {
+                const grants = (knowledge.papers || []).flatMap((p: any) => p.grants || []).filter((g: any) => g.funder);
+                const funders = [...new Map(grants.map((g: any) => [g.funder, g])).values()].slice(0, 8);
+                if (funders.length === 0) return null;
+                return (
+                  <div className="bg-card border border-border rounded-xl p-5 space-y-3">
+                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-primary" />
+                      Quem financia pesquisa neste campo
+                    </h3>
+                    <p className="text-[10px] text-muted-foreground">Identificado nos metadados dos papers via OpenAlex — indica onde há bolsas e contratos de pesquisa ativos.</p>
+                    <div className="space-y-1.5">
+                      {funders.map((g: any, i: number) => (
+                        <div key={i} className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+                          <span className="text-[10px] font-mono text-muted-foreground w-4 flex-shrink-0">{i + 1}</span>
+                          <p className="text-xs text-foreground flex-1">{g.funder}</p>
+                          {g.award && <span className="text-[9px] font-mono text-muted-foreground">{g.award}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Repos como evidência de mercado */}
+              {technology.github_repos && technology.github_repos.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5 space-y-3">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <GitBranch className="w-4 h-4 text-primary" />
+                    Tecnologias e linguagens em uso ({technology.github_repos.length} repos)
+                  </h3>
+                  <p className="text-[10px] text-muted-foreground">Repositórios open source são proxy de skills técnicas demandadas pelo mercado.</p>
+
+                  {technology.language_distribution && Object.keys(technology.language_distribution).length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(technology.language_distribution as Record<string, number>)
+                        .sort(([, a], [, b]) => b - a)
+                        .map(([lang, count]) => (
+                          <span key={lang} className="text-[10px] px-2 py-1 bg-primary/10 text-primary rounded font-mono">
+                            {lang} ({count})
+                          </span>
+                        ))}
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    {technology.github_repos.slice(0, 5).map((r: any, i: number) => (
+                      <a key={i} href={r.url} target="_blank" rel="noopener noreferrer"
+                         className="flex items-center justify-between px-3 py-2 hover:bg-muted/50 rounded-lg transition-colors border-b border-border/30 last:border-0">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium text-foreground truncate">{r.name}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{r.description}</p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                          {r.language && <span className="text-[9px] px-1.5 py-0.5 bg-muted rounded font-mono">{r.language}</span>}
+                          <span className="text-[10px] font-bold text-primary">⭐ {r.stars}</span>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </TabsContent>
+
             <TabsContent value="lacunas" className="space-y-4">
               <div className="bg-card border border-border rounded-xl p-5 space-y-4">
                 <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Lightbulb className="w-4 h-4 text-accent" /> Cruzamentos que revelam lacunas</h3>
