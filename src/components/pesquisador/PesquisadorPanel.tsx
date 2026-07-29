@@ -15,6 +15,7 @@ import ReactMarkdown from "react-markdown";
 import StrategicIndices from "@/components/governo/StrategicIndices";
 import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetailSheet";
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
+import SidraPanel from "@/components/shared/SidraPanel";
 
 const PesquisadorPanel = () => {
   const config = personaConfigs.pesquisador;
@@ -180,7 +181,8 @@ const PesquisadorPanel = () => {
               <TabsTrigger value="trl" className="text-xs rounded-lg">📈 Maturidade TRL</TabsTrigger>
               <TabsTrigger value="lacunas" className="text-xs rounded-lg">🎯 Lacunas</TabsTrigger>
               <TabsTrigger value="financiamento" className="text-xs rounded-lg">💰 Financiamento</TabsTrigger>
-              <TabsTrigger value="icts" className="text-xs rounded-lg">🏛️ ICTs Nacionais</TabsTrigger>
+             <TabsTrigger value="icts" className="text-xs rounded-lg">🏛️ ICTs Nacionais</TabsTrigger>
+             <TabsTrigger value="sidra" className="text-xs rounded-lg">🏦 Estrutura IBGE</TabsTrigger>
               <TabsTrigger value="prescricao" className="text-xs rounded-lg">🧠 IA {isAnalyzing && "…"}</TabsTrigger>
             </TabsList>
 
@@ -261,7 +263,7 @@ const PesquisadorPanel = () => {
                         <p className="text-xs font-medium text-foreground">{a.area}</p>
                         <div className="flex gap-3 mt-0.5">
                           {a.series.slice(0, 2).map((s: any, j: number) => (
-                            <span key={j} className="text-[10px] text-muted-foreground">{s.ano}: <strong className="text-foreground">{s.valor}</strong> titulados</span>
+                            <span key={j} className="text-[10px] text-muted-foreground">{s.ano}: <strong className="text-foreground">{s.valor}</strong> pessoas</span>
                           ))}
                         </div>
                       </div>
@@ -853,6 +855,13 @@ const PesquisadorPanel = () => {
                 </div>
               )}
             </TabsContent>
+
+            {/* ESTRUTURA IBGE / SIDRA */}
+            <TabsContent value="sidra" className="space-y-4">
+              <SidraPanel sidra={(data.layers as any).sidra} />
+            </TabsContent>
+
+
 
 
             {/* ICTs NACIONAIS */}
