@@ -249,10 +249,22 @@ Deno.serve(async (req) => {
       },
       indices,
       stats,
+      ontology: ontology
+        ? {
+            ncm_codes: ontology.ncm_codes || [],
+            cnae_codes: ontology.cnae_codes || [],
+            ipc_codes: ontology.ipc_codes || [],
+            cnpq_areas: ontology.cnpq_areas || [],
+            search_terms: ontology.search_terms || [],
+            confidence: ontology.confidence ?? 0,
+            available: true,
+          }
+        : { ncm_codes: [], cnae_codes: [], ipc_codes: [], cnpq_areas: [], search_terms: [query], confidence: 0, available: false },
       meta: {
         processing_time_ms: processingTime,
         sources: uniqueSources,
         source_count: uniqueSources.length,
+        ontology_used: !!ontology,
       },
     };
 
