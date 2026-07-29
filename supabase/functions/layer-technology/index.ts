@@ -152,15 +152,94 @@ Deno.serve(async (req) => {
     const tech_density = totalRepos + patentDatasets;
     const papersCount = knowledge_total_papers || 0;
 
+    // ─────────────────────────────────────────────────────────────────
+    // TRL — Technology Readiness Level (adaptado para dados públicos BR)
+    // Referência: NASA TRL / EMBRAPII / ISO 16290:2013
+    // Dados abertos permitem distinguir 3 faixas, não 9 níveis.
+    // ─────────────────────────────────────────────────────────────────
+
+    const hasScientificBase = papersCount > 0;
+
+    const hasStructuredPatents = ipcCodes.length > 0;
+    const hasRepoTraction = totalStars > 50;
+    const hasHighRepoTraction = totalStars > 500;
+    const hasMeaningfulRepos = totalRepos >= 3;
+    const hasInnovationFunding = embrapii.length > 0 && embrapii.some((d: any) =>
+      d.title?.toLowerCase().includes(query.toLowerCase().split(" ")[0])
+    );
+    const hasPublicContracts = (knowledge_papers || 0) > 0;
+    const hasEmploymentSignal = employmentDatasets > 0 && rais.some((d: any) =>
+      d.title?.toLowerCase().includes(query.toLowerCase().split(" ")[0])
+    );
+
+    let trl_estimate: number;
+    let trl_label: string;
+    let trl_confidence: "high" | "medium" | "low";
+    let trl_faixa: 1 | 2 | 3;
+    let trl_rationale: string;
+
+    if (hasHighRepoTraction && hasEmploymentSignal) {
+      trl_estimate = 8;
+      trl_label = "Demonstração / Mercado (TRL 7–9)";
+      trl_faixa = 3;
+      trl_confidence = "medium";
+      trl_rationale = `Alta tração open source (${totalStars} stars) + emprego formal identificado`;
+    } else if (hasHighRepoTraction || (hasMeaningfulRepos && hasEmploymentSignal)) {
+      trl_estimate = 7;
+      trl_label = "Demonstração / Mercado (TRL 7–9)";
+      trl_faixa = 3;
+      trl_confidence = "low";
+      trl_rationale = hasHighRepoTraction
+        ? `Tração open source alta (${totalStars} stars) — mercado em formação`
+        : `Repos + emprego formal — aplicação emergindo`;
+    } else if (hasStructuredPatents && (hasRepoTraction || hasMeaningfulRepos)) {
+      trl_estimate = 6;
+      trl_label = "Desenvolvimento / Validação (TRL 4–6)";
+      trl_faixa = 2;
+      trl_confidence = "medium";
+      trl_rationale = `Patentes IPC identificadas (${ipcCodes.length}) + código aberto com tração`;
+    } else if (hasStructuredPatents || (hasRepoTraction && hasScientificBase)) {
+      trl_estimate = 5;
+      trl_label = "Desenvolvimento / Validação (TRL 4–6)";
+      trl_faixa = 2;
+      trl_confidence = "medium";
+      trl_rationale = hasStructuredPatents
+        ? `Patentes identificadas via IPC (${ipcCodes.length} códigos) — campo em P&D aplicado`
+        : `Repos com tração (${totalStars} stars) + ${papersCount} papers científicos`;
+    } else if (hasInnovationFunding || (hasMeaningfulRepos && hasScientificBase)) {
+      trl_estimate = 4;
+      trl_label = "Desenvolvimento / Validação (TRL 4–6)";
+      trl_faixa = 2;
+      trl_confidence = "low";
+      trl_rationale = hasInnovationFunding
+        ? "Financiamento de inovação (Embrapii/Finep) identificado"
+        : `${totalRepos} repos + base científica — prototipagem em curso`;
+    } else if (hasScientificBase) {
+      trl_estimate = 3;
+      trl_label = "Pesquisa Básica (TRL 1–3)";
+      trl_faixa = 1;
+      trl_confidence = papersCount > 100 ? "high" : "medium";
+      trl_rationale = `${papersCount} papers científicos — campo em fase de pesquisa básica`;
+    } else {
+      trl_estimate = 1;
+      trl_label = "Pesquisa Básica (TRL 1–3)";
+      trl_faixa = 1;
+      trl_confidence = "low";
+      trl_rationale = "Dados insuficientes para classificação — campo muito específico ou emergente";
+    }
+
     const signals = {
-      has_papers: papersCount > 0, has_repos: totalRepos > 0, has_patents: patentDatasets > 0,
-      has_employment: employmentDatasets > 0, high_stars: totalStars > 100,
-      has_cnpj_data: cnpj_qsa.length > 0, has_transport_data: transportes.length > 0,
+      has_papers: hasScientificBase,
+      has_repos: hasMeaningfulRepos,
+      has_patents: hasStructuredPatents,
+      has_employment: hasEmploymentSignal,
+      high_stars: hasHighRepoTraction,
+      has_innovation_funding: hasInnovationFunding,
     };
-    const signalCount = Object.values(signals).filter(Boolean).length;
-    const trl_estimate = Math.min(9, signalCount + 1);
-    const trl_label = trl_estimate <= 3 ? "Pesquisa básica" : trl_estimate <= 5 ? "Protótipo/Validação" : trl_estimate <= 7 ? "Demonstração" : "Mercado";
-    const science_to_patent = patentDatasets > 0 && papersCount > 0 ? Math.round(papersCount / patentDatasets) : papersCount > 0 ? null : 0;
+
+    const science_to_patent = hasStructuredPatents && papersCount > 0
+      ? Math.round(papersCount / Math.max(ipcCodes.length, 1))
+      : null;
 
     const languageDistribution: Record<string, number> = {};
     for (const r of github) {
