@@ -479,17 +479,15 @@ Deno.serve(async (req) => {
     if (transportes.length > 0) sources.push("Transportes");
     if (anvisa.length > 0) sources.push("ANVISA");
 
-    // Novo CAGED — busca por CBO se API key disponível
-    const TRANSP_KEY = Deno.env.get("TRANSPARENCIA_API_KEY");
+    // Novo CAGED — série nacional (IPEAData), sem dependência de API key
     let cagedData = null;
-    if (TRANSP_KEY && cbosFromOntology.length > 0) {
-      try {
-        cagedData = await fetchCaged(cbosFromOntology, TRANSP_KEY);
-        if (cagedData) console.log(`CAGED: ${cagedData.cbo_results?.length || 0} CBOs, saldo ${cagedData.summary?.total_saldo}`);
-      } catch (e) {
-        console.warn("CAGED falhou:", e instanceof Error ? e.message : e);
-      }
+    try {
+      cagedData = await fetchCaged(cbosFromOntology);
+      if (cagedData) console.log(`CAGED: saldo 12m ${cagedData.nacional?.total_saldo}`);
+    } catch (e) {
+      console.warn("CAGED falhou:", e instanceof Error ? e.message : e);
     }
+
     if (cagedData) sources.push("Novo CAGED/MTE");
 
     return new Response(JSON.stringify({
