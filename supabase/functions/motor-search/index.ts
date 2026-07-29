@@ -524,6 +524,7 @@ Deno.serve(async (req) => {
         international: international || { country_distribution: {}, macro_indicators: [], ipeadata_series: [], comex_datasets: [], dependency_index: 0, br_share: 0, global_insertion: 0 },
       },
       indices,
+      persona_insights: personaInsights,
       stats,
       ontology: ontology
         ? {
