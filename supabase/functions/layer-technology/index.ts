@@ -287,11 +287,15 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { query, knowledge_papers, knowledge_total_papers, search_terms, ipc_codes } = await req.json();
+    const { query, knowledge_papers, knowledge_total_papers, search_terms, ipc_codes, cbo_codes } = await req.json();
     if (!query) return new Response(JSON.stringify({ error: "query is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const searchTerms: string[] = Array.isArray(search_terms) && search_terms.length > 0 ? search_terms : [query];
     const ipcCodes: string[] = Array.isArray(ipc_codes) ? ipc_codes : [];
+
+    // Resolve CBOs: prioridade para os vindos da ontologia Railway, fallback para mapeamento local
+    const cbosFromOntology: Array<{ code: string; description: string; area?: string }> =
+      Array.isArray(cbo_codes) && cbo_codes.length > 0 ? cbo_codes : resolveCboFromQuery(query);
 
     console.log(`Layer Technology: ${query} | termos: ${searchTerms.join(", ")} | IPC: ${ipcCodes.length}`);
     const start = Date.now();
@@ -415,8 +419,24 @@ Deno.serve(async (req) => {
     if (transportes.length > 0) sources.push("Transportes");
     if (anvisa.length > 0) sources.push("ANVISA");
 
+    // Novo CAGED — busca por CBO se API key disponível
+    const TRANSP_KEY = Deno.env.get("TRANSPARENCIA_API_KEY");
+    let cagedData = null;
+    if (TRANSP_KEY && cbosFromOntology.length > 0) {
+      try {
+        cagedData = await fetchCaged(cbosFromOntology, TRANSP_KEY);
+        if (cagedData) console.log(`CAGED: ${cagedData.cbo_results?.length || 0} CBOs, saldo ${cagedData.summary?.total_saldo}`);
+      } catch (e) {
+        console.warn("CAGED falhou:", e instanceof Error ? e.message : e);
+      }
+    }
+    if (cagedData) sources.push("Novo CAGED/MTE");
+
     return new Response(JSON.stringify({
-      github_repos: github, github_global_repos: globalRepos, patent_datasets: inpi, employment_datasets: rais,
+      github_repos: github,
+      caged_data: cagedData,
+      cbo_codes_used: cbosFromOntology,
+      github_global_repos: globalRepos, patent_datasets: inpi, employment_datasets: rais,
       innovation_datasets: embrapii, cnpj_qsa_datasets: cnpj_qsa,
       transport_datasets: transportes, anvisa_datasets: anvisa,
       tech_density, trl_estimate, trl_label, trl_faixa, trl_confidence, trl_rationale,
