@@ -262,9 +262,10 @@ Deno.serve(async (req) => {
     const sources: string[] = [];
     if (pintec) sources.push("PINTEC/IBGE");
     if (cempre) sources.push("CEMPRE/IBGE");
-    if (posgrad) sources.push("PNPG-CAPES/IBGE");
-    if (pib) sources.push("SCN/IBGE");
-    if (graduacao) sources.push("Censo Ed. Superior/IBGE");
+    if (posgrad) sources.push("PNAD Contínua/IBGE");
+    if (pib) sources.push("Contas Nacionais/IBGE");
+    if (graduacao) sources.push("PNAD Contínua UF/IBGE");
+
 
     return new Response(JSON.stringify({
       pintec,
