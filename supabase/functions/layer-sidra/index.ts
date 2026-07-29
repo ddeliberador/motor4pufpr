@@ -167,7 +167,7 @@ async function fetchPosGraduacao(_cnpqAreas: string[]) {
 // ── 4. PIB setorial ────────────────────────────────────────────────────────
 async function fetchPibSetorial() {
   const data = await safeFetch(
-    `${SIDRA}/t/6784/n1/all/v/9318/p/last%205`
+    `${SIDRA}/t/1846/n1/all/v/allxp/p/last%205`
   );
   if (!data || !Array.isArray(data)) return null;
 
@@ -190,7 +190,7 @@ async function fetchPibSetorial() {
 // ── 5. Graduados por área ─────────────────────────────────────────────────
 async function fetchGraduacao() {
   const data = await safeFetch(
-    `${SIDRA}/t/1616/n1/all/v/allxp/p/last%202`
+    `${SIDRA}/t/9163/n1/all/v/allxp/p/last%202`
   );
   if (!data || !Array.isArray(data)) return null;
 
