@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Building2, Search, ArrowLeft, AlertTriangle, Zap, MapPin, Globe, BookOpen, Landmark, Shield, FileText, Activity, GitBranch, Target } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
+import { TrlScaleChart } from "@/components/shared/TrlScaleChart";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
