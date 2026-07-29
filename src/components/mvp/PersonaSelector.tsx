@@ -1,104 +1,238 @@
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
-import { motion } from "framer-motion";
-import { personaConfigs } from "@/config/personas";
+import { Search, ArrowRight, Microscope, Building2, Factory, Landmark, X, Check } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useCnaeSearch } from "@/hooks/useCnaeSearch";
+import type { CnaeCode } from "@/components/mvp/CnaeSelectionModal";
 import type { Persona } from "@/types/persona";
 
-const personas: Persona[] = ["pesquisador", "universidade", "empresa", "governo"];
+const PERSONAS: { key: Persona; icon: typeof Microscope; label: string; subtitle: string; color: string }[] = [
+  { key: "pesquisador", icon: Microscope, label: "Pesquisador", subtitle: "Lacunas, financiamento, agenda científica", color: "from-violet-500 to-purple-600" },
+  { key: "universidade", icon: Building2, label: "Universidade", subtitle: "Posicionamento, captação, parcerias", color: "from-blue-500 to-cyan-600" },
+  { key: "empresa", icon: Factory, label: "Empresa", subtitle: "Make-or-buy, parceiro P&D, mercado", color: "from-orange-500 to-amber-600" },
+  { key: "governo", icon: Landmark, label: "Governo", subtitle: "Prioridade de investimento, efetividade", color: "from-emerald-500 to-teal-600" },
+];
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 30, scale: 0.95 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      delay: 1.0 + i * 0.12,
-      duration: 0.5,
-      ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
-    },
-  }),
-};
+const EXAMPLES = ["grafeno", "baterias de lítio", "semicondutores", "hidrogênio verde", "CRISPR", "inteligência artificial"];
 
-const PersonaSelector = () => {
+export default function PersonaSelector() {
   const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
+  const [cnaes, setCnaes] = useState<CnaeCode[]>([]);
+  const [selectedCnaes, setSelectedCnaes] = useState<CnaeCode[]>([]);
+  const [showCnaes, setShowCnaes] = useState(false);
+  const { searchCnaes, isLoading: loadingCnaes } = useCnaeSearch();
+
+  // Busca CNAEs em background ao digitar (debounced)
+  useEffect(() => {
+    if (query.trim().length < 3) {
+      setCnaes([]);
+      setSelectedCnaes([]);
+      setShowCnaes(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      const results = await searchCnaes(query);
+      if (results.length > 0) {
+        setCnaes(results.slice(0, 6));
+        setSelectedCnaes(results.filter((c) => c.isOfficialMatch).slice(0, 3));
+        setShowCnaes(true);
+      } else {
+        setCnaes([]);
+        setShowCnaes(false);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [query, searchCnaes]);
+
+  const toggleCnae = useCallback((cnae: CnaeCode) => {
+    setSelectedCnaes((prev) =>
+      prev.some((c) => c.code === cnae.code)
+        ? prev.filter((c) => c.code !== cnae.code)
+        : [...prev, cnae]
+    );
+  }, []);
+
+  const canSearch = query.trim().length >= 2 && selectedPersona !== null;
+
+  const handleSearch = () => {
+    if (!canSearch) return;
+    sessionStorage.setItem("motor4p_query", query.trim());
+    sessionStorage.setItem("motor4p_persona", selectedPersona!);
+    sessionStorage.setItem("motor4p_cnaes", JSON.stringify(selectedCnaes));
+    navigate(`/${selectedPersona}`);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && canSearch) handleSearch();
+  };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-      {personas.map((key, i) => {
-        const config = personaConfigs[key];
-        const Icon = config.icon;
-        return (
-          <motion.button
-            key={key}
-            custom={i}
-            variants={cardVariants}
-            initial="hidden"
-            animate="visible"
-            whileHover={{ y: -6, scale: 1.02, transition: { duration: 0.25 } }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigate(`/${key}`)}
-            className="group relative p-6 md:p-8 text-left transition-colors duration-300 cursor-pointer overflow-hidden rounded-xl border border-white/10 bg-white/5 backdrop-blur-md hover:border-blue-400/40 hover:bg-white/10"
+    <div className="space-y-6">
+      {/* Campo de busca */}
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-300/50 pointer-events-none" />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Objeto tecnológico — ex: grafeno, baterias de lítio, CRISPR..."
+          className="w-full h-14 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md pl-12 pr-4 text-base text-white placeholder:text-blue-300/40 focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-400/40 transition-all"
+          autoFocus
+        />
+      </div>
+
+      {/* Exemplos rápidos */}
+      {!query && (
+        <div className="flex flex-wrap gap-2 justify-center">
+          {EXAMPLES.map((ex) => (
+            <button
+              key={ex}
+              onClick={() => setQuery(ex)}
+              className="text-xs px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-blue-300/60 hover:text-white hover:border-blue-400/40 transition-all"
+            >
+              {ex}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* CNAEs sugeridos */}
+      <AnimatePresence>
+        {showCnaes && cnaes.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-md p-4 space-y-2"
           >
-            {/* Hover glow */}
-            <div
-              className={`absolute -top-20 -right-20 w-40 h-40 rounded-full bg-gradient-to-br ${config.color} opacity-0 group-hover:opacity-10 blur-3xl transition-opacity duration-500`}
-            />
-
-            {/* Corner accent line */}
-            <motion.div
-              className={`absolute top-0 left-0 h-1 bg-gradient-to-r ${config.color} rounded-t-xl`}
-              initial={{ width: 0 }}
-              animate={{ width: "100%" }}
-              transition={{ delay: 1.3 + i * 0.12, duration: 0.6 }}
-            />
-
-            <div className="relative z-10">
-              <motion.div
-                className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${config.color} flex items-center justify-center mb-5 shadow-lg`}
-                whileHover={{ rotate: [0, -8, 8, 0], transition: { duration: 0.5 } }}
-              >
-                <Icon className="w-7 h-7 text-white" />
-              </motion.div>
-              <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-blue-300 transition-colors">
-                {config.label}
-              </h3>
-              <p className="text-sm text-blue-200/60 mb-4">
-                {config.subtitle}
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold text-blue-300/70 uppercase tracking-wider">
+                {loadingCnaes ? "Identificando setores..." : "Setores CNAE identificados — confirme os relevantes"}
               </p>
-              <ul className="space-y-1.5 mb-5">
-                {config.questions.slice(0, 3).map((q, qi) => (
-                  <motion.li
-                    key={qi}
-                    className="text-xs text-blue-200/50 flex items-center gap-2"
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 1.4 + i * 0.12 + qi * 0.08 }}
-                  >
-                    <motion.span
-                      className={`w-1.5 h-1.5 rounded-full bg-gradient-to-br ${config.color}`}
-                      animate={{ scale: [1, 1.3, 1] }}
-                      transition={{ duration: 2, repeat: Infinity, delay: qi * 0.3 }}
-                    />
-                    {q}
-                  </motion.li>
-                ))}
-              </ul>
-              <div className="flex items-center gap-2 text-sm font-medium text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                Acessar
-                <motion.span
-                  animate={{ x: [0, 4, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  <ArrowRight className="w-4 h-4" />
-                </motion.span>
-              </div>
+              <button onClick={() => setShowCnaes(false)} className="text-blue-300/40 hover:text-white">
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
-          </motion.button>
-        );
-      })}
+            <div className="grid grid-cols-1 gap-1.5">
+              {cnaes.map((cnae) => {
+                const isSelected = selectedCnaes.some((c) => c.code === cnae.code);
+                return (
+                  <button
+                    key={cnae.code}
+                    onClick={() => toggleCnae(cnae)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${
+                      isSelected
+                        ? "bg-blue-500/20 border border-blue-400/40 text-white"
+                        : "bg-white/5 border border-white/5 text-blue-200/60 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border transition-all ${
+                        isSelected ? "bg-blue-500 border-blue-400" : "border-white/20"
+                      }`}
+                    >
+                      {isSelected && <Check className="w-3 h-3 text-white" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="font-mono text-[10px] text-blue-400/70 mr-2">{cnae.code}</span>
+                      <span className="text-xs line-clamp-1">{cnae.description}</span>
+                    </div>
+                    {cnae.isOfficialMatch && (
+                      <span className="text-[9px] px-1.5 py-0.5 bg-blue-500/20 text-blue-300 rounded-full flex-shrink-0">match</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            {selectedCnaes.length > 0 && (
+              <p className="text-[10px] text-blue-300/50 pt-1">
+                {selectedCnaes.length} setor{selectedCnaes.length > 1 ? "es" : ""} selecionado{selectedCnaes.length > 1 ? "s" : ""} — usados para refinar buscas em bases governamentais
+              </p>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Seleção de perfil — obrigatória */}
+      <div>
+        <p className="text-xs text-blue-300/50 text-center mb-3 uppercase tracking-wider font-semibold">
+          {selectedPersona ? "Perspectiva selecionada" : "Selecione sua perspectiva para buscar"}
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          {PERSONAS.map((p) => {
+            const Icon = p.icon;
+            const isSelected = selectedPersona === p.key;
+            return (
+              <motion.button
+                key={p.key}
+                onClick={() => setSelectedPersona(p.key)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={`relative p-4 rounded-xl text-left transition-all border ${
+                  isSelected
+                    ? "border-white/30 bg-white/10"
+                    : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
+                }`}
+              >
+                {isSelected && (
+                  <motion.div
+                    layoutId="persona-selected"
+                    className={`absolute inset-0 rounded-xl bg-gradient-to-br ${p.color} opacity-10`}
+                  />
+                )}
+                <div className="relative flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${p.color} flex items-center justify-center flex-shrink-0`}>
+                    <Icon className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className={`text-sm font-semibold transition-colors ${isSelected ? "text-white" : "text-blue-100/80"}`}>
+                      {p.label}
+                    </p>
+                    <p className="text-[10px] text-blue-300/50 line-clamp-1">{p.subtitle}</p>
+                  </div>
+                  {isSelected && (
+                    <div className="ml-auto flex-shrink-0">
+                      <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${p.color} flex items-center justify-center`}>
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Botão de busca */}
+      <motion.button
+        onClick={handleSearch}
+        disabled={!canSearch}
+        whileHover={canSearch ? { scale: 1.01 } : {}}
+        whileTap={canSearch ? { scale: 0.99 } : {}}
+        className={`w-full h-14 rounded-xl flex items-center justify-center gap-3 text-base font-semibold transition-all ${
+          canSearch
+            ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40"
+            : "bg-white/5 text-blue-300/30 cursor-not-allowed border border-white/5"
+        }`}
+      >
+        {!query.trim() ? (
+          <span>Digite o objeto tecnológico</span>
+        ) : !selectedPersona ? (
+          <span>Selecione sua perspectiva</span>
+        ) : (
+          <>
+            <Search className="w-5 h-5" />
+            <span className="truncate">
+              Analisar "{query.trim()}" como {PERSONAS.find((p) => p.key === selectedPersona)?.label}
+            </span>
+            <ArrowRight className="w-4 h-4 flex-shrink-0" />
+          </>
+        )}
+      </motion.button>
     </div>
   );
-};
-
-export default PersonaSelector;
+}
