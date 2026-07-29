@@ -52,13 +52,6 @@ const Header = () => {
               <Lock className="w-3 h-3" />
               Gestão da Pesquisa
             </Link>
-            <Link
-              to="/"
-              className="btn-primary flex items-center gap-2 text-sm py-2 px-4"
-            >
-              <Zap className="w-4 h-4" />
-              Escolher Perfil
-            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -99,14 +92,6 @@ const Header = () => {
               >
                 <Lock className="w-3 h-3" />
                 Gestão da Pesquisa
-              </Link>
-              <Link
-                to="/"
-                onClick={() => setMobileMenuOpen(false)}
-                className="btn-primary flex items-center justify-center gap-2 mt-2"
-              >
-                <Zap className="w-4 h-4" />
-                Escolher Perfil
               </Link>
             </div>
           </div>
