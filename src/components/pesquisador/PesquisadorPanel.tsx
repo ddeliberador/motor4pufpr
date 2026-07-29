@@ -456,6 +456,97 @@ const PesquisadorPanel = () => {
                 );
               })()}
 
+              {/* Novo CAGED — dados de emprego formal por CBO */}
+              {(() => {
+                const caged = (technology as any).caged_data;
+                if (!caged?.cbo_results?.length) return null;
+                const summary = caged.summary;
+                const tendenciaIcon = summary.tendencia_geral === "crescimento" ? "↑" : summary.tendencia_geral === "retração" ? "↓" : "→";
+                return (
+                  <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                          <Briefcase className="w-4 h-4 text-primary" />
+                          Emprego formal no campo — Novo CAGED/MTE
+                        </h3>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{summary.periodo} · {summary.cbos_consultados} ocupações consultadas</p>
+                      </div>
+                      <span className={`text-xs font-semibold px-2 py-1 rounded-full border ${
+                        summary.tendencia_geral === "crescimento" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
+                        : summary.tendencia_geral === "retração" ? "bg-red-500/10 border-red-500/20 text-red-500"
+                        : "bg-muted border-border text-muted-foreground"
+                      }`}>
+                        {tendenciaIcon} {summary.tendencia_geral}
+                      </span>
+                    </div>
+
+                    {/* Resumo */}
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-muted/30 rounded-lg p-3 text-center">
+                        <p className="text-xl font-bold text-emerald-500 font-mono">+{summary.total_admissoes.toLocaleString("pt-BR")}</p>
+                        <p className="text-[10px] text-muted-foreground">Admissões</p>
+                      </div>
+                      <div className="bg-muted/30 rounded-lg p-3 text-center">
+                        <p className="text-xl font-bold text-red-400 font-mono">-{summary.total_demissoes.toLocaleString("pt-BR")}</p>
+                        <p className="text-[10px] text-muted-foreground">Desligamentos</p>
+                      </div>
+                      <div className="bg-muted/30 rounded-lg p-3 text-center">
+                        <p className={`text-xl font-bold font-mono ${summary.total_saldo >= 0 ? "text-emerald-500" : "text-red-400"}`}>
+                          {summary.total_saldo >= 0 ? "+" : ""}{summary.total_saldo.toLocaleString("pt-BR")}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">Saldo líquido</p>
+                      </div>
+                    </div>
+
+                    {/* Por CBO */}
+                    <div className="space-y-2">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Por ocupação (CBO)</p>
+                      {caged.cbo_results.map((r: any, i: number) => (
+                        <div key={i} className="flex items-center gap-3 px-3 py-2.5 bg-muted/20 rounded-lg border border-border/30">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium text-foreground">{r.descricao}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[9px] font-mono text-muted-foreground">{r.cbo}</span>
+                              <span className="text-[9px] px-1 py-0.5 bg-muted rounded text-muted-foreground">{r.area}</span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end flex-shrink-0">
+                            <span className={`text-sm font-bold font-mono ${r.saldo >= 0 ? "text-emerald-500" : "text-red-400"}`}>
+                              {r.saldo >= 0 ? "+" : ""}{r.saldo.toLocaleString("pt-BR")}
+                            </span>
+                            <span className={`text-[9px] ${
+                              r.tendencia === "crescimento" ? "text-emerald-500"
+                              : r.tendencia === "retração" ? "text-red-400"
+                              : "text-muted-foreground"
+                            }`}>{r.tendencia}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Top UFs do primeiro CBO */}
+                    {caged.cbo_results[0]?.top_ufs?.length > 0 && (
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Estados com mais contratação</p>
+                        <div className="flex flex-wrap gap-2">
+                          {caged.cbo_results[0].top_ufs.map((u: any, i: number) => (
+                            <span key={i} className={`text-[10px] px-2 py-1 rounded font-mono border ${
+                              u.saldo > 0 ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600"
+                              : "bg-red-500/10 border-red-500/20 text-red-500"
+                            }`}>
+                              {u.uf} {u.saldo > 0 ? "+" : ""}{u.saldo}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-[9px] text-muted-foreground">Fonte: {caged.source}</p>
+                  </div>
+                );
+              })()}
+
               {/* Repos como evidência de mercado */}
               {technology.github_repos && technology.github_repos.length > 0 && (
                 <div className="bg-card border border-border rounded-xl p-5 space-y-3">
