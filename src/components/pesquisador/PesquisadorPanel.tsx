@@ -26,6 +26,9 @@ const PesquisadorPanel = () => {
   const [activeTab, setActiveTab] = useState("panorama");
   const [detailItem, setDetailItem] = useState<DetailItem | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [icts, setIcts] = useState<any>(null);
+  const [isLoadingIcts, setIsLoadingIcts] = useState(false);
+
 
   const { search, data, analysis, isLoading, isAnalyzing, error } = useMotorSearch();
 
