@@ -84,8 +84,10 @@ async function searchTransparencia(query: string, searchTerms: string[]) {
         object: pkg.title || "", proponent: pkg.organization?.title || "",
         value: 0, grantor: "", startDate: "", endDate: "", situation: "dataset",
       })),
+      emendas: [], federal_contracts: [], budget_execution: [],
       sanctions: [],
     };
+
   }
   const headers = { "chave-api-dados": CHAVE_API, "Accept": "application/json" };
   const TP = "https://api.portaldatransparencia.gov.br/api-de-dados";
