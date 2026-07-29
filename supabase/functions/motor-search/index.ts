@@ -528,7 +528,7 @@ Deno.serve(async (req) => {
     const knowledge = await invokeLayer("layer-knowledge", { query, search_terms: searchTerms });
 
     // STEP 2: Remaining 3 layers in parallel, passing knowledge + ontology data
-    const [technology, policy, international] = await Promise.all([
+    const [technology, policy, international, sidra] = await Promise.all([
       invokeLayer("layer-technology", {
         query,
         knowledge_papers: knowledge?.papers?.length || 0,
@@ -549,7 +549,14 @@ Deno.serve(async (req) => {
         knowledge_total_papers: knowledge?.total_papers || 0,
         ncm_codes: ncmCodes,
       }),
+      invokeLayer("layer-sidra", {
+        query,
+        cnae_codes: cnaeCodes,
+        cnpq_areas: ontology?.cnpq_areas || [],
+        persona: "all",
+      }),
     ]);
+
 
     // STEP 3: Cross-layer indices
     const indices = computeCrossLayerIndices(knowledge, technology, policy, international);
@@ -584,6 +591,8 @@ Deno.serve(async (req) => {
       ...(technology?.sources || []),
       ...(policy?.sources || []),
       ...(international?.sources || []),
+      ...(sidra?.sources || []),
+
     ];
     const uniqueSources = [...new Set(allSources)];
 
@@ -596,6 +605,8 @@ Deno.serve(async (req) => {
         technology: technology || { github_repos: [], patent_datasets: [], employment_datasets: [], tech_density: 0, trl_estimate: 2, trl_label: "Sem dados" },
         policy: policy || { contracts: [], convenios: [], sanctions: [], gazettes: [], total_instrumental_value: 0, instrumental_intensity: 0, fiscal_capacity: {}, uf_distribution: {} },
         international: international || { country_distribution: {}, macro_indicators: [], ipeadata_series: [], comex_datasets: [], dependency_index: 0, br_share: 0, global_insertion: 0 },
+        sidra: sidra || { pintec: null, cempre: null, pos_graduacao: null, pib_setorial: null, graduacao: null, sources: [] },
+
       },
       indices,
       persona_insights: personaInsights,
