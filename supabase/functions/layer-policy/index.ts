@@ -74,7 +74,7 @@ async function searchPNCP(query: string, searchTerms: string[], cnaeCodes: strin
   return allResults.slice(0, 15);
 }
 
-async function searchTransparencia(query: string) {
+async function searchTransparencia(query: string, searchTerms: string[]) {
   const CHAVE_API = Deno.env.get("TRANSPARENCIA_API_KEY") || "";
   if (!CHAVE_API) {
     console.warn("TRANSPARENCIA_API_KEY não configurada — usando fallback dados.gov.br");
@@ -88,16 +88,35 @@ async function searchTransparencia(query: string) {
     };
   }
   const headers = { "chave-api": CHAVE_API };
-  const [convenios, ceis] = await Promise.all([
-    safeFetch(`https://api.portaldatransparencia.gov.br/api-de-dados/convenios?pagina=1&tamanhoPagina=8&objeto=${encodeURIComponent(query)}`, { headers }, 25000),
-    safeFetch(`https://api.portaldatransparencia.gov.br/api-de-dados/ceis?pagina=1&tamanhoPagina=5&nomeFantasia=${encodeURIComponent(query)}`, { headers }, 25000),
-  ]);
+  const termsToTry = [query, ...searchTerms.filter((t) => t !== query)].slice(0, 2);
+
+  const allConvenios: any[] = [];
+  const seen = new Set<string>();
+  for (const term of termsToTry) {
+    const convenios = await safeFetch(
+      `https://api.portaldatransparencia.gov.br/api-de-dados/convenios?pagina=1&tamanhoPagina=8&objeto=${encodeURIComponent(term)}`,
+      { headers }, 25000
+    );
+    for (const c of (convenios || [])) {
+      const key = c.numero || c.objeto?.slice(0, 40) || "";
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        allConvenios.push({
+          object: c.objeto?.slice(0, 200) || "", proponent: c.proponente?.nome || "",
+          value: c.valor || 0, grantor: c.orgaoSuperior?.nome || "",
+          startDate: c.dataInicioVigencia || "", endDate: c.dataFimVigencia || "", situation: c.situacao || "",
+        });
+      }
+    }
+  }
+
+  const ceis = await safeFetch(
+    `https://api.portaldatransparencia.gov.br/api-de-dados/ceis?pagina=1&tamanhoPagina=5&nomeFantasia=${encodeURIComponent(query)}`,
+    { headers }, 25000
+  );
+
   return {
-    convenios: (convenios || []).map((c: any) => ({
-      object: c.objeto?.slice(0, 200) || "", proponent: c.proponente?.nome || "",
-      value: c.valor || 0, grantor: c.orgaoSuperior?.nome || "",
-      startDate: c.dataInicioVigencia || "", endDate: c.dataFimVigencia || "", situation: c.situacao || "",
-    })),
+    convenios: allConvenios,
     sanctions: (ceis || []).map((s: any) => ({
       company: s.nomeFantasia || s.razaoSocial || "", type: s.tipoSancao || "",
       organ: s.orgaoSancionador?.nome || "", date: s.dataInicioSancao || "",
