@@ -216,13 +216,7 @@ const GovernoPanel = () => {
               <div className="bg-card border border-border rounded-xl p-5 space-y-4">
                 <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Target className="w-4 h-4 text-primary" /> Maturidade Tecnológica — TRL Estimado</h3>
                 <p className="text-[10px] text-muted-foreground">Avaliação automática baseada em sinais de ciência, tecnologia, contratos e mercado para apoiar decisões de alocação de recursos.</p>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 bg-muted rounded-full h-5 relative overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 rounded-full transition-all" style={{ width: `${(trlEstimate / 9) * 100}%` }} />
-                  </div>
-                  <span className="text-2xl font-bold text-foreground">{trlEstimate}/9</span>
-                </div>
-                <p className="text-xs text-muted-foreground">{trlLabel}</p>
+                <TrlScaleChart level={trlEstimate} label={trlLabel} />
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                   {[
                     { label: "Papers científicos", ok: technology.trl_signals?.has_papers },
