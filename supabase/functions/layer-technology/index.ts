@@ -283,6 +283,82 @@ async function searchANVISA(query: string) {
   }));
 }
 
+async function fetchCaged(
+  cboCodes: Array<{ code: string; description: string; area?: string }>,
+  apiKey: string
+): Promise<any> {
+  const today = new Date();
+  const start = new Date(today.getFullYear() - 1, today.getMonth(), 1);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const competenciaInicio = `${start.getFullYear()}${pad(start.getMonth() + 1)}`;
+  const competenciaFim = `${today.getFullYear()}${pad(today.getMonth() + 1)}`;
+
+  const results: any[] = [];
+
+  for (const cbo of cboCodes.slice(0, 4)) {
+    const cboNum = cbo.code.replace("-", "");
+    try {
+      const data = await safeFetch(
+        `https://api.portaldatransparencia.gov.br/api-de-dados/caged-mensal?codigoCbo=${cboNum}&competenciaInicio=${competenciaInicio}&competenciaFim=${competenciaFim}&pagina=1&tamanhoPagina=100`,
+        { headers: { "chave-api-dados": apiKey, "Accept": "application/json" } },
+        20000
+      );
+
+      const items: any[] = Array.isArray(data) ? data : (data?.data || []);
+      if (!items.length) continue;
+
+      const admissoes = items.reduce((s: number, i: any) => s + (parseInt(i.admissoes || i.quantidadeAdmitidos || "0") || 0), 0);
+      const demissoes = items.reduce((s: number, i: any) => s + (parseInt(i.demissoes || i.quantidadeDesligados || "0") || 0), 0);
+      const saldo = admissoes - demissoes;
+
+      // Distribuição por UF
+      const ufDist: Record<string, number> = {};
+      for (const item of items) {
+        const uf = item.uf || item.siglaUf || item.municipioUf || "";
+        const s = parseInt(item.saldo || "0") || 0;
+        if (uf && s !== 0) ufDist[uf] = (ufDist[uf] || 0) + s;
+      }
+      const topUfs = Object.entries(ufDist)
+        .sort(([, a], [, b]) => (b as number) - (a as number))
+        .slice(0, 5)
+        .map(([uf, s]) => ({ uf, saldo: s }));
+
+      results.push({
+        cbo: cbo.code,
+        descricao: cbo.description,
+        area: cbo.area || "",
+        admissoes,
+        demissoes,
+        saldo,
+        tendencia: saldo > 50 ? "crescimento" : saldo < -50 ? "retração" : "estável",
+        top_ufs: topUfs,
+        meses: Math.round((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30)),
+      });
+    } catch (e) {
+      console.warn(`CAGED erro CBO ${cbo.code}:`, e instanceof Error ? e.message : e);
+    }
+  }
+
+  if (!results.length) return null;
+
+  const totalSaldo = results.reduce((s, r) => s + r.saldo, 0);
+  const totalAdmissoes = results.reduce((s, r) => s + r.admissoes, 0);
+  const totalDemissoes = results.reduce((s, r) => s + r.demissoes, 0);
+
+  return {
+    cbo_results: results,
+    summary: {
+      total_saldo: totalSaldo,
+      total_admissoes: totalAdmissoes,
+      total_demissoes: totalDemissoes,
+      tendencia_geral: totalSaldo > 50 ? "crescimento" : totalSaldo < -50 ? "retração" : "estável",
+      periodo: `${competenciaInicio.slice(0,4)}-${competenciaInicio.slice(4)} a ${competenciaFim.slice(0,4)}-${competenciaFim.slice(4)}`,
+      cbos_consultados: results.length,
+    },
+    source: "Novo CAGED — Portal da Transparência / MTE",
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
