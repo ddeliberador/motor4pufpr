@@ -176,14 +176,17 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { query, knowledge_total_papers } = await req.json();
+    const { query, knowledge_total_papers, search_terms, cnae_codes } = await req.json();
     if (!query) return new Response(JSON.stringify({ error: "query is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    console.log(`Layer Policy: ${query}`);
+    const searchTerms: string[] = Array.isArray(search_terms) && search_terms.length > 0 ? search_terms : [query];
+    const cnaeCodes: string[] = Array.isArray(cnae_codes) ? cnae_codes : [];
+
+    console.log(`Layer Policy: ${query} | termos: ${searchTerms.join(", ")} | CNAEs: ${cnaeCodes.length}`);
     const start = Date.now();
 
     const [pncp, transparencia, siconfi, gazettes, funding, tcu, tse, siop, datajud, ibama] = await Promise.all([
-      searchPNCP(query), searchTransparencia(query), searchSICONFI(), searchQueridoDiario(query),
+      searchPNCP(query, searchTerms, cnaeCodes), searchTransparencia(query, searchTerms), searchSICONFI(), searchQueridoDiario(query),
       searchFundingDatasets(query), searchTCU(query), searchTSE(query), searchSIOP(query), searchDataJud(query), searchIBAMA(query),
     ]);
 
