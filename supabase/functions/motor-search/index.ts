@@ -76,76 +76,147 @@ async function invokeLayer(name: string, body: Record<string, any>): Promise<any
 // AUE: Alinhamento U-E (knowledge ⨉ policy)
 // EI: Efetividade Instrumental (policy ⨉ knowledge)
 function computeCrossLayerIndices(knowledge: any, technology: any, policy: any, international: any) {
-  const totalPapers = knowledge?.total_papers || 0;
+  const totalPapersBR = knowledge?.total_papers || 0;
+  const totalPapersGlobal = knowledge?.total_papers_global || totalPapersBR;
+  const repos = technology?.github_repos?.length || 0;
   const totalContracts = policy?.total_contracts || 0;
   const totalConvenios = policy?.total_convenios || 0;
-  const totalRepos = technology?.github_repos?.length || 0;
+  const totalPatentDatasets = technology?.patent_datasets?.length || 0;
 
-  // GT — Gap Tecnológico: knowledge × technology × policy
-  const translationDenom = totalContracts + totalConvenios + totalRepos;
-  const gt_value = translationDenom > 0
-    ? Math.min(100, Math.round((totalPapers / translationDenom) * 10))
-    : totalPapers > 0 ? 100 : 0;
-  const gt_alert = gt_value > 70 ? "critical" : gt_value > 40 ? "warning" : "normal";
+  // GT — Gap de Tradução Científica (0-100, normalizado em log)
+  let gt_value = 0;
+  let gt_confidence: "high" | "medium" | "low" = "low";
+  let gt_basis = "";
 
-  // CD — Dependência Comercial: international (with knowledge context)
-  const cd_value = international?.dependency_index || 0;
-  const cd_alert = cd_value > 60 ? "critical" : cd_value > 40 ? "warning" : "normal";
+  const applicationSignals = repos + totalContracts + totalConvenios + totalPatentDatasets;
 
-  // AUE — Alinhamento U-E: knowledge × policy
-  const institutionNames = Object.keys(knowledge?.institutions || {}).map((n: string) => n.toLowerCase());
-  const contractOrgans = (policy?.contracts || []).map((c: any) => (c.organ || "").toLowerCase());
-  const convenioProponents = (policy?.convenios || []).map((c: any) => (c.proponent || "").toLowerCase());
-  const allInstrumental = [...contractOrgans, ...convenioProponents];
-  let matchCount = 0;
-  for (const inst of institutionNames) {
-    if (allInstrumental.some((o: string) => o.includes(inst.slice(0, 15)) || inst.includes(o.slice(0, 15)))) {
-      matchCount++;
-    }
+  if (totalPapersBR === 0) {
+    gt_value = 0;
+    gt_basis = "sem dados de produção científica";
+  } else if (applicationSignals === 0) {
+    const brSharePct = totalPapersGlobal > 0 ? (totalPapersBR / totalPapersGlobal) * 100 : 0;
+    gt_value = Math.round(Math.max(0, Math.min(100, 100 - brSharePct * 2)));
+    gt_confidence = "low";
+    gt_basis = "estimado via share BR/global (sem dados de aplicação)";
+  } else {
+    const ratio = totalPapersBR / applicationSignals;
+    const logRatio = Math.log10(Math.max(ratio, 0.01));
+    gt_value = Math.round(Math.min(100, Math.max(0, 25 + logRatio * 25)));
+    gt_confidence = totalContracts > 0 ? "high" : "medium";
+    gt_basis = `${totalPapersBR} papers BR / ${applicationSignals} sinais de aplicação`;
   }
-  const aue_value = institutionNames.length > 0
-    ? Math.round((matchCount / institutionNames.length) * 100)
-    : 0;
+
+  const gt_alert = gt_value > 70 ? "critical" : gt_value > 45 ? "warning" : "normal";
+
+  // CD — Concentração de Dependência Científica Internacional
+  const cd_value = international?.dependency_index || 0;
+  const cd_alert = cd_value > 70 ? "critical" : cd_value > 50 ? "warning" : "normal";
+  const cd_confidence: "high" | "medium" | "low" = international?.countries_with_coauthorship > 3 ? "high" : "medium";
+
+  // AUE — Alinhamento Universidade-Empresa (score composto de sinais)
+  let aue_value = 0;
+  let aue_confidence: "high" | "medium" | "low" = "low";
+  let aue_basis = "";
+
+  const hasScientificBase = totalPapersBR > 0;
+  const hasInstruments = (totalContracts + totalConvenios) > 0;
+  const hasOpenCode = repos > 2;
+  const hasIntlNetwork = (international?.countries_with_coauthorship || 0) > 5;
+  const hasFunding = (knowledge?.papers || []).some((p: any) => (p.grants || []).length > 0);
+
+  const aueSignals = [
+    hasScientificBase ? 20 : 0,
+    hasInstruments ? 25 : 0,
+    hasOpenCode ? 20 : 0,
+    hasIntlNetwork ? 20 : 0,
+    hasFunding ? 15 : 0,
+  ];
+  aue_value = aueSignals.reduce((a, b) => a + b, 0);
+
+  if (hasInstruments) {
+    aue_confidence = "high";
+    aue_basis = `${totalContracts + totalConvenios} instrumentos + ${aueSignals.filter(s => s > 0).length - 1} outros sinais`;
+  } else if (hasScientificBase && (hasOpenCode || hasIntlNetwork)) {
+    aue_confidence = "medium";
+    aue_basis = "sem instrumentos públicos — estimado por sinais alternativos";
+  } else {
+    aue_confidence = "low";
+    aue_basis = "dados insuficientes para articulação U-E";
+  }
+
   const aue_alert = aue_value < 20 ? "critical" : aue_value < 40 ? "warning" : "normal";
 
-  // EI — Efetividade Instrumental: policy × knowledge
+  // EI — Efetividade Instrumental (TRL × instrumentos)
+  let ei_value = 0;
+  let ei_confidence: "high" | "medium" | "low" = "low";
+  let ei_basis = "";
+
+  const trl = technology?.trl_estimate || 2;
+  const instrumentCount = totalContracts + totalConvenios;
   const totalInstrumentalValue = policy?.total_instrumental_value || 0;
-  const ei_value = translationDenom > 0 && totalInstrumentalValue > 0
-    ? Math.min(100, Math.round(Math.log10(totalInstrumentalValue / translationDenom) * 20 + 50))
-    : 0;
-  const ei_alert = ei_value < 40 ? "critical" : ei_value < 60 ? "warning" : "normal";
+
+  if (totalPapersBR === 0) {
+    ei_value = 0;
+    ei_basis = "sem dados de produção científica";
+  } else if (instrumentCount === 0 && totalInstrumentalValue === 0) {
+    ei_value = trl <= 3 ? 30 : trl <= 5 ? 15 : 5;
+    ei_confidence = "low";
+    ei_basis = `TRL ${trl} sem instrumentos públicos identificados`;
+  } else if (totalInstrumentalValue > 0) {
+    const ratio = totalInstrumentalValue / Math.max(instrumentCount, 1);
+    const logScore = Math.min(100, Math.round(Math.log10(ratio) * 20 + 50));
+    const trlAlignment = Math.abs(trl - 5) < 3 ? 1.0 : 0.8;
+    ei_value = Math.round(Math.min(100, Math.max(0, logScore * trlAlignment)));
+    ei_confidence = "high";
+    ei_basis = `R$ ${(totalInstrumentalValue / 1e6).toFixed(1)}M em ${instrumentCount} instrumentos`;
+  } else {
+    const countScore = instrumentCount <= 2 ? 30 : instrumentCount <= 5 ? 50 : 65;
+    ei_value = Math.round(countScore * (trl / 9));
+    ei_confidence = "medium";
+    ei_basis = `${instrumentCount} instrumentos identificados (sem valor financeiro)`;
+  }
+
+  const ei_alert = ei_value < 30 ? "critical" : ei_value < 55 ? "warning" : "normal";
 
   return {
     gt: {
       value: gt_value,
-      label: "Gap Tecnológico",
-      description: "Proporção ciência vs aplicação — quanto maior, mais ciência sem tradução prática",
-      formula: "papers / (contratos + convênios + repos) × 10",
+      label: "Gap de Tradução",
+      description: "Distância entre produção científica e aplicação tecnológica no campo",
+      formula: "log10(papers_BR / sinais_de_aplicação) × 25 + 25",
+      basis: gt_basis,
+      confidence: gt_confidence,
       layers_used: ["knowledge", "technology", "policy"],
       alert_level: gt_alert,
     },
     cd: {
       value: cd_value,
-      label: "Dependência Externa",
-      description: "% da produção científica fora do Brasil",
-      formula: "(papers_estrangeiros / total_papers) × 100",
+      label: "Dependência Científica",
+      description: "% da produção com origem fora do Brasil (coautorias OpenAlex)",
+      formula: "(papers_estrangeiros / total_coautorias) × 100",
+      basis: `${international?.countries_with_coauthorship || 0} países com coautoria identificados`,
+      confidence: cd_confidence,
       layers_used: ["international", "knowledge"],
       alert_level: cd_alert,
     },
     aue: {
       value: aue_value,
       label: "Articulação U-E",
-      description: "% de instituições científicas presentes também em contratos/convênios",
-      formula: "(instituições_com_match / total_instituições) × 100",
-      layers_used: ["knowledge", "policy"],
+      description: "Score composto de sinais de articulação entre academia e aplicação",
+      formula: "Σ sinais: produção + instrumentos + código aberto + rede intl. + financiamento",
+      basis: aue_basis,
+      confidence: aue_confidence,
+      layers_used: ["knowledge", "technology", "policy"],
       alert_level: aue_alert,
     },
     ei: {
       value: ei_value,
       label: "Efetividade Instrumental",
-      description: "Relação entre valor financeiro e volume de instrumentos públicos",
-      formula: "log10(valor_total / qtd_instrumentos) × 20 + 50",
-      layers_used: ["policy", "knowledge"],
+      description: "Alinhamento entre maturidade tecnológica (TRL) e instrumentos públicos disponíveis",
+      formula: "alinhamento TRL × intensidade instrumental",
+      basis: ei_basis,
+      confidence: ei_confidence,
+      layers_used: ["policy", "technology", "knowledge"],
       alert_level: ei_alert,
     },
   };
