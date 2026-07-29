@@ -167,20 +167,22 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { query, knowledge_international, knowledge_total_papers } = await req.json();
+    const { query, knowledge_international, knowledge_total_papers, ncm_codes } = await req.json();
     if (!query) {
       return new Response(JSON.stringify({ error: "query is required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log(`Layer International: ${query}`);
+    const ncmCodes: Array<{ code: string; description: string }> = Array.isArray(ncm_codes) ? ncm_codes : [];
+
+    console.log(`Layer International: ${query} | NCM: ${ncmCodes.length}`);
     const start = Date.now();
 
     const [bcb, ipeadata, comex, b3cvm, previdencia, ans, ana] = await Promise.all([
       getBCBSnapshot(),
       searchIPEAData(query),
-      searchCOMEX(query),
+      searchCOMEX(query, ncmCodes),
       searchB3CVM(query),
       searchPrevidencia(query),
       searchANS(query),
