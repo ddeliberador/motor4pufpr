@@ -145,6 +145,7 @@ const GovernoPanel = () => {
               <TabsTrigger value="maturidade" className="text-xs rounded-lg">⚙️ Maturidade (TRL)</TabsTrigger>
               <TabsTrigger value="relacional" className="text-xs rounded-lg">🔗 Mapa Relacional</TabsTrigger>
               <TabsTrigger value="mercado" className="text-xs rounded-lg">🏭 Análise de Mercado</TabsTrigger>
+              <TabsTrigger value="patentes" className="text-xs rounded-lg">🔏 Patentes EPO</TabsTrigger>
               <TabsTrigger value="territorial" className="text-xs rounded-lg">📍 Territorial</TabsTrigger>
               <TabsTrigger value="instrumentos" className="text-xs rounded-lg">🏛️ Instrumentos</TabsTrigger>
               <TabsTrigger value="prescricao" className="text-xs rounded-lg">🧠 Prescrição IA {isAnalyzing && "…"}</TabsTrigger>
