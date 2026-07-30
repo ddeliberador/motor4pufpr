@@ -200,6 +200,8 @@ export interface OntologyMeta {
   available: boolean;
 }
 
+import type { MarketLayerData } from "@/components/shared/MarketAnalysisPanel";
+
 // ===== Full Result =====
 export interface MotorSearchResult {
   query: string;
@@ -208,6 +210,8 @@ export interface MotorSearchResult {
     technology: TechnologyLayer;
     policy: PolicyLayer;
     international: InternationalLayer;
+    sidra?: any;
+    market?: MarketLayerData;
   };
   indices: StrategicIndices;
   ontology?: OntologyMeta;
