@@ -1,5 +1,5 @@
 /**
- * MOTOR 4P UFPR - useCnaeSearch Hook
+ * Motor da Inovação UFPR - useCnaeSearch Hook
  * Hook para buscar CNAEs oficiais baseados em termo de pesquisa
  */
 import { useState, useCallback } from 'react';

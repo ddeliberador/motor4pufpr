@@ -43,7 +43,7 @@ const THEME_SEED: Omit<Theme, "id">[] = [
   { name: "Sistemas Nacionais de Inovação", keywords: "NIS, SNI, coordenação, integração", progress: 10, notes: null },
   { name: "Fragmentação do SNI brasileiro", keywords: "descoordenação, política industrial, gargalos", progress: 5, notes: null },
   { name: "Política industrial + SNI", keywords: "Nova Indústria, PBIA, BNDES", progress: 5, notes: null },
-  { name: "Motor 4P como protótipo de coordenação", keywords: "APIs públicas, dados abertos, coordenação digital", progress: 20, notes: null },
+  { name: "Motor da Inovação como protótipo de coordenação", keywords: "APIs públicas, dados abertos, coordenação digital", progress: 20, notes: null },
 ];
 
 const ARTICLE_SEED: Omit<Article, "id">[] = [

@@ -1,5 +1,5 @@
 /**
- * Tipos e hook principal de busca do Motor 4P
+ * Tipos e hook principal de busca do Motor da Inovação
  * Arquitetura de 4 camadas analíticas com índices cruzados
  */
 import { useState, useCallback } from "react";
