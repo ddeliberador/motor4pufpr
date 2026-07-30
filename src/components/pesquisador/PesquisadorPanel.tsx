@@ -17,6 +17,7 @@ import ReactMarkdown from "react-markdown";
 import StrategicIndices from "@/components/governo/StrategicIndices";
 import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetailSheet";
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
+import { NovaIndustriaTab, PbiaTab, FomentoTab } from "@/components/shared/ProgramsTabs";
 
 const PesquisadorPanel = () => {
   const config = personaConfigs.pesquisador;
@@ -584,6 +585,22 @@ const PesquisadorPanel = () => {
                   </p>
                 </div>
               )}
+            </TabsContent>
+
+            {(data.layers as any).programs?.context?.industrial && (
+              <TabsContent value="nova-industria" className="space-y-4">
+                <NovaIndustriaTab ni={(data.layers as any).programs?.nova_industria} />
+              </TabsContent>
+            )}
+
+            {(data.layers as any).programs?.context?.ia && (
+              <TabsContent value="pbia" className="space-y-4">
+                <PbiaTab pbia={(data.layers as any).programs?.pbia} />
+              </TabsContent>
+            )}
+
+            <TabsContent value="fomento" className="space-y-4">
+              <FomentoTab fom={(data.layers as any).programs?.fomento} />
             </TabsContent>
           </Tabs>
         </div>
