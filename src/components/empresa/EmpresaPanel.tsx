@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { Factory, Search, ArrowLeft, AlertTriangle, Zap, Globe, GitBranch, Building2, Landmark, TrendingUp, Target, Handshake, ShieldCheck, Users, Building } from "lucide-react";
+import { Factory, Search, ArrowLeft, AlertTriangle, Zap, Globe, GitBranch, Building2, Landmark, TrendingUp, Target, Handshake, ShieldCheck, Users, Building, ExternalLink } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
 import { TrlScaleChart } from "@/components/shared/TrlScaleChart";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
