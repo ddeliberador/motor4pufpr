@@ -201,7 +201,15 @@ const EmpresaPanel = () => {
               <TabsTrigger value="comex" className="text-xs rounded-lg">🌐 Comércio Exterior</TabsTrigger>
               <TabsTrigger value="patentes" className="text-xs rounded-lg">🔏 Patentes EPO</TabsTrigger>
               <TabsTrigger value="ia" className="text-xs rounded-lg">🧠 Análise IA {isAnalyzing && "…"}</TabsTrigger>
+              {(data.layers as any).programs?.context?.industrial && (
+                <TabsTrigger value="nova-industria" className="text-xs rounded-lg">🏭 Nova Indústria</TabsTrigger>
+              )}
+              {(data.layers as any).programs?.context?.ia && (
+                <TabsTrigger value="pbia" className="text-xs rounded-lg">🤖 PBIA</TabsTrigger>
+              )}
+              <TabsTrigger value="fomento" className="text-xs rounded-lg">💡 Fomento</TabsTrigger>
             </TabsList>
+
 
             <TabsContent value="mercado" className="space-y-4">
               <div className="bg-card border border-border rounded-xl p-5">
