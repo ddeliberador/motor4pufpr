@@ -173,92 +173,135 @@ const PesquisadorPanel = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted/30 rounded-xl">
+            <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted/30 rounded-xl mb-4">
               <TabsTrigger value="openalex" className="text-xs rounded-lg">📄 OpenAlex</TabsTrigger>
               <TabsTrigger value="embrapii" className="text-xs rounded-lg">🔬 P&D Industrial</TabsTrigger>
               <TabsTrigger value="empregabilidade" className="text-xs rounded-lg">💼 CAGED</TabsTrigger>
-              <TabsTrigger value="icts" className="text-xs rounded-lg">🏛️ ICTs</TabsTrigger>
+              <TabsTrigger value="icts" className="text-xs rounded-lg">🏛️ ICTs Nacionais</TabsTrigger>
               <TabsTrigger value="ia" className="text-xs rounded-lg">🧠 Análise IA {isAnalyzing && "…"}</TabsTrigger>
             </TabsList>
 
-            {/* OPENALEX — produção científica real */}
             <TabsContent value="openalex" className="space-y-4">
-              <div className="bg-card border border-border rounded-xl p-5">
-                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><BookOpen className="w-4 h-4 text-primary" /> Papers mais citados</h3>
-                <div className="space-y-1">
-                  {topPapers.slice(0, 6).map((p, i) => (
-                    <button key={i} onClick={() => openDetail({ type: "paper", data: p })} className="w-full text-left py-2 px-3 hover:bg-muted/50 rounded-lg transition-colors flex items-center gap-3">
-                      <span className="text-[10px] font-mono text-muted-foreground w-4 flex-shrink-0">{i + 1}</span>
-                      <div className="flex-1 min-w-0"><p className="text-xs font-medium text-foreground line-clamp-1">{p.title}</p><div className="flex items-center gap-2 mt-0.5"><span className="text-[10px] text-muted-foreground">{p.year}</span><span className="text-[10px] font-semibold text-primary">{p.citations} cit.</span>{p.is_open_access && <span className="text-[9px] px-1 py-0.5 bg-emerald-500/10 text-emerald-600 rounded">OA</span>}</div></div>
-                      <ExternalLink className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-                    </button>
-                  ))}
-                </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: "Papers BR", value: data.stats.papers.toLocaleString("pt-BR"), sub: "produção nacional" },
+                  { label: "Instituições", value: data.stats.institutions, sub: "ativas no campo" },
+                  { label: "Países parceiros", value: data.stats.countries, sub: "coautorias" },
+                  { label: "Share BR/global", value: (knowledge as any).total_papers_global > 0 ? `${(((knowledge as any).total_papers / (knowledge as any).total_papers_global) * 100).toFixed(1)}%` : "—", sub: "da produção mundial" },
+                ].map((m, i) => (
+                  <div key={i} className="bg-card border border-border rounded-xl p-4 text-center">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{m.label}</p>
+                    <p className="text-2xl font-bold font-mono text-foreground">{m.value}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">{m.sub}</p>
+                  </div>
+                ))}
               </div>
 
-              {institutionRanking.length > 0 && (
+              {knowledge.institutions && Object.keys(knowledge.institutions).length > 0 && (
                 <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Users className="w-4 h-4 text-primary" /> Quem pesquisa isso?</h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-foreground">Instituições líderes no campo</h3>
+                    <a href="https://openalex.org" target="_blank" rel="noopener noreferrer"
+                       className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                      <ExternalLink className="w-3 h-3" /> OpenAlex
+                    </a>
+                  </div>
                   <div className="space-y-1.5">
-                    {institutionRanking.map(([inst, count], i) => {
-                      const instPapers = knowledge.papers.filter(p => p.authors.some(a => a.institution?.toLowerCase().includes(inst.toLowerCase().slice(0, 10))));
-                      const instContracts = policy.contracts.filter(c => c.organ?.toLowerCase().includes(inst.toLowerCase().slice(0, 10)));
-                      return (
-                        <button key={i} onClick={() => openDetail({ type: "institution", data: { name: inst, count: count as number, papers: instPapers, contracts: instContracts } })} className="w-full flex items-center gap-3 hover:bg-muted/50 rounded-lg px-2 py-1.5 transition-colors">
+                    {Object.entries(knowledge.institutions as Record<string, number>)
+                      .sort(([, a], [, b]) => b - a).slice(0, 8)
+                      .map(([inst, count], i) => (
+                        <div key={i} className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
                           <span className="text-[10px] font-mono text-muted-foreground w-4">{i + 1}</span>
-                          <div className="flex-1 bg-muted rounded-full h-5 relative overflow-hidden"><div className="h-full bg-primary/20 rounded-full" style={{ width: `${Math.min(100, ((count as number) / ((institutionRanking[0]?.[1] as number) || 1)) * 100)}%` }} /><span className="absolute inset-0 flex items-center px-2 text-[10px] font-medium text-foreground">{inst}</span></div>
-                          <span className="text-xs font-bold text-primary w-8 text-right">{count as number}</span>
-                        </button>
-                      );
-                    })}
+                          <span className="text-xs text-foreground flex-1 truncate">{inst}</span>
+                          <span className="text-xs font-bold text-primary flex-shrink-0">{count}</span>
+                        </div>
+                      ))}
                   </div>
                 </div>
               )}
 
-              {knowledge.international.length > 0 && (
+              {knowledge.international && knowledge.international.filter((c: any) => c.country_code !== "BR").length > 0 && (
                 <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Globe className="w-4 h-4 text-primary" /> Distribuição global</h3>
-                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                    {knowledge.international.slice(0, 10).map((c, i) => {
-                      const countryPapers = knowledge.papers.filter(p => p.authors.some(a => a.country === c.country_code));
-                      return (
-                        <button key={i} onClick={() => openDetail({ type: "country", data: { code: c.country_code, count: c.count, flag: flagMap[c.country_code], papers: countryPapers } })} className="text-center p-3 bg-muted rounded-lg hover:bg-muted/70 transition-colors">
-                          <p className="text-xl mb-0.5">{flagMap[c.country_code] || "🌍"}</p><p className="text-xs font-medium text-foreground">{c.country_code}</p><p className="text-sm font-bold text-primary">{c.count.toLocaleString()}</p>
-                        </button>
-                      );
-                    })}
+                  <h3 className="text-sm font-semibold text-foreground mb-3">Países com coautoria</h3>
+                  <div className="space-y-1">
+                    {knowledge.international.filter((c: any) => c.country_code !== "BR").slice(0, 8).map((c: any, i: number) => (
+                      <div key={i} className="flex items-center gap-3 px-3 py-1.5 bg-muted/20 rounded">
+                        <span className="text-xs font-mono text-muted-foreground w-6">{c.country_code}</span>
+                        <div className="flex-1 bg-muted rounded-full h-1.5">
+                          <div className="bg-primary h-1.5 rounded-full"
+                            style={{ width: `${Math.min(100, (c.count / Math.max(...knowledge.international.map((x: any) => x.count))) * 100)}%` }} />
+                        </div>
+                        <span className="text-xs text-foreground w-8 text-right">{c.count}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
 
-              {/* Entity Resolution */}
-              {knowledge.resolved_institutions && Object.keys(knowledge.resolved_institutions).length > 0 && (
-                <EntityResolutionCard resolvedInstitutions={knowledge.resolved_institutions} />
+              {(() => {
+                const grants = (knowledge.papers || []).flatMap((p: any) => p.grants || []).filter((g: any) => g.funder);
+                const funders = [...new Map(grants.map((g: any) => [g.funder, g])).values()].slice(0, 8) as any[];
+                if (!funders.length) return null;
+                return (
+                  <div className="bg-card border border-border rounded-xl p-5">
+                    <h3 className="text-sm font-semibold text-foreground mb-3">Financiadores identificados nos papers</h3>
+                    <div className="space-y-1.5">
+                      {funders.map((g: any, i: number) => (
+                        <div key={i} className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+                          <span className="text-[10px] font-mono text-muted-foreground w-4">{i + 1}</span>
+                          <span className="text-xs text-foreground flex-1">{g.funder}</span>
+                          {g.award && <span className="text-[9px] font-mono text-muted-foreground">{g.award}</span>}
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[9px] text-muted-foreground mt-2">Extraído dos metadados dos papers via OpenAlex</p>
+                  </div>
+                );
+              })()}
+
+              {knowledge.papers && knowledge.papers.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-3">Papers recentes ({(knowledge as any).total_papers?.toLocaleString("pt-BR")} no total)</h3>
+                  <div className="space-y-3">
+                    {knowledge.papers.slice(0, 8).map((p: any, i: number) => (
+                      <div key={i} className="p-3 border border-border/50 rounded-lg">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <a href={p.doi ? `https://doi.org/${p.doi}` : p.url || "#"} target="_blank" rel="noopener noreferrer"
+                             className="text-xs font-medium text-primary hover:underline flex-1 leading-snug line-clamp-2">
+                            {p.title || "Sem título"}
+                          </a>
+                          {p.year && <span className="text-[10px] font-mono text-muted-foreground flex-shrink-0">{p.year}</span>}
+                        </div>
+                        {p.abstract && <p className="text-[10px] text-muted-foreground line-clamp-2 mt-1">{p.abstract}</p>}
+                        <div className="flex gap-2 mt-1 flex-wrap">
+                          {(p.citations ?? p.cited_by_count) > 0 && <span className="text-[9px] text-muted-foreground">{p.citations ?? p.cited_by_count} citações</span>}
+                          {p.is_open_access && <span className="text-[9px] px-1 bg-emerald-500/10 text-emerald-600 rounded">open access</span>}
+                          {(p.grants || []).length > 0 && <span className="text-[9px] px-1 bg-blue-500/10 text-blue-600 rounded">financiado</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
 
-              {/* Pós-graduação SIDRA — relevante para pesquisador */}
               {(data.layers as any).sidra?.pos_graduacao?.areas?.length > 0 && (
                 <div className="bg-card border border-border rounded-xl p-5">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                      <Users className="w-4 h-4 text-primary" />
-                      Capacidade formativa nacional
-                    </h3>
+                    <h3 className="text-sm font-semibold text-foreground">Capacidade formativa — INEP/IBGE</h3>
                     <a href={(data.layers as any).sidra.pos_graduacao.url} target="_blank" rel="noopener noreferrer"
                        className="text-[10px] text-primary hover:underline flex items-center gap-1">
-                      <ExternalLink className="w-3 h-3" /> SIDRA/IBGE
+                      <ExternalLink className="w-3 h-3" /> SIDRA
                     </a>
                   </div>
-                  <p className="text-[10px] text-muted-foreground mb-3">
-                    {(data.layers as any).sidra.pos_graduacao.descricao}
-                  </p>
                   <div className="space-y-1.5">
                     {(data.layers as any).sidra.pos_graduacao.areas.slice(0, 6).map((a: any, i: number) => (
                       <div key={i} className="px-3 py-2 bg-muted/30 rounded-lg">
                         <p className="text-xs font-medium text-foreground">{a.area}</p>
                         <div className="flex gap-3 mt-0.5">
                           {a.series.slice(0, 2).map((s: any, j: number) => (
-                            <span key={j} className="text-[10px] text-muted-foreground">{s.ano}: <strong className="text-foreground">{s.valor}</strong> pessoas</span>
+                            <span key={j} className="text-[10px] text-muted-foreground">
+                              {s.ano}: <strong className="text-foreground">{s.valor}</strong>
+                            </span>
                           ))}
                         </div>
                       </div>
@@ -266,35 +309,8 @@ const PesquisadorPanel = () => {
                   </div>
                 </div>
               )}
-              {/* Todos os papers */}
-              <div className="bg-card border border-border rounded-xl p-5">
-                <h3 className="text-sm font-semibold text-foreground mb-3">Todos os papers ({knowledge.papers.length})</h3>
-                <div className="space-y-1">
-                  {knowledge.papers.map((p, i) => (
-                    <button key={i} onClick={() => openDetail({ type: "paper", data: p })} className="w-full text-left py-2.5 px-3 hover:bg-muted/50 rounded-lg transition-colors border-b border-border/30 last:border-0">
-                      <p className="text-xs font-medium text-foreground line-clamp-1">{p.title}</p>
-                      <div className="flex items-center gap-3 mt-1"><span className="text-[10px] text-muted-foreground">{p.year}</span><span className="text-[10px] font-semibold text-primary">{p.citations} citações</span><span className="text-[10px] text-muted-foreground truncate">{p.authors[0]?.name}</span>{p.is_open_access && <span className="text-[9px] px-1 py-0.5 bg-emerald-500/10 text-emerald-600 rounded">OA</span>}</div>
-                      {p.abstract && <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{p.abstract}</p>}
-                      {p.doi && <p className="text-[9px] font-mono text-primary mt-0.5">{p.doi}</p>}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Conceitos e financiadores identificados no OpenAlex */}
-              {knowledge.concepts?.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">Conceitos predominantes</h3>
-                  <div className="flex flex-wrap gap-1.5">
-                    {knowledge.concepts.slice(0, 15).map((c, i) => (
-                      <span key={i} className="text-[10px] px-2 py-1 bg-muted rounded-full text-foreground">{c.name} <strong className="text-primary">{c.count}</strong></span>
-                    ))}
-                  </div>
-                </div>
-              )}
             </TabsContent>
 
-            {/* P&D INDUSTRIAL — EMBRAPII + PINTEC */}
             <TabsContent value="embrapii" className="space-y-4">
               <div className="bg-card border border-border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-3">
@@ -302,35 +318,34 @@ const PesquisadorPanel = () => {
                     <FlaskConical className="w-4 h-4 text-primary" />
                     P&D Industrial — EMBRAPII + PINTEC/IBGE
                   </h3>
+                  <a href="https://embrapii.org.br/dados-abertos" target="_blank" rel="noopener noreferrer"
+                     className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                    <ExternalLink className="w-3 h-3" /> EMBRAPII
+                  </a>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-                  Projetos de P&D industrial identificados nas bases EMBRAPII e PINTEC. A fase do projeto indica o TRL real: Fase 1 = TRL 4–5, Fase 2 = TRL 5–6, Fase 3 = TRL 6–7.
+                  Projetos P&D industriais identificados. A fase do projeto indica TRL real: Fase 1 = TRL 4–5, Fase 2 = TRL 5–6, Fase 3 = TRL 6–7.
                 </p>
 
-                {/* TRL real via EPO — se disponível */}
                 {(data.layers as any).patents?.trl_from_patents && (
                   <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4">
-                    <p className="text-[10px] font-mono text-primary uppercase tracking-wider mb-1">TRL via EPO OPS — dado real</p>
-                    <p className="text-2xl font-bold text-foreground font-mono">
-                      {(data.layers as any).patents.trl_from_patents.estimate}
-                      <span className="text-sm font-normal text-muted-foreground ml-2">/ 9</span>
-                    </p>
-                    <p className="text-xs text-foreground mt-1">{(data.layers as any).patents.trl_from_patents.label}</p>
-                    <p className="text-[10px] text-muted-foreground mt-1">{(data.layers as any).patents.trl_from_patents.rationale}</p>
-                    <div className="mt-3">
-                      <TrlScaleChart
-                        level={(data.layers as any).patents.trl_from_patents.estimate}
-                        label={(data.layers as any).patents.trl_from_patents.label}
-                      />
+                    <p className="text-[10px] font-mono text-primary uppercase tracking-wider mb-1">TRL via EPO OPS — dado real de patentes</p>
+                    <div className="flex items-center gap-3">
+                      <p className="text-3xl font-bold text-foreground font-mono">
+                        {(data.layers as any).patents.trl_from_patents.estimate}
+                        <span className="text-base font-normal text-muted-foreground">/9</span>
+                      </p>
+                      <div>
+                        <p className="text-xs font-medium text-foreground">{(data.layers as any).patents.trl_from_patents.label}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{(data.layers as any).patents.trl_from_patents.rationale}</p>
+                      </div>
                     </div>
                   </div>
                 )}
 
-                {/* Projetos EMBRAPII / inovação */}
-                {technology.innovation_datasets && technology.innovation_datasets.length > 0 ? (
+                {(technology as any).innovation_datasets && (technology as any).innovation_datasets.length > 0 ? (
                   <div className="space-y-2">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Projetos identificados</p>
-                    {technology.innovation_datasets.slice(0, 6).map((d: any, i: number) => (
+                    {(technology as any).innovation_datasets.slice(0, 6).map((d: any, i: number) => (
                       <a key={i} href={d.url} target="_blank" rel="noopener noreferrer"
                          className="flex items-start gap-3 p-3 border border-border/50 rounded-lg hover:border-border transition-colors">
                         <div className="flex-1 min-w-0">
@@ -347,12 +362,11 @@ const PesquisadorPanel = () => {
                     <p className="text-sm text-muted-foreground">Nenhum projeto P&D identificado nas bases abertas para este tema.</p>
                     <a href="https://embrapii.org.br/dados-abertos" target="_blank" rel="noopener noreferrer"
                        className="text-xs text-primary hover:underline mt-1 inline-flex items-center gap-1">
-                      <ExternalLink className="w-3 h-3" /> Consultar EMBRAPII diretamente
+                      <ExternalLink className="w-3 h-3" /> Consultar EMBRAPII
                     </a>
                   </div>
                 )}
 
-                {/* PINTEC/SIDRA se disponível */}
                 {(data.layers as any).sidra?.pintec?.setores?.length > 0 && (
                   <div className="mt-4 pt-4 border-t border-border/30">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Inovação setorial — PINTEC/IBGE</p>
@@ -364,207 +378,64 @@ const PesquisadorPanel = () => {
                         </div>
                       ))}
                     </div>
-                    <p className="text-[9px] text-muted-foreground mt-2">Fonte: PINTEC {(data.layers as any).sidra.pintec.periodo} — IBGE</p>
                   </div>
                 )}
               </div>
             </TabsContent>
 
-            {/* EMPREGABILIDADE */}
             <TabsContent value="empregabilidade" className="space-y-4">
-              {/* Card principal — TRL como âncora de mercado */}
-              <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <Briefcase className="w-4 h-4 text-primary" /> Mercado de trabalho neste campo
-                </h3>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-muted/30 rounded-lg p-4">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Maturidade tecnológica</p>
-                    <p className="text-3xl font-bold text-foreground font-mono">{(technology as any).trl_estimate || "—"}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{(technology as any).trl_label || "Sem dados"}</p>
-                    {(technology as any).trl_confidence && (
-                      <p className={`text-[9px] mt-1 ${
-                        (technology as any).trl_confidence === "high" ? "text-emerald-600"
-                        : (technology as any).trl_confidence === "medium" ? "text-muted-foreground"
-                        : "text-amber-500"
-                      }`}>
-                        {(technology as any).trl_confidence === "high" ? "confiança alta"
-                         : (technology as any).trl_confidence === "medium" ? "estimado"
-                         : "dados insuficientes"}
-                      </p>
-                    )}
-                  </div>
-                  <div className="bg-muted/30 rounded-lg p-4">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Repos de código aberto</p>
-                    <p className="text-3xl font-bold text-foreground font-mono">{data.stats.github_repos}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {technology.total_stars > 0 ? `${technology.total_stars.toLocaleString()} stars no total` : "GitHub"}
-                    </p>
-                  </div>
+              <div className="bg-card border border-border rounded-xl p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Briefcase className="w-4 h-4 text-primary" />
+                    Mercado de trabalho — Novo CAGED / MTE
+                  </h3>
+                  <a href="https://www.gov.br/trabalho-e-emprego" target="_blank" rel="noopener noreferrer"
+                     className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                    <ExternalLink className="w-3 h-3" /> MTE
+                  </a>
                 </div>
-
-                {(technology as any).trl_rationale && (
-                  <div className="bg-muted/20 rounded-lg px-4 py-3 border-l-2 border-primary/30">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Base da classificação</p>
-                    <p className="text-xs text-foreground">{(technology as any).trl_rationale}</p>
-                  </div>
-                )}
-
-                {(() => {
-                  const trl = (technology as any).trl_estimate || 0;
-                  const faixa = (technology as any).trl_faixa || 1;
-                  if (faixa === 3) return (
-                    <div className="flex items-start gap-2 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
-                      <Briefcase className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-xs font-semibold text-foreground">Campo com mercado de trabalho ativo</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">TRL {trl} indica tecnologia em estágio de demonstração ou mercado. Há demanda por engenheiros, pesquisadores aplicados e especialistas em produto.</p>
-                      </div>
-                    </div>
-                  );
-                  if (faixa === 2) return (
-                    <div className="flex items-start gap-2 p-3 bg-blue-500/5 border border-blue-500/20 rounded-lg">
-                      <Briefcase className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-xs font-semibold text-foreground">Campo em desenvolvimento — oportunidade para pioneiros</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">TRL {trl} indica prototipagem e validação laboratorial. Mercado de trabalho emergente, concentrado em P&D aplicado e startups deep tech.</p>
-                      </div>
-                    </div>
-                  );
-                  return (
-                    <div className="flex items-start gap-2 p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
-                      <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-xs font-semibold text-foreground">Campo em pesquisa básica — mercado ainda acadêmico</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">TRL {trl} indica que a tecnologia ainda está em fase fundamental. Empregabilidade concentrada em grupos de pesquisa e pós-graduação.</p>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {/* Financiadores identificados nos papers */}
-              {(() => {
-                const grants = (knowledge.papers || []).flatMap((p: any) => p.grants || []).filter((g: any) => g.funder);
-                const funders = [...new Map(grants.map((g: any) => [g.funder, g])).values()].slice(0, 8);
-                if (funders.length === 0) return null;
-                return (
-                  <div className="bg-card border border-border rounded-xl p-5 space-y-3">
-                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-primary" />
-                      Quem financia pesquisa neste campo
-                    </h3>
-                    <p className="text-[10px] text-muted-foreground">Identificado nos metadados dos papers via OpenAlex — indica onde há bolsas e contratos de pesquisa ativos.</p>
-                    <div className="space-y-1.5">
-                      {funders.map((g: any, i: number) => (
-                        <div key={i} className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-                          <span className="text-[10px] font-mono text-muted-foreground w-4 flex-shrink-0">{i + 1}</span>
-                          <p className="text-xs text-foreground flex-1">{g.funder}</p>
-                          {g.award && <span className="text-[9px] font-mono text-muted-foreground">{g.award}</span>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Novo CAGED — mercado formal (série nacional MTE/IPEAData) */}
-              {(() => {
-                const caged = (technology as any).caged_data;
-                const nac = caged?.nacional;
-                if (!nac) return null;
-                const tendenciaIcon = nac.tendencia_geral === "crescimento" ? "↑" : nac.tendencia_geral === "retração" ? "↓" : "→";
-                const serie: any[] = nac.serie_saldo || [];
-                const maxAbs = Math.max(1, ...serie.map((s) => Math.abs(s.valor)));
-                return (
-                  <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                          <Briefcase className="w-4 h-4 text-primary" />
-                          Emprego formal — Novo CAGED/MTE
-                        </h3>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{nac.periodo} · série nacional (12 meses)</p>
-                      </div>
-                      <span className={`text-xs font-semibold px-2 py-1 rounded-full border ${
-                        nac.tendencia_geral === "crescimento" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
-                        : nac.tendencia_geral === "retração" ? "bg-red-500/10 border-red-500/20 text-red-500"
-                        : "bg-muted border-border text-muted-foreground"
-                      }`}>
-                        {tendenciaIcon} {nac.tendencia_geral}
-                      </span>
-                    </div>
-
+                {(technology as any).caged_data ? (
+                  <div className="space-y-4">
                     <div className="grid grid-cols-3 gap-3">
                       <div className="bg-muted/30 rounded-lg p-3 text-center">
-                        <p className="text-xl font-bold text-emerald-500 font-mono">+{nac.total_admissoes.toLocaleString("pt-BR")}</p>
-                        <p className="text-[10px] text-muted-foreground">Admissões</p>
+                        <p className="text-xl font-bold font-mono text-emerald-500">+{(technology as any).caged_data.nacional?.total_admissoes?.toLocaleString("pt-BR") || "—"}</p>
+                        <p className="text-[10px] text-muted-foreground">admissões (12m)</p>
                       </div>
                       <div className="bg-muted/30 rounded-lg p-3 text-center">
-                        <p className="text-xl font-bold text-red-400 font-mono">-{nac.total_demissoes.toLocaleString("pt-BR")}</p>
-                        <p className="text-[10px] text-muted-foreground">Desligamentos</p>
+                        <p className="text-xl font-bold font-mono text-red-500">-{(technology as any).caged_data.nacional?.total_demissoes?.toLocaleString("pt-BR") || "—"}</p>
+                        <p className="text-[10px] text-muted-foreground">demissões (12m)</p>
                       </div>
                       <div className="bg-muted/30 rounded-lg p-3 text-center">
-                        <p className={`text-xl font-bold font-mono ${nac.total_saldo >= 0 ? "text-emerald-500" : "text-red-400"}`}>
-                          {nac.total_saldo >= 0 ? "+" : ""}{nac.total_saldo.toLocaleString("pt-BR")}
+                        <p className={`text-xl font-bold font-mono ${(technology as any).caged_data.nacional?.total_saldo >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                          {(technology as any).caged_data.nacional?.total_saldo >= 0 ? "+" : ""}{(technology as any).caged_data.nacional?.total_saldo?.toLocaleString("pt-BR") || "—"}
                         </p>
-                        <p className="text-[10px] text-muted-foreground">Saldo líquido</p>
+                        <p className="text-[10px] text-muted-foreground">saldo líquido</p>
                       </div>
                     </div>
-
-                    {/* Série mensal do saldo */}
-                    {serie.length > 0 && (
+                    {(technology as any).caged_data.ocupacoes?.length > 0 && (
                       <div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Saldo mensal</p>
-                        <div className="flex items-end gap-1 h-20">
-                          {serie.map((s, i) => (
-                            <div key={i} className="flex-1 flex flex-col items-center justify-end h-full" title={`${s.data}: ${s.valor.toLocaleString("pt-BR")}`}>
-                              <div
-                                className={`w-full rounded-sm ${s.valor >= 0 ? "bg-emerald-500/60" : "bg-red-400/60"}`}
-                                style={{ height: `${Math.max(3, (Math.abs(s.valor) / maxAbs) * 100)}%` }}
-                              />
-                              <span className="text-[8px] text-muted-foreground mt-1 font-mono">{s.data.slice(5)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Ocupações mapeadas para o tema */}
-                    {caged.ocupacoes?.length > 0 && (
-                      <div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Ocupações (CBO) associadas ao tema</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Ocupações mapeadas (CBO)</p>
                         <div className="flex flex-wrap gap-2">
-                          {caged.ocupacoes.map((o: any, i: number) => (
-                            <span key={i} className="text-[10px] px-2 py-1 rounded border border-border bg-muted/30 text-muted-foreground">
-                              <span className="font-mono">{o.code}</span> · {o.description}
+                          {(technology as any).caged_data.ocupacoes.map((o: any, i: number) => (
+                            <span key={i} className="text-[10px] px-2 py-1 bg-muted rounded">
+                              {o.description} <span className="font-mono text-muted-foreground/60">{o.code}</span>
                             </span>
                           ))}
                         </div>
                       </div>
                     )}
-
-                    {caged.escopo && (
-                      <p className="text-[9px] text-amber-500/90 leading-relaxed">{caged.escopo}</p>
-                    )}
-                    <p className="text-[9px] text-muted-foreground">Fonte: {caged.source}</p>
+                    <p className="text-[9px] text-muted-foreground">{(technology as any).caged_data.escopo}</p>
                   </div>
-                );
-              })()}
-
-
-              {/* Repos como evidência de mercado */}
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-6">Dados do CAGED não disponíveis para este tema.</p>
+                )}
+              </div>
               {technology.github_repos && technology.github_repos.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5 space-y-3">
-                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                    <GitBranch className="w-4 h-4 text-primary" />
-                    Tecnologias e linguagens em uso ({technology.github_repos.length} repos)
-                  </h3>
-                  <p className="text-[10px] text-muted-foreground">Repositórios open source são proxy de skills técnicas demandadas pelo mercado.</p>
-
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-3">Habilidades técnicas em demanda — GitHub</h3>
                   {technology.language_distribution && Object.keys(technology.language_distribution).length > 0 && (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 mb-3">
                       {Object.entries(technology.language_distribution as Record<string, number>)
                         .sort(([, a], [, b]) => b - a)
                         .map(([lang, count]) => (
@@ -574,19 +445,12 @@ const PesquisadorPanel = () => {
                         ))}
                     </div>
                   )}
-
                   <div className="space-y-1">
                     {technology.github_repos.slice(0, 5).map((r: any, i: number) => (
                       <a key={i} href={r.url} target="_blank" rel="noopener noreferrer"
-                         className="flex items-center justify-between px-3 py-2 hover:bg-muted/50 rounded-lg transition-colors border-b border-border/30 last:border-0">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-foreground truncate">{r.name}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">{r.description}</p>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                          {r.language && <span className="text-[9px] px-1.5 py-0.5 bg-muted rounded font-mono">{r.language}</span>}
-                          <span className="text-[10px] font-bold text-primary">⭐ {r.stars}</span>
-                        </div>
+                         className="flex items-center justify-between px-3 py-2 hover:bg-muted/50 rounded-lg transition-colors">
+                        <p className="text-xs text-foreground truncate flex-1">{r.name}</p>
+                        <span className="text-[10px] font-bold text-primary flex-shrink-0 ml-2">⭐ {r.stars}</span>
                       </a>
                     ))}
                   </div>
