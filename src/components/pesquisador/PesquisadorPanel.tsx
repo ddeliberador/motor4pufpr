@@ -174,21 +174,16 @@ const PesquisadorPanel = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-             <TabsList className="w-full justify-start overflow-x-auto bg-muted/50 h-auto p-1 rounded-xl">
-              <TabsTrigger value="panorama" className="text-xs rounded-lg">🔬 Panorama</TabsTrigger>
-              <TabsTrigger value="saturacao" className="text-xs rounded-lg">📊 Saturação</TabsTrigger>
-              <TabsTrigger value="papers" className="text-xs rounded-lg">📄 Papers ({data.stats.papers})</TabsTrigger>
-              <TabsTrigger value="empregabilidade" className="text-xs rounded-lg">💼 Empregabilidade</TabsTrigger>
-              <TabsTrigger value="trl" className="text-xs rounded-lg">📈 Maturidade TRL</TabsTrigger>
-              <TabsTrigger value="lacunas" className="text-xs rounded-lg">🎯 Lacunas</TabsTrigger>
-              <TabsTrigger value="financiamento" className="text-xs rounded-lg">💰 Financiamento</TabsTrigger>
-             <TabsTrigger value="icts" className="text-xs rounded-lg">🏛️ ICTs Nacionais</TabsTrigger>
-             <TabsTrigger value="sidra" className="text-xs rounded-lg">🏦 Estrutura IBGE</TabsTrigger>
-              <TabsTrigger value="prescricao" className="text-xs rounded-lg">🧠 IA {isAnalyzing && "…"}</TabsTrigger>
+            <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted/30 rounded-xl">
+              <TabsTrigger value="openalex" className="text-xs rounded-lg">📄 OpenAlex</TabsTrigger>
+              <TabsTrigger value="embrapii" className="text-xs rounded-lg">🔬 P&D Industrial</TabsTrigger>
+              <TabsTrigger value="empregabilidade" className="text-xs rounded-lg">💼 CAGED</TabsTrigger>
+              <TabsTrigger value="icts" className="text-xs rounded-lg">🏛️ ICTs</TabsTrigger>
+              <TabsTrigger value="ia" className="text-xs rounded-lg">🧠 Análise IA {isAnalyzing && "…"}</TabsTrigger>
             </TabsList>
 
-            {/* PANORAMA */}
-            <TabsContent value="panorama" className="space-y-4">
+            {/* OPENALEX — produção científica real */}
+            <TabsContent value="openalex" className="space-y-4">
               <div className="bg-card border border-border rounded-xl p-5">
                 <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><BookOpen className="w-4 h-4 text-primary" /> Papers mais citados</h3>
                 <div className="space-y-1">
