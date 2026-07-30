@@ -528,7 +528,7 @@ Deno.serve(async (req) => {
     const knowledge = await invokeLayer("layer-knowledge", { query, search_terms: searchTerms });
 
     // STEP 2: Remaining 3 layers in parallel, passing knowledge + ontology data
-    const [technology, policy, international, sidra, market] = await Promise.all([
+    const [technology, policy, international, sidra, market, patents] = await Promise.all([
       invokeLayer("layer-technology", {
         query,
         knowledge_papers: knowledge?.papers?.length || 0,
@@ -562,11 +562,20 @@ Deno.serve(async (req) => {
         ncm_codes: ncmCodes,
         knowledge_total_papers: knowledge?.total_papers || 0,
       }),
+      invokeLayer("layer-patents", {
+        query,
+        ipc_codes: ipcCodes,
+      }),
     ]);
 
 
     // STEP 3: Cross-layer indices
     const indices = computeCrossLayerIndices(knowledge, technology, policy, international);
+
+    // Sobrescreve TRL heurístico com dado real da EPO quando disponível
+    if (patents?.trl_from_patents) {
+      (technology as any).trl_from_patents = patents.trl_from_patents;
+    }
 
     // Oportunidade derivada do GT (só disponível após o cálculo dos índices)
     if (market && Array.isArray(market.opportunities)) {
@@ -616,6 +625,7 @@ Deno.serve(async (req) => {
       ...(international?.sources || []),
       ...(sidra?.sources || []),
       ...(market?.sources || []),
+      ...(patents?.sources || []),
 
 
     ];
@@ -632,6 +642,7 @@ Deno.serve(async (req) => {
         international: international || { country_distribution: {}, macro_indicators: [], ipeadata_series: [], comex_datasets: [], dependency_index: 0, br_share: 0, global_insertion: 0 },
         sidra: sidra || { pintec: null, cempre: null, pos_graduacao: null, pib_setorial: null, graduacao: null, sources: [] },
         market: market || { patents: { holders: [], available: false, reason: "Camada indisponível" }, market: { suppliers: [], available: false }, trade: { items: [], available: false }, opportunities: [], sources: [] },
+        patents: patents || { available: false, patents: [], applicants: [], trend: [], br_share: null, trl_from_patents: null, sources: [] },
 
 
       },

@@ -15,6 +15,7 @@ import StrategicIndices from "./StrategicIndices";
 import RelationalGraph from "./RelationalGraph";
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
 import MarketAnalysisPanel from "@/components/shared/MarketAnalysisPanel";
+import PatentsPanel from "@/components/shared/PatentsPanel";
 
 const GovernoPanel = () => {
   const config = personaConfigs.governo;
@@ -145,6 +146,7 @@ const GovernoPanel = () => {
               <TabsTrigger value="maturidade" className="text-xs rounded-lg">⚙️ Maturidade (TRL)</TabsTrigger>
               <TabsTrigger value="relacional" className="text-xs rounded-lg">🔗 Mapa Relacional</TabsTrigger>
               <TabsTrigger value="mercado" className="text-xs rounded-lg">🏭 Análise de Mercado</TabsTrigger>
+              <TabsTrigger value="patentes" className="text-xs rounded-lg">🔏 Patentes EPO</TabsTrigger>
               <TabsTrigger value="territorial" className="text-xs rounded-lg">📍 Territorial</TabsTrigger>
               <TabsTrigger value="instrumentos" className="text-xs rounded-lg">🏛️ Instrumentos</TabsTrigger>
               <TabsTrigger value="prescricao" className="text-xs rounded-lg">🧠 Prescrição IA {isAnalyzing && "…"}</TabsTrigger>
@@ -280,6 +282,12 @@ const GovernoPanel = () => {
                 perfil="governo"
               />
             </TabsContent>
+
+            <TabsContent value="patentes" className="space-y-4">
+              <PatentsPanel patents={(data?.layers as any)?.patents} />
+            </TabsContent>
+
+
 
             <TabsContent value="territorial" className="space-y-4">
               {(!policy.uf_distribution || Object.keys(policy.uf_distribution).length === 0) ? (
