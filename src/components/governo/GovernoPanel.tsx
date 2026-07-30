@@ -141,247 +141,233 @@ const GovernoPanel = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="w-full justify-start overflow-x-auto bg-muted/50 h-auto p-1 rounded-xl">
-              <TabsTrigger value="diagnostico" className="text-xs rounded-lg">🎯 Diagnóstico</TabsTrigger>
-              <TabsTrigger value="maturidade" className="text-xs rounded-lg">⚙️ Maturidade (TRL)</TabsTrigger>
-              <TabsTrigger value="relacional" className="text-xs rounded-lg">🔗 Mapa Relacional</TabsTrigger>
-              <TabsTrigger value="mercado" className="text-xs rounded-lg">🏭 Análise de Mercado</TabsTrigger>
+            <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted/30 rounded-xl mb-4">
+              <TabsTrigger value="pncp" className="text-xs rounded-lg">📋 PNCP</TabsTrigger>
+              <TabsTrigger value="transparencia" className="text-xs rounded-lg">💰 Transparência</TabsTrigger>
+              <TabsTrigger value="caged" className="text-xs rounded-lg">👷 CAGED</TabsTrigger>
+              <TabsTrigger value="sidra" className="text-xs rounded-lg">📊 SIDRA/IBGE</TabsTrigger>
               <TabsTrigger value="patentes" className="text-xs rounded-lg">🔏 Patentes EPO</TabsTrigger>
-              <TabsTrigger value="territorial" className="text-xs rounded-lg">📍 Territorial</TabsTrigger>
-              <TabsTrigger value="instrumentos" className="text-xs rounded-lg">🏛️ Instrumentos</TabsTrigger>
-              <TabsTrigger value="prescricao" className="text-xs rounded-lg">🧠 Prescrição IA {isAnalyzing && "…"}</TabsTrigger>
+              <TabsTrigger value="ia" className="text-xs rounded-lg">🧠 Análise IA {isAnalyzing && "…"}</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="diagnostico" className="space-y-4">
-              {isAnalyzing && (<div className="bg-card border border-primary/20 rounded-xl p-5 flex items-center gap-3"><div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /><span className="text-sm text-muted-foreground">Cruzando 4 camadas para gerar diagnóstico...</span></div>)}
-              {analysis && analysis.sections?.length > 0 && (
-                <div className="space-y-4">
-                  {analysis.questions.map((question, idx) => (
-                    <div key={idx} className="bg-card border border-border rounded-xl p-5">
-                      <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><span className={`w-6 h-6 rounded-full bg-gradient-to-br ${config.color} text-white text-xs font-bold flex items-center justify-center flex-shrink-0`}>{idx + 1}</span>{question}</h3>
-                      <div className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-li:text-muted-foreground prose-a:text-primary"><ReactMarkdown>{analysis.sections[idx] || ""}</ReactMarkdown></div>
+            <TabsContent value="pncp" className="space-y-4">
+              <div className="bg-card border border-border rounded-xl p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-primary" />
+                    Compras públicas — PNCP
+                  </h3>
+                  <a href="https://pncp.gov.br" target="_blank" rel="noopener noreferrer"
+                     className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                    <ExternalLink className="w-3 h-3" /> pncp.gov.br
+                  </a>
+                </div>
+                {policy.contracts && policy.contracts.length > 0 ? (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      <div className="bg-muted/30 rounded-lg p-3 text-center">
+                        <p className="text-xl font-bold font-mono text-foreground">{(policy as any).total_contracts}</p>
+                        <p className="text-[10px] text-muted-foreground">contratos</p>
+                      </div>
+                      <div className="bg-muted/30 rounded-lg p-3 text-center">
+                        <p className="text-xl font-bold font-mono text-foreground">{(policy as any).total_convenios}</p>
+                        <p className="text-[10px] text-muted-foreground">convênios</p>
+                      </div>
+                      <div className="bg-muted/30 rounded-lg p-3 text-center">
+                        <p className="text-xl font-bold font-mono text-primary">
+                          R$ {(policy as any).total_instrumental_value > 0 ? ((policy as any).total_instrumental_value / 1e6).toFixed(1) + "M" : "—"}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">valor total</p>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
-              {indices && (
-                <div className="bg-card border border-border rounded-xl p-5 space-y-3">
-                  <h3 className="text-sm font-semibold text-foreground">Cruzamentos Automáticos</h3>
-                  <div className="space-y-2">
-                    {indices.gt?.value > 70 && (<div className="flex items-start gap-2 p-2.5 bg-destructive/5 border border-destructive/20 rounded-lg"><AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" /><p className="text-xs text-foreground"><strong>Gap Crítico (GT={indices.gt.value}):</strong> {data.stats.papers} papers vs {data.stats.contracts} licitações e {data.stats.convenios} convênios.</p></div>)}
-                    {indices.cd?.value > 60 && (<div className="flex items-start gap-2 p-2.5 bg-amber-500/5 border border-amber-500/20 rounded-lg"><Globe className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" /><p className="text-xs text-foreground"><strong>Dependência (CD={indices.cd.value}%):</strong> Produção científica estrangeira dominante.</p></div>)}
-                    {indices.aue?.value < 20 && (<div className="flex items-start gap-2 p-2.5 bg-amber-500/5 border border-amber-500/20 rounded-lg"><Landmark className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" /><p className="text-xs text-foreground"><strong>Desarticulação (AUE={indices.aue.value}%):</strong> Universidade e governo desconectados.</p></div>)}
-                    {indices.gt?.value <= 70 && indices.cd?.value <= 60 && indices.aue?.value >= 20 && (<p className="text-xs text-muted-foreground">Nenhum alerta crítico.</p>)}
-                  </div>
-                </div>
-              )}
-              {/* Painel de cobertura de fontes */}
-              <div className="bg-card border border-border rounded-xl p-4">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Fontes consultadas</h3>
-                <div className="flex flex-wrap gap-2">
-                  {data.meta.sources.map((src, i) => (
-                    <span key={i} className="text-[10px] px-2 py-1 bg-primary/10 text-primary rounded-full border border-primary/20">
-                      ✓ {src}
-                    </span>
-                  ))}
-                  {!data.meta.sources.includes("Transparência") && (
-                    <span className="text-[10px] px-2 py-1 bg-muted text-muted-foreground rounded-full border border-border">
-                      ○ Transparência (requer API key)
-                    </span>
-                  )}
-                  {!data.meta.sources.includes("SICONFI") && (
-                    <span className="text-[10px] px-2 py-1 bg-muted text-muted-foreground rounded-full border border-border">
-                      ○ SICONFI
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2"><Landmark className="w-4 h-4 text-primary" />Volume Instrumental</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between"><span className="text-xs text-muted-foreground">Licitações PNCP</span><span className="text-xs font-bold text-foreground">{data.stats.contracts} ({totalContractValue > 0 ? `R$ ${(totalContractValue / 1e6).toFixed(1)}M` : "sem valor"})</span></div>
-                    <div className="flex justify-between"><span className="text-xs text-muted-foreground">Convênios Federais</span><span className="text-xs font-bold text-foreground">{data.stats.convenios} ({totalConvenioValue > 0 ? `R$ ${(totalConvenioValue / 1e6).toFixed(1)}M` : "sem valor"})</span></div>
-                    <div className="flex justify-between"><span className="text-xs text-muted-foreground">Diários Oficiais</span><span className="text-xs font-bold text-foreground">{data.stats.gazettes} menções</span></div>
-                  </div>
-                </div>
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2"><Globe className="w-4 h-4 text-primary" />Produção Científica</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between"><span className="text-xs text-muted-foreground">Papers totais</span><span className="text-xs font-bold text-foreground">{data.stats.papers.toLocaleString("pt-BR")}</span></div>
-                    <div className="flex justify-between"><span className="text-xs text-muted-foreground">Países atuantes</span><span className="text-xs font-bold text-foreground">{data.stats.countries}</span></div>
-                    <div className="flex justify-between"><span className="text-xs text-muted-foreground">Instituições BR</span><span className="text-xs font-bold text-foreground">{data.stats.institutions}</span></div>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* MATURIDADE TECNOLÓGICA (TRL) */}
-            <TabsContent value="maturidade" className="space-y-4">
-              <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Target className="w-4 h-4 text-primary" /> Maturidade Tecnológica — TRL Estimado</h3>
-                <p className="text-[10px] text-muted-foreground">Avaliação automática baseada em sinais de ciência, tecnologia, contratos e mercado para apoiar decisões de alocação de recursos.</p>
-                <TrlScaleChart level={trlEstimate} label={trlLabel} />
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                  {[
-                    { label: "Papers científicos", ok: technology.trl_signals?.has_papers },
-                    { label: "Código aberto", ok: technology.trl_signals?.has_repos },
-                    { label: "Patentes/dados", ok: technology.trl_signals?.has_patents },
-                    { label: "Emprego formal", ok: technology.trl_signals?.has_employment },
-                    { label: "Alta visibilidade", ok: technology.trl_signals?.high_stars },
-                  ].map((s, i) => (
-                    <div key={i} className={`text-center p-2 rounded-lg ${s.ok ? "bg-emerald-500/5 border border-emerald-500/20" : "bg-muted/30 border border-border"}`}>
-                      <span className="text-lg">{s.ok ? "✓" : "—"}</span>
-                      <p className="text-[10px] text-muted-foreground">{s.label}</p>
-                    </div>
-                  ))}
-                </div>
-                {trlEstimate <= 3 && (
-                  <div className="flex items-start gap-2 p-2.5 bg-amber-500/5 border border-amber-500/20 rounded-lg">
-                    <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-foreground"><strong>TRL baixo ({trlEstimate}):</strong> Campo ainda em pesquisa básica. Investimento deve priorizar P&D, não produção.</p>
-                  </div>
-                )}
-                {trlEstimate >= 7 && (
-                  <div className="flex items-start gap-2 p-2.5 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
-                    <Target className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-foreground"><strong>TRL alto ({trlEstimate}):</strong> Tecnologia madura. Priorizar incentivos à produção e escala industrial.</p>
-                  </div>
-                )}
-              </div>
-              {repos.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><GitBranch className="w-4 h-4 text-primary" /> Projetos open source ({repos.length})</h3>
-                  <div className="space-y-1">
-                    {repos.slice(0, 6).map((r, i) => (
-                      <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between px-3 py-2 hover:bg-muted/50 rounded-lg transition-colors">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-foreground truncate">{r.name}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">{r.description}</p>
+                    {policy.contracts.slice(0, 8).map((c: any, i: number) => (
+                      <a key={i} href={c.url || "#"} target="_blank" rel="noopener noreferrer"
+                         className="flex items-start gap-3 p-3 border border-border/50 rounded-lg hover:border-border transition-colors">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-foreground line-clamp-2">{c.object}</p>
+                          <div className="flex gap-2 mt-1">
+                            {c.organ && <span className="text-[10px] text-muted-foreground truncate">{c.organ}</span>}
+                            {c.uf && <span className="text-[10px] font-mono bg-muted px-1 rounded">{c.uf}</span>}
+                            {c.value > 0 && <span className="text-[10px] font-semibold text-primary">R$ {(c.value / 1e3).toFixed(0)}k</span>}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                          {r.language && <span className="text-[9px] px-1.5 py-0.5 bg-primary/10 text-primary rounded">{r.language}</span>}
-                          <span className="text-[10px] font-bold text-primary">⭐{r.stars}</span>
-                        </div>
+                        <ExternalLink className="w-3 h-3 text-muted-foreground flex-shrink-0 mt-0.5" />
                       </a>
                     ))}
                   </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-sm text-muted-foreground">Nenhum contrato público identificado para este tema no PNCP.</p>
+                    <a href={`https://pncp.gov.br/app/editais?q=${encodeURIComponent(data.query)}`} target="_blank" rel="noopener noreferrer"
+                       className="text-xs text-primary hover:underline mt-2 inline-flex items-center gap-1">
+                      <ExternalLink className="w-3 h-3" /> Buscar no PNCP
+                    </a>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="transparencia" className="space-y-4">
+              <div className="bg-card border border-border rounded-xl p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-foreground">Convênios federais — Portal da Transparência</h3>
+                  <a href="https://portaldatransparencia.gov.br" target="_blank" rel="noopener noreferrer"
+                     className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                    <ExternalLink className="w-3 h-3" /> transparencia.gov.br
+                  </a>
                 </div>
-              )}
-              {knowledge.resolved_institutions && Object.keys(knowledge.resolved_institutions).length > 0 && (
-                <EntityResolutionCard resolvedInstitutions={knowledge.resolved_institutions} />
+                {policy.convenios && policy.convenios.length > 0 ? (
+                  <div className="space-y-2">
+                    {policy.convenios.slice(0, 8).map((c: any, i: number) => (
+                      <div key={i} className="p-3 border border-border/50 rounded-lg">
+                        <p className="text-xs font-medium text-foreground line-clamp-2">{c.object}</p>
+                        <div className="flex gap-2 mt-1 flex-wrap">
+                          {c.proponent && <span className="text-[10px] text-muted-foreground">{c.proponent}</span>}
+                          {c.uf && <span className="text-[10px] font-mono bg-muted px-1 rounded">{c.uf}</span>}
+                          {c.value > 0 && <span className="text-[10px] font-semibold text-primary">R$ {(c.value / 1e6).toFixed(2)}M</span>}
+                          {c.situation && <span className="text-[10px] text-muted-foreground/60">{c.situation}</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-6">Nenhum convênio identificado para este tema.</p>
+                )}
+              </div>
+              {(policy as any).emendas && (policy as any).emendas.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-3">Emendas parlamentares no campo</h3>
+                  <div className="space-y-2">
+                    {(policy as any).emendas.slice(0, 6).map((e: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium text-foreground truncate">{e.author}</p>
+                          <p className="text-[10px] text-muted-foreground">{e.function} · {e.locality}</p>
+                        </div>
+                        <span className="text-xs font-bold text-primary flex-shrink-0 ml-2">
+                          R$ {(e.paid / 1e6).toFixed(2)}M
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </TabsContent>
 
-            <TabsContent value="relacional"><RelationalGraph data={data} /></TabsContent>
+            <TabsContent value="caged" className="space-y-4">
+              <div className="bg-card border border-border rounded-xl p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Users className="w-4 h-4 text-primary" />
+                    Emprego formal — Novo CAGED / MTE
+                  </h3>
+                  <a href="https://www.gov.br/trabalho-e-emprego" target="_blank" rel="noopener noreferrer"
+                     className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                    <ExternalLink className="w-3 h-3" /> MTE
+                  </a>
+                </div>
+                {(technology as any).caged_data ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-muted/30 rounded-lg p-3 text-center">
+                        <p className="text-xl font-bold font-mono text-emerald-500">
+                          +{(technology as any).caged_data.nacional?.total_admissoes?.toLocaleString("pt-BR") || "—"}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">admissões (12m)</p>
+                      </div>
+                      <div className="bg-muted/30 rounded-lg p-3 text-center">
+                        <p className="text-xl font-bold font-mono text-red-500">
+                          -{(technology as any).caged_data.nacional?.total_demissoes?.toLocaleString("pt-BR") || "—"}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">demissões (12m)</p>
+                      </div>
+                      <div className="bg-muted/30 rounded-lg p-3 text-center">
+                        <p className={`text-xl font-bold font-mono ${(technology as any).caged_data.nacional?.total_saldo >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                          {(technology as any).caged_data.nacional?.total_saldo >= 0 ? "+" : ""}
+                          {(technology as any).caged_data.nacional?.total_saldo?.toLocaleString("pt-BR") || "—"}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">saldo líquido</p>
+                      </div>
+                    </div>
+                    {(technology as any).caged_data.ocupacoes?.length > 0 && (
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Ocupações monitoradas (CBO)</p>
+                        <div className="flex flex-wrap gap-2">
+                          {(technology as any).caged_data.ocupacoes.slice(0, 6).map((o: any, i: number) => (
+                            <span key={i} className="text-[10px] px-2 py-1 bg-muted rounded font-mono">
+                              {o.code} · {o.description}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-[9px] text-muted-foreground">{(technology as any).caged_data.escopo}</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-6">Dados do CAGED não disponíveis para este tema.</p>
+                )}
+              </div>
+            </TabsContent>
 
-            <TabsContent value="mercado" className="space-y-4">
-              <MarketAnalysisPanel
-                data={(data?.layers as any)?.market}
-                cempre={(data?.layers as any)?.sidra?.cempre}
-                perfil="governo"
-              />
+            <TabsContent value="sidra" className="space-y-4">
+              {(data.layers as any).sidra?.pintec?.setores?.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-foreground">Inovação setorial — PINTEC/IBGE</h3>
+                    <a href={(data.layers as any).sidra.pintec.url} target="_blank" rel="noopener noreferrer"
+                       className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                      <ExternalLink className="w-3 h-3" /> SIDRA
+                    </a>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mb-3">{(data.layers as any).sidra.pintec.descricao} · {(data.layers as any).sidra.pintec.periodo}</p>
+                  <div className="space-y-1.5">
+                    {(data.layers as any).sidra.pintec.setores.slice(0, 8).map((s: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg">
+                        <span className="text-xs text-foreground truncate flex-1">{s.atividade}</span>
+                        <span className="text-xs font-bold text-primary ml-2">{s.valor}{s.unidade === "%" ? "%" : ""}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(data.layers as any).sidra?.pib_setorial?.series?.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-foreground">PIB por atividade — SCN/IBGE</h3>
+                    <a href={(data.layers as any).sidra.pib_setorial.url} target="_blank" rel="noopener noreferrer"
+                       className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                      <ExternalLink className="w-3 h-3" /> SIDRA
+                    </a>
+                  </div>
+                  <div className="space-y-1.5">
+                    {(data.layers as any).sidra.pib_setorial.series.slice(0, 6).map((s: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg">
+                        <span className="text-xs text-foreground truncate flex-1">{s.componente}</span>
+                        <div className="flex gap-2 flex-shrink-0 ml-2">
+                          <span className="text-[10px] text-muted-foreground">{s.periodo}</span>
+                          <span className="text-xs font-bold text-primary">{s.valor}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {!(data.layers as any).sidra?.pintec?.setores?.length && !(data.layers as any).sidra?.pib_setorial?.series?.length && (
+                <div className="bg-card border border-border rounded-xl p-8 text-center">
+                  <p className="text-sm text-muted-foreground">Dados SIDRA/IBGE não disponíveis para o setor deste tema.</p>
+                  <a href="https://sidra.ibge.gov.br" target="_blank" rel="noopener noreferrer"
+                     className="text-xs text-primary hover:underline mt-2 inline-flex items-center gap-1">
+                    <ExternalLink className="w-3 h-3" /> Consultar SIDRA diretamente
+                  </a>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="patentes" className="space-y-4">
-              <PatentsPanel patents={(data?.layers as any)?.patents} />
+              <PatentsTab patents={(data.layers as any).patents} persona="governo" />
             </TabsContent>
 
-
-
-            <TabsContent value="territorial" className="space-y-4">
-              {(!policy.uf_distribution || Object.keys(policy.uf_distribution).length === 0) ? (
-                <div className="bg-card border border-amber-500/20 rounded-xl p-5 space-y-3">
-                  <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-amber-500" />
-                    Mapa territorial indisponível
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    A distribuição por UF é calculada a partir dos contratos do PNCP, convênios e emendas
-                    parlamentares do Portal da Transparência. Não foram encontrados instrumentos com
-                    localização identificada para este termo.
-                  </p>
-                  <a href="https://portaldatransparencia.gov.br/convenios"
-                     target="_blank" rel="noopener noreferrer"
-                     className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
-                    Consultar no Portal da Transparência →
-                  </a>
-
-                </div>
-              ) : (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-primary" /> Distribuição por estado
-                  </h3>
-                  <div className="space-y-2">
-                    {Object.entries(policy.uf_distribution)
-                      .sort(([, a], [, b]) => (b as number) - (a as number))
-                      .map(([uf, count]) => (
-                        <div key={uf} className="flex items-center gap-3">
-                          <span className="text-xs font-mono text-muted-foreground w-8">{uf}</span>
-                          <div className="flex-1 bg-muted rounded-full h-5 relative overflow-hidden">
-                            <div
-                              className="h-full bg-primary/20 rounded-full"
-                              style={{ width: `${Math.min(100, ((count as number) / Math.max(...Object.values(policy.uf_distribution) as number[])) * 100)}%` }}
-                            />
-                            <span className="absolute inset-0 flex items-center px-2 text-[10px] font-medium text-foreground">
-                              {count as number} contrato{(count as number) !== 1 ? "s" : ""}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                  {Object.keys(policy.uf_distribution).length < 5 && (
-                    <p className="text-xs text-amber-500 mt-3 flex items-center gap-1">
-                      <AlertTriangle className="w-3 h-3" /> Concentração territorial alta
-                    </p>
-                  )}
-                </div>
-              )}
-              {Object.keys(knowledge.institutions || {}).length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">Capacidades Instaladas</h3>
-                  <div className="space-y-1.5">
-                    {Object.entries(knowledge.institutions).sort(([, a], [, b]) => (b as number) - (a as number)).slice(0, 10).map(([inst, count], i) => (
-                      <div key={i} className="flex items-center gap-3"><span className="text-[10px] font-mono text-muted-foreground w-4">{i + 1}</span><div className="flex-1 bg-muted rounded-full h-5 relative overflow-hidden"><div className="h-full bg-primary/20 rounded-full" style={{ width: `${Math.min(100, ((count as number) / (Object.values(knowledge.institutions)[0] as number || 1)) * 100)}%` }} /><span className="absolute inset-0 flex items-center px-2 text-[10px] font-medium text-foreground">{inst}</span></div><span className="text-xs font-bold text-primary w-8 text-right">{count as number}</span></div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="instrumentos" className="space-y-4">
-              {policy.contracts.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">Licitações (PNCP)</h3>
-                  <div className="space-y-2">
-                    {policy.contracts.slice(0, 8).map((c, i) => (
-                      <a key={i} href={c.url} target="_blank" rel="noopener noreferrer" className="block py-2 border-b border-border/50 last:border-0 hover:bg-muted/30 -mx-2 px-2 rounded transition-colors"><p className="text-xs font-medium text-foreground line-clamp-1">{c.object || "Sem objeto"}</p><div className="flex items-center gap-2 mt-0.5"><span className="text-[10px] text-muted-foreground">{c.organ?.slice(0, 40)}</span>{c.value > 0 && <span className="text-[10px] font-semibold text-primary">R$ {(c.value / 1e3).toFixed(0)}mil</span>}{c.uf && <span className="text-[9px] px-1 py-0.5 bg-secondary text-secondary-foreground rounded">{c.uf}</span>}</div></a>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {policy.convenios.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">Convênios Federais</h3>
-                  <div className="space-y-2">
-                    {policy.convenios.slice(0, 6).map((c, i) => (
-                      <div key={i} className="py-2 border-b border-border/50 last:border-0"><p className="text-xs font-medium text-foreground line-clamp-1">{c.object}</p><div className="flex items-center gap-2 mt-0.5"><span className="text-[10px] text-muted-foreground">{c.proponent}</span>{c.value > 0 && <span className="text-[10px] font-semibold text-primary">R$ {(c.value / 1e3).toFixed(0)}mil</span>}<span className="text-[9px] px-1 py-0.5 bg-secondary text-secondary-foreground rounded">{c.situation}</span></div></div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {policy.sanctions.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Shield className="w-4 h-4 text-destructive" />Sancionadas (CEIS)</h3>
-                  <div className="space-y-2">
-                    {policy.sanctions.slice(0, 5).map((s, i) => (<div key={i} className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0"><span className="text-xs text-foreground">{s.company}</span><span className="text-[10px] text-destructive">{s.type}</span></div>))}
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="prescricao" className="space-y-4">
+            <TabsContent value="ia" className="space-y-4">
               {isAnalyzing ? (<div className="flex items-center justify-center py-12"><div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /><span className="ml-3 text-sm text-muted-foreground">Gerando prescrição baseada em 4 camadas...</span></div>
               ) : analysis && analysis.sections?.length > 0 ? (
                 <div className="space-y-4">
