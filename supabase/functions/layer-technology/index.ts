@@ -283,16 +283,74 @@ async function searchANVISA(query: string) {
   }));
 }
 
-// Novo CAGED (MTE) via IPEAData — séries mensais nacionais de admissões,
-// desligamentos e saldo. O Portal da Transparência NÃO expõe CAGED.
+// Mapeamento tema → seções CNAE (letra) para filtrar o CAGED
+// IPEAData tem séries por seção: CAGED12_ADMIS_{LETRA} e CAGED12_DESLIG_{LETRA}
+const CNAE_MAP: Record<string, { secoes: string[]; label: string }> = {
+  "software": { secoes: ["J", "M"], label: "Tecnologia da Informação e Comunicação (J) + Atividades científicas (M)" },
+  "artificial": { secoes: ["J", "M"], label: "TIC (J) + P&D (M)" },
+  "inteligencia": { secoes: ["J", "M"], label: "TIC (J) + P&D (M)" },
+  "dado": { secoes: ["J", "M"], label: "TIC (J) + P&D (M)" },
+  "tecnologia": { secoes: ["J", "M"], label: "TIC (J) + P&D (M)" },
+  "informatica": { secoes: ["J"], label: "Tecnologia da Informação e Comunicação (J)" },
+  "semicondutor": { secoes: ["C", "J"], label: "Indústria de transformação (C) + TIC (J)" },
+  "chip": { secoes: ["C", "J"], label: "Indústria de transformação (C) + TIC (J)" },
+  "eletronico": { secoes: ["C"], label: "Indústria de transformação (C)" },
+  "bateria": { secoes: ["C", "D"], label: "Indústria de transformação (C) + Energia (D)" },
+  "energia": { secoes: ["D", "C", "M"], label: "Energia (D) + Indústria (C) + P&D (M)" },
+  "solar": { secoes: ["D", "C"], label: "Energia (D) + Indústria (C)" },
+  "eolica": { secoes: ["D", "C"], label: "Energia (D) + Indústria (C)" },
+  "hidrogenio": { secoes: ["D", "C", "M"], label: "Energia (D) + Indústria (C) + P&D (M)" },
+  "farmaco": { secoes: ["C", "M", "Q"], label: "Indústria farmacêutica (C) + P&D (M) + Saúde (Q)" },
+  "medicamento": { secoes: ["C", "Q"], label: "Indústria farmacêutica (C) + Saúde (Q)" },
+  "biotecnologia": { secoes: ["M", "C", "Q"], label: "P&D (M) + Indústria (C) + Saúde (Q)" },
+  "saude": { secoes: ["Q", "M", "C"], label: "Saúde (Q) + P&D (M) + Indústria (C)" },
+  "robotica": { secoes: ["C", "J", "M"], label: "Indústria (C) + TIC (J) + P&D (M)" },
+  "automacao": { secoes: ["C", "J"], label: "Indústria (C) + TIC (J)" },
+  "aeronave": { secoes: ["C", "H"], label: "Indústria aeronáutica (C) + Transporte (H)" },
+  "drone": { secoes: ["C", "J"], label: "Indústria (C) + TIC (J)" },
+  "mineracao": { secoes: ["B", "C"], label: "Mineração (B) + Indústria (C)" },
+  "telecomunicacao": { secoes: ["J"], label: "Telecomunicações (J)" },
+  "agro": { secoes: ["A", "C", "M"], label: "Agropecuária (A) + Agroindústria (C) + P&D (M)" },
+  "agricola": { secoes: ["A", "C"], label: "Agropecuária (A) + Agroindústria (C)" },
+  "quimico": { secoes: ["C", "M"], label: "Indústria química (C) + P&D (M)" },
+  "nanotecnologia": { secoes: ["M", "C"], label: "P&D (M) + Indústria (C)" },
+  "grafeno": { secoes: ["M", "C"], label: "P&D (M) + Indústria (C)" },
+  "construcao": { secoes: ["F", "C"], label: "Construção (F) + Indústria (C)" },
+  "logistica": { secoes: ["H", "G"], label: "Transporte/Logística (H) + Comércio (G)" },
+  "financeiro": { secoes: ["K", "J"], label: "Financeiro (K) + TIC (J)" },
+  "fintech": { secoes: ["K", "J"], label: "Financeiro (K) + TIC (J)" },
+  "educacao": { secoes: ["P", "J"], label: "Educação (P) + TIC (J)" },
+  "pesquisa": { secoes: ["M"], label: "Atividades científicas e de P&D (M)" },
+};
+
+// Nomes das seções CNAE para exibição
+const CNAE_SECTION_NAMES: Record<string, string> = {
+  A: "Agropecuária", B: "Mineração", C: "Indústria de Transformação",
+  D: "Eletricidade/Energia", E: "Água/Saneamento", F: "Construção",
+  G: "Comércio", H: "Transporte/Logística", I: "Hospedagem/Alimentação",
+  J: "TIC / Informação", K: "Financeiro", L: "Imobiliário",
+  M: "P&D / Atividades Profissionais", N: "Serviços Administrativos",
+  O: "Administração Pública", P: "Educação", Q: "Saúde",
+  R: "Cultura/Lazer", S: "Outros Serviços",
+};
+
+function resolveSecoesFromQuery(query: string): { secoes: string[]; label: string } {
+  const norm = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const terms = norm.split(/\s+/);
+  for (const term of terms) {
+    for (const [kw, mapping] of Object.entries(CNAE_MAP)) {
+      if (term.includes(kw) || kw.includes(term)) return mapping;
+    }
+  }
+  // fallback genérico: M (P&D) + J (TIC)
+  return { secoes: ["M", "J"], label: "P&D / Atividades Profissionais (M) + TIC (J)" };
+}
+
 async function fetchCaged(
-  cboCodes: Array<{ code: string; description: string; area?: string }>
+  cboCodes: Array<{ code: string; description: string; area?: string }>,
+  query: string
 ): Promise<any> {
-  const SERIES: Record<string, string> = {
-    admissoes: "CAGED12_ADMISN12",
-    demissoes: "CAGED12_DESLIGN12",
-    saldo: "CAGED12_SALDON12",
-  };
+  const { secoes, label: setorLabel } = resolveSecoesFromQuery(query);
 
   const fetchSerie = async (code: string) => {
     const data = await safeFetch(
@@ -307,37 +365,98 @@ async function fetchCaged(
       .slice(-12);
   };
 
-  let admissoes: any[] = [], demissoes: any[] = [], saldo: any[] = [];
-  try {
-    [admissoes, demissoes, saldo] = await Promise.all([
-      fetchSerie(SERIES.admissoes),
-      fetchSerie(SERIES.demissoes),
-      fetchSerie(SERIES.saldo),
-    ]);
-  } catch (e) {
-    console.warn("CAGED/IPEA falhou:", e instanceof Error ? e.message : e);
-    return null;
+  // Séries por seção CNAE — padrão IPEAData: CAGED12_ADMIS_{LETRA} e CAGED12_DESLIG_{LETRA}
+  // Obs: nem toda letra tem série — fallback para nacional se retornar vazio
+  const setoralResults: Array<{
+    secao: string; nome: string;
+    admissoes: number; demissoes: number; saldo: number; serie_saldo: any[];
+  }> = [];
+
+  for (const secao of secoes.slice(0, 3)) {
+    try {
+      const codAdm = `CAGED12_ADMIS_${secao}`;
+      const codDes = `CAGED12_DESLIG_${secao}`;
+      const codSaldo = `CAGED12_SALDO_${secao}`;
+
+      const [adm, des, saldo] = await Promise.all([
+        fetchSerie(codAdm),
+        fetchSerie(codDes),
+        fetchSerie(codSaldo),
+      ]);
+
+      // Aceita se pelo menos saldo ou adm+des retornaram dados
+      const sumArr = (arr: any[]) => Math.round(arr.reduce((s, r) => s + r.valor, 0));
+      const saldoArr = saldo.length > 0 ? saldo
+        : adm.length > 0 && des.length > 0
+          ? adm.map((a: any, i: number) => ({ data: a.data, valor: a.valor - (des[i]?.valor || 0) }))
+          : [];
+
+      if (saldoArr.length === 0 && adm.length === 0) continue;
+
+      setoralResults.push({
+        secao,
+        nome: CNAE_SECTION_NAMES[secao] || `Seção ${secao}`,
+        admissoes: adm.length > 0 ? sumArr(adm) : 0,
+        demissoes: des.length > 0 ? sumArr(des) : 0,
+        saldo: saldoArr.length > 0 ? sumArr(saldoArr) : 0,
+        serie_saldo: saldoArr.slice(-12),
+      });
+    } catch (e) {
+      console.warn(`CAGED seção ${secao} falhou:`, e instanceof Error ? e.message : e);
+    }
   }
 
-  if (!saldo.length) return null;
+  // Nacional como fallback e contexto comparativo
+  let saldoNacional: any[] = [];
+  let admNacional: any[] = [];
+  let desNacional: any[] = [];
+  try {
+    [admNacional, desNacional, saldoNacional] = await Promise.all([
+      fetchSerie("CAGED12_ADMISN12"),
+      fetchSerie("CAGED12_DESLIGN12"),
+      fetchSerie("CAGED12_SALDON12"),
+    ]);
+  } catch (e) {
+    console.warn("CAGED nacional falhou:", e instanceof Error ? e.message : e);
+  }
 
-  const sum = (arr: any[]) => arr.reduce((s, r) => s + r.valor, 0);
-  const totalSaldo = Math.round(sum(saldo));
-  const ultimos3 = saldo.slice(-3).reduce((s, r) => s + r.valor, 0);
+  const sumArr = (arr: any[]) => Math.round(arr.reduce((s, r) => s + r.valor, 0));
+  const totalSaldoNacional = saldoNacional.length > 0 ? sumArr(saldoNacional) : 0;
+  const ultimos3 = saldoNacional.slice(-3).reduce((s: number, r: any) => s + r.valor, 0);
+
+  // Série principal: usa o primeiro setor encontrado, senão nacional
+  const seriePrincipal = setoralResults.length > 0
+    ? setoralResults[0].serie_saldo
+    : saldoNacional;
+
+  const saldoSetorial = setoralResults.reduce((s, r) => s + r.saldo, 0);
+  const admSetorial = setoralResults.reduce((s, r) => s + r.admissoes, 0);
+  const desSetorial = setoralResults.reduce((s, r) => s + r.demissoes, 0);
 
   return {
+    setor_foco: {
+      label: setorLabel,
+      secoes_cnae: secoes,
+      total_admissoes: admSetorial || null,
+      total_demissoes: desSetorial || null,
+      total_saldo: saldoSetorial || null,
+      detalhes: setoralResults,
+      serie_saldo: seriePrincipal,
+      disponivel: setoralResults.length > 0,
+    },
     nacional: {
-      periodo: `${saldo[0].data} a ${saldo[saldo.length - 1].data}`,
-      total_admissoes: Math.round(sum(admissoes)),
-      total_demissoes: Math.round(sum(demissoes)),
-      total_saldo: totalSaldo,
+      periodo: saldoNacional.length > 0 ? `${saldoNacional[0].data} a ${saldoNacional[saldoNacional.length - 1].data}` : "",
+      total_admissoes: admNacional.length > 0 ? sumArr(admNacional) : null,
+      total_demissoes: desNacional.length > 0 ? sumArr(desNacional) : null,
+      total_saldo: totalSaldoNacional,
       tendencia_geral: ultimos3 > 0 ? "crescimento" : ultimos3 < 0 ? "retração" : "estável",
-      serie_saldo: saldo,
+      serie_saldo: saldoNacional,
     },
     ocupacoes: cboCodes.slice(0, 6),
-    escopo:
-      "Saldo agregado do mercado formal brasileiro (todas as atividades). O recorte por ocupação exige os microdados do Novo CAGED, que não têm API pública.",
-    source: "Novo CAGED — MTE, via IPEAData",
+    escopo: setoralResults.length > 0
+      ? `Dados do mercado formal por seção CNAE: ${setoralResults.map(r => r.nome).join(", ")}. Reflete o setor econômico mais próximo do tema pesquisado.`
+      : `Série nacional agregada (sem dado setorial disponível no IPEAData para este tema). Seções tentadas: ${secoes.join(", ")}.`,
+    source: "Novo CAGED — MTE, via IPEAData (séries por seção CNAE)",
     url: "http://www.ipeadata.gov.br/",
   };
 }
@@ -482,7 +601,7 @@ Deno.serve(async (req) => {
     // Novo CAGED — série nacional (IPEAData), sem dependência de API key
     let cagedData = null;
     try {
-      cagedData = await fetchCaged(cbosFromOntology);
+      cagedData = await fetchCaged(cbosFromOntology, query);
       if (cagedData) console.log(`CAGED: saldo 12m ${cagedData.nacional?.total_saldo}`);
     } catch (e) {
       console.warn("CAGED falhou:", e instanceof Error ? e.message : e);
