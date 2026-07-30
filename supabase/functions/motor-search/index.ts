@@ -570,6 +570,10 @@ Deno.serve(async (req) => {
         query,
         cnae_codes: cnaeCodes,
       }),
+      invokeLayer("layer-cnpq", {
+        query,
+        cnpq_areas: ontology?.cnpq_areas || [],
+      }),
     ]);
 
 
