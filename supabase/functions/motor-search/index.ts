@@ -642,6 +642,7 @@ Deno.serve(async (req) => {
       ...(programs?.pbia?.sources || []),
       ...(programs?.fomento?.sources || []),
       ...(cnpq?.sources || []),
+      ...(policies?.sources || []),
 
 
     ];
