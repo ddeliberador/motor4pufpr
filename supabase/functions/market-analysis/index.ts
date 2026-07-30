@@ -213,23 +213,56 @@ interface Supplier {
 
 async function fetchPublicMarket(searchTerms: string[]) {
   const byCnpj: Record<string, Supplier> = {};
-  let pages = 0;
+  const terms = searchTerms.filter(Boolean).slice(0, 3);
 
-  for (const term of searchTerms.slice(0, 3)) {
+  // 1) Busca textual no índice público do PNCP (único endpoint que aceita texto livre)
+  type Hit = { url: string; value: number };
+  const hits: Record<string, Hit> = {};
+  let matched = 0;
+
+  for (const term of terms) {
     const data = await safeJson(
-      `https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?q=${encodeURIComponent(term)}&pagina=1&tamanhoPagina=50`,
+      `https://pncp.gov.br/api/search/?q=${encodeURIComponent(term)}&tipos_documento=contrato&pagina=1&tam_pagina=40`,
       20000,
     );
-    if (!data?.data) continue;
-    pages++;
-    for (const item of data.data) {
-      const name = item.nomeRazaoSocialFornecedor || "";
-      const cnpj = item.cnpjFornecedor || "";
-      if (!name || !cnpj) continue;
-      if (!byCnpj[cnpj]) byCnpj[cnpj] = { name, cnpj, contracts: 0, value: 0, share: 0 };
-      byCnpj[cnpj].contracts++;
-      byCnpj[cnpj].value += Number(item.valorTotalEstimado || item.valorTotalHomologado || 0);
+    const items: any[] = data?.items || [];
+    matched += items.length;
+    for (const it of items) {
+      const url: string = it.item_url || "";
+      const m = url.match(/^\/contratos\/(\d{14})\/(\d{4})\/(\d+)$/);
+      if (!m) continue;
+      hits[url] = { url, value: Number(it.valor_global || 0) };
     }
+  }
+
+  // 2) Detalhe de cada contrato para obter o fornecedor (CNPJ + razão social)
+  const top = Object.values(hits)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 45);
+
+  const details = await Promise.allSettled(
+    top.map(async (h) => {
+      const m = h.url.match(/^\/contratos\/(\d{14})\/(\d{4})\/(\d+)$/)!;
+      const d = await safeJson(
+        `https://pncp.gov.br/api/pncp/v1/orgaos/${m[1]}/contratos/${m[2]}/${m[3]}`,
+        15000,
+      );
+      if (!d) return null;
+      return {
+        cnpj: String(d.niFornecedor || "").replace(/\D/g, ""),
+        name: d.nomeRazaoSocialFornecedor || "",
+        value: Number(d.valorGlobal || h.value || 0),
+      };
+    }),
+  );
+
+  for (const r of details) {
+    if (r.status !== "fulfilled" || !r.value) continue;
+    const { cnpj, name, value } = r.value;
+    if (!cnpj || cnpj.length !== 14) continue;
+    if (!byCnpj[cnpj]) byCnpj[cnpj] = { name: name || cnpj, cnpj, contracts: 0, value: 0, share: 0 };
+    byCnpj[cnpj].contracts++;
+    byCnpj[cnpj].value += value;
   }
 
   const suppliers = Object.values(byCnpj).sort((a, b) => b.value - a.value);
@@ -247,9 +280,7 @@ async function fetchPublicMarket(searchTerms: string[]) {
   // Enriquecimento dos 5 maiores via BrasilAPI
   await Promise.all(
     suppliers.slice(0, 5).map(async (s) => {
-      const clean = s.cnpj.replace(/\D/g, "");
-      if (clean.length !== 14) return;
-      const d = await safeJson(`https://brasilapi.com.br/api/cnpj/v1/${clean}`, 12000);
+      const d = await safeJson(`https://brasilapi.com.br/api/cnpj/v1/${s.cnpj}`, 12000);
       if (!d || d.message) return;
       s.razao_social = d.razao_social || "";
       s.uf = d.uf || "";
@@ -267,15 +298,51 @@ async function fetchPublicMarket(searchTerms: string[]) {
     total_suppliers: suppliers.length,
     total_value: totalValue,
     total_contracts: totalContracts,
+    matched_documents: matched,
     hhi,
     cr4,
     concentration_label,
-    queried_terms: searchTerms.slice(0, 3),
-    available: pages > 0,
+    queried_terms: terms,
+    available: suppliers.length > 0,
+    reason: suppliers.length === 0 ? "Nenhum contrato público com fornecedor identificado para os termos consultados" : "",
   };
 }
 
-// ===== 3. Balança comercial por NCM (COMEX) =====
+// ===== 3. Balança comercial por NCM (COMEX Stat) =====
+function comexFilterName(code: string): string | null {
+  const c = code.replace(/\D/g, "");
+  if (c.length === 8) return "ncm";
+  if (c.length === 4) return "position";
+  if (c.length === 2) return "chapter";
+  return null;
+}
+
+async function comexFlow(flow: "export" | "import", filter: string, code: string, year: number) {
+  const res = await safeFetch(
+    "https://api-comexstat.mdic.gov.br/general",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        flow,
+        monthDetail: false,
+        period: { from: `${year}-01`, to: `${year}-12` },
+        filters: [{ filter, values: [Number(code.replace(/\D/g, ""))] }],
+        details: [filter],
+        metrics: ["metricFOB"],
+      }),
+    },
+    25000,
+  );
+  if (!res || !res.ok) return 0;
+  try {
+    const d = await res.json();
+    return (d?.data?.list || []).reduce((s: number, r: any) => s + Number(r.metricFOB || 0), 0);
+  } catch {
+    return 0;
+  }
+}
+
 async function fetchTradeBalance(ncmCodes: Array<{ code: string; description: string }>) {
   if (!ncmCodes.length) {
     return { items: [], total_export: 0, total_import: 0, balance: 0, available: false, reason: "Sem códigos NCM na tradução ontológica" };
@@ -285,25 +352,18 @@ async function fetchTradeBalance(ncmCodes: Array<{ code: string; description: st
 
   const results = await Promise.allSettled(
     ncmCodes.slice(0, 3).map(async (ncm) => {
-      const [exp, imp] = await Promise.all([
-        safeJson(`https://api-comexstat.mdic.gov.br/general?filter=ncm:${ncm.code}&period=${year}01-${year}12&monthDetail=false&metrics=metricFOB&flow=export`, 20000),
-        safeJson(`https://api-comexstat.mdic.gov.br/general?filter=ncm:${ncm.code}&period=${year}01-${year}12&monthDetail=false&metrics=metricFOB&flow=import`, 20000),
+      const filter = comexFilterName(ncm.code);
+      if (!filter) return null;
+      const [export_fob, import_fob] = await Promise.all([
+        comexFlow("export", filter, ncm.code, year),
+        comexFlow("import", filter, ncm.code, year),
       ]);
-      const sum = (d: any) =>
-        (d?.data?.list || []).reduce((s: number, r: any) => s + Number(r.metricFOB || 0), 0);
-      return {
-        code: ncm.code,
-        description: ncm.description,
-        export_fob: sum(exp),
-        import_fob: sum(imp),
-        year,
-        url: "https://comexstat.mdic.gov.br/pt/geral",
-      };
+      return { code: ncm.code, description: ncm.description, export_fob, import_fob, year, url: "https://comexstat.mdic.gov.br/pt/geral" };
     }),
   );
 
   for (const r of results) {
-    if (r.status === "fulfilled" && (r.value.export_fob > 0 || r.value.import_fob > 0)) {
+    if (r.status === "fulfilled" && r.value && (r.value.export_fob > 0 || r.value.import_fob > 0)) {
       items.push({ ...r.value, balance: r.value.export_fob - r.value.import_fob });
     }
   }
@@ -321,6 +381,7 @@ async function fetchTradeBalance(ncmCodes: Array<{ code: string; description: st
     reason: items.length === 0 ? "COMEX não retornou valores para os NCM consultados" : "",
   };
 }
+
 
 // ===== 4. Oportunidades derivadas dos dados =====
 function buildOpportunities(patents: any, market: any, trade: any, totalPapersBR: number, gt: number | null) {
