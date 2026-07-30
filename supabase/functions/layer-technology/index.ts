@@ -365,46 +365,90 @@ async function fetchCaged(
       .slice(-12);
   };
 
-  // Séries por seção CNAE — padrão IPEAData: CAGED12_ADMIS_{LETRA} e CAGED12_DESLIG_{LETRA}
-  // Obs: nem toda letra tem série — fallback para nacional se retornar vazio
+  // O IPEAData NÃO possui séries do CAGED por seção CNAE (apenas o agregado nacional).
+  // Para o recorte setorial usamos a PNAD Contínua/IBGE — tabela 4362:
+  // pessoas ocupadas por grupamento de atividade (série anual, em mil pessoas).
+  const SECAO_TO_GRUPAMENTO: Record<string, { id: number; nome: string }> = {
+    A: { id: 47947, nome: "Agropecuária, produção florestal e pesca" },
+    B: { id: 47948, nome: "Indústria geral" },
+    C: { id: 47948, nome: "Indústria geral" },
+    D: { id: 47948, nome: "Indústria geral" },
+    E: { id: 47948, nome: "Indústria geral" },
+    F: { id: 47949, nome: "Construção" },
+    G: { id: 47950, nome: "Comércio e reparação de veículos" },
+    H: { id: 56622, nome: "Transporte, armazenagem e correio" },
+    I: { id: 56623, nome: "Alojamento e alimentação" },
+    J: { id: 56624, nome: "Informação, comunicação e atividades profissionais" },
+    K: { id: 56624, nome: "Informação, comunicação e atividades profissionais" },
+    L: { id: 56624, nome: "Informação, comunicação e atividades profissionais" },
+    M: { id: 56624, nome: "Informação, comunicação e atividades profissionais" },
+    N: { id: 56624, nome: "Informação, comunicação e atividades profissionais" },
+    O: { id: 60032, nome: "Administração pública, educação e saúde" },
+    P: { id: 60032, nome: "Administração pública, educação e saúde" },
+    Q: { id: 60032, nome: "Administração pública, educação e saúde" },
+    R: { id: 56627, nome: "Outros serviços" },
+    S: { id: 56627, nome: "Outros serviços" },
+  };
+
   const setoralResults: Array<{
-    secao: string; nome: string;
+    secao: string; nome: string; grupamento: string;
+    ocupados_mil: number | null; variacao_pessoas: number | null;
     admissoes: number; demissoes: number; saldo: number; serie_saldo: any[];
   }> = [];
 
-  for (const secao of secoes.slice(0, 3)) {
-    try {
-      const codAdm = `CAGED12_ADMIS_${secao}`;
-      const codDes = `CAGED12_DESLIG_${secao}`;
-      const codSaldo = `CAGED12_SALDO_${secao}`;
+  try {
+    const grupamentos = Array.from(
+      new Map(
+        secoes.slice(0, 3)
+          .map((s) => SECAO_TO_GRUPAMENTO[s])
+          .filter(Boolean)
+          .map((g) => [g.id, g])
+      ).values()
+    );
 
-      const [adm, des, saldo] = await Promise.all([
-        fetchSerie(codAdm),
-        fetchSerie(codDes),
-        fetchSerie(codSaldo),
-      ]);
+    if (grupamentos.length > 0) {
+      const ids = grupamentos.map((g) => g.id).join(",");
+      const url = `https://servicodados.ibge.gov.br/api/v3/agregados/4362/periodos/-5/variaveis/4090?localidades=N1%5B1%5D&classificacao=888%5B${ids}%5D`;
+      const data = await safeFetch(url, { headers: { Accept: "application/json" } }, 20000);
+      const resultados: any[] = data?.[0]?.resultados || [];
 
-      // Aceita se pelo menos saldo ou adm+des retornaram dados
-      const sumArr = (arr: any[]) => Math.round(arr.reduce((s, r) => s + r.valor, 0));
-      const saldoArr = saldo.length > 0 ? saldo
-        : adm.length > 0 && des.length > 0
-          ? adm.map((a: any, i: number) => ({ data: a.data, valor: a.valor - (des[i]?.valor || 0) }))
-          : [];
+      for (const res of resultados) {
+        const catObj = res?.classificacoes?.[0]?.categoria || {};
+        const catId = Object.keys(catObj)[0];
+        const catNome = catObj[catId] || "";
+        const serieObj = res?.series?.[0]?.serie || {};
+        const anos = Object.keys(serieObj).sort();
+        const pontos = anos
+          .map((ano) => ({ ano, valor: Number(serieObj[ano]) }))
+          .filter((p) => Number.isFinite(p.valor));
+        if (pontos.length === 0) continue;
 
-      if (saldoArr.length === 0 && adm.length === 0) continue;
+        // variação anual em pessoas (série em mil pessoas)
+        const serieVariacao = pontos.slice(1).map((p, i) => ({
+          data: p.ano,
+          valor: Math.round((p.valor - pontos[i].valor) * 1000),
+        }));
+        const ultimo = pontos[pontos.length - 1];
+        const variacao = serieVariacao.length > 0 ? serieVariacao[serieVariacao.length - 1].valor : 0;
+        const secaoLetra = secoes.find((s) => SECAO_TO_GRUPAMENTO[s]?.id === Number(catId)) || "";
 
-      setoralResults.push({
-        secao,
-        nome: CNAE_SECTION_NAMES[secao] || `Seção ${secao}`,
-        admissoes: adm.length > 0 ? sumArr(adm) : 0,
-        demissoes: des.length > 0 ? sumArr(des) : 0,
-        saldo: saldoArr.length > 0 ? sumArr(saldoArr) : 0,
-        serie_saldo: saldoArr.slice(-12),
-      });
-    } catch (e) {
-      console.warn(`CAGED seção ${secao} falhou:`, e instanceof Error ? e.message : e);
+        setoralResults.push({
+          secao: secaoLetra,
+          nome: catNome || CNAE_SECTION_NAMES[secaoLetra] || `Seção ${secaoLetra}`,
+          grupamento: catNome,
+          ocupados_mil: ultimo.valor,
+          variacao_pessoas: variacao,
+          admissoes: 0,
+          demissoes: 0,
+          saldo: variacao,
+          serie_saldo: serieVariacao,
+        });
+      }
     }
+  } catch (e) {
+    console.warn("Setorial IBGE/PNADC falhou:", e instanceof Error ? e.message : e);
   }
+
 
   // Nacional como fallback e contexto comparativo
   let saldoNacional: any[] = [];
@@ -430,19 +474,23 @@ async function fetchCaged(
     : saldoNacional;
 
   const saldoSetorial = setoralResults.reduce((s, r) => s + r.saldo, 0);
-  const admSetorial = setoralResults.reduce((s, r) => s + r.admissoes, 0);
-  const desSetorial = setoralResults.reduce((s, r) => s + r.demissoes, 0);
+  const ocupadosSetorial = setoralResults.reduce((s, r) => s + (r.ocupados_mil || 0), 0);
+  const anoSetorial = setoralResults[0]?.serie_saldo?.slice(-1)?.[0]?.data || "";
 
   return {
     setor_foco: {
       label: setorLabel,
       secoes_cnae: secoes,
-      total_admissoes: admSetorial || null,
-      total_demissoes: desSetorial || null,
-      total_saldo: saldoSetorial || null,
+      grupamentos: setoralResults.map((r) => r.grupamento),
+      ano_referencia: anoSetorial,
+      ocupados_mil: ocupadosSetorial || null,
+      total_admissoes: null,
+      total_demissoes: null,
+      total_saldo: setoralResults.length > 0 ? saldoSetorial : null,
       detalhes: setoralResults,
       serie_saldo: seriePrincipal,
       disponivel: setoralResults.length > 0,
+      metrica: "variação anual do total de ocupados (PNAD Contínua/IBGE)",
     },
     nacional: {
       periodo: saldoNacional.length > 0 ? `${saldoNacional[0].data} a ${saldoNacional[saldoNacional.length - 1].data}` : "",
@@ -454,9 +502,9 @@ async function fetchCaged(
     },
     ocupacoes: cboCodes.slice(0, 6),
     escopo: setoralResults.length > 0
-      ? `Dados do mercado formal por seção CNAE: ${setoralResults.map(r => r.nome).join(", ")}. Reflete o setor econômico mais próximo do tema pesquisado.`
-      : `Série nacional agregada (sem dado setorial disponível no IPEAData para este tema). Seções tentadas: ${secoes.join(", ")}.`,
-    source: "Novo CAGED — MTE, via IPEAData (séries por seção CNAE)",
+      ? `Recorte setorial: ${setoralResults.map((r) => r.grupamento).join(", ")} — total de ocupados e variação anual (PNAD Contínua/IBGE, tabela 4362). Admissões e desligamentos são do Novo CAGED nacional, pois o MTE não publica séries por seção CNAE em API aberta.`
+      : `Série nacional agregada do Novo CAGED. Seções CNAE tentadas: ${secoes.join(", ")}.`,
+    source: "Novo CAGED — MTE/IPEAData (nacional) + PNAD Contínua/IBGE tabela 4362 (setorial)",
     url: "http://www.ipeadata.gov.br/",
   };
 }
