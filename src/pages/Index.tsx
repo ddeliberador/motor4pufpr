@@ -85,6 +85,20 @@ const Index = () => (
               <BookOpen className="w-3.5 h-3.5" />
               Nelson &amp; Winter · Mazzucato · Freeman
             </Link>
+
+            {/* Selo institucional — Banco Brasileiro de Soluções de IA */}
+            <div className="border border-slate-800 rounded-lg px-4 py-3 flex items-start gap-3">
+              <div className="w-1.5 h-full min-h-[2rem] bg-blue-600 rounded-full flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-mono mb-1">Registro acadêmico</p>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Submetido ao{" "}
+                  <span className="text-blue-400 font-medium">Banco Brasileiro de Soluções de IA</span>
+                  {" "}em 28/07/2026 como protótipo de pesquisa de doutorado acadêmico.
+                </p>
+                <p className="text-[10px] text-slate-600 mt-1">PPGPP · UFPR · Políticas Públicas e Inovação</p>
+              </div>
+            </div>
           </motion.div>
 
           {/* Coluna direita — busca */}
