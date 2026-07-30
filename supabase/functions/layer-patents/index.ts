@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
     const token = await getEpoToken();
     if (!token) return new Response(JSON.stringify({
       available: false,
-      message: "EPO OPS indisponível — verifique EPO_CLIENT_ID e EPO_CLIENT_SECRET.",
+      message: "EPO OPS indisponível — verifique EPO_OPS_KEY e EPO_OPS_SECRET nos secrets do Supabase.",
       ipc_codes: ipcCodes, patents: [], applicants: [], trend: [], br_share: null, trl_from_patents: null, sources: [],
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
