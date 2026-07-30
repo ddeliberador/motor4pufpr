@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { 
   Code2, Database, Globe, Server, Shield, GitBranch, 
   Cpu, Layers, FileCode, ExternalLink, Terminal,
-  BookOpen, Microscope, Factory, Zap
+  BookOpen, Microscope, Factory, Building2, Zap
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";

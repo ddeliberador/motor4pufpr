@@ -1,5 +1,5 @@
 /**
- * MOTOR 4P UFPR - API Client
+ * Motor da Inovação UFPR - API Client
  * Cliente para comunicação com o backend FastAPI
  */
 
