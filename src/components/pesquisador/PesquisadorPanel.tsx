@@ -32,6 +32,7 @@ const PesquisadorPanel = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [icts, setIcts] = useState<any>(null);
   const [isLoadingIcts, setIsLoadingIcts] = useState(false);
+  const [cnpqData, setCnpqData] = useState<any>(null);
 
 
   const { search, data, analysis, isLoading, isAnalyzing, error } = useMotorSearch();
