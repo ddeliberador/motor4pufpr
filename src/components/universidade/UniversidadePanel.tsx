@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { Landmark, Search, ArrowLeft, AlertTriangle, Zap, Globe, BookOpen, Building2, Award, Link2 } from "lucide-react";
+import { Landmark, Search, ArrowLeft, AlertTriangle, Zap, Globe, BookOpen, Building2, Award, Link2, ExternalLink } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import Header from "@/components/Header";
