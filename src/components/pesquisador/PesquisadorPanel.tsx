@@ -32,6 +32,7 @@ const PesquisadorPanel = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [icts, setIcts] = useState<any>(null);
   const [isLoadingIcts, setIsLoadingIcts] = useState(false);
+  const [cnpqData, setCnpqData] = useState<any>(null);
 
 
   const { search, data, analysis, isLoading, isAnalyzing, error } = useMotorSearch();
@@ -181,6 +182,7 @@ const PesquisadorPanel = () => {
               <TabsTrigger value="embrapii" className="text-xs rounded-lg">🔬 P&D Industrial</TabsTrigger>
               <TabsTrigger value="empregabilidade" className="text-xs rounded-lg">💼 CAGED</TabsTrigger>
               <TabsTrigger value="icts" className="text-xs rounded-lg">🏛️ ICTs Nacionais</TabsTrigger>
+              <TabsTrigger value="cnpq" className="text-xs rounded-lg">🎓 Bolsas CNPq</TabsTrigger>
               {(data.layers as any).programs?.context?.industrial && (
                 <TabsTrigger value="nova-industria" className="text-xs rounded-lg">🏭 Nova Indústria BR</TabsTrigger>
               )}
@@ -559,6 +561,180 @@ const PesquisadorPanel = () => {
                   <p className="text-sm text-muted-foreground">Clique na aba para carregar os ICTs nacionais.</p>
                 </div>
               )}
+            </TabsContent>
+
+            {/* BOLSAS CNPQ */}
+            <TabsContent value="cnpq" className="space-y-4">
+              {(() => {
+                const cnpq = (data.layers as any).cnpq;
+                if (!cnpq) return (
+                  <div className="text-center py-8">
+                    <p className="text-sm text-muted-foreground">Carregando dados CNPq...</p>
+                  </div>
+                );
+
+                return (
+                  <div className="space-y-4">
+
+                    {/* Modalidades de bolsa */}
+                    <div className="bg-card border border-border rounded-xl p-5">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                          <BookOpen className="w-4 h-4 text-primary" />
+                          Modalidades de bolsa CNPq
+                        </h3>
+                        <a href="https://www.gov.br/cnpq/pt-br/acesso-a-informacao/acoes-e-programas/programas/programas-de-bolsas"
+                           target="_blank" rel="noopener noreferrer"
+                           className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                          <ExternalLink className="w-3 h-3" /> CNPq
+                        </a>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {cnpq.modalidades?.map((m: any, i: number) => (
+                          <a key={i} href={m.url} target="_blank" rel="noopener noreferrer"
+                             className="flex items-start gap-3 p-3 border border-border/50 rounded-lg hover:border-primary/30 hover:bg-primary/5 transition-colors">
+                            <span className="text-xs font-bold font-mono text-primary bg-primary/10 px-2 py-1 rounded flex-shrink-0">{m.sigla}</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium text-foreground">{m.nome}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{m.descricao}</p>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {m.niveis.map((n: string, j: number) => (
+                                  <span key={j} className="text-[9px] px-1 bg-muted rounded font-mono">{n}</span>
+                                ))}
+                              </div>
+                            </div>
+                            <ExternalLink className="w-3 h-3 text-muted-foreground flex-shrink-0 mt-0.5" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Convênios CNPq por universidade (Transparência) */}
+                    {cnpq.convenios && cnpq.convenios.total > 0 && (
+                      <div className="bg-card border border-border rounded-xl p-5">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                            <Users className="w-4 h-4 text-primary" />
+                            Convênios CNPq/MCTI por instituição — Portal da Transparência
+                          </h3>
+                          <div className="text-right">
+                            <p className="text-xs font-bold text-primary">R$ {(cnpq.convenios.total_valor / 1e6).toFixed(1)}M</p>
+                            <p className="text-[9px] text-muted-foreground">{cnpq.convenios.total} convênios</p>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mb-3">
+                          Convênios do MCTI (órgão 24000) relacionados ao tema "{data.query}" — dados reais do Portal da Transparência.
+                        </p>
+                        <div className="space-y-2">
+                          {cnpq.convenios.ranking_ies.slice(0, 10).map((ies: any, i: number) => (
+                            <div key={i} className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+                              <span className="text-[10px] font-mono text-muted-foreground w-4 flex-shrink-0">{i + 1}</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-foreground truncate">{ies.convenente}</p>
+                                <p className="text-[10px] text-muted-foreground">{ies.count} convênio{ies.count > 1 ? "s" : ""}{ies.uf ? ` · ${ies.uf}` : ""}</p>
+                              </div>
+                              <span className="text-xs font-bold text-primary flex-shrink-0">
+                                R$ {(ies.valor / 1e6).toFixed(2)}M
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* CNPq identificado nos papers (OpenAlex grants) */}
+                    {(() => {
+                      const papers = (data.layers.knowledge as any).papers || [];
+                      const cnpqPapers = papers.filter((p: any) =>
+                        (p.grants || []).some((g: any) =>
+                          g.funder?.toLowerCase().includes("cnpq") ||
+                          g.funder?.toLowerCase().includes("conselho nacional") ||
+                          g.funder?.toLowerCase().includes("capes") ||
+                          g.funder?.toLowerCase().includes("fapesp") ||
+                          g.funder?.toLowerCase().includes("fapemig") ||
+                          g.funder?.toLowerCase().includes("faperj")
+                        )
+                      );
+                      if (!cnpqPapers.length) return null;
+
+                      const byFunder: Record<string, number> = {};
+                      for (const p of cnpqPapers) {
+                        for (const g of (p.grants || [])) {
+                          if (g.funder) byFunder[g.funder] = (byFunder[g.funder] || 0) + 1;
+                        }
+                      }
+
+                      return (
+                        <div className="bg-card border border-border rounded-xl p-5">
+                          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-primary" />
+                            Agências financiadoras identificadas nos papers — OpenAlex
+                          </h3>
+                          <p className="text-[10px] text-muted-foreground mb-3">
+                            {cnpqPapers.length} de {papers.length} papers têm agência de fomento declarada nos metadados.
+                          </p>
+                          <div className="space-y-1.5">
+                            {Object.entries(byFunder)
+                              .sort(([, a], [, b]) => (b as number) - (a as number))
+                              .slice(0, 8)
+                              .map(([funder, count], i) => (
+                                <div key={i} className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+                                  <span className="text-[10px] font-mono text-muted-foreground w-4">{i + 1}</span>
+                                  <span className="text-xs text-foreground flex-1 truncate">{funder}</span>
+                                  <span className="text-xs font-bold text-primary flex-shrink-0">{count as number} paper{(count as number) > 1 ? "s" : ""}</span>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Datasets CNPq */}
+                    {cnpq.datasets?.length > 0 && (
+                      <div className="bg-card border border-border rounded-xl p-5">
+                        <h3 className="text-sm font-semibold text-foreground mb-3">Bases de dados CNPq — dados.gov.br</h3>
+                        <div className="space-y-2">
+                          {cnpq.datasets.slice(0, 5).map((d: any, i: number) => (
+                            <a key={i} href={d.url} target="_blank" rel="noopener noreferrer"
+                               className="flex items-start gap-3 p-3 border border-border/50 rounded-lg hover:border-border transition-colors">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-foreground line-clamp-1">{d.title}</p>
+                                {d.description && <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{d.description}</p>}
+                                {d.resources?.length > 0 && (
+                                  <div className="flex gap-1 mt-1">
+                                    {d.resources.map((r: any, j: number) => (
+                                      <span key={j} className="text-[9px] px-1 bg-muted rounded font-mono">{r.format || "CSV"}</span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <ExternalLink className="w-3 h-3 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Links úteis */}
+                    <div className="bg-card border border-border rounded-xl p-5">
+                      <h3 className="text-sm font-semibold text-foreground mb-3">Links diretos — acesso ao fomento</h3>
+                      <div className="space-y-2">
+                        {cnpq.links_uteis?.map((l: any, i: number) => (
+                          <a key={i} href={l.url} target="_blank" rel="noopener noreferrer"
+                             className="flex items-center justify-between px-3 py-2.5 border border-border/50 rounded-lg hover:border-primary/30 hover:bg-primary/5 transition-colors">
+                            <span className="text-xs text-foreground">{l.label}</span>
+                            <ExternalLink className="w-3 h-3 text-primary flex-shrink-0" />
+                          </a>
+                        ))}
+                      </div>
+                      <p className="text-[9px] text-muted-foreground mt-3 text-center">
+                        Fonte: Portal da Transparência (convênios MCTI) · dados.gov.br (CNPq) · OpenAlex (grants em papers)
+                      </p>
+                    </div>
+
+                  </div>
+                );
+              })()}
             </TabsContent>
 
             {/* PRESCRIÇÃO IA */}
