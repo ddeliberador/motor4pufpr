@@ -329,7 +329,7 @@ async function fetchPublicMarket(searchTerms: string[]) {
     hhi,
     cr4,
     concentration_label,
-    queried_terms: terms,
+    queried_terms: [...primary, ...fallback],
     available: suppliers.length > 0,
     reason: suppliers.length === 0 ? "Nenhum contrato público com fornecedor identificado para os termos consultados" : "",
   };
