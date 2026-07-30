@@ -625,6 +625,7 @@ Deno.serve(async (req) => {
       ...(international?.sources || []),
       ...(sidra?.sources || []),
       ...(market?.sources || []),
+      ...(patents?.sources || []),
 
 
     ];
