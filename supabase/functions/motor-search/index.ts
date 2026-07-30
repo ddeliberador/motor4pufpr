@@ -662,6 +662,7 @@ Deno.serve(async (req) => {
         patents: patents || { available: false, patents: [], applicants: [], trend: [], br_share: null, trl_from_patents: null, sources: [] },
         programs: programs || { nova_industria: { disponivel: false }, pbia: { disponivel: false }, fomento: { disponivel: false }, context: {} },
         cnpq: cnpq || { datasets: [], chamadas: [], convenios: null, modalidades: [], sources: [] },
+        policies: policies || { politicas: { federal: [], estadual_sp: [], municipal: [] }, gazettes_mencoes: [], editais_inovacao: [], sources: [] },
 
 
       },
