@@ -16,7 +16,7 @@ import StrategicIndices from "@/components/governo/StrategicIndices";
 import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetailSheet";
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
 import MarketAnalysisPanel from "@/components/shared/MarketAnalysisPanel";
-import PatentsPanel from "@/components/shared/PatentsPanel";
+import PatentsTab from "@/components/shared/PatentsTab";
 
 interface Competitor {
   name: string;
