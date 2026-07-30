@@ -474,19 +474,23 @@ async function fetchCaged(
     : saldoNacional;
 
   const saldoSetorial = setoralResults.reduce((s, r) => s + r.saldo, 0);
-  const admSetorial = setoralResults.reduce((s, r) => s + r.admissoes, 0);
-  const desSetorial = setoralResults.reduce((s, r) => s + r.demissoes, 0);
+  const ocupadosSetorial = setoralResults.reduce((s, r) => s + (r.ocupados_mil || 0), 0);
+  const anoSetorial = setoralResults[0]?.serie_saldo?.slice(-1)?.[0]?.data || "";
 
   return {
     setor_foco: {
       label: setorLabel,
       secoes_cnae: secoes,
-      total_admissoes: admSetorial || null,
-      total_demissoes: desSetorial || null,
-      total_saldo: saldoSetorial || null,
+      grupamentos: setoralResults.map((r) => r.grupamento),
+      ano_referencia: anoSetorial,
+      ocupados_mil: ocupadosSetorial || null,
+      total_admissoes: null,
+      total_demissoes: null,
+      total_saldo: setoralResults.length > 0 ? saldoSetorial : null,
       detalhes: setoralResults,
       serie_saldo: seriePrincipal,
       disponivel: setoralResults.length > 0,
+      metrica: "variação anual do total de ocupados (PNAD Contínua/IBGE)",
     },
     nacional: {
       periodo: saldoNacional.length > 0 ? `${saldoNacional[0].data} a ${saldoNacional[saldoNacional.length - 1].data}` : "",
@@ -498,9 +502,9 @@ async function fetchCaged(
     },
     ocupacoes: cboCodes.slice(0, 6),
     escopo: setoralResults.length > 0
-      ? `Dados do mercado formal por seção CNAE: ${setoralResults.map(r => r.nome).join(", ")}. Reflete o setor econômico mais próximo do tema pesquisado.`
-      : `Série nacional agregada (sem dado setorial disponível no IPEAData para este tema). Seções tentadas: ${secoes.join(", ")}.`,
-    source: "Novo CAGED — MTE, via IPEAData (séries por seção CNAE)",
+      ? `Recorte setorial: ${setoralResults.map((r) => r.grupamento).join(", ")} — total de ocupados e variação anual (PNAD Contínua/IBGE, tabela 4362). Admissões e desligamentos são do Novo CAGED nacional, pois o MTE não publica séries por seção CNAE em API aberta.`
+      : `Série nacional agregada do Novo CAGED. Seções CNAE tentadas: ${secoes.join(", ")}.`,
+    source: "Novo CAGED — MTE/IPEAData (nacional) + PNAD Contínua/IBGE tabela 4362 (setorial)",
     url: "http://www.ipeadata.gov.br/",
   };
 }
