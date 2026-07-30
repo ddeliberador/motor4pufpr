@@ -27,7 +27,7 @@ const GovernoPanel = () => {
   const [suggestedCnaes, setSuggestedCnaes] = useState<CnaeCode[]>([]);
   const [selectedCnaes, setSelectedCnaes] = useState<CnaeCode[]>([]);
   const [pendingSearchQuery, setPendingSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("diagnostico");
+  const [activeTab, setActiveTab] = useState("pncp");
 
   const { search, data, analysis, isLoading, isAnalyzing, error } = useMotorSearch();
 
