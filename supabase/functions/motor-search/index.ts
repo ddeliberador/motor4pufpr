@@ -574,6 +574,10 @@ Deno.serve(async (req) => {
         query,
         cnpq_areas: ontology?.cnpq_areas || [],
       }),
+      invokeLayer("layer-policies", {
+        query,
+        cnpq_areas: ontology?.cnpq_areas || [],
+      }),
     ]);
 
 
