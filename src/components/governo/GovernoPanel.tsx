@@ -282,6 +282,12 @@ const GovernoPanel = () => {
               />
             </TabsContent>
 
+            <TabsContent value="patentes" className="space-y-4">
+              <PatentsPanel patents={(data?.layers as any)?.patents} />
+            </TabsContent>
+
+
+
             <TabsContent value="territorial" className="space-y-4">
               {(!policy.uf_distribution || Object.keys(policy.uf_distribution).length === 0) ? (
                 <div className="bg-card border border-amber-500/20 rounded-xl p-5 space-y-3">
