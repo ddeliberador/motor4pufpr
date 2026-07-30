@@ -140,7 +140,15 @@ const UniversidadePanel = () => {
               <TabsTrigger value="sidra" className="text-xs rounded-lg">🎓 Formação/IBGE</TabsTrigger>
               <TabsTrigger value="transparencia" className="text-xs rounded-lg">💰 Financiamento</TabsTrigger>
               <TabsTrigger value="ia" className="text-xs rounded-lg">🧠 Análise IA {isAnalyzing && "…"}</TabsTrigger>
+              {(data.layers as any).programs?.context?.industrial && (
+                <TabsTrigger value="nova-industria" className="text-xs rounded-lg">🏭 Nova Indústria</TabsTrigger>
+              )}
+              {(data.layers as any).programs?.context?.ia && (
+                <TabsTrigger value="pbia" className="text-xs rounded-lg">🤖 PBIA</TabsTrigger>
+              )}
+              <TabsTrigger value="fomento" className="text-xs rounded-lg">💡 Fomento</TabsTrigger>
             </TabsList>
+
 
             <TabsContent value="openalex" className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
