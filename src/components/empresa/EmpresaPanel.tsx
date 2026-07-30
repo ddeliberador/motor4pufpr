@@ -200,6 +200,7 @@ const EmpresaPanel = () => {
               <TabsTrigger value="financiamento" className="text-xs rounded-lg">💰 Financiamento</TabsTrigger>
               <TabsTrigger value="tecnologia" className="text-xs rounded-lg">⚙️ Tecnologia ({repos.length})</TabsTrigger>
               <TabsTrigger value="mercado" className="text-xs rounded-lg">🏭 Análise de Mercado</TabsTrigger>
+              <TabsTrigger value="patentes" className="text-xs rounded-lg">🔏 Patentes EPO</TabsTrigger>
               <TabsTrigger value="riscos" className="text-xs rounded-lg">🛡️ Riscos</TabsTrigger>
               <TabsTrigger value="prescricao" className="text-xs rounded-lg">🧠 IA {isAnalyzing && "…"}</TabsTrigger>
             </TabsList>
@@ -449,6 +450,11 @@ const EmpresaPanel = () => {
                 cempre={(data?.layers as any)?.sidra?.cempre}
                 perfil="empresa"
               />
+            </TabsContent>
+
+            {/* ===== PATENTES EPO TAB ===== */}
+            <TabsContent value="patentes" className="space-y-4">
+              <PatentsPanel patents={(data?.layers as any)?.patents} />
             </TabsContent>
 
             {/* ===== RISCOS TAB ===== */}
