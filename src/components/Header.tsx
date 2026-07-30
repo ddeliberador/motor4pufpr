@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Zap, Lock } from "lucide-react";
+import { Menu, X, Lock } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -18,14 +18,31 @@ const Header = () => {
         <nav className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/30 transition-shadow">
-              <Zap className="w-5 h-5 text-primary-foreground" />
-            </div>
+            {/* Engrenagem SVG inline */}
+            <svg width="40" height="40" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect width="64" height="64" rx="14" fill="#07101c"/>
+              <g transform="translate(32,32)">
+                <g fill="#3b82f6">
+                  <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(0)"/>
+                  <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(45)"/>
+                  <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(90)"/>
+                  <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(135)"/>
+                  <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(180)"/>
+                  <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(225)"/>
+                  <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(270)"/>
+                  <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(315)"/>
+                  <circle cx="0" cy="0" r="18" fill="#3b82f6"/>
+                </g>
+                <circle cx="0" cy="0" r="10" fill="#07101c"/>
+                <circle cx="0" cy="-3.5" r="2" fill="#3b82f6"/>
+                <rect x="-1.5" y="0.5" width="3" height="7" rx="1.2" fill="#3b82f6"/>
+              </g>
+            </svg>
             <div className="hidden sm:block">
-              <span className="font-semibold text-lg text-foreground tracking-tight uppercase">
-                MOTOR DA INOVAÇÃO
+              <span className="font-semibold text-base text-foreground tracking-tight">
+                Motor da <span className="text-primary">Inovação</span>
               </span>
-              <span className="text-xs text-muted-foreground block -mt-0.5">UFPR</span>
+              <span className="text-[10px] text-muted-foreground block -mt-0.5 tracking-widest uppercase">UFPR · PPGPP</span>
             </div>
           </Link>
 
