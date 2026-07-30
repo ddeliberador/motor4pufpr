@@ -1,3 +1,5 @@
+import CagedSaldoChart from "@/components/shared/CagedSaldoChart";
+import TrlScaleBar from "@/components/shared/TrlScaleBar";
 import { useState, useCallback, useEffect } from "react";
 import { Microscope, Search, ArrowLeft, AlertTriangle, Zap, Globe, BookOpen, Users, GitBranch, TrendingUp, ExternalLink, Beaker, Target, Lightbulb, Briefcase, FlaskConical } from "lucide-react";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
@@ -327,21 +329,10 @@ const PesquisadorPanel = () => {
                   Projetos P&D industriais identificados. A fase do projeto indica TRL real: Fase 1 = TRL 4–5, Fase 2 = TRL 5–6, Fase 3 = TRL 6–7.
                 </p>
 
-                {(data.layers as any).patents?.trl_from_patents && (
-                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4">
-                    <p className="text-[10px] font-mono text-primary uppercase tracking-wider mb-1">TRL via EPO OPS — dado real de patentes</p>
-                    <div className="flex items-center gap-3">
-                      <p className="text-3xl font-bold text-foreground font-mono">
-                        {(data.layers as any).patents.trl_from_patents.estimate}
-                        <span className="text-base font-normal text-muted-foreground">/9</span>
-                      </p>
-                      <div>
-                        <p className="text-xs font-medium text-foreground">{(data.layers as any).patents.trl_from_patents.label}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{(data.layers as any).patents.trl_from_patents.rationale}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                <TrlScaleBar
+                  trlData={(data.layers as any).patents?.trl_from_patents}
+                  fallback={(technology as any).trl_estimate}
+                />
 
                 {(technology as any).innovation_datasets && (technology as any).innovation_datasets.length > 0 ? (
                   <div className="space-y-2">
@@ -425,6 +416,7 @@ const PesquisadorPanel = () => {
                         </div>
                       </div>
                     )}
+                    <CagedSaldoChart serie={(technology as any).caged_data.nacional?.serie_saldo} gradientId="cagedGradPesq" />
                     <p className="text-[9px] text-muted-foreground">{(technology as any).caged_data.escopo}</p>
                   </div>
                 ) : (

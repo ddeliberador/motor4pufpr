@@ -1,3 +1,5 @@
+import CagedSaldoChart from "@/components/shared/CagedSaldoChart";
+import TrlScaleBar from "@/components/shared/TrlScaleBar";
 import { useState, useCallback, useEffect } from "react";
 import { Factory, Search, ArrowLeft, AlertTriangle, Zap, Globe, GitBranch, Building2, Landmark, TrendingUp, Target, Handshake, ShieldCheck, Users, Building, ExternalLink } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
@@ -294,6 +296,7 @@ const EmpresaPanel = () => {
                         </div>
                       </div>
                     )}
+                    <CagedSaldoChart serie={(technology as any).caged_data.nacional?.serie_saldo} gradientId="cagedGradEmp" />
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-6">Dados do CAGED não disponíveis para este tema.</p>
@@ -347,6 +350,10 @@ const EmpresaPanel = () => {
             </TabsContent>
 
             <TabsContent value="patentes" className="space-y-4">
+              <TrlScaleBar
+                trlData={(data.layers as any).patents?.trl_from_patents}
+                fallback={(technology as any).trl_estimate}
+              />
               <PatentsTab patents={(data.layers as any).patents} persona="empresa" />
             </TabsContent>
 

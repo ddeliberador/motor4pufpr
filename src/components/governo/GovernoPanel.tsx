@@ -1,3 +1,5 @@
+import CagedSaldoChart from "@/components/shared/CagedSaldoChart";
+import TrlScaleBar from "@/components/shared/TrlScaleBar";
 import { useState, useEffect } from "react";
 import { Building2, Search, ArrowLeft, AlertTriangle, Zap, MapPin, Globe, BookOpen, Landmark, Shield, FileText, Activity, GitBranch, Target, ExternalLink, Users } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
@@ -301,6 +303,7 @@ const GovernoPanel = () => {
                         </div>
                       </div>
                     )}
+                    <CagedSaldoChart serie={(technology as any).caged_data.nacional?.serie_saldo} gradientId="cagedGradGov" />
                     <p className="text-[9px] text-muted-foreground">{(technology as any).caged_data.escopo}</p>
                   </div>
                 ) : (
@@ -364,6 +367,10 @@ const GovernoPanel = () => {
             </TabsContent>
 
             <TabsContent value="patentes" className="space-y-4">
+              <TrlScaleBar
+                trlData={(data.layers as any).patents?.trl_from_patents}
+                fallback={(technology as any).trl_estimate}
+              />
               <PatentsTab patents={(data.layers as any).patents} persona="governo" />
             </TabsContent>
 
