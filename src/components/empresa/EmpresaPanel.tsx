@@ -19,6 +19,8 @@ import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetail
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
 import MarketAnalysisPanel from "@/components/shared/MarketAnalysisPanel";
 import PatentsTab from "@/components/shared/PatentsTab";
+import ProgramsTab from "@/components/shared/ProgramsTab";
+
 
 interface Competitor {
   name: string;
