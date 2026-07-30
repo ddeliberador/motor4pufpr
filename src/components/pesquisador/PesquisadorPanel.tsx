@@ -414,8 +414,8 @@ const PesquisadorPanel = () => {
                       const sf = (technology as any).caged_data.setor_foco;
                       const nac = (technology as any).caged_data.nacional;
                       const useSetor = sf?.disponivel && sf?.total_saldo != null;
-                      const adm = useSetor ? sf.total_admissoes : nac?.total_admissoes;
-                      const dem = useSetor ? sf.total_demissoes : nac?.total_demissoes;
+                      const adm = (useSetor ? sf.total_admissoes : null) ?? nac?.total_admissoes;
+                      const dem = (useSetor ? sf.total_demissoes : null) ?? nac?.total_demissoes;
                       const saldo = useSetor ? sf.total_saldo : nac?.total_saldo;
                       const contexto = useSetor
                         ? sf.detalhes?.map((d: any) => d.nome).join(" + ") || sf.label
@@ -443,7 +443,9 @@ const PesquisadorPanel = () => {
                             </div>
                           </div>
                           <p className="text-[9px] text-muted-foreground px-1">
-                            {useSetor ? `Setor: ${contexto}` : "⚠ Dado setorial indisponível — exibindo série nacional agregada"}
+                            {useSetor
+                              ? `Setor: ${contexto}${sf.ano_referencia ? ` · ${sf.ano_referencia}` : ""} — saldo = ${sf.metrica || "variação anual de ocupados"}. Admissões/desligamentos: Novo CAGED nacional (12m).`
+                              : "⚠ Dado setorial indisponível — exibindo série nacional agregada"}
                           </p>
 
                           {/* Detalhamento por subseção CNAE quando disponível */}
@@ -454,8 +456,11 @@ const PesquisadorPanel = () => {
                                 <div key={i} className="flex items-center justify-between px-3 py-1.5 bg-muted/20 rounded">
                                   <span className="text-[10px] text-foreground">{d.nome}</span>
                                   <div className="flex gap-3">
-                                    <span className="text-[9px] text-emerald-500">+{d.admissoes.toLocaleString("pt-BR")}</span>
-                                    <span className="text-[9px] text-red-500">-{d.demissoes.toLocaleString("pt-BR")}</span>
+                                    {d.ocupados_mil != null && (
+                                      <span className="text-[9px] text-muted-foreground">
+                                        {(d.ocupados_mil * 1000).toLocaleString("pt-BR")} ocupados
+                                      </span>
+                                    )}
                                     <span className={`text-[9px] font-bold ${d.saldo >= 0 ? "text-emerald-500" : "text-red-500"}`}>
                                       {d.saldo >= 0 ? "+" : ""}{d.saldo.toLocaleString("pt-BR")}
                                     </span>
