@@ -1,16 +1,37 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ArrowRight, Microscope, Building2, Factory, Landmark, X, Check } from "lucide-react";
+import { Search, ArrowRight, Microscope, Building2, Factory, X, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import type { CnaeCode } from "@/components/mvp/CnaeSelectionModal";
 import type { Persona } from "@/types/persona";
 
-const PERSONAS: { key: Persona; icon: typeof Microscope; label: string; subtitle: string; color: string }[] = [
+const GearIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 64 64" className={className} xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <g transform="translate(32,32)">
+      <g fill="currentColor">
+        <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(0)"/>
+        <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(45)"/>
+        <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(90)"/>
+        <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(135)"/>
+        <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(180)"/>
+        <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(225)"/>
+        <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(270)"/>
+        <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(315)"/>
+        <circle cx="0" cy="0" r="18" fill="currentColor"/>
+      </g>
+      <circle cx="0" cy="0" r="10" fill="rgba(0,0,0,0.35)"/>
+      <circle cx="0" cy="-3.5" r="2" fill="white" opacity="0.8"/>
+      <rect x="-1.5" y="0.5" width="3" height="7" rx="1.2" fill="white" opacity="0.8"/>
+    </g>
+  </svg>
+);
+
+const PERSONAS: { key: Persona; icon: React.ElementType; label: string; subtitle: string; color: string }[] = [
   { key: "pesquisador", icon: Microscope, label: "Pesquisador", subtitle: "Lacunas, financiamento, agenda científica", color: "from-violet-500 to-purple-600" },
   { key: "universidade", icon: Building2, label: "Universidade", subtitle: "Posicionamento, captação, parcerias", color: "from-blue-500 to-cyan-600" },
   { key: "empresa", icon: Factory, label: "Empresa", subtitle: "Make-or-buy, parceiro P&D, mercado", color: "from-orange-500 to-amber-600" },
-  { key: "governo", icon: Landmark, label: "Governo", subtitle: "Prioridade de investimento, efetividade", color: "from-emerald-500 to-teal-600" },
+  { key: "governo", icon: GearIcon, label: "Governo", subtitle: "Prioridade de investimento, efetividade", color: "from-emerald-500 to-teal-600" },
 ];
 
 const EXAMPLES = ["grafeno", "baterias de lítio", "semicondutores", "hidrogênio verde", "CRISPR", "inteligência artificial"];
