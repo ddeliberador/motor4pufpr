@@ -1,7 +1,7 @@
 import CagedSaldoChart from "@/components/shared/CagedSaldoChart";
 import TrlScaleBar from "@/components/shared/TrlScaleBar";
 import { useState, useEffect } from "react";
-import { Building2, Search, ArrowLeft, AlertTriangle, Zap, MapPin, Globe, BookOpen, Landmark, Shield, FileText, Activity, GitBranch, Target, ExternalLink, Users } from "lucide-react";
+import { Building2, Search, ArrowLeft, AlertTriangle, Zap, MapPin, Globe, BookOpen, Shield, FileText, Activity, GitBranch, Target, ExternalLink, Users } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
 import { TrlScaleChart } from "@/components/shared/TrlScaleChart";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
@@ -133,7 +133,7 @@ const GovernoPanel = () => {
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
             {[
               { icon: BookOpen, value: data.stats.papers, label: "Papers" },
-              { icon: Landmark, value: data.stats.contracts, label: "Licitações" },
+              { icon: FileText, value: data.stats.contracts, label: "Licitações" },
               { icon: Shield, value: data.stats.convenios, label: "Convênios" },
               { icon: Globe, value: data.stats.countries, label: "Países" },
               { icon: FileText, value: data.stats.datasets, label: "Datasets" },

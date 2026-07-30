@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
-  Zap, BookOpen, Microscope, Factory, Landmark, Globe, 
+  Zap, BookOpen, Microscope, Factory, Globe, 
   ArrowRight, Database, BarChart3, Network, Target,
   AlertTriangle, TrendingUp, Layers, GitBranch
 } from "lucide-react";
@@ -34,7 +34,7 @@ const layers = [
     outputs: ["TRL estimado", "Ciência → Patente", "Base produtiva associada"],
   },
   {
-    icon: Landmark,
+    icon: Building2,
     title: "Política",
     color: "from-amber-500 to-orange-500",
     sources: ["PNCP", "Transparência", "SICONFI", "FNDCT"],
@@ -60,7 +60,7 @@ const personas = [
   { key: "pesquisador", icon: Microscope, label: "Pesquisador", deliverables: ["3 agendas estratégicas", "3 parceiros potenciais", "3 fontes de financiamento"] },
   { key: "universidade", icon: BookOpen, label: "Universidade", deliverables: ["Índice de Conversão Estrutural", "Áreas fortes e frágeis", "3 parcerias estratégicas"] },
   { key: "empresa", icon: Factory, label: "Empresa", deliverables: ["3 parceiros acadêmicos", "3 instrumentos disponíveis", "Diagnóstico de dependência"] },
-  { key: "governo", icon: Landmark, label: "Governo", deliverables: ["Investir / Reestruturar / Criar / Reduzir", "Setores críticos", "Alavancas prioritárias"] },
+  { key: "governo", icon: Building2, label: "Governo", deliverables: ["Investir / Reestruturar / Criar / Reduzir", "Setores críticos", "Alavancas prioritárias"] },
 ];
 
 const Conceito = () => {
@@ -84,7 +84,7 @@ const Conceito = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.6 }}
           >
-            Motor 4P
+            Motor da Inovação
             <span className="block text-2xl md:text-3xl font-normal text-muted-foreground mt-3">
               Diagnóstico Estrutural do Sistema Nacional de Inovação
             </span>
@@ -341,7 +341,7 @@ const Conceito = () => {
             ))}
           </div>
           <p className="text-center text-sm text-foreground font-medium mt-8">
-            O Motor 4P operacionaliza teoria econômica como infraestrutura pública.
+            O Motor da Inovação operacionaliza teoria econômica como infraestrutura pública.
           </p>
         </div>
       </section>
