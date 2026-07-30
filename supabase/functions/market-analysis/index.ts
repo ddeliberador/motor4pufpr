@@ -215,44 +215,51 @@ function deaccent(t: string) {
   return t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-// O índice do PNCP é sensível a acentos e a expressões compostas.
-// Gera variações: termo original, sem acento e tokens relevantes isolados.
-function pncpVariants(terms: string[]): string[] {
-  const out: string[] = [];
-  const stop = new Set(["de", "da", "do", "e", "para", "com", "em", "the", "of", "and"]);
+// O índice do PNCP é sensível a acentos; expressões compostas são consultadas
+// primeiro e só há fallback por token quando nada é encontrado.
+function pncpVariants(terms: string[]): { primary: string[]; fallback: string[] } {
+  const stop = new Set(["de", "da", "do", "e", "para", "com", "em", "the", "of", "and", "verde", "verdes", "novo", "nova", "nacional"]);
+  const primary: string[] = [];
+  const fallback: string[] = [];
   for (const t of terms.filter(Boolean)) {
     const clean = deaccent(t.trim().toLowerCase());
-    if (clean) out.push(clean);
+    if (!clean) continue;
+    primary.push(clean);
     for (const tok of clean.split(/[^a-z0-9]+/)) {
-      if (tok.length >= 5 && !stop.has(tok)) out.push(tok);
+      if (tok.length >= 7 && !stop.has(tok)) fallback.push(tok);
     }
   }
-  return [...new Set(out)].slice(0, 5);
+  return { primary: [...new Set(primary)].slice(0, 3), fallback: [...new Set(fallback)].slice(0, 3) };
 }
 
 async function fetchPublicMarket(searchTerms: string[]) {
   const byCnpj: Record<string, Supplier> = {};
-  const terms = pncpVariants(searchTerms);
+  const { primary, fallback } = pncpVariants(searchTerms);
 
   // 1) Busca textual no índice público do PNCP (único endpoint que aceita texto livre)
   type Hit = { url: string; value: number };
   const hits: Record<string, Hit> = {};
   let matched = 0;
 
-  for (const term of terms) {
-    const data = await safeJson(
-      `https://pncp.gov.br/api/search/?q=${encodeURIComponent(term)}&tipos_documento=contrato&pagina=1&tam_pagina=40`,
-      20000,
-    );
-    const items: any[] = data?.items || [];
-    matched += items.length;
-    for (const it of items) {
-      const url: string = it.item_url || "";
-      const m = url.match(/^\/contratos\/(\d{14})\/(\d{4})\/(\d+)$/);
-      if (!m) continue;
-      hits[url] = { url, value: Number(it.valor_global || 0) };
+  const runTerms = async (list: string[]) => {
+    for (const term of list) {
+      const data = await safeJson(
+        `https://pncp.gov.br/api/search/?q=${encodeURIComponent(term)}&tipos_documento=contrato&pagina=1&tam_pagina=40`,
+        20000,
+      );
+      const items: any[] = data?.items || [];
+      matched += items.length;
+      for (const it of items) {
+        const url: string = it.item_url || "";
+        if (!/^\/contratos\/\d{14}\/\d{4}\/\d+$/.test(url)) continue;
+        hits[url] = { url, value: Number(it.valor_global || 0) };
+      }
     }
-  }
+  };
+
+  await runTerms(primary);
+  if (Object.keys(hits).length === 0) await runTerms(fallback);
+
 
 
   // 2) Detalhe de cada contrato para obter o fornecedor (CNPJ + razão social)
