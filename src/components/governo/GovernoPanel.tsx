@@ -18,6 +18,7 @@ import RelationalGraph from "./RelationalGraph";
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
 import MarketAnalysisPanel from "@/components/shared/MarketAnalysisPanel";
 import PatentsTab from "@/components/shared/PatentsTab";
+import { NovaIndustriaTab, PbiaTab, FomentoTab } from "@/components/shared/ProgramsTabs";
 
 const GovernoPanel = () => {
   const config = personaConfigs.governo;
@@ -149,6 +150,13 @@ const GovernoPanel = () => {
               <TabsTrigger value="caged" className="text-xs rounded-lg">👷 CAGED</TabsTrigger>
               <TabsTrigger value="sidra" className="text-xs rounded-lg">📊 SIDRA/IBGE</TabsTrigger>
               <TabsTrigger value="patentes" className="text-xs rounded-lg">🔏 Patentes EPO</TabsTrigger>
+              {(data.layers as any).programs?.context?.industrial && (
+                <TabsTrigger value="nova-industria" className="text-xs rounded-lg">🏭 Nova Indústria BR</TabsTrigger>
+              )}
+              {(data.layers as any).programs?.context?.ia && (
+                <TabsTrigger value="pbia" className="text-xs rounded-lg">🤖 PBIA</TabsTrigger>
+              )}
+              <TabsTrigger value="fomento" className="text-xs rounded-lg">💡 Fomento</TabsTrigger>
               <TabsTrigger value="ia" className="text-xs rounded-lg">🧠 Análise IA {isAnalyzing && "…"}</TabsTrigger>
             </TabsList>
 
@@ -387,6 +395,22 @@ const GovernoPanel = () => {
                   <p className="text-[10px] text-muted-foreground text-center">Prescrição: {data.meta.sources.join(" · ")} · GT={indices?.gt?.value} CD={indices?.cd?.value} AUE={indices?.aue?.value} EI={indices?.ei?.value}</p>
                 </div>
               ) : (<div className="text-center py-12 text-muted-foreground"><Zap className="w-8 h-8 mx-auto mb-3 opacity-40" /><p className="text-sm">Prescrição IA não disponível.</p></div>)}
+            </TabsContent>
+
+            {(data.layers as any).programs?.context?.industrial && (
+              <TabsContent value="nova-industria" className="space-y-4">
+                <NovaIndustriaTab ni={(data.layers as any).programs?.nova_industria} emphasizeExecution />
+              </TabsContent>
+            )}
+
+            {(data.layers as any).programs?.context?.ia && (
+              <TabsContent value="pbia" className="space-y-4">
+                <PbiaTab pbia={(data.layers as any).programs?.pbia} emphasizeExecution />
+              </TabsContent>
+            )}
+
+            <TabsContent value="fomento" className="space-y-4">
+              <FomentoTab fom={(data.layers as any).programs?.fomento} />
             </TabsContent>
           </Tabs>
         </div>
