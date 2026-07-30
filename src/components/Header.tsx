@@ -64,10 +64,10 @@ const Header = () => {
             </Link>
             <Link
               to={user ? "/gestao-pesquisa" : "/auth"}
-              className={`text-sm font-medium transition-colors flex items-center gap-1 ${isActive('/gestao-pesquisa') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+              title="Gestão da Pesquisa"
+              className={`p-2 rounded-lg transition-colors ${isActive('/gestao-pesquisa') ? 'text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
             >
-              <Lock className="w-3 h-3" />
-              Gestão da Pesquisa
+              <Lock className="w-4 h-4" />
             </Link>
           </div>
 
@@ -105,10 +105,10 @@ const Header = () => {
               <Link
                 to={user ? "/gestao-pesquisa" : "/auth"}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${isActive('/gestao-pesquisa') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${isActive('/gestao-pesquisa') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
               >
-                <Lock className="w-3 h-3" />
-                Gestão da Pesquisa
+                <Lock className="w-3.5 h-3.5" />
+                Área restrita
               </Link>
             </div>
           </div>
