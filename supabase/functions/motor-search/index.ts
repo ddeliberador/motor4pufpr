@@ -528,7 +528,7 @@ Deno.serve(async (req) => {
     const knowledge = await invokeLayer("layer-knowledge", { query, search_terms: searchTerms });
 
     // STEP 2: Remaining 3 layers in parallel, passing knowledge + ontology data
-    const [technology, policy, international, sidra, market, patents] = await Promise.all([
+    const [technology, policy, international, sidra, market, patents, programs] = await Promise.all([
       invokeLayer("layer-technology", {
         query,
         knowledge_papers: knowledge?.papers?.length || 0,
@@ -565,6 +565,10 @@ Deno.serve(async (req) => {
       invokeLayer("layer-patents", {
         query,
         ipc_codes: ipcCodes,
+      }),
+      invokeLayer("layer-programs", {
+        query,
+        cnae_codes: cnaeCodes,
       }),
     ]);
 
@@ -626,6 +630,9 @@ Deno.serve(async (req) => {
       ...(sidra?.sources || []),
       ...(market?.sources || []),
       ...(patents?.sources || []),
+      ...(programs?.nova_industria?.sources || []),
+      ...(programs?.pbia?.sources || []),
+      ...(programs?.fomento?.sources || []),
 
 
     ];
@@ -643,6 +650,7 @@ Deno.serve(async (req) => {
         sidra: sidra || { pintec: null, cempre: null, pos_graduacao: null, pib_setorial: null, graduacao: null, sources: [] },
         market: market || { patents: { holders: [], available: false, reason: "Camada indisponível" }, market: { suppliers: [], available: false }, trade: { items: [], available: false }, opportunities: [], sources: [] },
         patents: patents || { available: false, patents: [], applicants: [], trend: [], br_share: null, trl_from_patents: null, sources: [] },
+        programs: programs || { nova_industria: { disponivel: false }, pbia: { disponivel: false }, fomento: { disponivel: false }, context: {} },
 
 
       },
