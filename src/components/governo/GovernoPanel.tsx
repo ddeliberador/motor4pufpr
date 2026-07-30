@@ -19,6 +19,7 @@ import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
 import MarketAnalysisPanel from "@/components/shared/MarketAnalysisPanel";
 import PatentsTab from "@/components/shared/PatentsTab";
 import { NovaIndustriaTab, PbiaTab, FomentoTab } from "@/components/shared/ProgramsTabs";
+import PoliciesTab from "@/components/shared/PoliciesTab";
 
 const GovernoPanel = () => {
   const config = personaConfigs.governo;
@@ -157,6 +158,7 @@ const GovernoPanel = () => {
                 <TabsTrigger value="pbia" className="text-xs rounded-lg">🤖 PBIA</TabsTrigger>
               )}
               <TabsTrigger value="fomento" className="text-xs rounded-lg">💡 Fomento</TabsTrigger>
+              <TabsTrigger value="politicas" className="text-xs rounded-lg">📋 Políticas</TabsTrigger>
               <TabsTrigger value="ia" className="text-xs rounded-lg">🧠 Análise IA {isAnalyzing && "…"}</TabsTrigger>
             </TabsList>
 
@@ -382,6 +384,13 @@ const GovernoPanel = () => {
               <PatentsTab patents={(data.layers as any).patents} persona="governo" />
             </TabsContent>
 
+            <TabsContent value="politicas" className="space-y-4">
+              <PoliciesTab
+                policies={(data.layers as any).policies}
+                persona="governo"
+                query={data.query}
+              />
+            </TabsContent>
             <TabsContent value="ia" className="space-y-4">
               {isAnalyzing ? (<div className="flex items-center justify-center py-12"><div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /><span className="ml-3 text-sm text-muted-foreground">Gerando prescrição baseada em 4 camadas...</span></div>
               ) : analysis && analysis.sections?.length > 0 ? (
