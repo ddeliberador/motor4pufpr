@@ -19,6 +19,8 @@ import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetail
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
 import MarketAnalysisPanel from "@/components/shared/MarketAnalysisPanel";
 import PatentsTab from "@/components/shared/PatentsTab";
+import ProgramsTab from "@/components/shared/ProgramsTab";
+
 
 interface Competitor {
   name: string;
@@ -201,7 +203,15 @@ const EmpresaPanel = () => {
               <TabsTrigger value="comex" className="text-xs rounded-lg">🌐 Comércio Exterior</TabsTrigger>
               <TabsTrigger value="patentes" className="text-xs rounded-lg">🔏 Patentes EPO</TabsTrigger>
               <TabsTrigger value="ia" className="text-xs rounded-lg">🧠 Análise IA {isAnalyzing && "…"}</TabsTrigger>
+              {(data.layers as any).programs?.context?.industrial && (
+                <TabsTrigger value="nova-industria" className="text-xs rounded-lg">🏭 Nova Indústria</TabsTrigger>
+              )}
+              {(data.layers as any).programs?.context?.ia && (
+                <TabsTrigger value="pbia" className="text-xs rounded-lg">🤖 PBIA</TabsTrigger>
+              )}
+              <TabsTrigger value="fomento" className="text-xs rounded-lg">💡 Fomento</TabsTrigger>
             </TabsList>
+
 
             <TabsContent value="mercado" className="space-y-4">
               <div className="bg-card border border-border rounded-xl p-5">
@@ -365,7 +375,22 @@ const EmpresaPanel = () => {
                 </div>
               ) : (<div className="text-center py-12 text-muted-foreground"><Zap className="w-8 h-8 mx-auto mb-3 opacity-40" /><p className="text-sm">IA não disponível.</p></div>)}
             </TabsContent>
+
+            {(data.layers as any).programs?.context?.industrial && (
+              <TabsContent value="nova-industria" className="space-y-4">
+                <ProgramsTab programs={(data.layers as any).programs} which="nova-industria" />
+              </TabsContent>
+            )}
+            {(data.layers as any).programs?.context?.ia && (
+              <TabsContent value="pbia" className="space-y-4">
+                <ProgramsTab programs={(data.layers as any).programs} which="pbia" />
+              </TabsContent>
+            )}
+            <TabsContent value="fomento" className="space-y-4">
+              <ProgramsTab programs={(data.layers as any).programs} which="fomento" />
+            </TabsContent>
           </Tabs>
+
         </div>
       </main>
       <Footer />

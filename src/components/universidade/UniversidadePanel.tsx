@@ -14,6 +14,8 @@ import StrategicIndices from "@/components/governo/StrategicIndices";
 import RelationalGraph from "@/components/governo/RelationalGraph";
 import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetailSheet";
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
+import ProgramsTab from "@/components/shared/ProgramsTab";
+
 
 const UniversidadePanel = () => {
   const config = personaConfigs.universidade;
@@ -140,7 +142,15 @@ const UniversidadePanel = () => {
               <TabsTrigger value="sidra" className="text-xs rounded-lg">🎓 Formação/IBGE</TabsTrigger>
               <TabsTrigger value="transparencia" className="text-xs rounded-lg">💰 Financiamento</TabsTrigger>
               <TabsTrigger value="ia" className="text-xs rounded-lg">🧠 Análise IA {isAnalyzing && "…"}</TabsTrigger>
+              {(data.layers as any).programs?.context?.industrial && (
+                <TabsTrigger value="nova-industria" className="text-xs rounded-lg">🏭 Nova Indústria</TabsTrigger>
+              )}
+              {(data.layers as any).programs?.context?.ia && (
+                <TabsTrigger value="pbia" className="text-xs rounded-lg">🤖 PBIA</TabsTrigger>
+              )}
+              <TabsTrigger value="fomento" className="text-xs rounded-lg">💡 Fomento</TabsTrigger>
             </TabsList>
+
 
             <TabsContent value="openalex" className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -327,7 +337,22 @@ const UniversidadePanel = () => {
                 </div>
               ) : (<div className="text-center py-12 text-muted-foreground"><Zap className="w-8 h-8 mx-auto mb-3 opacity-40" /><p className="text-sm">IA não disponível.</p></div>)}
             </TabsContent>
+
+            {(data.layers as any).programs?.context?.industrial && (
+              <TabsContent value="nova-industria" className="space-y-4">
+                <ProgramsTab programs={(data.layers as any).programs} which="nova-industria" />
+              </TabsContent>
+            )}
+            {(data.layers as any).programs?.context?.ia && (
+              <TabsContent value="pbia" className="space-y-4">
+                <ProgramsTab programs={(data.layers as any).programs} which="pbia" />
+              </TabsContent>
+            )}
+            <TabsContent value="fomento" className="space-y-4">
+              <ProgramsTab programs={(data.layers as any).programs} which="fomento" />
+            </TabsContent>
           </Tabs>
+
         </div>
       </main>
       <Footer />
