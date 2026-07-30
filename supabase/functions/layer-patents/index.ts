@@ -9,9 +9,9 @@ const EPO_BASE = "https://ops.epo.org/3.2/rest-services";
 const EPO_AUTH = "https://ops.epo.org/3.2/auth/accesstoken";
 
 async function getEpoToken(): Promise<string | null> {
-  const clientId = Deno.env.get("EPO_CLIENT_ID");
-  const clientSecret = Deno.env.get("EPO_CLIENT_SECRET");
-  if (!clientId || !clientSecret) { console.warn("EPO credentials not set"); return null; }
+  const clientId = Deno.env.get("EPO_OPS_KEY") || Deno.env.get("EPO_CLIENT_ID");
+  const clientSecret = Deno.env.get("EPO_OPS_SECRET") || Deno.env.get("EPO_CLIENT_SECRET");
+  if (!clientId || !clientSecret) { console.warn("EPO credentials not set (EPO_OPS_KEY/EPO_OPS_SECRET)"); return null; }
   try {
     const res = await fetch(EPO_AUTH, {
       method: "POST",
