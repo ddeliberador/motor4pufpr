@@ -22,8 +22,8 @@ const Header = () => {
               <Zap className="w-5 h-5 text-primary-foreground" />
             </div>
             <div className="hidden sm:block">
-              <span className="font-semibold text-lg text-foreground tracking-tight">
-                MOTOR 4P
+              <span className="font-semibold text-lg text-foreground tracking-tight uppercase">
+                MOTOR DA INOVAÇÃO
               </span>
               <span className="text-xs text-muted-foreground block -mt-0.5">UFPR</span>
             </div>
