@@ -655,6 +655,7 @@ Deno.serve(async (req) => {
         sidra: sidra || { pintec: null, cempre: null, pos_graduacao: null, pib_setorial: null, graduacao: null, sources: [] },
         market: market || { patents: { holders: [], available: false, reason: "Camada indisponível" }, market: { suppliers: [], available: false }, trade: { items: [], available: false }, opportunities: [], sources: [] },
         patents: patents || { available: false, patents: [], applicants: [], trend: [], br_share: null, trl_from_patents: null, sources: [] },
+        programs: programs || { nova_industria: { disponivel: false }, pbia: { disponivel: false }, fomento: { disponivel: false }, context: {} },
         cnpq: cnpq || { datasets: [], chamadas: [], convenios: null, modalidades: [], sources: [] },
 
 
