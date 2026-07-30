@@ -24,7 +24,7 @@ const UniversidadePanel = () => {
   const [suggestedCnaes, setSuggestedCnaes] = useState<CnaeCode[]>([]);
   const [, setSelectedCnaes] = useState<CnaeCode[]>([]);
   const [pendingSearchQuery, setPendingSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("posicionamento");
+  const [activeTab, setActiveTab] = useState("openalex");
   const [detailItem, setDetailItem] = useState<DetailItem | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
