@@ -14,6 +14,8 @@ import StrategicIndices from "@/components/governo/StrategicIndices";
 import RelationalGraph from "@/components/governo/RelationalGraph";
 import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetailSheet";
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
+import ProgramsTab from "@/components/shared/ProgramsTab";
+
 
 const UniversidadePanel = () => {
   const config = personaConfigs.universidade;
