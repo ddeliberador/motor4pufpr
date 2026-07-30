@@ -15,6 +15,7 @@ import ReactMarkdown from "react-markdown";
 import StrategicIndices from "@/components/governo/StrategicIndices";
 import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetailSheet";
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
+import MarketAnalysisPanel from "@/components/shared/MarketAnalysisPanel";
 
 interface Competitor {
   name: string;
@@ -197,6 +198,7 @@ const EmpresaPanel = () => {
               <TabsTrigger value="matching" className="text-xs rounded-lg">🤝 Matching</TabsTrigger>
               <TabsTrigger value="financiamento" className="text-xs rounded-lg">💰 Financiamento</TabsTrigger>
               <TabsTrigger value="tecnologia" className="text-xs rounded-lg">⚙️ Tecnologia ({repos.length})</TabsTrigger>
+              <TabsTrigger value="mercado" className="text-xs rounded-lg">🏭 Análise de Mercado</TabsTrigger>
               <TabsTrigger value="riscos" className="text-xs rounded-lg">🛡️ Riscos</TabsTrigger>
               <TabsTrigger value="prescricao" className="text-xs rounded-lg">🧠 IA {isAnalyzing && "…"}</TabsTrigger>
             </TabsList>
@@ -437,6 +439,15 @@ const EmpresaPanel = () => {
                   </div>
                 </div>
               )}
+            </TabsContent>
+
+            {/* ===== ANÁLISE DE MERCADO TAB ===== */}
+            <TabsContent value="mercado" className="space-y-4">
+              <MarketAnalysisPanel
+                data={(data?.layers as any)?.market}
+                cempre={(data?.layers as any)?.sidra?.cempre}
+                perfil="empresa"
+              />
             </TabsContent>
 
             {/* ===== RISCOS TAB ===== */}

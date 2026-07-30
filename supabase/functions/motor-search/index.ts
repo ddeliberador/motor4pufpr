@@ -528,7 +528,7 @@ Deno.serve(async (req) => {
     const knowledge = await invokeLayer("layer-knowledge", { query, search_terms: searchTerms });
 
     // STEP 2: Remaining 3 layers in parallel, passing knowledge + ontology data
-    const [technology, policy, international, sidra] = await Promise.all([
+    const [technology, policy, international, sidra, market] = await Promise.all([
       invokeLayer("layer-technology", {
         query,
         knowledge_papers: knowledge?.papers?.length || 0,
@@ -555,17 +555,40 @@ Deno.serve(async (req) => {
         cnpq_areas: ontology?.cnpq_areas || [],
         persona: "all",
       }),
+      invokeLayer("market-analysis", {
+        query,
+        search_terms: searchTerms,
+        ipc_codes: ipcCodes,
+        ncm_codes: ncmCodes,
+        knowledge_total_papers: knowledge?.total_papers || 0,
+      }),
     ]);
 
 
     // STEP 3: Cross-layer indices
     const indices = computeCrossLayerIndices(knowledge, technology, policy, international);
 
+    // Oportunidade derivada do GT (só disponível após o cálculo dos índices)
+    if (market && Array.isArray(market.opportunities)) {
+      const gtValue = indices?.gt?.value ?? 0;
+      const papersBR = knowledge?.total_papers || 0;
+      if (papersBR > 0 && gtValue > 60) {
+        market.opportunities.push({
+          title: "Base científica sem tradução comercial",
+          evidence: `${papersBR} publicações brasileiras no tema, mas o Gap de Tradução está em ${gtValue}/100 — conhecimento disponível e pouco apropriado pelo mercado.`,
+          metric: `GT ${gtValue}/100 · ${papersBR} papers BR`,
+          source: "OpenAlex + índices Motor 4P",
+          severity: "alta",
+        });
+      }
+    }
+
     // STEP 4: Persona-specific insights (deterministic, pre-calculated)
     const personaInsights = computePersonaInsights(
       "pesquisador", // será sobrescrito pelo motor-analysis por persona
       knowledge, technology, policy, international, indices
     );
+
 
     // Aggregate stats
     const stats = {
@@ -592,6 +615,8 @@ Deno.serve(async (req) => {
       ...(policy?.sources || []),
       ...(international?.sources || []),
       ...(sidra?.sources || []),
+      ...(market?.sources || []),
+
 
     ];
     const uniqueSources = [...new Set(allSources)];
@@ -606,6 +631,8 @@ Deno.serve(async (req) => {
         policy: policy || { contracts: [], convenios: [], sanctions: [], gazettes: [], total_instrumental_value: 0, instrumental_intensity: 0, fiscal_capacity: {}, uf_distribution: {} },
         international: international || { country_distribution: {}, macro_indicators: [], ipeadata_series: [], comex_datasets: [], dependency_index: 0, br_share: 0, global_insertion: 0 },
         sidra: sidra || { pintec: null, cempre: null, pos_graduacao: null, pib_setorial: null, graduacao: null, sources: [] },
+        market: market || { patents: { holders: [], available: false, reason: "Camada indisponível" }, market: { suppliers: [], available: false }, trade: { items: [], available: false }, opportunities: [], sources: [] },
+
 
       },
       indices,
