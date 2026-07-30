@@ -601,7 +601,7 @@ Deno.serve(async (req) => {
     // Novo CAGED — série nacional (IPEAData), sem dependência de API key
     let cagedData = null;
     try {
-      cagedData = await fetchCaged(cbosFromOntology);
+      cagedData = await fetchCaged(cbosFromOntology, query);
       if (cagedData) console.log(`CAGED: saldo 12m ${cagedData.nacional?.total_saldo}`);
     } catch (e) {
       console.warn("CAGED falhou:", e instanceof Error ? e.message : e);
