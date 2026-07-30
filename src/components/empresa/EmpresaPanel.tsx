@@ -193,328 +193,164 @@ const EmpresaPanel = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="w-full justify-start overflow-x-auto bg-muted/50 h-auto p-1 rounded-xl">
-              <TabsTrigger value="oportunidade" className="text-xs rounded-lg">🎯 Oportunidade</TabsTrigger>
-              <TabsTrigger value="concorrentes" className="text-xs rounded-lg">🏢 Concorrentes {competitors ? `(${(competitors.competitors_br?.length || 0) + (competitors.competitors_intl?.length || 0)})` : isLoadingCompetitors ? "…" : ""}</TabsTrigger>
-              <TabsTrigger value="matching" className="text-xs rounded-lg">🤝 Matching</TabsTrigger>
-              <TabsTrigger value="financiamento" className="text-xs rounded-lg">💰 Financiamento</TabsTrigger>
-              <TabsTrigger value="tecnologia" className="text-xs rounded-lg">⚙️ Tecnologia ({repos.length})</TabsTrigger>
-              <TabsTrigger value="mercado" className="text-xs rounded-lg">🏭 Análise de Mercado</TabsTrigger>
+            <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted/30 rounded-xl mb-4">
+              <TabsTrigger value="mercado" className="text-xs rounded-lg">🏢 CEMPRE/Mercado</TabsTrigger>
+              <TabsTrigger value="caged" className="text-xs rounded-lg">👷 CAGED</TabsTrigger>
+              <TabsTrigger value="comex" className="text-xs rounded-lg">🌐 Comércio Exterior</TabsTrigger>
               <TabsTrigger value="patentes" className="text-xs rounded-lg">🔏 Patentes EPO</TabsTrigger>
-              <TabsTrigger value="riscos" className="text-xs rounded-lg">🛡️ Riscos</TabsTrigger>
-              <TabsTrigger value="prescricao" className="text-xs rounded-lg">🧠 IA {isAnalyzing && "…"}</TabsTrigger>
+              <TabsTrigger value="ia" className="text-xs rounded-lg">🧠 Análise IA {isAnalyzing && "…"}</TabsTrigger>
             </TabsList>
 
-            {/* ===== OPORTUNIDADE TAB ===== */}
-            <TabsContent value="oportunidade" className="space-y-4">
-              <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Target className="w-4 h-4 text-primary" /> Maturidade Tecnológica (TRL)</h3>
-                <TrlScaleChart level={trlEstimate} label={trlLabel} compact />
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                  {[
-                    { label: "Papers científicos", ok: trlSignals.has_papers },
-                    { label: "Código aberto", ok: trlSignals.has_repos },
-                    { label: "Contratos públicos", ok: trlSignals.has_patents },
-                    { label: "Emprego formal", ok: trlSignals.has_employment },
-                    { label: "Alta visibilidade", ok: trlSignals.high_stars },
-                  ].map((s, i) => (
-                    <div key={i} className={`text-center p-2 rounded-lg ${s.ok ? "bg-emerald-500/5 border border-emerald-500/20" : "bg-muted/30 border border-border"}`}><span className="text-lg">{s.ok ? "✓" : "—"}</span><p className="text-[10px] text-muted-foreground">{s.label}</p></div>
-                  ))}
-                </div>
-              </div>
-              {intl.macro_indicators.some(m => m.value !== null) && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><TrendingUp className="w-4 h-4 text-primary" /> Sinais de mercado</h3>
-                  <div className="space-y-1">
-                    {intl.macro_indicators.filter(m => m.value !== null).map((m, i) => (
-                      <button key={i} onClick={() => openDetail({ type: "indicator", data: m })} className="w-full text-left flex items-center justify-between px-3 py-2 hover:bg-muted/50 rounded-lg transition-colors"><span className="text-xs text-muted-foreground">{m.name}</span><span className="text-sm font-bold text-foreground">{m.value!.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}</span></button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {/* Entity Resolution */}
-              {knowledge.resolved_institutions && Object.keys(knowledge.resolved_institutions).length > 0 && (
-                <EntityResolutionCard resolvedInstitutions={knowledge.resolved_institutions} />
-              )}
-            </TabsContent>
-
-            {/* ===== CONCORRENTES TAB ===== */}
-            <TabsContent value="concorrentes" className="space-y-4">
-              {isLoadingCompetitors ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                  <span className="ml-3 text-sm text-muted-foreground">Mapeando concorrentes via PNCP, OpenAlex, BrasilAPI...</span>
-                </div>
-              ) : competitors ? (
-                <>
-                  {/* BR Competitors */}
-                  {competitors.competitors_br.length > 0 && (
-                    <div className="bg-card border border-border rounded-xl p-5">
-                      <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
-                        <Building className="w-4 h-4 text-primary" /> Concorrentes no Brasil ({competitors.competitors_br.length})
-                      </h3>
-                      <p className="text-[10px] text-muted-foreground mb-4">Empresas identificadas em licitações e contratos públicos no setor pesquisado, com CNPJ e quadro societário.</p>
-                      <div className="space-y-3">
-                        {competitors.competitors_br.map((comp, i) => (
-                          <button
-                            key={i}
-                            onClick={() => openDetail({
-                              type: "concorrente_br",
-                              title: comp.nome_fantasia || comp.razao_social || comp.name,
-                              subtitle: comp.cnpj ? `CNPJ: ${comp.cnpj}` : undefined,
-                              data: comp,
-                            })}
-                            className="w-full text-left bg-muted/30 border border-border/50 rounded-lg p-4 hover:bg-muted/50 transition-colors"
-                          >
-                            <div className="flex items-start justify-between gap-3 mb-2">
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-semibold text-foreground truncate">{comp.nome_fantasia || comp.razao_social || comp.name}</p>
-                                {comp.razao_social && comp.nome_fantasia && <p className="text-[10px] text-muted-foreground truncate">{comp.razao_social}</p>}
-                              </div>
-                              {comp.source && <span className="text-[9px] px-2 py-0.5 bg-primary/10 text-primary rounded-full flex-shrink-0">{comp.source}</span>}
-                            </div>
-                            <div className="flex flex-wrap gap-2 mb-2">
-                              {comp.cnpj && <span className="text-[10px] px-2 py-0.5 bg-muted text-muted-foreground rounded font-mono">{comp.cnpj}</span>}
-                              {comp.uf && comp.municipio && <span className="text-[10px] px-2 py-0.5 bg-muted text-muted-foreground rounded">📍 {comp.municipio}/{comp.uf}</span>}
-                              {comp.porte && <span className="text-[10px] px-2 py-0.5 bg-muted text-muted-foreground rounded">{comp.porte}</span>}
-                              {comp.cnae_descricao && <span className="text-[10px] px-2 py-0.5 bg-accent/10 text-accent rounded truncate max-w-[200px]">{comp.cnae_descricao}</span>}
-                            </div>
-                            <div className="flex flex-wrap gap-3 text-[10px]">
-                              {comp.contracts && <span className="text-primary font-semibold">{comp.contracts} contratos</span>}
-                              {comp.total_value && comp.total_value > 0 && <span className="text-foreground font-semibold">R$ {(comp.total_value / 1e6).toFixed(2)}M</span>}
-                              {comp.capital_social && comp.capital_social > 0 && <span className="text-muted-foreground">Capital: R$ {(comp.capital_social / 1e6).toFixed(2)}M</span>}
-                              {comp.total_socios !== undefined && <span className="text-muted-foreground">{comp.total_socios} sócios</span>}
-                            </div>
-                            {comp.qsa && comp.qsa.length > 0 && (
-                              <div className="mt-2 pt-2 border-t border-border/30">
-                                <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1"><Users className="w-3 h-3" /> Quadro Societário:</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {comp.qsa.slice(0, 4).map((s, j) => (
-                                    <span key={j} className="text-[9px] px-2 py-0.5 bg-muted rounded text-foreground">{s.nome} <span className="text-muted-foreground">({s.qualificacao})</span></span>
-                                  ))}
-                                  {comp.qsa.length > 4 && <span className="text-[9px] px-2 py-0.5 text-muted-foreground">+{comp.qsa.length - 4} sócios</span>}
-                                </div>
-                              </div>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* International Competitors */}
-                  {competitors.competitors_intl.length > 0 && (
-                    <div className="bg-card border border-border rounded-xl p-5">
-                      <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
-                        <Globe className="w-4 h-4 text-primary" /> Concorrentes Internacionais ({competitors.competitors_intl.length})
-                      </h3>
-                      <p className="text-[10px] text-muted-foreground mb-4">Organizações corporativas e tecnológicas identificadas via publicações científicas e repositórios.</p>
-                      <div className="space-y-1.5">
-                        {competitors.competitors_intl.map((comp, i) => (
-                          <button
-                            key={i}
-                            onClick={() => openDetail({
-                              type: "concorrente_intl",
-                              title: comp.name,
-                              subtitle: comp.country ? `${flagMap[comp.country] || "🌍"} ${comp.country}` : undefined,
-                              data: comp,
-                            })}
-                            className="w-full text-left flex items-center gap-3 px-3 py-2.5 hover:bg-muted/50 rounded-lg transition-colors border-b border-border/30 last:border-0"
-                          >
-                            <span className="text-lg flex-shrink-0">{flagMap[comp.country || ""] || "🌍"}</span>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium text-foreground truncate">{comp.name}</p>
-                              <div className="flex gap-2 mt-0.5">
-                                {comp.publications && <span className="text-[10px] text-primary font-semibold">{comp.publications} publicações</span>}
-                                {comp.type && <span className="text-[9px] px-1.5 py-0.5 bg-muted rounded text-muted-foreground">{comp.type}</span>}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              {comp.github_stars !== undefined && <span className="text-[10px] font-bold text-primary">⭐ {comp.github_stars}</span>}
-                              {comp.source && <span className="text-[9px] px-1.5 py-0.5 bg-primary/10 text-primary rounded-full">{comp.source}</span>}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Sources */}
-                  {competitors.summary?.sources?.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 justify-center">
-                      {competitors.summary.sources.map((s, i) => (
-                        <span key={i} className="text-[9px] px-2 py-0.5 bg-muted text-muted-foreground rounded-full">{s}</span>
-                      ))}
-                    </div>
-                  )}
-
-                  {competitors.competitors_br.length === 0 && competitors.competitors_intl.length === 0 && (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <Building className="w-8 h-8 mx-auto mb-3 opacity-40" />
-                      <p className="text-sm">Nenhum concorrente identificado para este setor.</p>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Building className="w-8 h-8 mx-auto mb-3 opacity-40" />
-                  <p className="text-sm">Carregando mapeamento de concorrentes...</p>
-                </div>
-              )}
-            </TabsContent>
-
-            {/* ===== MATCHING TAB ===== */}
-            <TabsContent value="matching" className="space-y-4">
-              <div className="bg-card border border-border rounded-xl p-5">
-                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Handshake className="w-4 h-4 text-primary" /> Matching: Grupos de P&D</h3>
-                <p className="text-xs text-muted-foreground mb-4">Instituições com produção científica ativa — potenciais parceiros.</p>
-                <div className="space-y-1.5">
-                  {institutionRanking.map(([inst, count], i) => {
-                    const instPapers = knowledge.papers.filter(p => p.authors.some(a => a.institution?.toLowerCase().includes(inst.toLowerCase().slice(0, 10))));
-                    const instContracts = policy.contracts.filter(c => c.organ?.toLowerCase().includes(inst.toLowerCase().slice(0, 10)));
-                    const hasContractHistory = instContracts.length > 0;
-                    return (
-                      <button key={i} onClick={() => openDetail({ type: "institution", data: { name: inst, count: count as number, papers: instPapers, contracts: instContracts } })} className="w-full text-left flex items-center gap-3 px-3 py-2.5 hover:bg-muted/50 rounded-lg transition-colors border-b border-border/30 last:border-0">
-                        <span className="text-xs font-mono text-muted-foreground w-5">{i + 1}</span>
-                        <div className="flex-1 min-w-0"><p className="text-xs font-medium text-foreground truncate">{inst}</p><div className="flex gap-2 mt-0.5"><span className="text-[10px] text-primary font-semibold">{count as number} papers</span>{hasContractHistory && <span className="text-[9px] px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 rounded-full">cooperação</span>}</div></div>
-                        <div className="flex-shrink-0">{hasContractHistory ? <span className="text-[9px] px-2 py-1 bg-emerald-500/10 text-emerald-600 rounded-full font-medium">Recomendado</span> : <span className="text-[9px] px-2 py-1 bg-muted text-muted-foreground rounded-full">Acadêmico</span>}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              {knowledge.international.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Globe className="w-4 h-4 text-primary" /> Líderes globais</h3>
-                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                    {knowledge.international.slice(0, 10).map((c, i) => (
-                      <button key={i} onClick={() => openDetail({ type: "country", data: { code: c.country_code, count: c.count, flag: flagMap[c.country_code] } })} className="text-center p-3 bg-muted rounded-lg hover:bg-muted/70 transition-colors"><p className="text-xl mb-0.5">{flagMap[c.country_code] || "🌍"}</p><p className="text-xs font-medium text-foreground">{c.country_code}</p><p className="text-sm font-bold text-primary">{c.count.toLocaleString()}</p></button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-
-            {/* ===== FINANCIAMENTO TAB ===== */}
-            <TabsContent value="financiamento" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-2"><Landmark className="w-4 h-4 text-primary inline mr-1" />Licitações</h3>
-                  <p className="text-2xl font-bold text-primary mb-3">{data.stats.contracts}{totalContractValue > 0 && <span className="text-sm font-normal text-muted-foreground ml-2">R$ {(totalContractValue / 1e6).toFixed(1)}M</span>}</p>
-                  <div className="space-y-1">
-                    {policy.contracts.slice(0, 6).map((c, i) => (
-                      <button key={i} onClick={() => openDetail({ type: "contract", data: c })} className="w-full text-left py-1.5 px-2 hover:bg-muted/50 rounded transition-colors"><p className="text-xs text-foreground line-clamp-1">{c.object}</p><div className="flex gap-2">{c.value > 0 && <span className="text-[10px] font-semibold text-primary">R$ {(c.value / 1e3).toFixed(0)}mil</span>}</div></button>
-                    ))}
-                  </div>
-                </div>
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-2"><Building2 className="w-4 h-4 text-accent inline mr-1" />Convênios</h3>
-                  <p className="text-2xl font-bold text-accent mb-3">{policy.convenios.length}{totalConvenioValue > 0 && <span className="text-sm font-normal text-muted-foreground ml-2">R$ {(totalConvenioValue / 1e6).toFixed(1)}M</span>}</p>
-                  <div className="space-y-1">
-                    {policy.convenios.slice(0, 6).map((c, i) => (
-                      <button key={i} onClick={() => openDetail({ type: "convenio", data: c })} className="w-full text-left py-1.5 px-2 hover:bg-muted/50 rounded transition-colors"><p className="text-xs text-foreground line-clamp-1">{c.object}</p><div className="flex gap-2">{c.value > 0 && <span className="text-[10px] font-semibold text-accent">R$ {(c.value / 1e3).toFixed(0)}mil</span>}</div></button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* ===== TECNOLOGIA TAB ===== */}
-            <TabsContent value="tecnologia" className="space-y-4">
-              {repos.length > 0 ? (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3"><GitBranch className="w-4 h-4 text-primary inline mr-1" />Tecnologia disponível</h3>
-                  <div className="space-y-1.5">
-                    {repos.map((r, i) => (
-                      <button key={i} onClick={() => openDetail({ type: "repo", data: r })} className="w-full text-left flex items-center justify-between px-3 py-2.5 hover:bg-muted/50 rounded-lg transition-colors border-b border-border/30 last:border-0"><div className="min-w-0 flex-1"><p className="text-xs font-medium text-foreground">{r.name}</p><p className="text-[10px] text-muted-foreground line-clamp-1">{r.description}</p></div><div className="flex items-center gap-2 flex-shrink-0 ml-3">{r.language && <span className="text-[9px] px-1.5 py-0.5 bg-primary/10 text-primary rounded">{r.language}</span>}<span className="text-[10px] font-bold text-primary">⭐{r.stars}</span></div></button>
-                    ))}
-                  </div>
-                </div>
-              ) : (<div className="text-center py-12 text-muted-foreground"><GitBranch className="w-8 h-8 mx-auto mb-3 opacity-40" /><p className="text-sm">Nenhum repositório.</p></div>)}
-              {intl.ipeadata_series?.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">Séries econômicas</h3>
-                  <div className="space-y-1">
-                    {intl.ipeadata_series.slice(0, 5).map((s, i) => (
-                      <button key={i} onClick={() => openDetail({ type: "series", data: s })} className="w-full text-left flex items-center justify-between px-3 py-2 hover:bg-muted/50 rounded-lg transition-colors"><span className="text-xs text-muted-foreground truncate">{s.name}</span>{s.lastValue !== null && <span className="text-xs font-bold text-foreground">{s.lastValue.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}</span>}</button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-
-            {/* ===== ANÁLISE DE MERCADO TAB ===== */}
             <TabsContent value="mercado" className="space-y-4">
-              <MarketAnalysisPanel
-                data={(data?.layers as any)?.market}
-                cempre={(data?.layers as any)?.sidra?.cempre}
-                perfil="empresa"
-              />
-            </TabsContent>
-
-            {/* ===== PATENTES EPO TAB ===== */}
-            <TabsContent value="patentes" className="space-y-4">
-              <PatentsPanel patents={(data?.layers as any)?.patents} />
-            </TabsContent>
-
-            {/* ===== RISCOS TAB ===== */}
-            <TabsContent value="riscos" className="space-y-4">
-              {/* Resumo de riscos calculados */}
-              <div className="bg-card border border-border rounded-xl p-5 space-y-3">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-primary" /> Radar de dependências
-                </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className={`rounded-lg p-3 border ${intl.dependency_index > 60 ? "border-red-500/30 bg-red-500/5" : "border-border bg-muted/30"}`}>
-                    <p className="text-[10px] text-muted-foreground mb-1">Dependência externa</p>
-                    <p className={`text-2xl font-bold ${intl.dependency_index > 60 ? "text-red-500" : "text-foreground"}`}>
-                      {intl.dependency_index}%
-                    </p>
-                    <p className="text-[9px] text-muted-foreground">prod. científica fora do BR</p>
+              <div className="bg-card border border-border rounded-xl p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-primary" />
+                    Estrutura setorial — CEMPRE/IBGE
+                  </h3>
+                  <a href="https://sidra.ibge.gov.br/tabela/1685" target="_blank" rel="noopener noreferrer"
+                     className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                    <ExternalLink className="w-3 h-3" /> SIDRA
+                  </a>
+                </div>
+                {(data.layers as any).sidra?.cempre?.setores?.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {(data.layers as any).sidra.cempre.setores.slice(0, 8).map((s: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg">
+                        <span className="text-xs text-foreground truncate flex-1">{s.atividade}</span>
+                        <div className="flex gap-3 flex-shrink-0 ml-2">
+                          {s.empresas && <span className="text-[10px] text-muted-foreground">{s.empresas} emp.</span>}
+                          {s.pessoal && <span className="text-[10px] font-semibold text-primary">{s.pessoal} pessoas</span>}
+                        </div>
+                      </div>
+                    ))}
+                    <p className="text-[9px] text-muted-foreground mt-2">Fonte: CEMPRE {(data.layers as any).sidra.cempre.periodo} — IBGE</p>
                   </div>
-                  <div className={`rounded-lg p-3 border ${intl.br_share < 10 ? "border-amber-500/30 bg-amber-500/5" : "border-border bg-muted/30"}`}>
-                    <p className="text-[10px] text-muted-foreground mb-1">Share Brasil</p>
-                    <p className={`text-2xl font-bold ${intl.br_share < 10 ? "text-amber-500" : "text-foreground"}`}>
-                      {intl.br_share}%
-                    </p>
-                    <p className="text-[9px] text-muted-foreground">no top-10 global</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-6">Dados CEMPRE não disponíveis para o setor deste tema.</p>
+                )}
+              </div>
+              {/* GitHub como proxy de players tech */}
+              {technology.github_repos && technology.github_repos.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <GitBranch className="w-4 h-4 text-primary" />
+                    Repositórios open source no campo — GitHub
+                  </h3>
+                  <div className="space-y-1.5">
+                    {technology.github_repos.slice(0, 6).map((r: any, i: number) => (
+                      <a key={i} href={r.url} target="_blank" rel="noopener noreferrer"
+                         className="flex items-center justify-between px-3 py-2 hover:bg-muted/50 rounded-lg transition-colors">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium text-foreground truncate">{r.name}</p>
+                          {r.description && <p className="text-[10px] text-muted-foreground truncate">{r.description}</p>}
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                          {r.language && <span className="text-[9px] px-1.5 py-0.5 bg-muted rounded font-mono">{r.language}</span>}
+                          <span className="text-[10px] font-bold text-primary">⭐ {r.stars}</span>
+                        </div>
+                      </a>
+                    ))}
                   </div>
                 </div>
-                {intl.dependency_index > 60 && (
-                  <div className="flex items-start gap-2 p-2.5 bg-red-500/5 border border-red-500/20 rounded-lg">
-                    <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-foreground">
-                      <strong>Risco de dependência crítica:</strong> {intl.dependency_index}% da produção científica está fora do Brasil.
-                      Estratégia de make-or-buy recomendada antes de investir em P&D local.
-                    </p>
-                  </div>
-                )}
-                {sanctions.length > 0 && (
-                  <div className="flex items-start gap-2 p-2.5 bg-amber-500/5 border border-amber-500/20 rounded-lg">
-                    <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-foreground">
-                      <strong>{sanctions.length} empresa(s) sancionada(s)</strong> encontrada(s) neste campo (CEIS/Portal Transparência).
-                    </p>
-                  </div>
-                )}
-              </div>
+              )}
+            </TabsContent>
 
-              <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-primary" /> Análise de Riscos</h3>
-                {indices?.cd?.value > 50 && (<div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg"><p className="text-xs font-semibold text-foreground mb-1">⚠ Dependência Externa ({indices.cd.value}%)</p><p className="text-[10px] text-muted-foreground">Riscos de supply chain e IP.</p></div>)}
-                {trlEstimate <= 4 && (<div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg"><p className="text-xs font-semibold text-foreground mb-1">⚠ Baixa maturidade (TRL {trlEstimate})</p><p className="text-[10px] text-muted-foreground">Alto risco para investimento direto.</p></div>)}
-                {sanctions.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-semibold text-destructive flex items-center gap-2"><AlertTriangle className="w-3.5 h-3.5" /> Sancionadas ({sanctions.length})</h4>
-                    {sanctions.slice(0, 5).map((s, i) => (<div key={i} className="flex items-center justify-between py-1.5 px-3 bg-destructive/5 border border-destructive/10 rounded-lg"><span className="text-xs text-foreground">{s.company}</span><span className="text-[10px] text-destructive">{s.type}</span></div>))}
+            <TabsContent value="caged" className="space-y-4">
+              <div className="bg-card border border-border rounded-xl p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Users className="w-4 h-4 text-primary" />
+                    Disponibilidade de mão de obra — Novo CAGED / MTE
+                  </h3>
+                </div>
+                {(technology as any).caged_data ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-muted/30 rounded-lg p-3 text-center">
+                        <p className="text-xl font-bold font-mono text-emerald-500">+{(technology as any).caged_data.nacional?.total_admissoes?.toLocaleString("pt-BR") || "—"}</p>
+                        <p className="text-[10px] text-muted-foreground">admissões (12m)</p>
+                      </div>
+                      <div className="bg-muted/30 rounded-lg p-3 text-center">
+                        <p className="text-xl font-bold font-mono text-red-500">-{(technology as any).caged_data.nacional?.total_demissoes?.toLocaleString("pt-BR") || "—"}</p>
+                        <p className="text-[10px] text-muted-foreground">demissões (12m)</p>
+                      </div>
+                      <div className="bg-muted/30 rounded-lg p-3 text-center">
+                        <p className={`text-xl font-bold font-mono ${(technology as any).caged_data.nacional?.total_saldo >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                          {(technology as any).caged_data.nacional?.total_saldo >= 0 ? "+" : ""}{(technology as any).caged_data.nacional?.total_saldo?.toLocaleString("pt-BR") || "—"}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">saldo líquido</p>
+                      </div>
+                    </div>
+                    {(technology as any).caged_data.ocupacoes?.length > 0 && (
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Perfis profissionais mapeados (CBO)</p>
+                        <div className="flex flex-wrap gap-2">
+                          {(technology as any).caged_data.ocupacoes.map((o: any, i: number) => (
+                            <span key={i} className="text-[10px] px-2 py-1 bg-muted rounded">
+                              {o.description} <span className="font-mono text-muted-foreground/60">{o.area}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-6">Dados do CAGED não disponíveis para este tema.</p>
                 )}
-                {(!indices || indices.cd?.value <= 50) && trlEstimate > 4 && sanctions.length === 0 && (<div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg"><p className="text-xs text-foreground">✓ Nenhum risco crítico.</p></div>)}
               </div>
             </TabsContent>
 
-            {/* ===== IA TAB ===== */}
-            <TabsContent value="prescricao" className="space-y-4">
+            <TabsContent value="comex" className="space-y-4">
+              <div className="bg-card border border-border rounded-xl p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-primary" />
+                    Comércio exterior — COMEX Stat / BCB
+                  </h3>
+                  <a href="https://comexstat.mdic.gov.br" target="_blank" rel="noopener noreferrer"
+                     className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                    <ExternalLink className="w-3 h-3" /> COMEX Stat
+                  </a>
+                </div>
+                {intl.macro_indicators && intl.macro_indicators.filter((m: any) => m.value !== null).length > 0 ? (
+                  <div className="space-y-2">
+                    {intl.macro_indicators.filter((m: any) => m.value !== null).slice(0, 6).map((m: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg">
+                        <span className="text-xs text-foreground flex-1">{m.label || m.series_id}</span>
+                        <span className="text-xs font-bold text-primary ml-2">{m.value} {m.unit || ""}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-6">Dados de comércio exterior não disponíveis para este tema.</p>
+                )}
+                {intl.country_distribution && Object.keys(intl.country_distribution).length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-border/30">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Principais mercados parceiros</p>
+                    <div className="space-y-1">
+                      {Object.entries(intl.country_distribution as Record<string, number>)
+                        .sort(([, a], [, b]) => b - a).slice(0, 6)
+                        .map(([country, count], i) => (
+                          <div key={i} className="flex items-center gap-3 px-3 py-1.5 bg-muted/20 rounded">
+                            <span className="text-xs font-mono text-muted-foreground w-6">{country}</span>
+                            <div className="flex-1 bg-muted rounded-full h-1.5">
+                              <div className="bg-primary h-1.5 rounded-full" style={{ width: `${Math.min(100, (count / Math.max(...Object.values(intl.country_distribution as Record<string, number>))) * 100)}%` }} />
+                            </div>
+                            <span className="text-xs text-foreground w-8 text-right">{count}</span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="patentes" className="space-y-4">
+              <PatentsTab patents={(data.layers as any).patents} persona="empresa" />
+            </TabsContent>
+
+            <TabsContent value="ia" className="space-y-4">
               {isAnalyzing ? (<div className="flex items-center justify-center py-12"><div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /><span className="ml-3 text-sm text-muted-foreground">Gerando inteligência competitiva...</span></div>
               ) : analysis && analysis.sections?.length > 0 ? (
                 <div className="space-y-4">
