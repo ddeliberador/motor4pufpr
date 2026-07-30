@@ -267,90 +267,7 @@ const PesquisadorPanel = () => {
                   </div>
                 </div>
               )}
-            </TabsContent>
-
-            <TabsContent value="saturacao" className="space-y-4">
-              <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Target className="w-4 h-4 text-primary" /> Mapa de Saturação Temática</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="bg-muted/30 rounded-lg p-3 text-center"><p className="text-2xl font-bold text-foreground">{data.stats.papers.toLocaleString()}</p><p className="text-[10px] text-muted-foreground">Papers globais</p></div>
-                  <div className="bg-muted/30 rounded-lg p-3 text-center"><p className="text-2xl font-bold text-foreground">{data.stats.countries}</p><p className="text-[10px] text-muted-foreground">Países atuantes</p></div>
-                  <div className="bg-muted/30 rounded-lg p-3 text-center"><p className="text-2xl font-bold text-foreground">{brShare.toFixed(1)}%</p><p className="text-[10px] text-muted-foreground">Share Brasil</p></div>
-                  <div className="bg-muted/30 rounded-lg p-3 text-center"><p className="text-2xl font-bold text-foreground">{data.stats.github_repos}</p><p className="text-[10px] text-muted-foreground">Repos abertos</p></div>
-                </div>
-                {/* Barra comparativa Brasil vs mundo */}
-                {totalPapers > 0 && totalPapersGlobal > 0 && (
-                  <div className="bg-muted/30 rounded-lg p-4 space-y-2">
-                    <p className="text-xs font-semibold text-foreground">Brasil no contexto global</p>
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-muted-foreground w-16">🇧🇷 Brasil</span>
-                        <div className="flex-1 bg-muted rounded-full h-4 relative overflow-hidden">
-                          <div
-                            className="h-full bg-primary rounded-full"
-                            style={{ width: `${Math.min(100, brShare)}%` }}
-                          />
-                          <span className="absolute inset-0 flex items-center justify-end pr-2 text-[9px] font-bold text-foreground">
-                            {totalPapers.toLocaleString()} papers
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-bold text-primary w-12 text-right">{brShare.toFixed(1)}%</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-muted-foreground w-16">🌍 Mundo</span>
-                        <div className="flex-1 bg-muted rounded-full h-4 relative overflow-hidden">
-                          <div className="h-full bg-muted-foreground/20 rounded-full" style={{ width: "100%" }} />
-                          <span className="absolute inset-0 flex items-center justify-end pr-2 text-[9px] font-bold text-foreground">
-                            {totalPapersGlobal.toLocaleString()} papers
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-bold text-muted-foreground w-12 text-right">100%</span>
-                      </div>
-                    </div>
-                    {brShare < 2 && (
-                      <p className="text-[10px] text-amber-500">
-                        Brasil representa menos de 2% da produção global neste tema — campo com baixa presença nacional.
-                      </p>
-                    )}
-                    {brShare > 10 && (
-                      <p className="text-[10px] text-emerald-500">
-                        Brasil tem presença relevante — acima de 10% da produção global.
-                      </p>
-                    )}
-                  </div>
-                )}
-                <div className="space-y-2">
-                  {data.stats.papers > 5000 && data.stats.countries > 20 && (
-                    <div className="flex items-start gap-2 p-2.5 bg-amber-500/5 border border-amber-500/20 rounded-lg"><AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" /><p className="text-xs text-foreground"><strong>Campo saturado:</strong> {data.stats.papers.toLocaleString()} papers em {data.stats.countries} países.</p></div>
-                  )}
-                  {data.stats.papers < 500 && (
-                    <div className="flex items-start gap-2 p-2.5 bg-emerald-500/5 border border-emerald-500/20 rounded-lg"><Lightbulb className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" /><p className="text-xs text-foreground"><strong>Campo emergente:</strong> Apenas {data.stats.papers} papers. Oportunidade de pioneirismo.</p></div>
-                  )}
-                  {brShare < 5 && totalPapers > 100 && (
-                    <div className="flex items-start gap-2 p-2.5 bg-destructive/5 border border-destructive/20 rounded-lg"><AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" /><p className="text-xs text-foreground"><strong>Baixa participação BR ({brShare.toFixed(1)}%).</strong></p></div>
-                  )}
-                  {indices?.gt?.value > 70 && (
-                    <div className="flex items-start gap-2 p-2.5 bg-destructive/5 border border-destructive/20 rounded-lg"><AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" /><p className="text-xs text-foreground"><strong>Gap de Tradução (GT={indices.gt.value}):</strong> Ciência não traduzida em aplicação.</p></div>
-                  )}
-                </div>
-                {isolatedResearchGroups.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-semibold text-foreground">Grupos sem vínculo com contratos</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
-                      {isolatedResearchGroups.map(([name, count], i) => (
-                        <button key={i} onClick={() => openDetail({ type: "institution", data: { name, count: count as number, papers: knowledge.papers.filter(p => p.authors.some(a => a.institution?.toLowerCase().includes(name.toLowerCase().slice(0, 10)))) } })} className="text-left flex items-center justify-between px-3 py-2 bg-amber-500/5 border border-amber-500/10 rounded-lg hover:bg-amber-500/10 transition-colors">
-                          <span className="text-xs text-foreground truncate">{name}</span>
-                          <span className="text-xs font-bold text-amber-600 flex-shrink-0">{count as number} papers</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-
-            {/* PAPERS */}
-            <TabsContent value="papers" className="space-y-4">
+              {/* Todos os papers */}
               <div className="bg-card border border-border rounded-xl p-5">
                 <h3 className="text-sm font-semibold text-foreground mb-3">Todos os papers ({knowledge.papers.length})</h3>
                 <div className="space-y-1">
@@ -358,32 +275,99 @@ const PesquisadorPanel = () => {
                     <button key={i} onClick={() => openDetail({ type: "paper", data: p })} className="w-full text-left py-2.5 px-3 hover:bg-muted/50 rounded-lg transition-colors border-b border-border/30 last:border-0">
                       <p className="text-xs font-medium text-foreground line-clamp-1">{p.title}</p>
                       <div className="flex items-center gap-3 mt-1"><span className="text-[10px] text-muted-foreground">{p.year}</span><span className="text-[10px] font-semibold text-primary">{p.citations} citações</span><span className="text-[10px] text-muted-foreground truncate">{p.authors[0]?.name}</span>{p.is_open_access && <span className="text-[9px] px-1 py-0.5 bg-emerald-500/10 text-emerald-600 rounded">OA</span>}</div>
+                      {p.abstract && <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{p.abstract}</p>}
+                      {p.doi && <p className="text-[9px] font-mono text-primary mt-0.5">{p.doi}</p>}
                     </button>
                   ))}
                 </div>
               </div>
+
+              {/* Conceitos e financiadores identificados no OpenAlex */}
+              {knowledge.concepts?.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-3">Conceitos predominantes</h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {knowledge.concepts.slice(0, 15).map((c, i) => (
+                      <span key={i} className="text-[10px] px-2 py-1 bg-muted rounded-full text-foreground">{c.name} <strong className="text-primary">{c.count}</strong></span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </TabsContent>
 
-            {/* MATURIDADE TECNOLÓGICA (TRL) */}
-            <TabsContent value="trl" className="space-y-4">
-              <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><TrendingUp className="w-4 h-4 text-primary" /> Maturidade tecnológica do objeto pesquisado</h3>
-                <p className="text-[10px] text-muted-foreground">Estimativa a partir de sinais reais: volume de publicações, repositórios de código, patentes/datasets, emprego formal e contratos públicos.</p>
-                <TrlScaleChart level={technology.trl_estimate || 0} label={technology.trl_label} />
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                  {[
-                    { label: "Papers científicos", ok: technology.trl_signals?.has_papers },
-                    { label: "Código aberto", ok: technology.trl_signals?.has_repos },
-                    { label: "Patentes/dados", ok: technology.trl_signals?.has_patents },
-                    { label: "Emprego formal", ok: technology.trl_signals?.has_employment },
-                    { label: "Alta visibilidade", ok: technology.trl_signals?.high_stars },
-                  ].map((s, i) => (
-                    <div key={i} className={`text-center p-2 rounded-lg ${s.ok ? "bg-emerald-500/5 border border-emerald-500/20" : "bg-muted/30 border border-border"}`}>
-                      <span className="text-lg">{s.ok ? "✓" : "—"}</span>
-                      <p className="text-[10px] text-muted-foreground">{s.label}</p>
-                    </div>
-                  ))}
+            {/* P&D INDUSTRIAL — EMBRAPII + PINTEC */}
+            <TabsContent value="embrapii" className="space-y-4">
+              <div className="bg-card border border-border rounded-xl p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <FlaskConical className="w-4 h-4 text-primary" />
+                    P&D Industrial — EMBRAPII + PINTEC/IBGE
+                  </h3>
                 </div>
+                <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+                  Projetos de P&D industrial identificados nas bases EMBRAPII e PINTEC. A fase do projeto indica o TRL real: Fase 1 = TRL 4–5, Fase 2 = TRL 5–6, Fase 3 = TRL 6–7.
+                </p>
+
+                {/* TRL real via EPO — se disponível */}
+                {(data.layers as any).patents?.trl_from_patents && (
+                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4">
+                    <p className="text-[10px] font-mono text-primary uppercase tracking-wider mb-1">TRL via EPO OPS — dado real</p>
+                    <p className="text-2xl font-bold text-foreground font-mono">
+                      {(data.layers as any).patents.trl_from_patents.estimate}
+                      <span className="text-sm font-normal text-muted-foreground ml-2">/ 9</span>
+                    </p>
+                    <p className="text-xs text-foreground mt-1">{(data.layers as any).patents.trl_from_patents.label}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">{(data.layers as any).patents.trl_from_patents.rationale}</p>
+                    <div className="mt-3">
+                      <TrlScaleChart
+                        level={(data.layers as any).patents.trl_from_patents.estimate}
+                        label={(data.layers as any).patents.trl_from_patents.label}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Projetos EMBRAPII / inovação */}
+                {technology.innovation_datasets && technology.innovation_datasets.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Projetos identificados</p>
+                    {technology.innovation_datasets.slice(0, 6).map((d: any, i: number) => (
+                      <a key={i} href={d.url} target="_blank" rel="noopener noreferrer"
+                         className="flex items-start gap-3 p-3 border border-border/50 rounded-lg hover:border-border transition-colors">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-foreground">{d.title}</p>
+                          {d.description && <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{d.description}</p>}
+                        </div>
+                        <ExternalLink className="w-3 h-3 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <FlaskConical className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
+                    <p className="text-sm text-muted-foreground">Nenhum projeto P&D identificado nas bases abertas para este tema.</p>
+                    <a href="https://embrapii.org.br/dados-abertos" target="_blank" rel="noopener noreferrer"
+                       className="text-xs text-primary hover:underline mt-1 inline-flex items-center gap-1">
+                      <ExternalLink className="w-3 h-3" /> Consultar EMBRAPII diretamente
+                    </a>
+                  </div>
+                )}
+
+                {/* PINTEC/SIDRA se disponível */}
+                {(data.layers as any).sidra?.pintec?.setores?.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-border/30">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Inovação setorial — PINTEC/IBGE</p>
+                    <div className="space-y-1.5">
+                      {(data.layers as any).sidra.pintec.setores.slice(0, 5).map((s: any, i: number) => (
+                        <div key={i} className="flex justify-between px-3 py-2 bg-muted/30 rounded-lg">
+                          <span className="text-xs text-foreground truncate flex-1">{s.atividade}</span>
+                          <span className="text-xs font-bold text-primary ml-2">{s.valor}%</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[9px] text-muted-foreground mt-2">Fonte: PINTEC {(data.layers as any).sidra.pintec.periodo} — IBGE</p>
+                  </div>
+                )}
               </div>
             </TabsContent>
 
