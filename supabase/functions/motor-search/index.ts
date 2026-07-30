@@ -528,7 +528,7 @@ Deno.serve(async (req) => {
     const knowledge = await invokeLayer("layer-knowledge", { query, search_terms: searchTerms });
 
     // STEP 2: Remaining 3 layers in parallel, passing knowledge + ontology data
-    const [technology, policy, international, sidra, market, patents, programs, cnpq] = await Promise.all([
+    const [technology, policy, international, sidra, market, patents, programs, cnpq, policies] = await Promise.all([
       invokeLayer("layer-technology", {
         query,
         knowledge_papers: knowledge?.papers?.length || 0,
@@ -571,6 +571,10 @@ Deno.serve(async (req) => {
         cnae_codes: cnaeCodes,
       }),
       invokeLayer("layer-cnpq", {
+        query,
+        cnpq_areas: ontology?.cnpq_areas || [],
+      }),
+      invokeLayer("layer-policies", {
         query,
         cnpq_areas: ontology?.cnpq_areas || [],
       }),
@@ -638,6 +642,7 @@ Deno.serve(async (req) => {
       ...(programs?.pbia?.sources || []),
       ...(programs?.fomento?.sources || []),
       ...(cnpq?.sources || []),
+      ...(policies?.sources || []),
 
 
     ];
@@ -657,6 +662,7 @@ Deno.serve(async (req) => {
         patents: patents || { available: false, patents: [], applicants: [], trend: [], br_share: null, trl_from_patents: null, sources: [] },
         programs: programs || { nova_industria: { disponivel: false }, pbia: { disponivel: false }, fomento: { disponivel: false }, context: {} },
         cnpq: cnpq || { datasets: [], chamadas: [], convenios: null, modalidades: [], sources: [] },
+        policies: policies || { politicas: { federal: [], estadual_sp: [], municipal: [] }, gazettes_mencoes: [], editais_inovacao: [], sources: [] },
 
 
       },

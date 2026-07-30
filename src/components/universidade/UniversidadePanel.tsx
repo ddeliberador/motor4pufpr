@@ -15,6 +15,7 @@ import RelationalGraph from "@/components/governo/RelationalGraph";
 import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetailSheet";
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
 import ProgramsTab from "@/components/shared/ProgramsTab";
+import PoliciesTab from "@/components/shared/PoliciesTab";
 
 
 const UniversidadePanel = () => {
@@ -141,6 +142,7 @@ const UniversidadePanel = () => {
               <TabsTrigger value="openalex" className="text-xs rounded-lg">📄 OpenAlex</TabsTrigger>
               <TabsTrigger value="sidra" className="text-xs rounded-lg">🎓 Formação/IBGE</TabsTrigger>
               <TabsTrigger value="transparencia" className="text-xs rounded-lg">💰 Financiamento</TabsTrigger>
+              <TabsTrigger value="politicas" className="text-xs rounded-lg">📋 Políticas</TabsTrigger>
               <TabsTrigger value="ia" className="text-xs rounded-lg">🧠 Análise IA {isAnalyzing && "…"}</TabsTrigger>
               {(data.layers as any).programs?.context?.industrial && (
                 <TabsTrigger value="nova-industria" className="text-xs rounded-lg">🏭 Nova Indústria</TabsTrigger>
@@ -324,6 +326,13 @@ const UniversidadePanel = () => {
               )}
             </TabsContent>
 
+            <TabsContent value="politicas" className="space-y-4">
+              <PoliciesTab
+                policies={(data.layers as any).policies}
+                persona="universidade"
+                query={data.query}
+              />
+            </TabsContent>
             <TabsContent value="ia" className="space-y-4">
               {isAnalyzing ? (<div className="flex items-center justify-center py-12"><div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /><span className="ml-3 text-sm text-muted-foreground">Analisando posicionamento...</span></div>
               ) : analysis && analysis.sections?.length > 0 ? (
