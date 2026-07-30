@@ -280,27 +280,73 @@ const GovernoPanel = () => {
                 </div>
                 {(technology as any).caged_data ? (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="bg-muted/30 rounded-lg p-3 text-center">
-                        <p className="text-xl font-bold font-mono text-emerald-500">
-                          +{(technology as any).caged_data.nacional?.total_admissoes?.toLocaleString("pt-BR") || "—"}
+                    {/* Label do setor foco */}
+                    {(technology as any).caged_data.setor_foco?.disponivel && (
+                      <div className="px-3 py-2 bg-primary/5 border border-primary/20 rounded-lg mb-2">
+                        <p className="text-[10px] text-primary font-medium">
+                          📊 Setor foco: {(technology as any).caged_data.setor_foco.label}
                         </p>
-                        <p className="text-[10px] text-muted-foreground">admissões (12m)</p>
                       </div>
-                      <div className="bg-muted/30 rounded-lg p-3 text-center">
-                        <p className="text-xl font-bold font-mono text-red-500">
-                          -{(technology as any).caged_data.nacional?.total_demissoes?.toLocaleString("pt-BR") || "—"}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">demissões (12m)</p>
-                      </div>
-                      <div className="bg-muted/30 rounded-lg p-3 text-center">
-                        <p className={`text-xl font-bold font-mono ${(technology as any).caged_data.nacional?.total_saldo >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-                          {(technology as any).caged_data.nacional?.total_saldo >= 0 ? "+" : ""}
-                          {(technology as any).caged_data.nacional?.total_saldo?.toLocaleString("pt-BR") || "—"}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">saldo líquido</p>
-                      </div>
-                    </div>
+                    )}
+
+                    {/* Métricas — prioriza setorial, cai em nacional */}
+                    {(() => {
+                      const sf = (technology as any).caged_data.setor_foco;
+                      const nac = (technology as any).caged_data.nacional;
+                      const useSetor = sf?.disponivel && sf?.total_saldo != null;
+                      const adm = useSetor ? sf.total_admissoes : nac?.total_admissoes;
+                      const dem = useSetor ? sf.total_demissoes : nac?.total_demissoes;
+                      const saldo = useSetor ? sf.total_saldo : nac?.total_saldo;
+                      const contexto = useSetor
+                        ? sf.detalhes?.map((d: any) => d.nome).join(" + ") || sf.label
+                        : "agregado nacional";
+                      return (
+                        <>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div className="bg-muted/30 rounded-lg p-3 text-center">
+                              <p className="text-xl font-bold font-mono text-emerald-500">
+                                {adm != null ? `+${adm.toLocaleString("pt-BR")}` : "—"}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">admissões (12m)</p>
+                            </div>
+                            <div className="bg-muted/30 rounded-lg p-3 text-center">
+                              <p className="text-xl font-bold font-mono text-red-500">
+                                {dem != null ? `-${dem.toLocaleString("pt-BR")}` : "—"}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">demissões (12m)</p>
+                            </div>
+                            <div className="bg-muted/30 rounded-lg p-3 text-center">
+                              <p className={`text-xl font-bold font-mono ${(saldo ?? 0) >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                                {saldo != null ? `${saldo >= 0 ? "+" : ""}${saldo.toLocaleString("pt-BR")}` : "—"}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">saldo líquido</p>
+                            </div>
+                          </div>
+                          <p className="text-[9px] text-muted-foreground px-1">
+                            {useSetor ? `Setor: ${contexto}` : "⚠ Dado setorial indisponível — exibindo série nacional agregada"}
+                          </p>
+
+                          {/* Detalhamento por subseção CNAE quando disponível */}
+                          {useSetor && sf.detalhes?.length > 1 && (
+                            <div className="space-y-1">
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Por seção CNAE</p>
+                              {sf.detalhes.map((d: any, i: number) => (
+                                <div key={i} className="flex items-center justify-between px-3 py-1.5 bg-muted/20 rounded">
+                                  <span className="text-[10px] text-foreground">{d.nome}</span>
+                                  <div className="flex gap-3">
+                                    <span className="text-[9px] text-emerald-500">+{d.admissoes.toLocaleString("pt-BR")}</span>
+                                    <span className="text-[9px] text-red-500">-{d.demissoes.toLocaleString("pt-BR")}</span>
+                                    <span className={`text-[9px] font-bold ${d.saldo >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                                      {d.saldo >= 0 ? "+" : ""}{d.saldo.toLocaleString("pt-BR")}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                     {(technology as any).caged_data.ocupacoes?.length > 0 && (
                       <div>
                         <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Ocupações monitoradas (CBO)</p>
@@ -313,7 +359,9 @@ const GovernoPanel = () => {
                         </div>
                       </div>
                     )}
-                    <CagedSaldoChart serie={(technology as any).caged_data.nacional?.serie_saldo} gradientId="cagedGradGov" />
+                    <CagedSaldoChart serie={(technology as any).caged_data.setor_foco?.disponivel
+                        ? (technology as any).caged_data.setor_foco.serie_saldo
+                        : (technology as any).caged_data.nacional?.serie_saldo} gradientId="cagedGradGov" />
                     <p className="text-[9px] text-muted-foreground">{(technology as any).caged_data.escopo}</p>
                   </div>
                 ) : (
