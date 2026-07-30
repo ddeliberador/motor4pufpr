@@ -211,9 +211,28 @@ interface Supplier {
   razao_social?: string;
 }
 
+function deaccent(t: string) {
+  return t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+// O índice do PNCP é sensível a acentos e a expressões compostas.
+// Gera variações: termo original, sem acento e tokens relevantes isolados.
+function pncpVariants(terms: string[]): string[] {
+  const out: string[] = [];
+  const stop = new Set(["de", "da", "do", "e", "para", "com", "em", "the", "of", "and"]);
+  for (const t of terms.filter(Boolean)) {
+    const clean = deaccent(t.trim().toLowerCase());
+    if (clean) out.push(clean);
+    for (const tok of clean.split(/[^a-z0-9]+/)) {
+      if (tok.length >= 5 && !stop.has(tok)) out.push(tok);
+    }
+  }
+  return [...new Set(out)].slice(0, 5);
+}
+
 async function fetchPublicMarket(searchTerms: string[]) {
   const byCnpj: Record<string, Supplier> = {};
-  const terms = searchTerms.filter(Boolean).slice(0, 3);
+  const terms = pncpVariants(searchTerms);
 
   // 1) Busca textual no índice público do PNCP (único endpoint que aceita texto livre)
   type Hit = { url: string; value: number };
@@ -234,6 +253,7 @@ async function fetchPublicMarket(searchTerms: string[]) {
       hits[url] = { url, value: Number(it.valor_global || 0) };
     }
   }
+
 
   // 2) Detalhe de cada contrato para obter o fornecedor (CNPJ + razão social)
   const top = Object.values(hits)
