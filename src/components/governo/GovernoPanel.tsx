@@ -15,7 +15,7 @@ import StrategicIndices from "./StrategicIndices";
 import RelationalGraph from "./RelationalGraph";
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
 import MarketAnalysisPanel from "@/components/shared/MarketAnalysisPanel";
-import PatentsPanel from "@/components/shared/PatentsPanel";
+import PatentsTab from "@/components/shared/PatentsTab";
 
 const GovernoPanel = () => {
   const config = personaConfigs.governo;
