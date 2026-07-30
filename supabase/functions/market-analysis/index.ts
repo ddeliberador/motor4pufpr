@@ -494,7 +494,8 @@ Deno.serve(async (req) => {
 
     const [patentsR, marketR, tradeR] = await Promise.allSettled([
       fetchPatentHolders(searchTerms, ipcCodes),
-      fetchPublicMarket(searchTerms),
+      // PNCP indexa em português — prioriza a query original do usuário
+      fetchPublicMarket([query, ...searchTerms]),
       fetchTradeBalance(ncmCodes),
     ]);
 
