@@ -15,7 +15,6 @@ import ReactMarkdown from "react-markdown";
 import StrategicIndices from "@/components/governo/StrategicIndices";
 import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetailSheet";
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
-import SidraPanel from "@/components/shared/SidraPanel";
 
 const PesquisadorPanel = () => {
   const config = personaConfigs.pesquisador;
@@ -25,7 +24,7 @@ const PesquisadorPanel = () => {
   const [suggestedCnaes, setSuggestedCnaes] = useState<CnaeCode[]>([]);
   const [, setSelectedCnaes] = useState<CnaeCode[]>([]);
   const [pendingSearchQuery, setPendingSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("panorama");
+  const [activeTab, setActiveTab] = useState("openalex");
   const [detailItem, setDetailItem] = useState<DetailItem | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [icts, setIcts] = useState<any>(null);
@@ -595,252 +594,6 @@ const PesquisadorPanel = () => {
               )}
             </TabsContent>
 
-            <TabsContent value="lacunas" className="space-y-4">
-              <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Lightbulb className="w-4 h-4 text-accent" /> Cruzamentos que revelam lacunas</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="bg-muted/30 rounded-lg p-4"><p className="text-xs font-semibold text-foreground mb-1">Produção Científica</p><p className="text-2xl font-bold text-primary">{data.stats.papers}</p><p className="text-[10px] text-muted-foreground">papers encontrados</p></div>
-                  <div className="bg-muted/30 rounded-lg p-4"><p className="text-xs font-semibold text-foreground mb-1">Aplicação Prática</p><p className="text-2xl font-bold text-accent">{data.stats.contracts + data.stats.github_repos}</p><p className="text-[10px] text-muted-foreground">contratos + repos</p></div>
-                </div>
-                {/* Interpretação automática do gap */}
-                {(() => {
-                  const papers = data.stats.papers;
-                  const aplicacao = data.stats.contracts + data.stats.github_repos;
-                  const ratio = aplicacao > 0 ? papers / aplicacao : papers > 0 ? 999 : 0;
-
-                  if (papers === 0 && aplicacao === 0) return (
-                    <div className="p-3 bg-muted/30 rounded-lg">
-                      <p className="text-xs text-muted-foreground">Nenhum dado encontrado para este tema. Tente um termo mais amplo.</p>
-                    </div>
-                  );
-
-                  if (ratio > 20) return (
-                    <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg space-y-1">
-                      <p className="text-xs font-semibold text-foreground">🚨 Gap crítico de tradução</p>
-                      <p className="text-xs text-muted-foreground">
-                        <strong>{papers.toLocaleString()} papers</strong> e apenas <strong>{aplicacao} aplicações</strong> — ratio {ratio > 100 ? ">100" : ratio.toFixed(0)}:1.
-                        O conhecimento existe mas não está sendo traduzido em produtos, contratos ou código.
-                      </p>
-                      <p className="text-xs text-primary font-medium">→ Oportunidade: pesquisa aplicada ou transferência tecnológica têm demanda reprimida.</p>
-                    </div>
-                  );
-
-                  if (ratio > 5) return (
-                    <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg space-y-1">
-                      <p className="text-xs font-semibold text-foreground">⚠️ Gap de tradução moderado</p>
-                      <p className="text-xs text-muted-foreground">
-                        Ratio {ratio.toFixed(1)}:1 (papers/aplicações). Campo com produção científica ativa mas absorção ainda limitada.
-                      </p>
-                      <p className="text-xs text-primary font-medium">→ Posicione pesquisa na interface ciência-mercado para maior impacto.</p>
-                    </div>
-                  );
-
-                  if (ratio < 1 && aplicacao > papers && papers > 0) return (
-                    <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg space-y-1">
-                      <p className="text-xs font-semibold text-foreground">✅ Campo com demanda prática maior que produção</p>
-                      <p className="text-xs text-muted-foreground">
-                        <strong>{aplicacao} aplicações</strong> para <strong>{papers} papers</strong>.
-                        Mercado absorve mais do que a academia produz — campo com alta empregabilidade.
-                      </p>
-                      <p className="text-xs text-primary font-medium">→ Pesquisa aplicada tem mercado garantido neste tema.</p>
-                    </div>
-                  );
-
-                  return (
-                    <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
-                      <p className="text-xs text-foreground">
-                        <strong>Campo equilibrado:</strong> ratio {ratio.toFixed(1)}:1. Boa relação entre produção científica e absorção prática.
-                      </p>
-                    </div>
-                  );
-                })()}
-                {technology.github_repos.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-semibold text-foreground flex items-center gap-2"><GitBranch className="w-3.5 h-3.5" /> Código aberto disponível</h4>
-                    {technology.github_repos.slice(0, 5).map((r, i) => (
-                      <button key={i} onClick={() => openDetail({ type: "repo", data: r })} className="w-full text-left flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className="min-w-0 flex-1"><p className="text-xs font-medium text-foreground truncate">{r.name}</p><p className="text-[10px] text-muted-foreground truncate">{r.description}</p></div>
-                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">{r.language && <span className="text-[9px] px-1.5 py-0.5 bg-primary/10 text-primary rounded">{r.language}</span>}<span className="text-[10px] font-bold text-primary">⭐{r.stars}</span></div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {policy.convenios.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-semibold text-foreground">Convênios ativos (possível financiamento)</h4>
-                    {policy.convenios.slice(0, 4).map((c, i) => (
-                      <button key={i} onClick={() => openDetail({ type: "convenio", data: c })} className="w-full text-left py-2 px-3 bg-accent/5 border border-accent/10 rounded-lg hover:bg-accent/10 transition-colors">
-                        <p className="text-xs font-medium text-foreground line-clamp-1">{c.object || "Sem objeto"}</p>
-                        <div className="flex gap-2 mt-0.5"><span className="text-[10px] text-muted-foreground">{c.proponent}</span>{c.value > 0 && <span className="text-[10px] font-semibold text-accent">R$ {(c.value / 1e3).toFixed(0)}mil</span>}</div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-
-            {/* FINANCIAMENTO */}
-            <TabsContent value="financiamento" className="space-y-4">
-              {/* Estado vazio — sem instrumentos federais para o termo */}
-              {policy.contracts.length === 0 && policy.convenios.length === 0 && (
-                <div className="bg-card border border-border rounded-xl p-5 space-y-3">
-                  <p className="text-sm font-semibold text-foreground">Nenhum contrato ou convênio federal encontrado para este termo</p>
-                  <p className="text-xs text-muted-foreground">
-                    A busca cobre PNCP e Portal da Transparência (convênios, contratos MCTI/MEC e emendas parlamentares).
-                    Termos muito específicos podem não aparecer no objeto dos instrumentos — tente uma formulação mais ampla.
-                  </p>
-                  {policy.funding_datasets && policy.funding_datasets.length > 0 && (
-                    <div className="pt-3 border-t border-border/50">
-                      <p className="text-xs font-semibold text-foreground mb-2">Datasets de fomento disponíveis (BNDES/Finep/FNDCT)</p>
-                      <div className="space-y-1">
-                        {policy.funding_datasets.slice(0, 5).map((d: any, i: number) => (
-                          <a key={i} href={d.url} target="_blank" rel="noopener noreferrer"
-                             className="block px-3 py-2 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
-                            <p className="text-xs font-medium text-foreground line-clamp-1">{d.title}</p>
-                            <span className="text-[9px] text-primary">↗ Acessar dataset</span>
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {policy.contracts.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">Licitações públicas relacionadas</h3>
-                  <div className="space-y-1">
-                    {policy.contracts.slice(0, 8).map((c, i) => (
-                      <button key={i} onClick={() => openDetail({ type: "contract", data: c })} className="w-full text-left py-2 px-3 hover:bg-muted/50 rounded-lg transition-colors border-b border-border/30 last:border-0">
-                        <p className="text-xs font-medium text-foreground line-clamp-1">{c.object || "Sem objeto"}</p>
-                        <div className="flex items-center gap-2 mt-0.5"><span className="text-[10px] text-muted-foreground">{c.organ?.slice(0, 35)}</span>{c.value > 0 && <span className="text-[10px] font-semibold text-primary">R$ {(c.value / 1e3).toFixed(0)}mil</span>}{c.uf && <span className="text-[9px] px-1 py-0.5 bg-secondary text-secondary-foreground rounded">{c.uf}</span>}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {policy.convenios.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">Convênios federais</h3>
-                  <div className="space-y-1">
-                    {policy.convenios.slice(0, 6).map((c, i) => (
-                      <button key={i} onClick={() => openDetail({ type: "convenio", data: c })} className="w-full text-left py-2 px-3 hover:bg-muted/50 rounded-lg transition-colors border-b border-border/30 last:border-0">
-                        <p className="text-xs font-medium text-foreground line-clamp-1">{c.object}</p>
-                        <div className="flex gap-2 mt-0.5"><span className="text-[10px] text-muted-foreground">{c.grantor}</span>{c.value > 0 && <span className="text-[10px] font-semibold text-accent">R$ {(c.value / 1e3).toFixed(0)}mil</span>}<span className="text-[9px] px-1 py-0.5 bg-secondary text-secondary-foreground rounded">{c.situation}</span></div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {(policy as any).emendas?.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-1">Emendas parlamentares</h3>
-                  <p className="text-[10px] text-muted-foreground mb-3">
-                    Portal da Transparência · {(policy as any).emendas[0]?.contextual ? "funções orçamentárias correlatas" : "aderentes ao tema"}
-                  </p>
-                  <div className="space-y-1">
-                    {(policy as any).emendas.slice(0, 6).map((e: any, i: number) => (
-                      <div key={i} className="py-2 px-3 border-b border-border/30 last:border-0">
-                        <p className="text-xs font-medium text-foreground line-clamp-1">{e.author} — {e.subfunction || e.function}</p>
-                        <div className="flex gap-2 mt-0.5 items-center">
-                          <span className="text-[10px] text-muted-foreground">{e.locality} · {e.year}</span>
-                          {e.paid > 0 && <span className="text-[10px] font-semibold text-accent">R$ {(e.paid / 1e3).toFixed(0)}mil pagos</span>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {(policy as any).budget_execution?.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-1">Execução orçamentária federal em CT&amp;I</h3>
-                  <p className="text-[10px] text-muted-foreground mb-3">Portal da Transparência · MCTI e MEC</p>
-                  <div className="space-y-1">
-                    {(policy as any).budget_execution.slice(0, 8).map((b: any, i: number) => (
-                      <div key={i} className="flex items-center justify-between gap-3 py-2 px-3 border-b border-border/30 last:border-0">
-                        <div className="min-w-0">
-                          <p className="text-xs text-foreground truncate">{b.organ}</p>
-                          <p className="text-[10px] text-muted-foreground">{b.superior} · {b.year}</p>
-                        </div>
-                        <span className="text-xs font-semibold text-primary whitespace-nowrap">R$ {(b.paid / 1e9).toFixed(2)} bi</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {intl.macro_indicators.some(m => m.value !== null) && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">Contexto macroeconômico</h3>
-                  <div className="space-y-1">
-                    {intl.macro_indicators.filter(m => m.value !== null).map((m, i) => (
-                      <button key={i} onClick={() => openDetail({ type: "indicator", data: m })} className="w-full text-left flex items-center justify-between px-3 py-2 hover:bg-muted/50 rounded-lg transition-colors">
-                        <span className="text-xs text-muted-foreground">{m.name}</span>
-                        <div className="flex items-center gap-2"><span className="text-sm font-bold text-foreground">{m.value!.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}</span>{m.variation !== null && <span className={`text-[10px] font-medium ${m.variation > 0 ? "text-emerald-600" : "text-red-500"}`}>{m.variation > 0 ? "+" : ""}{m.variation.toFixed(1)}%</span>}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* SIDRA — dados estruturais IBGE */}
-              {(data.layers as any).sidra?.pintec?.setores?.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-foreground">
-                      Inovação no setor — PINTEC/IBGE
-                    </h3>
-                    <a href={(data.layers as any).sidra.pintec.url} target="_blank" rel="noopener noreferrer"
-                       className="text-[10px] text-primary hover:underline flex items-center gap-1">
-                      <ExternalLink className="w-3 h-3" /> SIDRA
-                    </a>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground mb-3">
-                    {(data.layers as any).sidra.pintec.descricao} · {(data.layers as any).sidra.pintec.periodo}
-                  </p>
-                  <div className="space-y-1.5">
-                    {(data.layers as any).sidra.pintec.setores.slice(0, 6).map((s: any, i: number) => (
-                      <div key={i} className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg">
-                        <span className="text-xs text-foreground truncate flex-1">{s.atividade}</span>
-                        <span className="text-xs font-bold text-primary ml-2 flex-shrink-0">{s.valor}{s.unidade === "%" ? "%" : ""}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {(data.layers as any).sidra?.cempre?.setores?.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-foreground">Empresas no setor — CEMPRE/IBGE</h3>
-                    <a href={(data.layers as any).sidra.cempre.url} target="_blank" rel="noopener noreferrer"
-                       className="text-[10px] text-primary hover:underline flex items-center gap-1">
-                      <ExternalLink className="w-3 h-3" /> SIDRA
-                    </a>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground mb-3">
-                    {(data.layers as any).sidra.cempre.descricao} · {(data.layers as any).sidra.cempre.periodo}
-                  </p>
-                  <div className="space-y-1.5">
-                    {(data.layers as any).sidra.cempre.setores.slice(0, 5).map((s: any, i: number) => (
-                      <div key={i} className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg">
-                        <span className="text-xs text-foreground truncate flex-1">{s.atividade}</span>
-                        <div className="flex gap-3 flex-shrink-0 ml-2">
-                          {s.empresas && <span className="text-[10px] text-muted-foreground">{s.empresas} emp.</span>}
-                          {s.pessoal && <span className="text-[10px] font-semibold text-primary">{s.pessoal} pessoas</span>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-
-            {/* ESTRUTURA IBGE / SIDRA */}
-            <TabsContent value="sidra" className="space-y-4">
-              <SidraPanel sidra={(data.layers as any).sidra} />
-            </TabsContent>
-
 
 
 
@@ -945,7 +698,7 @@ const PesquisadorPanel = () => {
             </TabsContent>
 
             {/* PRESCRIÇÃO IA */}
-            <TabsContent value="prescricao" className="space-y-4">
+            <TabsContent value="ia" className="space-y-4">
               {isAnalyzing ? (
                 <div className="flex items-center justify-center py-12"><div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /><span className="ml-3 text-sm text-muted-foreground">Analisando campo científico com {data.meta.source_count} fontes...</span></div>
               ) : analysis && analysis.sections?.length > 0 ? (
