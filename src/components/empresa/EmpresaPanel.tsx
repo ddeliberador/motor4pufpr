@@ -373,7 +373,22 @@ const EmpresaPanel = () => {
                 </div>
               ) : (<div className="text-center py-12 text-muted-foreground"><Zap className="w-8 h-8 mx-auto mb-3 opacity-40" /><p className="text-sm">IA não disponível.</p></div>)}
             </TabsContent>
+
+            {(data.layers as any).programs?.context?.industrial && (
+              <TabsContent value="nova-industria" className="space-y-4">
+                <ProgramsTab programs={(data.layers as any).programs} which="nova-industria" />
+              </TabsContent>
+            )}
+            {(data.layers as any).programs?.context?.ia && (
+              <TabsContent value="pbia" className="space-y-4">
+                <ProgramsTab programs={(data.layers as any).programs} which="pbia" />
+              </TabsContent>
+            )}
+            <TabsContent value="fomento" className="space-y-4">
+              <ProgramsTab programs={(data.layers as any).programs} which="fomento" />
+            </TabsContent>
           </Tabs>
+
         </div>
       </main>
       <Footer />
