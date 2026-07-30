@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
-  Zap, BookOpen, Microscope, Factory, Landmark, Globe, 
+  Zap, BookOpen, Microscope, Factory, Globe, 
   ArrowRight, Database, BarChart3, Network, Target,
   AlertTriangle, TrendingUp, Layers, GitBranch
 } from "lucide-react";
