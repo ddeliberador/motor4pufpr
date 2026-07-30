@@ -1,3 +1,5 @@
+import CagedSaldoChart from "@/components/shared/CagedSaldoChart";
+import TrlScaleBar from "@/components/shared/TrlScaleBar";
 import { useState, useCallback, useEffect } from "react";
 import { Factory, Search, ArrowLeft, AlertTriangle, Zap, Globe, GitBranch, Building2, Landmark, TrendingUp, Target, Handshake, ShieldCheck, Users, Building, ExternalLink } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
