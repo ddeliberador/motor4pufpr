@@ -892,7 +892,7 @@ const AtlasContent = ({ initialQuery = "" }: AtlasContentProps) => {
         </div>
 
         <p className="text-muted-foreground mb-8">
-          O Motor 4P propõe um indicador auditável para comparar instituições brasileiras em qualquer área tecnológica.
+          O Motor da Inovação propõe um indicador auditável para comparar instituições brasileiras em qualquer área tecnológica.
         </p>
 
         {/* Formula Box */}

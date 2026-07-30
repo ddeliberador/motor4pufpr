@@ -37,7 +37,7 @@ const Footer = () => {
                 <Zap className="w-5 h-5 text-primary-foreground" />
               </div>
               <div>
-                <span className="font-semibold text-lg tracking-tight">MOTOR 4P</span>
+                <span className="font-semibold text-lg tracking-tight">Motor da Inovação</span>
                 <span className="text-xs text-primary-foreground/70 block -mt-0.5">UFPR</span>
               </div>
             </div>
@@ -121,7 +121,7 @@ const Footer = () => {
       <div className="border-t border-primary-foreground/10">
         <div className="container-wide py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-primary-foreground/50">
-            <p>© {currentYear} MOTOR 4P UFPR. Todos os direitos reservados.</p>
+            <p>© {currentYear} Motor da Inovação · PPGPP · UFPR. Todos os direitos reservados.</p>
             <div className="flex items-center gap-4">
               <span>Dados Públicos</span>
               <span>•</span>

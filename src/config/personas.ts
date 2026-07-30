@@ -1,4 +1,4 @@
-import { Microscope, Landmark, Factory, Building2, type LucideIcon } from "lucide-react";
+import { Microscope, GraduationCap, Factory, Building2, type LucideIcon } from "lucide-react";
 import type { Persona } from "@/types/persona";
 
 export interface PersonaConfig {
@@ -40,7 +40,7 @@ export const personaConfigs: Record<Persona, PersonaConfig> = {
   universidade: {
     key: "universidade",
     label: "Universidade",
-    icon: Landmark,
+    icon: GraduationCap,
     subtitle: "Posicionamento institucional, captação e parcerias estratégicas",
     questions: [
       "Onde estamos posicionados?",

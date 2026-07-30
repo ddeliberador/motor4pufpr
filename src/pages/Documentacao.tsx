@@ -57,7 +57,7 @@ const apis = [
   },
   {
     category: "Camada da Política",
-    icon: Landmark,
+    icon: Building2,
     color: "from-amber-500 to-orange-500",
     sources: [
       { name: "PNCP", url: "https://pncp.gov.br/", desc: "Compras públicas e contratos governamentais" },
@@ -146,7 +146,7 @@ const Documentacao = () => {
               <div>
                 <h2 className="text-2xl font-bold mb-3">Compromisso Open Source</h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  O Motor 4P é um projeto <strong className="text-foreground">100% open source</strong>, 
+                  O Motor da Inovação é um projeto <strong className="text-foreground">100% open source</strong>, 
                   desenvolvido como parte de uma tese de doutorado em Políticas Públicas na UFPR. 
                   Toda a infraestrutura — frontend, backend, conectores de dados e modelos analíticos — 
                   é pública e auditável.
@@ -211,7 +211,7 @@ const Documentacao = () => {
             </motion.h2>
             <motion.p variants={fadeUp} custom={1} className="text-center text-muted-foreground mb-10 max-w-2xl mx-auto">
               {edgeFunctions.length} funções serverless em TypeScript/Deno que orquestram toda a lógica de busca, 
-              análise e síntese do Motor 4P.
+              análise e síntese do Motor da Inovação.
             </motion.p>
 
             <div className="space-y-3">
