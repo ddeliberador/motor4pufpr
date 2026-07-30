@@ -562,11 +562,20 @@ Deno.serve(async (req) => {
         ncm_codes: ncmCodes,
         knowledge_total_papers: knowledge?.total_papers || 0,
       }),
+      invokeLayer("layer-patents", {
+        query,
+        ipc_codes: ipcCodes,
+      }),
     ]);
 
 
     // STEP 3: Cross-layer indices
     const indices = computeCrossLayerIndices(knowledge, technology, policy, international);
+
+    // Sobrescreve TRL heurístico com dado real da EPO quando disponível
+    if (patents?.trl_from_patents) {
+      (technology as any).trl_from_patents = patents.trl_from_patents;
+    }
 
     // Oportunidade derivada do GT (só disponível após o cálculo dos índices)
     if (market && Array.isArray(market.opportunities)) {
