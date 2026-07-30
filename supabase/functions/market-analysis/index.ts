@@ -312,7 +312,7 @@ async function fetchPublicMarket(searchTerms: string[]) {
 function comexFilterName(code: string): string | null {
   const c = code.replace(/\D/g, "");
   if (c.length === 8) return "ncm";
-  if (c.length === 4) return "position";
+  if (c.length === 4) return "heading";
   if (c.length === 2) return "chapter";
   return null;
 }
@@ -350,17 +350,19 @@ async function fetchTradeBalance(ncmCodes: Array<{ code: string; description: st
   const year = new Date().getFullYear() - 1;
   const items: any[] = [];
 
-  const results = await Promise.allSettled(
-    ncmCodes.slice(0, 3).map(async (ncm) => {
+  const results: PromiseSettledResult<any>[] = [];
+  for (const ncm of ncmCodes.slice(0, 3)) {
+    results.push(await (async () => {
       const filter = comexFilterName(ncm.code);
       if (!filter) return null;
-      const [export_fob, import_fob] = await Promise.all([
-        comexFlow("export", filter, ncm.code, year),
-        comexFlow("import", filter, ncm.code, year),
-      ]);
+      // COMEX limita requisições concorrentes (HTTP 429) — consultas sequenciais
+      const export_fob = await comexFlow("export", filter, ncm.code, year);
+      await new Promise((r) => setTimeout(r, 1200));
+      const import_fob = await comexFlow("import", filter, ncm.code, year);
       return { code: ncm.code, description: ncm.description, export_fob, import_fob, year, url: "https://comexstat.mdic.gov.br/pt/geral" };
-    }),
-  );
+    })().then((value) => ({ status: "fulfilled" as const, value })).catch((reason) => ({ status: "rejected" as const, reason })));
+    await new Promise((r) => setTimeout(r, 1200));
+  }
 
   for (const r of results) {
     if (r.status === "fulfilled" && r.value && (r.value.export_fob > 0 || r.value.import_fob > 0)) {
