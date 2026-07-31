@@ -392,6 +392,101 @@ function scoreCnae(subclasse: typeof CNAE_CACHE extends Array<infer T> ? T : nev
   return score;
 }
 
+// Dados estáticos mínimos de CNAE para enriquecer resultado semântico (sem API)
+const CNAE_STATIC: Record<string, { descricao: string; divisao_id: string; divisao_desc: string; secao_id: string; secao_desc: string }> = {
+  "0121-1/01": { descricao: "Horticultura, exceto morango", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agricultura, pecuária, produção florestal, pesca e aquicultura" },
+  "0121-1/02": { descricao: "Cultivo de morango", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agricultura, pecuária, produção florestal, pesca e aquicultura" },
+  "0121-1/03": { descricao: "Cultivo de cogumelos e trufas", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agricultura, pecuária, produção florestal, pesca e aquicultura" },
+  "0121-1/04": { descricao: "Cultivo de flores e plantas ornamentais", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agricultura, pecuária, produção florestal, pesca e aquicultura" },
+  "0121-1/05": { descricao: "Serviços de colheita, pré-limpeza e lavagem de hortaliças e legumes", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agricultura, pecuária, produção florestal, pesca e aquicultura" },
+  "0111-3/01": { descricao: "Cultivo de trigo", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agropecuária" },
+  "0111-3/02": { descricao: "Cultivo de milho", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agropecuária" },
+  "0111-3/03": { descricao: "Cultivo de algodão herbáceo e de outras fibras de lavoura temporária", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agropecuária" },
+  "0111-3/04": { descricao: "Cultivo de arroz", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agropecuária" },
+  "0111-3/05": { descricao: "Cultivo de soja", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agropecuária" },
+  "0113-0/00": { descricao: "Cultivo de cana-de-açúcar", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agropecuária" },
+  "0131-8/00": { descricao: "Cultivo de laranja", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agropecuária" },
+  "0132-6/00": { descricao: "Cultivo de uva", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agropecuária" },
+  "0133-4/02": { descricao: "Cultivo de manga e mamão", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agropecuária" },
+  "0133-4/03": { descricao: "Cultivo de outras frutas de lavoura permanente", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agropecuária" },
+  "0134-4/00": { descricao: "Cultivo de café", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agropecuária" },
+  "0141-5/01": { descricao: "Criação de bovinos para corte", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agropecuária" },
+  "0141-5/02": { descricao: "Criação de bovinos para leite", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agropecuária" },
+  "0151-2/01": { descricao: "Criação de suínos", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agropecuária" },
+  "0151-2/02": { descricao: "Criação de aves – galináceos", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agropecuária" },
+  "0155-5/01": { descricao: "Criação de frangos para corte", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agropecuária" },
+  "0159-8/02": { descricao: "Criação de abelhas e outros insetos", divisao_id: "01", divisao_desc: "Agricultura, pecuária e serviços relacionados", secao_id: "A", secao_desc: "Agropecuária" },
+  "0210-1/06": { descricao: "Cultivo de espécies madeireiras, exceto eucalipto e pinus", divisao_id: "02", divisao_desc: "Produção florestal", secao_id: "A", secao_desc: "Agropecuária" },
+  "0321-3/00": { descricao: "Criação de peixes em água salgada e salobra", divisao_id: "03", divisao_desc: "Pesca e aquicultura", secao_id: "A", secao_desc: "Agropecuária" },
+  "0321-3/01": { descricao: "Criação de peixes ornamentais em água doce", divisao_id: "03", divisao_desc: "Pesca e aquicultura", secao_id: "A", secao_desc: "Agropecuária" },
+  "0321-3/04": { descricao: "Cultivo de algas marinhas", divisao_id: "03", divisao_desc: "Pesca e aquicultura", secao_id: "A", secao_desc: "Agropecuária" },
+  "0322-1/02": { descricao: "Criação de camarões em água doce", divisao_id: "03", divisao_desc: "Pesca e aquicultura", secao_id: "A", secao_desc: "Agropecuária" },
+  "0710-1/00": { descricao: "Extração de minério de ferro", divisao_id: "07", divisao_desc: "Extração de minerais metálicos", secao_id: "B", secao_desc: "Mineração" },
+  "0721-7/00": { descricao: "Extração de minério de cobre", divisao_id: "07", divisao_desc: "Extração de minerais metálicos", secao_id: "B", secao_desc: "Mineração" },
+  "0722-5/01": { descricao: "Extração de ouro em aluvião", divisao_id: "07", divisao_desc: "Extração de minerais metálicos", secao_id: "B", secao_desc: "Mineração" },
+  "0810-0/01": { descricao: "Extração de ardósia e trabalhos associados", divisao_id: "08", divisao_desc: "Extração de minerais não-metálicos", secao_id: "B", secao_desc: "Mineração" },
+  "0891-6/00": { descricao: "Extração de minerais para fabricação de adubos, fertilizantes e outros", divisao_id: "08", divisao_desc: "Extração de minerais não-metálicos", secao_id: "B", secao_desc: "Mineração" },
+  "0899-1/99": { descricao: "Extração de outros minerais não-metálicos não especificados anteriormente", divisao_id: "08", divisao_desc: "Extração de minerais não-metálicos", secao_id: "B", secao_desc: "Mineração" },
+  "1011-2/01": { descricao: "Frigorífico — abate de bovinos", divisao_id: "10", divisao_desc: "Fabricação de produtos alimentícios", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "1099-6/01": { descricao: "Fabricação de vinagres", divisao_id: "10", divisao_desc: "Fabricação de produtos alimentícios", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "1099-6/04": { descricao: "Fabricação de gelo comum", divisao_id: "10", divisao_desc: "Fabricação de produtos alimentícios", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "1112-7/00": { descricao: "Fabricação de vinho", divisao_id: "11", divisao_desc: "Fabricação de bebidas", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "1113-5/01": { descricao: "Fabricação de malte, inclusive malte uísque", divisao_id: "11", divisao_desc: "Fabricação de bebidas", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "1311-1/00": { descricao: "Preparação e fiação de fibras de algodão", divisao_id: "13", divisao_desc: "Fabricação de produtos têxteis", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "1410-2/01": { descricao: "Confecção de roupas íntimas", divisao_id: "14", divisao_desc: "Confecção de artigos do vestuário e acessórios", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "1531-9/01": { descricao: "Fabricação de calçados de couro", divisao_id: "15", divisao_desc: "Preparação de couros e fabricação de artefatos de couro", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "1710-9/00": { descricao: "Fabricação de celulose e outras pastas para a fabricação de papel", divisao_id: "17", divisao_desc: "Fabricação de celulose, papel e produtos de papel", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "1721-4/00": { descricao: "Fabricação de papel", divisao_id: "17", divisao_desc: "Fabricação de celulose, papel e produtos de papel", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "1921-7/00": { descricao: "Fabricação de produtos do refino de petróleo", divisao_id: "19", divisao_desc: "Fabricação de coque, de produtos derivados do petróleo", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2012-6/00": { descricao: "Fabricação de intermediários para fertilizantes", divisao_id: "20", divisao_desc: "Fabricação de produtos químicos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2013-4/01": { descricao: "Fabricação de adubos e fertilizantes organo-minerais", divisao_id: "20", divisao_desc: "Fabricação de produtos químicos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2041-4/00": { descricao: "Fabricação de tintas, vernizes, esmaltes e lacas", divisao_id: "20", divisao_desc: "Fabricação de produtos químicos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2063-1/00": { descricao: "Fabricação de cosméticos, produtos de perfumaria e de higiene pessoal", divisao_id: "20", divisao_desc: "Fabricação de produtos químicos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2091-6/00": { descricao: "Fabricação de adesivos e selantes", divisao_id: "20", divisao_desc: "Fabricação de produtos químicos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2121-1/01": { descricao: "Fabricação de medicamentos alopáticos para uso humano", divisao_id: "21", divisao_desc: "Fabricação de produtos farmoquímicos e farmacêuticos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2121-1/02": { descricao: "Fabricação de medicamentos homeopáticos para uso humano", divisao_id: "21", divisao_desc: "Fabricação de produtos farmoquímicos e farmacêuticos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2121-1/03": { descricao: "Fabricação de medicamentos fitoterápicos para uso humano", divisao_id: "21", divisao_desc: "Fabricação de produtos farmoquímicos e farmacêuticos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2121-1/04": { descricao: "Fabricação de medicamentos para uso veterinário", divisao_id: "21", divisao_desc: "Fabricação de produtos farmoquímicos e farmacêuticos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2123-8/00": { descricao: "Fabricação de preparações farmacêuticas", divisao_id: "21", divisao_desc: "Fabricação de produtos farmoquímicos e farmacêuticos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2211-1/00": { descricao: "Fabricação de pneumáticos e de câmaras-de-ar", divisao_id: "22", divisao_desc: "Fabricação de produtos de borracha e de material plástico", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2221-8/00": { descricao: "Fabricação de laminados planos e tubulações de material plástico", divisao_id: "22", divisao_desc: "Fabricação de produtos de borracha e de material plástico", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2629-1/00": { descricao: "Fabricação de periféricos para equipamentos de informática", divisao_id: "26", divisao_desc: "Fabricação de equipamentos de informática, produtos eletrônicos e ópticos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2640-0/00": { descricao: "Fabricação de aparelhos de recepção, reprodução e amplificação de áudio e vídeo", divisao_id: "26", divisao_desc: "Fabricação de equipamentos de informática, produtos eletrônicos e ópticos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2660-4/00": { descricao: "Fabricação de aparelhos eletromédicos e eletroterapêuticos", divisao_id: "26", divisao_desc: "Fabricação de equipamentos de informática, produtos eletrônicos e ópticos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2679-4/99": { descricao: "Fabricação de outros produtos ópticos não especificados anteriormente", divisao_id: "26", divisao_desc: "Fabricação de equipamentos de informática, produtos eletrônicos e ópticos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2710-4/01": { descricao: "Fabricação de geradores de corrente contínua e alternada", divisao_id: "27", divisao_desc: "Fabricação de máquinas, aparelhos e materiais elétricos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2710-4/02": { descricao: "Fabricação de transformadores, indutores, conversores e similares", divisao_id: "27", divisao_desc: "Fabricação de máquinas, aparelhos e materiais elétricos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2710-4/03": { descricao: "Fabricação de motores elétricos", divisao_id: "27", divisao_desc: "Fabricação de máquinas, aparelhos e materiais elétricos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2742-2/00": { descricao: "Fabricação de aparelhos de ar condicionado para uso não-industrial", divisao_id: "27", divisao_desc: "Fabricação de máquinas, aparelhos e materiais elétricos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2750-3/00": { descricao: "Fabricação de fogões, refrigeradores e máquinas de lavar", divisao_id: "27", divisao_desc: "Fabricação de máquinas, aparelhos e materiais elétricos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2751-1/00": { descricao: "Fabricação de fogões, refrigeradores e máquinas de lavar para uso doméstico", divisao_id: "27", divisao_desc: "Fabricação de máquinas, aparelhos e materiais elétricos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2790-2/00": { descricao: "Fabricação de outros equipamentos e aparelhos elétricos não especificados", divisao_id: "27", divisao_desc: "Fabricação de máquinas, aparelhos e materiais elétricos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2822-4/02": { descricao: "Fabricação de equipamentos de transporte não especificados anteriormente", divisao_id: "28", divisao_desc: "Fabricação de máquinas e equipamentos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2829-1/00": { descricao: "Fabricação de outras máquinas e equipamentos de uso geral", divisao_id: "28", divisao_desc: "Fabricação de máquinas e equipamentos", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2910-7/01": { descricao: "Fabricação de automóveis, camionetas e utilitários", divisao_id: "29", divisao_desc: "Fabricação de veículos automotores", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "2920-4/01": { descricao: "Fabricação de caminhões e ônibus", divisao_id: "29", divisao_desc: "Fabricação de veículos automotores", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "3011-3/02": { descricao: "Construção de embarcações para esporte e lazer", divisao_id: "30", divisao_desc: "Fabricação de outros equipamentos de transporte", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "3030-3/00": { descricao: "Fabricação de veículos ferroviários", divisao_id: "30", divisao_desc: "Fabricação de outros equipamentos de transporte", secao_id: "C", secao_desc: "Indústria de Transformação" },
+  "3511-5/01": { descricao: "Geração de energia elétrica", divisao_id: "35", divisao_desc: "Eletricidade, gás e outras utilidades", secao_id: "D", secao_desc: "Eletricidade e Gás" },
+  "3511-5/02": { descricao: "Atividades de coordenação e controle da operação da geração e transmissão de energia elétrica", divisao_id: "35", divisao_desc: "Eletricidade, gás e outras utilidades", secao_id: "D", secao_desc: "Eletricidade e Gás" },
+  "3520-4/00": { descricao: "Produção e distribuição de combustíveis gasosos por redes urbanas", divisao_id: "35", divisao_desc: "Eletricidade, gás e outras utilidades", secao_id: "D", secao_desc: "Eletricidade e Gás" },
+  "4912-4/01": { descricao: "Transporte ferroviário de passageiros intermunicipal e interestadual", divisao_id: "49", divisao_desc: "Transporte terrestre", secao_id: "H", secao_desc: "Transporte e Armazenagem" },
+  "5011-4/01": { descricao: "Transporte marítimo de cabotagem", divisao_id: "50", divisao_desc: "Transporte aquaviário", secao_id: "H", secao_desc: "Transporte e Armazenagem" },
+  "5211-7/01": { descricao: "Armazéns gerais — emissão de warrant", divisao_id: "52", divisao_desc: "Armazenamento e atividades auxiliares dos transportes", secao_id: "H", secao_desc: "Transporte e Armazenagem" },
+  "6201-5/00": { descricao: "Desenvolvimento de programas de computador sob encomenda", divisao_id: "62", divisao_desc: "Atividades dos serviços de tecnologia da informação", secao_id: "J", secao_desc: "Informação e Comunicação" },
+  "6201-5/01": { descricao: "Desenvolvimento de programas de computador sob encomenda", divisao_id: "62", divisao_desc: "Atividades dos serviços de tecnologia da informação", secao_id: "J", secao_desc: "Informação e Comunicação" },
+  "6201-5/02": { descricao: "Web design", divisao_id: "62", divisao_desc: "Atividades dos serviços de tecnologia da informação", secao_id: "J", secao_desc: "Informação e Comunicação" },
+  "6204-0/00": { descricao: "Consultoria em tecnologia da informação", divisao_id: "62", divisao_desc: "Atividades dos serviços de tecnologia da informação", secao_id: "J", secao_desc: "Informação e Comunicação" },
+  "6209-1/00": { descricao: "Suporte técnico, manutenção e outros serviços em tecnologia da informação", divisao_id: "62", divisao_desc: "Atividades dos serviços de tecnologia da informação", secao_id: "J", secao_desc: "Informação e Comunicação" },
+  "6311-9/00": { descricao: "Tratamento de dados, provedores de serviços de aplicação e serviços de hospedagem", divisao_id: "63", divisao_desc: "Atividades de prestação de serviços de informação", secao_id: "J", secao_desc: "Informação e Comunicação" },
+  "6612-6/04": { descricao: "Corretoras de contratos de mercadorias", divisao_id: "66", divisao_desc: "Atividades auxiliares dos serviços financeiros", secao_id: "K", secao_desc: "Atividades Financeiras" },
+  "7120-1/00": { descricao: "Testes e análises técnicas", divisao_id: "71", divisao_desc: "Serviços de arquitetura, engenharia e testes técnicos", secao_id: "M", secao_desc: "Atividades Profissionais, Científicas e Técnicas" },
+  "7210-0/00": { descricao: "Pesquisa e desenvolvimento experimental em ciências físicas e naturais", divisao_id: "72", divisao_desc: "Pesquisa e desenvolvimento científico", secao_id: "M", secao_desc: "Atividades Profissionais, Científicas e Técnicas" },
+  "7220-7/00": { descricao: "Pesquisa e desenvolvimento experimental em ciências sociais e humanas", divisao_id: "72", divisao_desc: "Pesquisa e desenvolvimento científico", secao_id: "M", secao_desc: "Atividades Profissionais, Científicas e Técnicas" },
+  "7490-1/04": { descricao: "Atividades de intermediação e agenciamento de serviços e negócios em geral", divisao_id: "74", divisao_desc: "Outras atividades profissionais, científicas e técnicas", secao_id: "M", secao_desc: "Atividades Profissionais, Científicas e Técnicas" },
+  "6911-7/01": { descricao: "Serviços advocatícios", divisao_id: "69", divisao_desc: "Atividades jurídicas, de contabilidade e de auditoria", secao_id: "M", secao_desc: "Atividades Profissionais, Científicas e Técnicas" },
+};
+
 async function fetchCnaeFromIbge(query: string, searchTerms: string[] = []): Promise<{
   subclasses: Array<{ id: string; descricao: string; divisao_id: string; divisao_desc: string; secao_id: string; secao_desc: string; score: number }>;
   divisoes: Array<{ id: string; descricao: string; secao_id: string }>;
@@ -400,9 +495,44 @@ async function fetchCnaeFromIbge(query: string, searchTerms: string[] = []): Pro
   semantic_match?: boolean;
   semantic_ids?: string[];
 }> {
-  const cache = await loadCnaeCache();
+  // 1. Tenta match semântico primeiro — offline, sem chamada HTTP
+  const semanticIds = resolveSemanticCnae(query, searchTerms);
+
+  if (semanticIds.length > 0) {
+    const subclasses = semanticIds
+      .map(id => {
+        const s = CNAE_STATIC[id];
+        if (!s) return null;
+        return { id, ...s, score: 999 };
+      })
+      .filter(Boolean) as Array<{ id: string; descricao: string; divisao_id: string; divisao_desc: string; secao_id: string; secao_desc: string; score: number }>;
+
+    const divMap = new Map<string, { id: string; descricao: string; secao_id: string }>();
+    for (const s of subclasses) {
+      if (s.divisao_id && !divMap.has(s.divisao_id)) {
+        divMap.set(s.divisao_id, { id: s.divisao_id, descricao: s.divisao_desc, secao_id: s.secao_id });
+      }
+    }
+    const secoes = [...new Set(subclasses.map(s => s.secao_id).filter(Boolean))];
+
+    return {
+      subclasses,
+      divisoes: [...divMap.values()],
+      secoes,
+      fallback: false,
+      semantic_match: true,
+      semantic_ids: semanticIds,
+    };
+  }
+
+  // 2. Fallback: tenta API IBGE com timeout curto (5s para não travar a função)
+  const cache = await Promise.race([
+    loadCnaeCache(),
+    new Promise<null>(resolve => setTimeout(() => resolve(null), 5000)),
+  ]);
+
   if (!cache || cache.length === 0) {
-    return { subclasses: [], divisoes: [], secoes: [], fallback: true };
+    return { subclasses: [], divisoes: [], secoes: [], fallback: true, semantic_match: false };
   }
 
   const allTerms = [query, ...searchTerms]
@@ -410,53 +540,27 @@ async function fetchCnaeFromIbge(query: string, searchTerms: string[] = []): Pro
     .filter((t, i, arr) => t.length >= 3 && arr.indexOf(t) === i)
     .slice(0, 12);
 
-  // 1. Mapeamento semântico direto (maior precisão — não depende de texto)
-  const semanticIds = resolveSemanticCnae(query, searchTerms);
-  const semanticSubs = semanticIds
-    .map(id => cache.find(s => cnaeDigits(s.id) === cnaeDigits(id)))
-    .filter(Boolean) as typeof cache;
-
-  // 2. Score por texto nas demais subclasses (complementar)
-  const semanticSet = new Set(semanticSubs.map(s => s.id));
   const textScored = cache
-    .filter(s => !semanticSet.has(s.id))
     .map(s => ({ ...s, score: scoreCnae(s, allTerms) }))
     .filter(s => s.score > 0)
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
 
-  // Merge: semântico primeiro (score=999), texto depois
-  const scored = [
-    ...semanticSubs.map(s => ({ ...s, score: 999 })),
-    ...textScored,
-  ];
-
-  const topSubs = scored.slice(0, 10).map(s => ({
-    id: s.id,
-    descricao: s.descricao,
-    divisao_id: s.divisao_id,
-    divisao_desc: s.divisao_desc,
-    secao_id: s.secao_id,
-    secao_desc: s.secao_desc,
-    score: s.score,
+  const topSubs = textScored.map(s => ({
+    id: s.id, descricao: s.descricao, divisao_id: s.divisao_id,
+    divisao_desc: s.divisao_desc, secao_id: s.secao_id, secao_desc: s.secao_desc, score: s.score,
   }));
 
   const divMap = new Map<string, { id: string; descricao: string; secao_id: string }>();
-  for (const s of scored.slice(0, 20)) {
-    if (s.divisao_id && !divMap.has(s.divisao_id)) {
+  for (const s of textScored) {
+    if (s.divisao_id && !divMap.has(s.divisao_id))
       divMap.set(s.divisao_id, { id: s.divisao_id, descricao: s.divisao_desc, secao_id: s.secao_id });
-    }
   }
-
-  const secoes = [...new Set(scored.slice(0, 20).map(s => s.secao_id).filter(Boolean))];
+  const secoes = [...new Set(textScored.map(s => s.secao_id).filter(Boolean))];
 
   return {
-    subclasses: topSubs,
-    divisoes: [...divMap.values()].slice(0, 6),
-    secoes: secoes.slice(0, 4),
-    fallback: false,
-    semantic_match: semanticSubs.length > 0,
-    semantic_ids: semanticIds,
-
+    subclasses: topSubs, divisoes: [...divMap.values()].slice(0, 6),
+    secoes: secoes.slice(0, 4), fallback: false, semantic_match: false,
   };
 }
 
@@ -701,14 +805,14 @@ async function fetchCaged(
   const resolved = resolveSecoesFromQuery(query);
   const secoes = (secoesExternas && secoesExternas.length > 0) ? secoesExternas : resolved.secoes;
   const setorLabel = (secoesExternas && secoesExternas.length > 0)
-    ? `Seções CNAE identificadas via IBGE: ${secoesExternas.join(", ")}`
+    ? `Seções CNAE via IBGE: ${secoesExternas.join(", ")}`
     : resolved.label;
 
   const fetchSerie = async (code: string) => {
     const data = await safeFetch(
       `http://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='${code}')`,
       { headers: { Accept: "application/json" } },
-      20000
+      15000
     );
     const rows: any[] = data?.value || [];
     return rows
@@ -717,92 +821,7 @@ async function fetchCaged(
       .slice(-12);
   };
 
-  // O IPEAData NÃO possui séries do CAGED por seção CNAE (apenas o agregado nacional).
-  // Para o recorte setorial usamos a PNAD Contínua/IBGE — tabela 4362:
-  // pessoas ocupadas por grupamento de atividade (série anual, em mil pessoas).
-  const SECAO_TO_GRUPAMENTO: Record<string, { id: number; nome: string }> = {
-    A: { id: 47947, nome: "Agropecuária, produção florestal e pesca" },
-    B: { id: 47948, nome: "Indústria geral" },
-    C: { id: 47948, nome: "Indústria geral" },
-    D: { id: 47948, nome: "Indústria geral" },
-    E: { id: 47948, nome: "Indústria geral" },
-    F: { id: 47949, nome: "Construção" },
-    G: { id: 47950, nome: "Comércio e reparação de veículos" },
-    H: { id: 56622, nome: "Transporte, armazenagem e correio" },
-    I: { id: 56623, nome: "Alojamento e alimentação" },
-    J: { id: 56624, nome: "Informação, comunicação e atividades profissionais" },
-    K: { id: 56624, nome: "Informação, comunicação e atividades profissionais" },
-    L: { id: 56624, nome: "Informação, comunicação e atividades profissionais" },
-    M: { id: 56624, nome: "Informação, comunicação e atividades profissionais" },
-    N: { id: 56624, nome: "Informação, comunicação e atividades profissionais" },
-    O: { id: 60032, nome: "Administração pública, educação e saúde" },
-    P: { id: 60032, nome: "Administração pública, educação e saúde" },
-    Q: { id: 60032, nome: "Administração pública, educação e saúde" },
-    R: { id: 56627, nome: "Outros serviços" },
-    S: { id: 56627, nome: "Outros serviços" },
-  };
-
-  const setoralResults: Array<{
-    secao: string; nome: string; grupamento: string;
-    ocupados_mil: number | null; variacao_pessoas: number | null;
-    admissoes: number; demissoes: number; saldo: number; serie_saldo: any[];
-  }> = [];
-
-  try {
-    const grupamentos = Array.from(
-      new Map(
-        secoes.slice(0, 3)
-          .map((s) => SECAO_TO_GRUPAMENTO[s])
-          .filter(Boolean)
-          .map((g) => [g.id, g])
-      ).values()
-    );
-
-    if (grupamentos.length > 0) {
-      const ids = grupamentos.map((g) => g.id).join(",");
-      const url = `https://servicodados.ibge.gov.br/api/v3/agregados/4362/periodos/-5/variaveis/4090?localidades=N1%5B1%5D&classificacao=888%5B${ids}%5D`;
-      const data = await safeFetch(url, { headers: { Accept: "application/json" } }, 20000);
-      const resultados: any[] = data?.[0]?.resultados || [];
-
-      for (const res of resultados) {
-        const catObj = res?.classificacoes?.[0]?.categoria || {};
-        const catId = Object.keys(catObj)[0];
-        const catNome = catObj[catId] || "";
-        const serieObj = res?.series?.[0]?.serie || {};
-        const anos = Object.keys(serieObj).sort();
-        const pontos = anos
-          .map((ano) => ({ ano, valor: Number(serieObj[ano]) }))
-          .filter((p) => Number.isFinite(p.valor));
-        if (pontos.length === 0) continue;
-
-        // variação anual em pessoas (série em mil pessoas)
-        const serieVariacao = pontos.slice(1).map((p, i) => ({
-          data: p.ano,
-          valor: Math.round((p.valor - pontos[i].valor) * 1000),
-        }));
-        const ultimo = pontos[pontos.length - 1];
-        const variacao = serieVariacao.length > 0 ? serieVariacao[serieVariacao.length - 1].valor : 0;
-        const secaoLetra = secoes.find((s) => SECAO_TO_GRUPAMENTO[s]?.id === Number(catId)) || "";
-
-        setoralResults.push({
-          secao: secaoLetra,
-          nome: catNome || CNAE_SECTION_NAMES[secaoLetra] || `Seção ${secaoLetra}`,
-          grupamento: catNome,
-          ocupados_mil: ultimo.valor,
-          variacao_pessoas: variacao,
-          admissoes: 0,
-          demissoes: 0,
-          saldo: variacao,
-          serie_saldo: serieVariacao,
-        });
-      }
-    }
-  } catch (e) {
-    console.warn("Setorial IBGE/PNADC falhou:", e instanceof Error ? e.message : e);
-  }
-
-
-  // Nacional como fallback e contexto comparativo
+  // Nacional via IPEAData — rápido e confiável
   let saldoNacional: any[] = [];
   let admNacional: any[] = [];
   let desNacional: any[] = [];
@@ -820,29 +839,16 @@ async function fetchCaged(
   const totalSaldoNacional = saldoNacional.length > 0 ? sumArr(saldoNacional) : 0;
   const ultimos3 = saldoNacional.slice(-3).reduce((s: number, r: any) => s + r.valor, 0);
 
-  // Série principal: usa o primeiro setor encontrado, senão nacional
-  const seriePrincipal = setoralResults.length > 0
-    ? setoralResults[0].serie_saldo
-    : saldoNacional;
-
-  const saldoSetorial = setoralResults.reduce((s, r) => s + r.saldo, 0);
-  const ocupadosSetorial = setoralResults.reduce((s, r) => s + (r.ocupados_mil || 0), 0);
-  const anoSetorial = setoralResults[0]?.serie_saldo?.slice(-1)?.[0]?.data || "";
-
   return {
     setor_foco: {
       label: setorLabel,
       secoes_cnae: secoes,
-      grupamentos: setoralResults.map((r) => r.grupamento),
-      ano_referencia: anoSetorial,
-      ocupados_mil: ocupadosSetorial || null,
+      disponivel: false,
+      serie_saldo: saldoNacional,
+      total_saldo: null,
       total_admissoes: null,
       total_demissoes: null,
-      total_saldo: setoralResults.length > 0 ? saldoSetorial : null,
-      detalhes: setoralResults,
-      serie_saldo: seriePrincipal,
-      disponivel: setoralResults.length > 0,
-      metrica: "variação anual do total de ocupados (PNAD Contínua/IBGE)",
+      detalhes: [],
     },
     nacional: {
       periodo: saldoNacional.length > 0 ? `${saldoNacional[0].data} a ${saldoNacional[saldoNacional.length - 1].data}` : "",
@@ -853,10 +859,8 @@ async function fetchCaged(
       serie_saldo: saldoNacional,
     },
     ocupacoes: cboCodes.slice(0, 6),
-    escopo: setoralResults.length > 0
-      ? `Recorte setorial: ${setoralResults.map((r) => r.grupamento).join(", ")} — total de ocupados e variação anual (PNAD Contínua/IBGE, tabela 4362). Admissões e desligamentos são do Novo CAGED nacional, pois o MTE não publica séries por seção CNAE em API aberta.`
-      : `Série nacional agregada do Novo CAGED. Seções CNAE tentadas: ${secoes.join(", ")}.`,
-    source: "Novo CAGED — MTE/IPEAData (nacional) + PNAD Contínua/IBGE tabela 4362 (setorial)",
+    escopo: `Saldo nacional do mercado formal (Novo CAGED/MTE) — recorte setorial por seção CNAE ${secoes.join(", ")} identificado mas série granular não disponível em API aberta.`,
+    source: "Novo CAGED — MTE via IPEAData",
     url: "http://www.ipeadata.gov.br/",
   };
 }
@@ -887,7 +891,10 @@ Deno.serve(async (req) => {
     // CNAE e NCM — busca em paralelo com as outras fontes
     const [cnaeResult, ncmCodes] = await Promise.all([
       fetchCnaeFromIbge(query, searchTerms),
-      fetchNcmFromMdic(query),
+      Promise.race([
+        fetchNcmFromMdic(query),
+        new Promise<[]>(resolve => setTimeout(() => resolve([]), 8000)),
+      ]),
     ]);
 
     const github = githubResult.br_repos;
