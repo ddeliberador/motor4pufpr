@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 import StrategicIndices from "@/components/governo/StrategicIndices";
+import OpportunityCard from "@/components/shared/OpportunityCard";
+import ParceriaICTModal from "@/components/shared/ParceriaICTModal";
 import RelationalGraph from "@/components/governo/RelationalGraph";
 import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetailSheet";
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
@@ -111,6 +113,10 @@ const UniversidadePanel = () => {
 
         <div className="max-w-6xl mx-auto px-4 py-6 space-y-6 animate-in fade-in-0 duration-500">
           {indices && <StrategicIndices indices={indices} />}
+
+          {(data as any).oportunidades?.length > 0 && (
+            <OpportunityCard oportunidades={(data as any).oportunidades} persona="universidade" query={data.query} />
+          )}
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-card border border-border rounded-xl p-4 text-center"><p className="text-2xl font-bold text-foreground">{totalInstitutions}</p><p className="text-[10px] text-muted-foreground">Instituições atuantes</p></div>

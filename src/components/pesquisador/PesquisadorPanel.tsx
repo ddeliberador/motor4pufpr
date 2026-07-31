@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 import StrategicIndices from "@/components/governo/StrategicIndices";
+import OpportunityCard from "@/components/shared/OpportunityCard";
 import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetailSheet";
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
 import { NovaIndustriaTab, PbiaTab, FomentoTab } from "@/components/shared/ProgramsTabs";
@@ -142,6 +143,10 @@ const PesquisadorPanel = () => {
         {/* Results dashboard */}
         <div className="max-w-6xl mx-auto px-4 py-6 space-y-6 animate-in fade-in-0 duration-500">
           {indices && <StrategicIndices indices={indices} />}
+
+          {(data as any).oportunidades?.length > 0 && (
+            <OpportunityCard oportunidades={(data as any).oportunidades} persona="pesquisador" query={data.query} />
+          )}
 
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">

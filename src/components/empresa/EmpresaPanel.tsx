@@ -15,6 +15,9 @@ import { Button } from "@/components/ui/button";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
 import ReactMarkdown from "react-markdown";
 import StrategicIndices from "@/components/governo/StrategicIndices";
+import OpportunityCard from "@/components/shared/OpportunityCard";
+import LeiBemCalculadora from "@/components/shared/LeiBemCalculadora";
+import ParceriaICTModal from "@/components/shared/ParceriaICTModal";
 import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetailSheet";
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
 import MarketAnalysisPanel from "@/components/shared/MarketAnalysisPanel";
@@ -171,6 +174,10 @@ const EmpresaPanel = () => {
 
         <div className="max-w-6xl mx-auto px-4 py-6 space-y-6 animate-in fade-in-0 duration-500">
           {indices && <StrategicIndices indices={indices} />}
+
+          {(data as any).oportunidades?.length > 0 && (
+            <OpportunityCard oportunidades={(data as any).oportunidades} persona="empresa" query={data.query} />
+          )}
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-card border border-border rounded-xl p-4 text-center"><p className="text-xs text-muted-foreground mb-1">TRL Estimado</p><p className="text-3xl font-bold text-foreground">{trlEstimate}</p><p className="text-[10px] text-muted-foreground">{trlLabel}</p></div>
@@ -435,6 +442,7 @@ const EmpresaPanel = () => {
             </TabsContent>
 
             <TabsContent value="politicas" className="space-y-4">
+              <LeiBemCalculadora />
               <PoliciesTab
                 policies={(data.layers as any).policies}
                 persona="empresa"

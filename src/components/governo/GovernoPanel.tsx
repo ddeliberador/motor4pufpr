@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 import StrategicIndices from "./StrategicIndices";
+import OpportunityCard from "@/components/shared/OpportunityCard";
 import RelationalGraph from "./RelationalGraph";
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
 import MarketAnalysisPanel from "@/components/shared/MarketAnalysisPanel";
@@ -105,6 +106,10 @@ const GovernoPanel = () => {
 
         <div className="max-w-6xl mx-auto px-4 py-6 space-y-6 animate-in fade-in-0 duration-500">
           {indices && <StrategicIndices indices={indices} />}
+
+          {(data as any).oportunidades?.length > 0 && (
+            <OpportunityCard oportunidades={(data as any).oportunidades} persona="governo" query={data.query} />
+          )}
 
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
             {[

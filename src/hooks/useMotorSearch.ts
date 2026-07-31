@@ -274,7 +274,7 @@ export function useMotorSearch() {
     try {
       const { data: searchResult, error: searchError } = await supabase.functions.invoke(
         "motor-search",
-        { body: { query, selectedCnaes: selectedCnaes || [] } }
+        { body: { query, persona, selectedCnaes: selectedCnaes || [] } }
       );
 
       if (searchError) throw searchError;
