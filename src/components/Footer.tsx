@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Zap, Github, Mail, ExternalLink } from "lucide-react";
+import { Github, Mail, ExternalLink } from "lucide-react";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -32,14 +32,26 @@ const Footer = () => {
           {/* Brand */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-primary-foreground/10 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-primary-foreground" />
-              </div>
+              {/* Logo oficial — engrenagem com "i" centralizado */}
+              <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
+                <rect width="44" height="44" rx="10" fill="white" fillOpacity="0.08"/>
+                {/* Engrenagem */}
+                <path
+                  d="M22 14.5a1.5 1.5 0 0 1 1.5 1.5v.72a6.5 6.5 0 0 1 1.92.8l.51-.51a1.5 1.5 0 0 1 2.12 2.12l-.51.51a6.5 6.5 0 0 1 .8 1.92H29a1.5 1.5 0 0 1 0 3h-.72a6.5 6.5 0 0 1-.8 1.92l.51.51a1.5 1.5 0 0 1-2.12 2.12l-.51-.51a6.5 6.5 0 0 1-1.92.8V29a1.5 1.5 0 0 1-3 0v-.72a6.5 6.5 0 0 1-1.92-.8l-.51.51a1.5 1.5 0 0 1-2.12-2.12l.51-.51a6.5 6.5 0 0 1-.8-1.92H15a1.5 1.5 0 0 1 0-3h.72a6.5 6.5 0 0 1 .8-1.92l-.51-.51a1.5 1.5 0 0 1 2.12-2.12l.51.51a6.5 6.5 0 0 1 1.92-.8V16a1.5 1.5 0 0 1 1.5-1.5z"
+                  fill="#3b82f6"
+                />
+                <circle cx="22" cy="22" r="3.5" fill="white" fillOpacity="0.12"/>
+                {/* Letra i */}
+                <text x="22" y="26" textAnchor="middle" fontSize="8" fontWeight="bold" fill="white" fontFamily="system-ui, sans-serif">i</text>
+              </svg>
               <div>
-                <span className="font-semibold text-lg tracking-tight">Motor da Inovação</span>
-                <span className="text-xs text-primary-foreground/70 block -mt-0.5">UFPR</span>
+                <div className="font-semibold text-lg tracking-tight leading-tight">
+                  Motor da <span className="font-extrabold">Inovação</span>
+                </div>
+                <span className="text-xs text-primary-foreground/60 tracking-wide">UFPR · PPGPP</span>
               </div>
             </div>
+
             <p className="text-sm text-primary-foreground/70 leading-relaxed mb-4">
               A Camada Ausente da Política Industrial Brasileira. 
               Infraestrutura computacional para conectar Pesquisa, Produção, Política e Patentes.
