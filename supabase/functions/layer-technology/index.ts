@@ -147,6 +147,154 @@ const CBO_KEYWORD_MAP: Record<string, Array<{ code: string; description: string;
   ],
 };
 
+// Cache em memória das subclasses CNAE (carregado uma vez por instância da edge function)
+let CNAE_CACHE: Array<{
+  id: string;
+  descricao: string;
+  classe_id: string;
+  classe_desc: string;
+  grupo_id: string;
+  grupo_desc: string;
+  divisao_id: string;
+  divisao_desc: string;
+  secao_id: string;
+  secao_desc: string;
+}> | null = null;
+
+async function loadCnaeCache(): Promise<typeof CNAE_CACHE> {
+  if (CNAE_CACHE) return CNAE_CACHE;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 20000);
+    const res = await fetch(
+      "https://servicodados.ibge.gov.br/api/v2/cnae/subclasses",
+      { signal: ctrl.signal, headers: { Accept: "application/json" } }
+    );
+    clearTimeout(t);
+    if (!res.ok) { console.warn(`CNAE API ${res.status}`); return null; }
+    const data: any[] = await res.json();
+    CNAE_CACHE = data.map((s: any) => ({
+      id: s.id || "",
+      descricao: s.descricao || "",
+      classe_id: s.classe?.id || "",
+      classe_desc: s.classe?.descricao || "",
+      grupo_id: s.classe?.grupo?.id || "",
+      grupo_desc: s.classe?.grupo?.descricao || "",
+      divisao_id: s.classe?.grupo?.divisao?.id || "",
+      divisao_desc: s.classe?.grupo?.divisao?.descricao || "",
+      secao_id: s.classe?.grupo?.divisao?.secao?.id || "",
+      secao_desc: s.classe?.grupo?.divisao?.secao?.descricao || "",
+    }));
+    console.log(`CNAE cache: ${CNAE_CACHE.length} subclasses carregadas`);
+    return CNAE_CACHE;
+  } catch (e) {
+    console.warn("CNAE load error:", e instanceof Error ? e.message : e);
+    return null;
+  }
+}
+
+function normStr(s: string): string {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, " ");
+}
+
+function scoreCnae(subclasse: typeof CNAE_CACHE extends Array<infer T> ? T : never, terms: string[]): number {
+  const haystack = normStr(
+    `${subclasse.descricao} ${subclasse.classe_desc} ${subclasse.grupo_desc} ${subclasse.divisao_desc}`
+  );
+  let score = 0;
+  for (const term of terms) {
+    if (term.length < 3) continue;
+    if (normStr(subclasse.descricao).includes(term)) score += 10;
+    else if (normStr(subclasse.classe_desc).includes(term)) score += 6;
+    else if (normStr(subclasse.grupo_desc).includes(term)) score += 4;
+    else if (normStr(subclasse.divisao_desc).includes(term)) score += 2;
+    else if (haystack.includes(term)) score += 1;
+  }
+  return score;
+}
+
+async function fetchCnaeFromIbge(query: string, searchTerms: string[] = []): Promise<{
+  subclasses: Array<{ id: string; descricao: string; divisao_id: string; divisao_desc: string; secao_id: string; secao_desc: string; score: number }>;
+  divisoes: Array<{ id: string; descricao: string; secao_id: string }>;
+  secoes: string[];
+  fallback: boolean;
+}> {
+  const cache = await loadCnaeCache();
+  if (!cache || cache.length === 0) {
+    return { subclasses: [], divisoes: [], secoes: [], fallback: true };
+  }
+
+  const allTerms = [query, ...searchTerms]
+    .flatMap(t => normStr(t).split(/\s+/))
+    .filter((t, i, arr) => t.length >= 3 && arr.indexOf(t) === i)
+    .slice(0, 12);
+
+  const scored = cache
+    .map(s => ({ ...s, score: scoreCnae(s, allTerms) }))
+    .filter(s => s.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  const topSubs = scored.slice(0, 10).map(s => ({
+    id: s.id,
+    descricao: s.descricao,
+    divisao_id: s.divisao_id,
+    divisao_desc: s.divisao_desc,
+    secao_id: s.secao_id,
+    secao_desc: s.secao_desc,
+    score: s.score,
+  }));
+
+  const divMap = new Map<string, { id: string; descricao: string; secao_id: string }>();
+  for (const s of scored.slice(0, 20)) {
+    if (s.divisao_id && !divMap.has(s.divisao_id)) {
+      divMap.set(s.divisao_id, { id: s.divisao_id, descricao: s.divisao_desc, secao_id: s.secao_id });
+    }
+  }
+
+  const secoes = [...new Set(scored.slice(0, 20).map(s => s.secao_id).filter(Boolean))];
+
+  return {
+    subclasses: topSubs,
+    divisoes: [...divMap.values()].slice(0, 6),
+    secoes: secoes.slice(0, 4),
+    fallback: false,
+  };
+}
+
+// Busca NCM via API MDIC/ComexStat — retorna códigos NCM do produto
+async function fetchNcmFromMdic(query: string): Promise<Array<{ code: string; description: string }>> {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 15000);
+    const res = await fetch(
+      "https://api-comexstat.mdic.gov.br/tables/ncm?language=pt",
+      { signal: ctrl.signal, headers: { Accept: "application/json" } }
+    );
+    clearTimeout(t);
+    if (!res.ok) { console.warn(`NCM API ${res.status}`); return []; }
+    const data: any = await res.json();
+    const items: any[] = Array.isArray(data) ? data : (data?.data || data?.items || []);
+    if (!items.length) return [];
+
+    const terms = normStr(query).split(/\s+/).filter(t => t.length >= 3);
+    const scored = items
+      .map((item: any) => {
+        const desc = normStr(item.text || item.description || item.no_ncm_por || "");
+        const code = String(item.id || item.co_ncm || item.code || "");
+        const s = terms.reduce((acc, t) => acc + (desc.includes(t) ? 1 : 0), 0);
+        return { code, description: item.text || item.no_ncm_por || "", score: s };
+      })
+      .filter(i => i.score > 0 && i.code)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8);
+
+    return scored.map(i => ({ code: i.code, description: i.description }));
+  } catch (e) {
+    console.warn("NCM fetch error:", e instanceof Error ? e.message : e);
+    return [];
+  }
+}
+
 function resolveCboFromQuery(query: string): Array<{ code: string; description: string; area: string }> {
   const terms = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/\s+/);
   const seen = new Set<string>();
