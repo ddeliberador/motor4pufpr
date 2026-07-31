@@ -24,7 +24,10 @@ import CnaeNcmCard from "@/components/shared/CnaeNcmCard";
 const PesquisadorPanel = () => {
   const config = personaConfigs.pesquisador;
   const [searchQuery, setSearchQuery] = useState("");
-  const [hasSearched, setHasSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useState(() =>
+    sessionStorage.getItem("motor4p_query") !== null &&
+    sessionStorage.getItem("motor4p_persona") === "pesquisador"
+  );
   const [showCnaeModal, setShowCnaeModal] = useState(false);
   const [suggestedCnaes, setSuggestedCnaes] = useState<CnaeCode[]>([]);
   const [, setSelectedCnaes] = useState<CnaeCode[]>([]);

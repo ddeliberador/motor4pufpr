@@ -23,7 +23,10 @@ const UniversidadePanel = () => {
   const config = personaConfigs.universidade;
   const [searchQuery, setSearchQuery] = useState("");
   const [universityName, setUniversityName] = useState("");
-  const [hasSearched, setHasSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useState(() =>
+    sessionStorage.getItem("motor4p_query") !== null &&
+    sessionStorage.getItem("motor4p_persona") === "universidade"
+  );
   const [showCnaeModal, setShowCnaeModal] = useState(false);
   const [suggestedCnaes, setSuggestedCnaes] = useState<CnaeCode[]>([]);
   const [, setSelectedCnaes] = useState<CnaeCode[]>([]);

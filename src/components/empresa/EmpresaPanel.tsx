@@ -60,7 +60,10 @@ const EmpresaPanel = () => {
   const config = personaConfigs.empresa;
   const [searchQuery, setSearchQuery] = useState("");
   const [companyName, setCompanyName] = useState("");
-  const [hasSearched, setHasSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useState(() =>
+    sessionStorage.getItem("motor4p_query") !== null &&
+    sessionStorage.getItem("motor4p_persona") === "empresa"
+  );
   const [showCnaeModal, setShowCnaeModal] = useState(false);
   const [suggestedCnaes, setSuggestedCnaes] = useState<CnaeCode[]>([]);
   const [, setSelectedCnaes] = useState<CnaeCode[]>([]);
