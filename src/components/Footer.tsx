@@ -27,8 +27,8 @@ const Footer = () => {
   return (
     <footer className="bg-primary text-primary-foreground">
       {/* Main Footer */}
-      <div className="container-wide py-12 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+      <div className="container-wide py-6 md:py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           {/* Brand */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-4">
@@ -52,11 +52,11 @@ const Footer = () => {
               </div>
             </div>
 
-            <p className="text-sm text-primary-foreground/70 leading-relaxed mb-4">
+            <p className="text-sm text-primary-foreground/70 leading-relaxed mb-3">
               A Camada Ausente da Política Industrial Brasileira. 
               Infraestrutura computacional para conectar Pesquisa, Produção, Política e Patentes.
             </p>
-            <div className="text-xs text-primary-foreground/60 space-y-1">
+            <div className="text-xs text-primary-foreground/60 space-y-0.5">
               <p className="font-medium text-primary-foreground/70">Doutorado em Políticas Públicas — UFPR (2025-2028)</p>
               <p><span className="text-primary-foreground/50">Doutorando:</span> <a href="https://lattes.cnpq.br/3225001061053583" target="_blank" rel="noopener noreferrer" className="hover:text-primary-foreground underline underline-offset-2 transition-colors">Decio Dalton Deliberador Filho</a></p>
               <p><span className="text-primary-foreground/50">Orientador:</span> <a href="http://lattes.cnpq.br/1832648887498998" target="_blank" rel="noopener noreferrer" className="hover:text-primary-foreground underline underline-offset-2 transition-colors">Walter Tadahiro Shima</a></p>
@@ -65,10 +65,10 @@ const Footer = () => {
 
           {/* Links - Projeto */}
           <div>
-            <h4 className="font-semibold text-sm uppercase tracking-wider mb-4 text-primary-foreground/90">
+            <h4 className="font-semibold text-sm uppercase tracking-wider mb-2 text-primary-foreground/90">
               Projeto
             </h4>
-            <ul className="space-y-2">
+            <ul className="space-y-1">
               {links.projeto.map((link) => (
                 <li key={link.label}>
                   <Link
@@ -84,10 +84,10 @@ const Footer = () => {
 
           {/* Links - Recursos */}
           <div>
-            <h4 className="font-semibold text-sm uppercase tracking-wider mb-4 text-primary-foreground/90">
+            <h4 className="font-semibold text-sm uppercase tracking-wider mb-2 text-primary-foreground/90">
               Fontes de Dados
             </h4>
-            <ul className="space-y-2">
+            <ul className="space-y-1">
               {links.recursos.map((link) => (
                 <li key={link.label}>
                   <a
@@ -106,10 +106,10 @@ const Footer = () => {
 
           {/* Links - Contato */}
           <div>
-            <h4 className="font-semibold text-sm uppercase tracking-wider mb-4 text-primary-foreground/90">
+            <h4 className="font-semibold text-sm uppercase tracking-wider mb-2 text-primary-foreground/90">
               Contato
             </h4>
-            <ul className="space-y-3">
+            <ul className="space-y-2">
               {links.contato.map((link) => (
                 <li key={link.label}>
                   <a
