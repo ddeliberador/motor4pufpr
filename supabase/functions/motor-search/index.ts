@@ -499,7 +499,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { query, selectedCnaes } = await req.json();
+    const { query, selectedCnaes, persona = "pesquisador" } = await req.json();
     if (!query) {
       return new Response(JSON.stringify({ error: "query is required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -650,6 +650,90 @@ Deno.serve(async (req) => {
 
     const processingTime = Date.now() - start;
 
+    // Gera oportunidades por perfil com base nos dados reais
+    function gerarOportunidades(persona: string, dados: any) {
+      const k = dados.layers?.knowledge || {};
+      const t = dados.layers?.technology || {};
+      const pol = dados.layers?.policy || {};
+      const cnpqL = dados.layers?.cnpq || {};
+      const idx = dados.indices || {};
+      const totalPapers = k.total_papers || 0;
+      const trl = t.trl_estimate || 1;
+      const temPatentes = ((dados.layers?.patents?.patents || []).length || 0) > 0;
+      const temContratos = (pol.contracts || []).length > 0;
+      const temConvenios = (pol.convenios || []).length > 0;
+      const saldoCaged = t.caged_data?.nacional?.total_saldo || 0;
+      const temModalidadesBolsa = (cnpqL.modalidades || []).length > 0;
+      const topInst = Object.entries(k.institutions || {}).sort((a: any, b: any) => b[1] - a[1]).slice(0, 3).map(([n]) => n);
+
+      if (persona === "pesquisador") {
+        const ops: any[] = [];
+        if (totalPapers < 500) {
+          ops.push({ emoji: "\u{1F331}", titulo: "Campo emergente — oportunidade de pioneirismo", descricao: `Apenas ${totalPapers} artigos foram publicados sobre este tema no Brasil. Isso indica baixa concorrência científica e alta chance de se tornar referência nacional rapidamente.`, acao: "Publique nos próximos 12 meses para ocupar posição de liderança", urgencia: "alta" });
+        } else if (totalPapers > 5000) {
+          ops.push({ emoji: "\u{1F50D}", titulo: "Campo saturado — busque o nicho", descricao: `Com ${totalPapers.toLocaleString("pt-BR")} artigos publicados, o tema central está competitivo. A estratégia mais eficiente é mapear sub-temas ainda pouco explorados dentro deste campo.`, acao: "Use os pesquisadores listados para identificar sub-temas emergentes", urgencia: "media" });
+        }
+        if (trl <= 4 && totalPapers > 100) {
+          ops.push({ emoji: "\u{1F52C}", titulo: "Pesquisa madura sem aplicação industrial", descricao: `TRL ${trl} indica que há base científica sólida mas pouca industrialização. Isso cria oportunidade para pesquisa translacional — conectar ciência com empresa via contratos de parceria.`, acao: "Contate as ICTs listadas e proponha projeto de P&D aplicado", urgencia: "media" });
+        }
+        if (temModalidadesBolsa) {
+          ops.push({ emoji: "\u{1F4B0}", titulo: "Bolsas de pesquisa disponíveis no CNPq", descricao: "Existem modalidades de bolsa CNPq ativas para este campo. A bolsa DTI-A conecta pesquisadores a empresas; a PQ é para produtividade em pesquisa; a Universal financia projetos sem vínculo empresarial.", acao: "Acesse o portal CNPq e verifique editais abertos para sua área", url: "https://www.gov.br/cnpq/pt-br/acesso-a-informacao/acoes-e-programas/programas/programas-de-bolsas", urgencia: "baixa" });
+        }
+        const internacionalCount = (k.international || []).filter((c: any) => c.country_code !== "BR").length;
+        if (internacionalCount < 3 && totalPapers > 50) {
+          ops.push({ emoji: "\u{1F30D}", titulo: "Baixa colaboração internacional — oportunidade de destaque", descricao: "O tema tem poucos parceiros internacionais identificados. Pesquisadores com coautorias estrangeiras têm maior fator de impacto e acesso a editais bilaterais CNPq-CAPES.", acao: "Identifique grupos nos países líderes e proponha coautoria", urgencia: "baixa" });
+        }
+        return ops.slice(0, 3);
+      }
+
+      if (persona === "empresa") {
+        const ops: any[] = [];
+        if (trl >= 7) {
+          ops.push({ emoji: "\u{1F680}", titulo: "Tecnologia madura — momento de adotar", descricao: `TRL ${trl} indica que a tecnologia já foi demonstrada em escala real. O risco de adoção é baixo. Empresas que entram agora ainda pegam a curva de crescimento antes da massificação.`, acao: "Avalie fornecedores e parceiros ICT para implementação nos próximos 6 meses", urgencia: "alta" });
+        } else if (trl <= 4) {
+          ops.push({ emoji: "\u{1F91D}", titulo: "Tecnologia em desenvolvimento — entre no P&D agora", descricao: `TRL ${trl} significa que a tecnologia ainda está sendo desenvolvida. Empresas que investem em P&D neste estágio via contratos com ICTs constroem vantagem competitiva e direito de preferência sobre resultados.`, acao: "Contrate uma ICT via Marco Legal CT&I para co-desenvolver a tecnologia", urgencia: "media" });
+        }
+        ops.push({ emoji: "\u{1F4B0}", titulo: "Lei do Bem — deduza até 80% dos custos de P&D", descricao: "Empresas no regime de Lucro Real que investem em pesquisa e desenvolvimento podem deduzir entre 60% e 80% desses gastos do Imposto de Renda. Em 2024, mais de 4.200 empresas usaram este benefício.", acao: "Use a calculadora abaixo para estimar sua dedução fiscal", url: "https://www.gov.br/mcti/pt-br/acompanhe-o-mcti/lei-do-bem", urgencia: "media" });
+        if (temPatentes) {
+          ops.push({ emoji: "\u{1F50F}", titulo: "Verifique patentes antes de investir", descricao: "Existem patentes identificadas neste campo. Antes de desenvolver ou lançar produto, mapeie quais tecnologias estão protegidas para evitar disputas de propriedade intelectual.", acao: "Consulte o INPI e o EPO para verificar o portfólio de patentes relevantes", url: "https://www.gov.br/inpi/pt-br", urgencia: "alta" });
+        }
+        return ops.slice(0, 3);
+      }
+
+      if (persona === "governo") {
+        const ops: any[] = [];
+        const gt = idx.gt?.value ?? 50;
+        const ei = idx.ei?.value ?? 50;
+        if (gt > 70) {
+          ops.push({ emoji: "\u{1F3ED}", titulo: "Excesso de pesquisa sem industrialização — lacuna crítica", descricao: `O índice de tradução (${gt}/100) indica que há muito conhecimento científico sendo produzido, mas ele não está chegando ao mercado. Isso representa desperdício de investimento público em P&D.`, acao: "Crie programa de encomenda tecnológica para empresas âncora no setor", urgencia: "alta" });
+        }
+        if (ei < 40) {
+          ops.push({ emoji: "\u{1F3AF}", titulo: "Instrumentos existentes com baixo impacto", descricao: `O índice de efetividade (${ei}/100) sugere que os instrumentos públicos atuais — editais, convênios, subvenções — estão gerando pouco resultado neste campo. É preciso revisar o desenho dos instrumentos.`, acao: "Realize avaliação de impacto dos convênios MCTI nos últimos 3 anos e redesenhe o instrumento", urgencia: "alta" });
+        }
+        if (temContratos) {
+          ops.push({ emoji: "\u{1F4CB}", titulo: "Compras públicas como instrumento de política", descricao: "Há contratos públicos identificados neste tema. O governo pode usar poder de compra para estimular a produção nacional — encomendas tecnológicas criam mercado garantido e reduzem o risco do investimento privado em P&D.", acao: "Estruture edital de encomenda tecnológica com requisito de conteúdo nacional", urgencia: "media" });
+        }
+        if (saldoCaged < 0) {
+          ops.push({ emoji: "\u{1F477}", titulo: "Mercado de trabalho retraindo — sinal de desinvestimento", descricao: "O saldo de empregos formais no setor está negativo. Isso pode indicar que empresas estão saindo do mercado ou reduzindo operações — um sinal precoce de que a política industrial precisa de atenção.", acao: "Acione SENAI e SESI para programa emergencial de requalificação profissional no setor", urgencia: "alta" });
+        }
+        return ops.slice(0, 3);
+      }
+
+      if (persona === "universidade") {
+        const ops: any[] = [];
+        if (topInst.length > 0) {
+          ops.push({ emoji: "\u{1F3C6}", titulo: "Posicionamento no ranking nacional", descricao: "A análise de publicações identifica as instituições líderes neste campo. Saber onde você está no ranking é o primeiro passo para definir uma estratégia de nicho ou de disputa pela liderança.", acao: "Compare sua produção com a das 3 instituições líderes listadas na aba Produção Científica", urgencia: "media" });
+        }
+        ops.push({ emoji: "\u{1F4BB}", titulo: "Lei da Informática — fonte de P&D obrigatória para ICTs", descricao: "Empresas de TIC são obrigadas por lei a investir 5% do faturamento em P&D com ICTs credenciadas. Credenciar-se como ICT receptora da Lei da Informática abre um fluxo permanente de recursos privados para pesquisa.", acao: "Inicie o processo de credenciamento junto ao MCTI/SEPIN", url: "https://www.gov.br/mcti/pt-br/acompanhe-o-mcti/sepin/lei-de-informatica", urgencia: "alta" });
+        if (temConvenios) {
+          ops.push({ emoji: "\u{1F4DD}", titulo: "Convênios com o MCTI disponíveis neste tema", descricao: "Existem convênios do Ministério de Ciência e Tecnologia relacionados a este campo. Esses instrumentos permitem que universidades recebam recursos federais para realizar projetos de pesquisa e extensão.", acao: "Contate o setor de convênios da sua pró-reitoria de pesquisa e verifique a elegibilidade", url: "https://portaltransparencia.gov.br/convenios", urgencia: "media" });
+        }
+        return ops.slice(0, 3);
+      }
+
+      return [];
+    }
+
     const result = {
       query,
       layers: {
@@ -688,6 +772,8 @@ Deno.serve(async (req) => {
         ontology_used: !!ontology,
       },
     };
+
+    (result as any).oportunidades = gerarOportunidades(persona, result);
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
