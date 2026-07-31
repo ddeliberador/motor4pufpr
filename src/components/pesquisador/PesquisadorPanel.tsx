@@ -19,6 +19,7 @@ import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetail
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
 import { NovaIndustriaTab, PbiaTab, FomentoTab } from "@/components/shared/ProgramsTabs";
 import PoliciesTab from "@/components/shared/PoliciesTab";
+import CnaeNcmCard from "@/components/shared/CnaeNcmCard";
 
 const PesquisadorPanel = () => {
   const config = personaConfigs.pesquisador;
@@ -345,6 +346,8 @@ const PesquisadorPanel = () => {
                   trlData={(data.layers as any).patents?.trl_from_patents}
                   fallback={(technology as any).trl_estimate}
                 />
+
+                <div className="my-4"><CnaeNcmCard technology={technology} /></div>
 
                 {(technology as any).innovation_datasets && (technology as any).innovation_datasets.length > 0 ? (
                   <div className="space-y-2">

@@ -16,6 +16,7 @@ import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetail
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
 import ProgramsTab from "@/components/shared/ProgramsTab";
 import PoliciesTab from "@/components/shared/PoliciesTab";
+import CnaeNcmCard from "@/components/shared/CnaeNcmCard";
 
 
 const UniversidadePanel = () => {
@@ -168,6 +169,7 @@ const UniversidadePanel = () => {
                   </div>
                 ))}
               </div>
+              <CnaeNcmCard technology={technology} />
               {knowledge.institutions && Object.keys(knowledge.institutions).length > 0 && (
                 <div className="bg-card border border-border rounded-xl p-5">
                   <div className="flex items-center justify-between mb-3">

@@ -21,6 +21,7 @@ import MarketAnalysisPanel from "@/components/shared/MarketAnalysisPanel";
 import PatentsTab from "@/components/shared/PatentsTab";
 import ProgramsTab from "@/components/shared/ProgramsTab";
 import PoliciesTab from "@/components/shared/PoliciesTab";
+import CnaeNcmCard from "@/components/shared/CnaeNcmCard";
 
 
 interface Competitor {
@@ -244,6 +245,7 @@ const EmpresaPanel = () => {
                   <p className="text-sm text-muted-foreground text-center py-6">Dados CEMPRE não disponíveis para o setor deste tema.</p>
                 )}
               </div>
+              <CnaeNcmCard technology={technology} />
               {/* GitHub como proxy de players tech */}
               {technology.github_repos && technology.github_repos.length > 0 && (
                 <div className="bg-card border border-border rounded-xl p-5">

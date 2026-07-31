@@ -20,6 +20,7 @@ import MarketAnalysisPanel from "@/components/shared/MarketAnalysisPanel";
 import PatentsTab from "@/components/shared/PatentsTab";
 import { NovaIndustriaTab, PbiaTab, FomentoTab } from "@/components/shared/ProgramsTabs";
 import PoliciesTab from "@/components/shared/PoliciesTab";
+import CnaeNcmCard from "@/components/shared/CnaeNcmCard";
 
 const GovernoPanel = () => {
   const config = personaConfigs.governo;
@@ -376,6 +377,7 @@ const GovernoPanel = () => {
             </TabsContent>
 
             <TabsContent value="sidra" className="space-y-4">
+              <CnaeNcmCard technology={technology} />
               {(data.layers as any).sidra?.pintec?.setores?.length > 0 && (
                 <div className="bg-card border border-border rounded-xl p-5">
                   <div className="flex items-center justify-between mb-3">
