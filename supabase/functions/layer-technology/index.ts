@@ -397,6 +397,8 @@ async function fetchCnaeFromIbge(query: string, searchTerms: string[] = []): Pro
   divisoes: Array<{ id: string; descricao: string; secao_id: string }>;
   secoes: string[];
   fallback: boolean;
+  semantic_match?: boolean;
+  semantic_ids?: string[];
 }> {
   const cache = await loadCnaeCache();
   if (!cache || cache.length === 0) {
@@ -408,10 +410,25 @@ async function fetchCnaeFromIbge(query: string, searchTerms: string[] = []): Pro
     .filter((t, i, arr) => t.length >= 3 && arr.indexOf(t) === i)
     .slice(0, 12);
 
-  const scored = cache
+  // 1. Mapeamento semântico direto (maior precisão — não depende de texto)
+  const semanticIds = resolveSemanticCnae(query, searchTerms);
+  const semanticSubs = semanticIds
+    .map(id => cache.find(s => cnaeDigits(s.id) === cnaeDigits(id)))
+    .filter(Boolean) as typeof cache;
+
+  // 2. Score por texto nas demais subclasses (complementar)
+  const semanticSet = new Set(semanticSubs.map(s => s.id));
+  const textScored = cache
+    .filter(s => !semanticSet.has(s.id))
     .map(s => ({ ...s, score: scoreCnae(s, allTerms) }))
     .filter(s => s.score > 0)
     .sort((a, b) => b.score - a.score);
+
+  // Merge: semântico primeiro (score=999), texto depois
+  const scored = [
+    ...semanticSubs.map(s => ({ ...s, score: 999 })),
+    ...textScored,
+  ];
 
   const topSubs = scored.slice(0, 10).map(s => ({
     id: s.id,
@@ -437,6 +454,9 @@ async function fetchCnaeFromIbge(query: string, searchTerms: string[] = []): Pro
     divisoes: [...divMap.values()].slice(0, 6),
     secoes: secoes.slice(0, 4),
     fallback: false,
+    semantic_match: semanticSubs.length > 0,
+    semantic_ids: semanticIds,
+
   };
 }
 
