@@ -27,7 +27,10 @@ const GovernoPanel = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [govLevel, setGovLevel] = useState<"federal" | "estadual" | "municipal">("federal");
   const [govLocation, setGovLocation] = useState("");
-  const [hasSearched, setHasSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useState(() =>
+    sessionStorage.getItem("motor4p_query") !== null &&
+    sessionStorage.getItem("motor4p_persona") === "governo"
+  );
   const [showCnaeModal, setShowCnaeModal] = useState(false);
   const [suggestedCnaes, setSuggestedCnaes] = useState<CnaeCode[]>([]);
   const [selectedCnaes, setSelectedCnaes] = useState<CnaeCode[]>([]);
