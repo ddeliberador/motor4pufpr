@@ -389,138 +389,165 @@ const PesquisadorPanel = () => {
               </div>
             </TabsContent>
 
-            <TabsContent value="empregabilidade" className="space-y-4">
-              <div className="bg-card border border-border rounded-xl p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-primary" />
-                    Mercado de trabalho — Novo CAGED / MTE
-                  </h3>
-                  <a href="https://www.gov.br/trabalho-e-emprego" target="_blank" rel="noopener noreferrer"
-                     className="text-[10px] text-primary hover:underline flex items-center gap-1">
-                    <ExternalLink className="w-3 h-3" /> MTE
-                  </a>
-                </div>
-                {(technology as any).caged_data ? (
-                  <div className="space-y-4">
-                    {/* Label do setor foco */}
-                    {(technology as any).caged_data.setor_foco?.disponivel && (
-                      <div className="px-3 py-2 bg-primary/5 border border-primary/20 rounded-lg mb-2">
-                        <p className="text-[10px] text-primary font-medium">
-                          📊 Setor foco: {(technology as any).caged_data.setor_foco.label}
+            <TabsContent value="empregabilidade" className="space-y-5">
+
+              {(technology as any).caged_data ? (() => {
+                const nac = (technology as any).caged_data.nacional;
+                const adm = nac?.total_admissoes;
+                const dem = nac?.total_demissoes;
+                const saldo = nac?.total_saldo ?? 0;
+                const tendencia = nac?.tendencia_geral;
+                const periodo = nac?.periodo || "últimos 12 meses";
+                const ocupacoes = (technology as any).caged_data.ocupacoes || [];
+
+                const trendIcon = tendencia === "crescimento" ? "📈" : tendencia === "retração" ? "📉" : "➡️";
+                const trendLabel = tendencia === "crescimento" ? "Mercado em expansão" : tendencia === "retração" ? "Mercado retraindo" : "Mercado estável";
+
+                return (
+                  <>
+                    {/* Contexto explicativo */}
+                    <div className="bg-card border border-border rounded-xl p-5">
+                      <div className="flex items-start gap-3 mb-4">
+                        <span className="text-2xl">{trendIcon}</span>
+                        <div>
+                          <h3 className="text-base font-semibold text-foreground">{trendLabel}</h3>
+                          <p className="text-sm text-muted-foreground mt-0.5">
+                            Profissionais com carteira assinada no Brasil — {periodo}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="bg-muted/30 rounded-xl p-4 mb-5">
+                        <p className="text-sm text-foreground leading-relaxed">
+                          Esses números mostram <strong>quantas pessoas foram contratadas e demitidas com carteira assinada</strong> no Brasil
+                          em áreas relacionadas a <strong>{data.query}</strong>.
+                          O saldo é a diferença: se positivo, mais empregos foram criados do que encerrados.
                         </p>
                       </div>
-                    )}
 
-                    {/* Métricas — prioriza setorial, cai em nacional */}
-                    {(() => {
-                      const sf = (technology as any).caged_data.setor_foco;
-                      const nac = (technology as any).caged_data.nacional;
-                      const useSetor = sf?.disponivel && sf?.total_saldo != null;
-                      const adm = (useSetor ? sf.total_admissoes : null) ?? nac?.total_admissoes;
-                      const dem = (useSetor ? sf.total_demissoes : null) ?? nac?.total_demissoes;
-                      const saldo = useSetor ? sf.total_saldo : nac?.total_saldo;
-                      const contexto = useSetor
-                        ? sf.detalhes?.map((d: any) => d.nome).join(" + ") || sf.label
-                        : "agregado nacional";
-                      return (
-                        <>
-                          <div className="grid grid-cols-3 gap-3">
-                            <div className="bg-muted/30 rounded-lg p-3 text-center">
-                              <p className="text-xl font-bold font-mono text-emerald-500">
-                                {adm != null ? `+${adm.toLocaleString("pt-BR")}` : "—"}
-                              </p>
-                              <p className="text-[10px] text-muted-foreground">admissões (12m)</p>
-                            </div>
-                            <div className="bg-muted/30 rounded-lg p-3 text-center">
-                              <p className="text-xl font-bold font-mono text-red-500">
-                                {dem != null ? `-${dem.toLocaleString("pt-BR")}` : "—"}
-                              </p>
-                              <p className="text-[10px] text-muted-foreground">demissões (12m)</p>
-                            </div>
-                            <div className="bg-muted/30 rounded-lg p-3 text-center">
-                              <p className={`text-xl font-bold font-mono ${(saldo ?? 0) >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-                                {saldo != null ? `${saldo >= 0 ? "+" : ""}${saldo.toLocaleString("pt-BR")}` : "—"}
-                              </p>
-                              <p className="text-[10px] text-muted-foreground">saldo líquido</p>
-                            </div>
-                          </div>
-                          <p className="text-[9px] text-muted-foreground px-1">
-                            {useSetor
-                              ? `Setor: ${contexto}${sf.ano_referencia ? ` · ${sf.ano_referencia}` : ""} — saldo = ${sf.metrica || "variação anual de ocupados"}. Admissões/desligamentos: Novo CAGED nacional (12m).`
-                              : "⚠ Dado setorial indisponível — exibindo série nacional agregada"}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+                        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-5 text-center">
+                          <p className="text-[11px] text-emerald-600 font-semibold uppercase tracking-wider mb-2">✅ Contratações</p>
+                          <p className="text-3xl font-bold text-emerald-500 font-mono leading-none">
+                            {adm != null ? `+${adm.toLocaleString("pt-BR")}` : "—"}
                           </p>
+                          <p className="text-xs text-muted-foreground mt-2">pessoas contratadas com carteira</p>
+                        </div>
 
-                          {/* Detalhamento por subseção CNAE quando disponível */}
-                          {useSetor && sf.detalhes?.length > 1 && (
-                            <div className="space-y-1">
-                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Por seção CNAE</p>
-                              {sf.detalhes.map((d: any, i: number) => (
-                                <div key={i} className="flex items-center justify-between px-3 py-1.5 bg-muted/20 rounded">
-                                  <span className="text-[10px] text-foreground">{d.nome}</span>
-                                  <div className="flex gap-3">
-                                    {d.ocupados_mil != null && (
-                                      <span className="text-[9px] text-muted-foreground">
-                                        {(d.ocupados_mil * 1000).toLocaleString("pt-BR")} ocupados
-                                      </span>
-                                    )}
-                                    <span className={`text-[9px] font-bold ${d.saldo >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-                                      {d.saldo >= 0 ? "+" : ""}{d.saldo.toLocaleString("pt-BR")}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
+                        <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-5 text-center">
+                          <p className="text-[11px] text-red-500 font-semibold uppercase tracking-wider mb-2">❌ Demissões</p>
+                          <p className="text-3xl font-bold text-red-500 font-mono leading-none">
+                            {dem != null ? `-${dem.toLocaleString("pt-BR")}` : "—"}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-2">pessoas que saíram do mercado formal</p>
+                        </div>
+
+                        <div className={`rounded-xl p-5 text-center border ${saldo >= 0 ? "bg-emerald-500/5 border-emerald-500/20" : "bg-red-500/5 border-red-500/20"}`}>
+                          <p className={`text-[11px] font-semibold uppercase tracking-wider mb-2 ${saldo >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                            {saldo >= 0 ? "📊 Saldo positivo" : "📊 Saldo negativo"}
+                          </p>
+                          <p className={`text-3xl font-bold font-mono leading-none ${saldo >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                            {saldo != null ? `${saldo >= 0 ? "+" : ""}${saldo.toLocaleString("pt-BR")}` : "—"}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-2">empregos criados no saldo final</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium text-foreground">Evolução mês a mês</p>
+                          <a href="https://www.gov.br/trabalho-e-emprego" target="_blank" rel="noopener noreferrer"
+                             className="text-xs text-primary hover:underline flex items-center gap-1">
+                            <ExternalLink className="w-3 h-3" /> Fonte: MTE
+                          </a>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Saldo de empregos por mês — pontos acima da linha = mais contratações; abaixo = mais demissões</p>
+                        <CagedSaldoChart
+                          serie={(technology as any).caged_data.setor_foco?.disponivel
+                            ? (technology as any).caged_data.setor_foco.serie_saldo
+                            : (technology as any).caged_data.nacional?.serie_saldo}
+                          gradientId="cagedGradPesq"
+                        />
+                      </div>
+
+                      <p className="text-[10px] text-muted-foreground mt-3 pt-3 border-t border-border/30">
+                        📌 Dados do Novo CAGED (Cadastro Geral de Empregados e Desempregados) — Ministério do Trabalho e Emprego.
+                        Cobre apenas empregos formais com carteira assinada. Autônomos e informais não estão incluídos.
+                      </p>
+                    </div>
+
+                    {/* Perfis profissionais */}
+                    {ocupacoes.length > 0 && (
+                      <div className="bg-card border border-border rounded-xl p-5">
+                        <h3 className="text-sm font-semibold text-foreground mb-1">👤 Perfis profissionais relacionados</h3>
+                        <p className="text-xs text-muted-foreground mb-3">
+                          Ocupações que mais aparecem em empresas que atuam nesse campo, segundo a Classificação Brasileira de Ocupações (CBO).
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {ocupacoes.map((o: any, i: number) => (
+                            <div key={i} className="flex items-center gap-3 px-3 py-2.5 bg-muted/30 rounded-lg">
+                              <span className="text-lg">💼</span>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-foreground">{o.description}</p>
+                                <p className="text-[10px] text-muted-foreground font-mono">{o.code}{o.area ? ` · ${o.area}` : ""}</p>
+                              </div>
                             </div>
-                          )}
-                        </>
-                      );
-                    })()}
-                    {(technology as any).caged_data.ocupacoes?.length > 0 && (
-                      <div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Ocupações mapeadas (CBO)</p>
-                        <div className="flex flex-wrap gap-2">
-                          {(technology as any).caged_data.ocupacoes.map((o: any, i: number) => (
-                            <span key={i} className="text-[10px] px-2 py-1 bg-muted rounded">
-                              {o.description} <span className="font-mono text-muted-foreground/60">{o.code}</span>
-                            </span>
                           ))}
                         </div>
                       </div>
                     )}
-                    <CagedSaldoChart serie={(technology as any).caged_data.setor_foco?.disponivel
-                        ? (technology as any).caged_data.setor_foco.serie_saldo
-                        : (technology as any).caged_data.nacional?.serie_saldo} gradientId="cagedGradPesq" />
-                    <p className="text-[9px] text-muted-foreground">{(technology as any).caged_data.escopo}</p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-6">Dados do CAGED não disponíveis para este tema.</p>
-                )}
-              </div>
-              {technology.github_repos && technology.github_repos.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">Habilidades técnicas em demanda — GitHub</h3>
-                  {technology.language_distribution && Object.keys(technology.language_distribution).length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {Object.entries(technology.language_distribution as Record<string, number>)
-                        .sort(([, a], [, b]) => b - a)
-                        .map(([lang, count]) => (
-                          <span key={lang} className="text-[10px] px-2 py-1 bg-primary/10 text-primary rounded font-mono">
-                            {lang} ({count})
-                          </span>
-                        ))}
-                    </div>
-                  )}
-                  <div className="space-y-1">
-                    {technology.github_repos.slice(0, 5).map((r: any, i: number) => (
-                      <a key={i} href={r.url} target="_blank" rel="noopener noreferrer"
-                         className="flex items-center justify-between px-3 py-2 hover:bg-muted/50 rounded-lg transition-colors">
-                        <p className="text-xs text-foreground truncate flex-1">{r.name}</p>
-                        <span className="text-[10px] font-bold text-primary flex-shrink-0 ml-2">⭐ {r.stars}</span>
-                      </a>
-                    ))}
-                  </div>
+
+                    {/* GitHub como sinal de demanda técnica */}
+                    {technology.github_repos && technology.github_repos.length > 0 && (
+                      <div className="bg-card border border-border rounded-xl p-5">
+                        <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
+                          <GitBranch className="w-4 h-4 text-primary" />
+                          Habilidades técnicas mais buscadas
+                        </h3>
+                        <p className="text-xs text-muted-foreground mb-3">
+                          Projetos de código aberto no GitHub relacionados ao tema — indica quais tecnologias e linguagens estão sendo mais usadas no mercado.
+                        </p>
+                        {technology.language_distribution && Object.keys(technology.language_distribution).length > 0 && (
+                          <div className="mb-3">
+                            <p className="text-xs text-muted-foreground mb-2">Linguagens de programação mais comuns:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {Object.entries(technology.language_distribution as Record<string, number>)
+                                .sort(([, a], [, b]) => b - a)
+                                .map(([lang, count]) => (
+                                  <span key={lang} className="text-sm px-3 py-1 bg-primary/10 text-primary rounded-full font-medium">
+                                    {lang} <span className="opacity-60 text-xs">({count})</span>
+                                  </span>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+                        <div className="space-y-1.5">
+                          {technology.github_repos.slice(0, 5).map((r: any, i: number) => (
+                            <a key={i} href={r.url} target="_blank" rel="noopener noreferrer"
+                               className="flex items-center justify-between px-3 py-2.5 hover:bg-muted/50 rounded-lg transition-colors border border-transparent hover:border-border">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm text-foreground truncate font-medium">{r.name}</p>
+                                {r.description && <p className="text-xs text-muted-foreground truncate">{r.description}</p>}
+                              </div>
+                              <span className="text-sm font-bold text-amber-500 flex-shrink-0 ml-3">⭐ {r.stars?.toLocaleString("pt-BR")}</span>
+                            </a>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-3">
+                          Projetos com mais estrelas no GitHub = maior adoção pela comunidade técnica
+                        </p>
+                      </div>
+                    )}
+                  </>
+                );
+              })() : (
+                <div className="bg-card border border-border rounded-xl p-8 text-center">
+                  <p className="text-2xl mb-3">📊</p>
+                  <p className="text-base font-medium text-foreground mb-1">Dados do mercado de trabalho indisponíveis</p>
+                  <p className="text-sm text-muted-foreground">Não encontramos dados de emprego formal para este tema no Novo CAGED.</p>
                 </div>
               )}
+
             </TabsContent>
 
 
