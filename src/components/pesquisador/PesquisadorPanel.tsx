@@ -180,99 +180,73 @@ const PesquisadorPanel = () => {
               <TabsTrigger value="ia" className="text-xs rounded-lg">🧠 Análise IA {isAnalyzing && "…"}</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="openalex" className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {[
-                  { label: "Papers BR", value: data.stats.papers.toLocaleString("pt-BR"), sub: "produção nacional" },
-                  { label: "Instituições", value: data.stats.institutions, sub: "ativas no campo" },
-                  { label: "Países parceiros", value: data.stats.countries, sub: "coautorias" },
-                  { label: "Share BR/global", value: (knowledge as any).total_papers_global > 0 ? `${(((knowledge as any).total_papers / (knowledge as any).total_papers_global) * 100).toFixed(1)}%` : "—", sub: "da produção mundial" },
-                ].map((m, i) => (
-                  <div key={i} className="bg-card border border-border rounded-xl p-4 text-center">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">{m.label}</p>
-                    <p className="text-3xl font-bold font-mono text-foreground">{m.value}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{m.sub}</p>
-                  </div>
-                ))}
+            <TabsContent value="openalex" className="space-y-5">
+
+              {/* Resumo em linguagem simples */}
+              <div className="bg-card border border-border rounded-2xl p-5">
+                <h3 className="text-base font-semibold text-foreground mb-2">
+                  📚 O que o Brasil já sabe sobre <span className="text-primary">"{data.query}"</span>?
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                  Dados extraídos do <strong>OpenAlex</strong>, o maior repositório global de artigos científicos gratuito.
+                  Cada "paper" é um artigo publicado em revista científica por pesquisadores.
+                </p>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    {
+                      valor: data.stats.papers.toLocaleString("pt-BR"),
+                      titulo: "Artigos publicados",
+                      explica: "Total de artigos científicos brasileiros sobre o tema encontrados no OpenAlex",
+                      cor: "text-primary",
+                    },
+                    {
+                      valor: data.stats.institutions,
+                      titulo: "Universidades e institutos",
+                      explica: "Quantas instituições brasileiras têm pesquisadores que publicam sobre o tema",
+                      cor: "text-foreground",
+                    },
+                    {
+                      valor: data.stats.countries,
+                      titulo: "Países parceiros",
+                      explica: "Países que publicaram artigos em conjunto com pesquisadores brasileiros",
+                      cor: "text-foreground",
+                    },
+                    {
+                      valor: (knowledge as any).total_papers_global > 0
+                        ? `${(((knowledge as any).total_papers / (knowledge as any).total_papers_global) * 100).toFixed(1)}%`
+                        : "—",
+                      titulo: "Participação mundial",
+                      explica: "De cada 100 artigos publicados no mundo sobre este tema, quantos são brasileiros",
+                      cor: "text-foreground",
+                    },
+                  ].map((m, i) => (
+                    <div key={i} className="bg-muted/30 rounded-xl p-4 text-center" title={m.explica}>
+                      <p className={`text-3xl font-bold ${m.cor} mb-1`}>{m.valor}</p>
+                      <p className="text-sm font-medium text-foreground">{m.titulo}</p>
+                      <p className="text-xs text-muted-foreground mt-1 leading-tight">{m.explica}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {knowledge.institutions && Object.keys(knowledge.institutions).length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-foreground">Instituições líderes no campo</h3>
-                    <a href="https://openalex.org" target="_blank" rel="noopener noreferrer"
-                       className="text-[10px] text-primary hover:underline flex items-center gap-1">
-                      <ExternalLink className="w-3 h-3" /> OpenAlex
-                    </a>
-                  </div>
-                  <div className="space-y-1.5">
-                    {Object.entries(knowledge.institutions as Record<string, number>)
-                      .sort(([, a], [, b]) => b - a).slice(0, 8)
-                      .map(([inst, count], i) => (
-                        <div key={i} className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-                          <span className="text-[10px] font-mono text-muted-foreground w-4">{i + 1}</span>
-                          <span className="text-xs text-foreground flex-1 truncate">{inst}</span>
-                          <span className="text-xs font-bold text-primary flex-shrink-0">{count}</span>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-
-              {knowledge.international && knowledge.international.filter((c: any) => c.country_code !== "BR").length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">Países com coautoria</h3>
-                  <div className="space-y-1">
-                    {knowledge.international.filter((c: any) => c.country_code !== "BR").slice(0, 8).map((c: any, i: number) => (
-                      <div key={i} className="flex items-center gap-3 px-3 py-1.5 bg-muted/20 rounded">
-                        <span className="text-xs font-mono text-muted-foreground w-6">{c.country_code}</span>
-                        <div className="flex-1 bg-muted rounded-full h-1.5">
-                          <div className="bg-primary h-1.5 rounded-full"
-                            style={{ width: `${Math.min(100, (c.count / Math.max(...knowledge.international.map((x: any) => x.count))) * 100)}%` }} />
-                        </div>
-                        <span className="text-xs text-foreground w-8 text-right">{c.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {(() => {
-                const grants = (knowledge.papers || []).flatMap((p: any) => p.grants || []).filter((g: any) => g.funder);
-                const funders = [...new Map(grants.map((g: any) => [g.funder, g])).values()].slice(0, 8) as any[];
-                if (!funders.length) return null;
-                return (
-                  <div className="bg-card border border-border rounded-xl p-5">
-                    <h3 className="text-sm font-semibold text-foreground mb-3">Financiadores identificados nos papers</h3>
-                    <div className="space-y-1.5">
-                      {funders.map((g: any, i: number) => (
-                        <div key={i} className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-                          <span className="text-[10px] font-mono text-muted-foreground w-4">{i + 1}</span>
-                          <span className="text-xs text-foreground flex-1">{g.funder}</span>
-                          {g.award && <span className="text-[9px] font-mono text-muted-foreground">{g.award}</span>}
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-[9px] text-muted-foreground mt-2">Extraído dos metadados dos papers via OpenAlex</p>
-                  </div>
-                );
-              })()}
-
-              {/* Grupos de pesquisa com pesquisadores nominados */}
+              {/* Quem pesquisa — grupos de pesquisa com pesquisadores nominados */}
               {institutionRanking.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
+                <div className="bg-card border border-border rounded-2xl p-5">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                    <h3 className="text-base font-semibold text-foreground">
                       🔬 Quem pesquisa este tema no Brasil?
                     </h3>
-                    <a href={`https://openalex.org/works?filter=institutions.country_code:br,concepts.display_name.search:${encodeURIComponent(data.query)}&group_by=authorships.institutions.id`}
+                    <a href={`https://openalex.org/works?filter=institutions.country_code:br,display_name.search:${encodeURIComponent(data.query)}`}
                        target="_blank" rel="noopener noreferrer"
                        className="text-xs text-primary hover:underline flex items-center gap-1">
-                      <ExternalLink className="w-3 h-3" /> OpenAlex
+                      <ExternalLink className="w-3 h-3" /> Ver no OpenAlex
                     </a>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Instituições brasileiras com mais publicações sobre <strong>{data.query}</strong>, com os pesquisadores mais ativos identificados nos papers.
+                  <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                    Instituições com mais artigos publicados sobre <strong>"{data.query}"</strong>.
+                    O número indica quantos artigos foram publicados por pesquisadores daquele local.
+                    Clique no nome de um pesquisador para ver seu perfil completo.
                   </p>
 
                   <div className="space-y-3">
@@ -282,90 +256,205 @@ const PesquisadorPanel = () => {
                           (p.authorships || [])
                             .filter((a: any) =>
                               (a.institution || a.institutions?.[0]?.display_name || "")
-                                .toLowerCase()
-                                .includes(inst.toLowerCase().slice(0, 15))
+                                .toLowerCase().includes(inst.toLowerCase().slice(0, 15))
                             )
                             .map((a: any) => a.author?.display_name || a.name || "")
                         )
                         .filter(Boolean);
-
-                      const pesqUnicos = [...new Set(pesquisadores)].slice(0, 4) as string[];
+                      const pesqUnicos = [...new Set(pesquisadores)].slice(0, 5) as string[];
 
                       return (
-                        <div key={i} className={`rounded-xl border p-4 ${i === 0 ? "border-primary/30 bg-primary/5" : "border-border/60"}`}>
-                          <div className="flex items-start justify-between gap-3 mb-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className={`text-base font-bold flex-shrink-0 ${i === 0 ? "text-primary" : "text-muted-foreground"}`}>
+                        <div key={i} className={`rounded-xl border p-4 ${i === 0 ? "border-primary/40 bg-primary/5" : "border-border/60 hover:border-border transition-colors"}`}>
+                          <div className="flex items-start justify-between gap-3 mb-3">
+                            <div className="flex items-start gap-3 min-w-0">
+                              <span className={`text-lg font-bold flex-shrink-0 w-7 ${i === 0 ? "text-primary" : "text-muted-foreground"}`}>
                                 {i + 1}º
                               </span>
-                              <p className="text-sm font-semibold text-foreground leading-snug">{inst}</p>
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold text-foreground leading-snug">{inst}</p>
+                                {i === 0 && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full mt-1 inline-block">Líder nacional no tema</span>}
+                              </div>
                             </div>
                             <div className="flex-shrink-0 text-right">
-                              <p className="text-lg font-bold text-primary">{count as number}</p>
-                              <p className="text-[10px] text-muted-foreground">paper{(count as number) > 1 ? "s" : ""}</p>
+                              <p className="text-xl font-bold text-primary">{count as number}</p>
+                              <p className="text-xs text-muted-foreground">{(count as number) === 1 ? "artigo" : "artigos"} publicados</p>
                             </div>
                           </div>
 
-                          {pesqUnicos.length > 0 && (
-                            <div className="mt-2">
-                              <p className="text-[11px] text-muted-foreground mb-1.5">👤 Pesquisadores identificados:</p>
-                              <div className="flex flex-wrap gap-1.5">
+                          {pesqUnicos.length > 0 ? (
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-2">
+                                👤 Pesquisadores identificados nesta instituição:
+                              </p>
+                              <div className="flex flex-wrap gap-2">
                                 {pesqUnicos.map((nome, j) => (
-                                  <a
-                                    key={j}
-                                    href={`https://openalex.org/authors?filter=display_name.search:${encodeURIComponent(nome)}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-xs px-2.5 py-1 bg-muted rounded-full hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
-                                  >
+                                  <a key={j}
+                                     href={`https://openalex.org/authors?filter=display_name.search:${encodeURIComponent(nome)}`}
+                                     target="_blank" rel="noopener noreferrer"
+                                     className="text-sm px-3 py-1 bg-muted rounded-full hover:bg-primary/10 hover:text-primary transition-colors border border-transparent hover:border-primary/20">
                                     {nome}
                                   </a>
                                 ))}
                               </div>
                             </div>
-                          )}
-
-                          {pesqUnicos.length === 0 && (
-                            <p className="text-xs text-muted-foreground/60 mt-1">
-                              Pesquisadores não identificados nos metadados disponíveis
+                          ) : (
+                            <p className="text-xs text-muted-foreground/50 italic">
+                              Nomes dos pesquisadores não disponíveis nos metadados públicos
                             </p>
                           )}
                         </div>
                       );
                     })}
                   </div>
-
-                  <div className="mt-4 pt-3 border-t border-border/30 flex items-center justify-between">
-                    <p className="text-[10px] text-muted-foreground">
-                      Pesquisadores extraídos dos metadados de autorias nos papers via OpenAlex
-                    </p>
-                    <a href={`https://openalex.org/works?filter=institutions.country_code:br,display_name.search:${encodeURIComponent(data.query)}`}
-                       target="_blank" rel="noopener noreferrer"
-                       className="text-xs text-primary hover:underline flex-shrink-0 ml-2">
-                      Ver todos no OpenAlex →
-                    </a>
-                  </div>
                 </div>
               )}
 
+              {/* Países parceiros com barras e nomes completos */}
+              {knowledge.international && knowledge.international.filter((c: any) => c.country_code !== "BR").length > 0 && (
+                <div className="bg-card border border-border rounded-2xl p-5">
+                  <h3 className="text-base font-semibold text-foreground mb-2">
+                    🌍 Com quais países o Brasil colabora?
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                    Países cujos pesquisadores assinaram artigos <strong>em conjunto</strong> com brasileiros sobre este tema.
+                    Mais colaborações = mais integração científica internacional.
+                  </p>
+                  <div className="space-y-2">
+                    {(() => {
+                      const PAISES: Record<string, string> = {
+                        US: "Estados Unidos", CN: "China", DE: "Alemanha", GB: "Reino Unido",
+                        FR: "França", JP: "Japão", KR: "Coreia do Sul", IN: "Índia",
+                        CA: "Canadá", AU: "Austrália", IT: "Itália", ES: "Espanha",
+                        NL: "Holanda", CH: "Suíça", SE: "Suécia", PT: "Portugal",
+                        AR: "Argentina", MX: "México", CO: "Colômbia", CL: "Chile",
+                        PE: "Peru", EC: "Equador", UY: "Uruguai", BO: "Bolívia",
+                        ZA: "África do Sul", NG: "Nigéria", EG: "Egito", MA: "Marrocos",
+                      };
+                      const FLAGS: Record<string, string> = {
+                        US: "🇺🇸", CN: "🇨🇳", DE: "🇩🇪", GB: "🇬🇧", FR: "🇫🇷",
+                        JP: "🇯🇵", KR: "🇰🇷", IN: "🇮🇳", CA: "🇨🇦", AU: "🇦🇺",
+                        IT: "🇮🇹", ES: "🇪🇸", NL: "🇳🇱", CH: "🇨🇭", SE: "🇸🇪",
+                        PT: "🇵🇹", AR: "🇦🇷", MX: "🇲🇽", CO: "🇨🇴", CL: "🇨🇱",
+                        PE: "🇵🇪", EC: "🇪🇨", UY: "🇺🇾", BO: "🇧🇴",
+                      };
+                      const lista = knowledge.international.filter((c: any) => c.country_code !== "BR").slice(0, 8);
+                      const max = Math.max(...lista.map((c: any) => c.count));
+                      return lista.map((c: any, i: number) => (
+                        <div key={i} className="flex items-center gap-3">
+                          <span className="text-xl flex-shrink-0">{FLAGS[c.country_code] || "🏳️"}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium text-foreground">
+                                {PAISES[c.country_code] || c.country_code}
+                              </span>
+                              <span className="text-sm font-bold text-foreground ml-2">
+                                {c.count} {c.count === 1 ? "artigo" : "artigos"}
+                              </span>
+                            </div>
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div className="bg-primary h-2 rounded-full transition-all"
+                                style={{ width: `${Math.min(100, (c.count / max) * 100)}%` }} />
+                            </div>
+                          </div>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border/30">
+                    📌 Fonte: OpenAlex · Coautorias identificadas nos artigos brasileiros sobre o tema
+                  </p>
+                </div>
+              )}
+
+              {/* Financiadores */}
+              {(() => {
+                const grants = (knowledge.papers || []).flatMap((p: any) => p.grants || []).filter((g: any) => g.funder);
+                const byFunder: Record<string, number> = {};
+                for (const g of grants) {
+                  if (g.funder) byFunder[g.funder] = (byFunder[g.funder] || 0) + 1;
+                }
+                const funders = Object.entries(byFunder).sort(([, a], [, b]) => b - a).slice(0, 8);
+                if (!funders.length) return null;
+                return (
+                  <div className="bg-card border border-border rounded-2xl p-5">
+                    <h3 className="text-base font-semibold text-foreground mb-2">
+                      💰 Quem está pagando a pesquisa?
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                      Agências e organizações que financiaram os artigos publicados — identificadas nos próprios metadados dos papers.
+                      O número indica em quantos artigos cada financiador aparece.
+                    </p>
+                    <div className="space-y-2">
+                      {funders.map(([funder, count], i) => (
+                        <div key={i} className="flex items-center justify-between px-4 py-3 bg-muted/30 rounded-xl">
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-muted-foreground font-mono w-5">{i + 1}</span>
+                            <span className="text-sm text-foreground font-medium">{funder}</span>
+                          </div>
+                          <span className="text-sm font-bold text-primary flex-shrink-0">
+                            {count} {count === 1 ? "artigo" : "artigos"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-3">
+                      📌 Extraído dos metadados de financiamento dos artigos via OpenAlex
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {/* Artigos recentes */}
               {knowledge.papers && knowledge.papers.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">Papers recentes ({(knowledge as any).total_papers?.toLocaleString("pt-BR")} no total)</h3>
+                <div className="bg-card border border-border rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-base font-semibold text-foreground">
+                      📄 Artigos mais recentes
+                    </h3>
+                    <a href={`https://openalex.org/works?filter=institutions.country_code:br,display_name.search:${encodeURIComponent(data.query)}&sort=publication_date:desc`}
+                       target="_blank" rel="noopener noreferrer"
+                       className="text-xs text-primary hover:underline flex items-center gap-1">
+                      <ExternalLink className="w-3 h-3" /> Ver todos
+                    </a>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {(knowledge as any).total_papers?.toLocaleString("pt-BR")} artigos encontrados no total.
+                    Clique no título para acessar o artigo completo (quando disponível gratuitamente).
+                  </p>
                   <div className="space-y-3">
                     {knowledge.papers.slice(0, 8).map((p: any, i: number) => (
-                      <div key={i} className="p-3 border border-border/50 rounded-lg">
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <a href={p.doi ? `https://doi.org/${p.doi}` : p.url || "#"} target="_blank" rel="noopener noreferrer"
-                             className="text-xs font-medium text-primary hover:underline flex-1 leading-snug line-clamp-2">
+                      <div key={i} className="p-4 border border-border/50 rounded-xl hover:border-border transition-colors">
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <a href={p.doi ? `https://doi.org/${p.doi}` : p.url || "#"}
+                             target="_blank" rel="noopener noreferrer"
+                             className="text-sm font-medium text-primary hover:underline flex-1 leading-snug">
                             {p.title || "Sem título"}
                           </a>
-                          {p.year && <span className="text-[10px] font-mono text-muted-foreground flex-shrink-0">{p.year}</span>}
+                          {p.year && (
+                            <span className="text-sm text-muted-foreground flex-shrink-0 bg-muted px-2 py-0.5 rounded">
+                              {p.year}
+                            </span>
+                          )}
                         </div>
-                        {p.abstract && <p className="text-[10px] text-muted-foreground line-clamp-2 mt-1">{p.abstract}</p>}
-                        <div className="flex gap-2 mt-1 flex-wrap">
-                          {(p.citations ?? p.cited_by_count) > 0 && <span className="text-[9px] text-muted-foreground">{p.citations ?? p.cited_by_count} citações</span>}
-                          {p.is_open_access && <span className="text-[9px] px-1 bg-emerald-500/10 text-emerald-600 rounded">open access</span>}
-                          {(p.grants || []).length > 0 && <span className="text-[9px] px-1 bg-blue-500/10 text-blue-600 rounded">financiado</span>}
+                        {p.abstract && (
+                          <p className="text-xs text-muted-foreground line-clamp-2 mb-2 leading-relaxed">{p.abstract}</p>
+                        )}
+                        <div className="flex flex-wrap gap-2">
+                          {(p.citations ?? p.cited_by_count) > 0 && (
+                            <span className="text-xs px-2 py-0.5 bg-muted rounded text-muted-foreground">
+                              📊 {(p.citations ?? p.cited_by_count)} citações
+                            </span>
+                          )}
+                          {p.is_open_access && (
+                            <span className="text-xs px-2 py-0.5 bg-emerald-500/10 text-emerald-600 rounded">
+                              🔓 Acesso gratuito
+                            </span>
+                          )}
+                          {(p.grants || []).length > 0 && (
+                            <span className="text-xs px-2 py-0.5 bg-blue-500/10 text-blue-600 rounded">
+                              💰 Financiado
+                            </span>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -373,22 +462,28 @@ const PesquisadorPanel = () => {
                 </div>
               )}
 
+              {/* Pós-graduação SIDRA */}
               {(data.layers as any).sidra?.pos_graduacao?.areas?.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-foreground">Capacidade formativa — INEP/IBGE</h3>
+                <div className="bg-card border border-border rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-base font-semibold text-foreground">
+                      🎓 Cursos de pós-graduação na área
+                    </h3>
                     <a href={(data.layers as any).sidra.pos_graduacao.url} target="_blank" rel="noopener noreferrer"
-                       className="text-[10px] text-primary hover:underline flex items-center gap-1">
-                      <ExternalLink className="w-3 h-3" /> SIDRA
+                       className="text-xs text-primary hover:underline flex items-center gap-1">
+                      <ExternalLink className="w-3 h-3" /> SIDRA/IBGE
                     </a>
                   </div>
-                  <div className="space-y-1.5">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Dados do IBGE sobre formação acadêmica nas áreas relacionadas ao tema — quantos docentes e alunos existem no Brasil.
+                  </p>
+                  <div className="space-y-2">
                     {(data.layers as any).sidra.pos_graduacao.areas.slice(0, 6).map((a: any, i: number) => (
-                      <div key={i} className="px-3 py-2 bg-muted/30 rounded-lg">
-                        <p className="text-xs font-medium text-foreground">{a.area}</p>
-                        <div className="flex gap-3 mt-0.5">
+                      <div key={i} className="px-4 py-3 bg-muted/30 rounded-xl">
+                        <p className="text-sm font-medium text-foreground mb-1">{a.area}</p>
+                        <div className="flex gap-4">
                           {a.series.slice(0, 2).map((s: any, j: number) => (
-                            <span key={j} className="text-[10px] text-muted-foreground">
+                            <span key={j} className="text-xs text-muted-foreground">
                               {s.ano}: <strong className="text-foreground">{s.valor}</strong>
                             </span>
                           ))}
@@ -398,6 +493,7 @@ const PesquisadorPanel = () => {
                   </div>
                 </div>
               )}
+
             </TabsContent>
 
             <TabsContent value="embrapii" className="space-y-4">
