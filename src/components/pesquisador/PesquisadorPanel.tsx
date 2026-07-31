@@ -496,67 +496,98 @@ const PesquisadorPanel = () => {
 
             </TabsContent>
 
-            <TabsContent value="embrapii" className="space-y-4">
-              <div className="bg-card border border-border rounded-xl p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                    <FlaskConical className="w-4 h-4 text-primary" />
-                    P&D Industrial — EMBRAPII + PINTEC/IBGE
-                  </h3>
-                  <a href="https://embrapii.org.br/dados-abertos" target="_blank" rel="noopener noreferrer"
-                     className="text-[10px] text-primary hover:underline flex items-center gap-1">
-                    <ExternalLink className="w-3 h-3" /> EMBRAPII
-                  </a>
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-                  Projetos P&D industriais identificados. A fase do projeto indica TRL real: Fase 1 = TRL 4–5, Fase 2 = TRL 5–6, Fase 3 = TRL 6–7.
+            <TabsContent value="embrapii" className="space-y-5">
+
+              <div className="bg-card border border-border rounded-2xl p-5">
+                <h3 className="text-base font-semibold text-foreground mb-2">
+                  🏭 Projetos de pesquisa aplicada à indústria
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                  A <strong>EMBRAPII</strong> (Empresa Brasileira de Pesquisa e Inovação Industrial) financia projetos em que empresas e institutos de pesquisa desenvolvem tecnologia juntos. O <strong>TRL</strong> (Technology Readiness Level) indica o quanto uma tecnologia está pronta para o mercado — vai de 1 (ideia inicial) a 9 (produto disponível).
                 </p>
 
                 <TrlScaleBar
                   trlData={(data.layers as any).patents?.trl_from_patents}
                   fallback={(technology as any).trl_estimate}
                 />
+              </div>
 
-                <div className="my-4"><CnaeNcmCard technology={technology} /></div>
+              <div className="bg-card border border-border rounded-2xl p-5">
+                <h3 className="text-base font-semibold text-foreground mb-2">
+                  🏷️ Classificação oficial do setor
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                  O <strong>CNAE</strong> é o código que o governo usa para identificar o setor de uma empresa. O <strong>NCM</strong> é o código aduaneiro do produto — usado em notas fiscais e exportações. Esses códigos conectam a pesquisa com os dados econômicos do setor.
+                </p>
+                <CnaeNcmCard technology={technology} />
+              </div>
 
-                {(technology as any).innovation_datasets && (technology as any).innovation_datasets.length > 0 ? (
+              {(technology as any).innovation_datasets && (technology as any).innovation_datasets.length > 0 && (
+                <div className="bg-card border border-border rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-base font-semibold text-foreground">📂 Bases de dados disponíveis</h3>
+                    <a href="https://embrapii.org.br/dados-abertos" target="_blank" rel="noopener noreferrer"
+                       className="text-xs text-primary hover:underline flex items-center gap-1">
+                      <ExternalLink className="w-3 h-3" /> EMBRAPII
+                    </a>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Conjuntos de dados públicos sobre projetos de pesquisa e inovação industrial relacionados ao tema.
+                  </p>
                   <div className="space-y-2">
                     {(technology as any).innovation_datasets.slice(0, 6).map((d: any, i: number) => (
                       <a key={i} href={d.url} target="_blank" rel="noopener noreferrer"
-                         className="flex items-start gap-3 p-3 border border-border/50 rounded-lg hover:border-border transition-colors">
+                         className="flex items-start gap-3 p-4 border border-border/50 rounded-xl hover:border-border transition-colors">
+                        <span className="text-xl">📄</span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-foreground">{d.title}</p>
-                          {d.description && <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{d.description}</p>}
+                          <p className="text-sm font-medium text-foreground">{d.title}</p>
+                          {d.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{d.description}</p>}
                         </div>
-                        <ExternalLink className="w-3 h-3 text-muted-foreground flex-shrink-0 mt-0.5" />
+                        <ExternalLink className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                       </a>
                     ))}
                   </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <FlaskConical className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
-                    <p className="text-sm text-muted-foreground">Nenhum projeto P&D identificado nas bases abertas para este tema.</p>
-                    <a href="https://embrapii.org.br/dados-abertos" target="_blank" rel="noopener noreferrer"
-                       className="text-xs text-primary hover:underline mt-1 inline-flex items-center gap-1">
-                      <ExternalLink className="w-3 h-3" /> Consultar EMBRAPII
+                </div>
+              )}
+
+              {(technology as any).innovation_datasets?.length === 0 && (
+                <div className="bg-card border border-border rounded-2xl p-8 text-center">
+                  <p className="text-3xl mb-3">🔍</p>
+                  <p className="text-base font-medium text-foreground mb-1">Nenhum projeto identificado nas bases abertas</p>
+                  <p className="text-sm text-muted-foreground mb-4">Isso pode indicar que a pesquisa neste tema ainda é pouco industrializada, ou os dados ainda não foram publicados abertamente.</p>
+                  <a href="https://embrapii.org.br/dados-abertos" target="_blank" rel="noopener noreferrer"
+                     className="text-sm text-primary hover:underline inline-flex items-center gap-1">
+                    <ExternalLink className="w-3 h-3" /> Consultar diretamente na EMBRAPII
+                  </a>
+                </div>
+              )}
+
+              {(data.layers as any).sidra?.pintec?.setores?.length > 0 && (
+                <div className="bg-card border border-border rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-base font-semibold text-foreground">📊 Inovação por setor da indústria</h3>
+                    <a href="https://sidra.ibge.gov.br/tabela/7494" target="_blank" rel="noopener noreferrer"
+                       className="text-xs text-primary hover:underline flex items-center gap-1">
+                      <ExternalLink className="w-3 h-3" /> PINTEC/IBGE
                     </a>
                   </div>
-                )}
-
-                {(data.layers as any).sidra?.pintec?.setores?.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-border/30">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Inovação setorial — PINTEC/IBGE</p>
-                    <div className="space-y-1.5">
-                      {(data.layers as any).sidra.pintec.setores.slice(0, 5).map((s: any, i: number) => (
-                        <div key={i} className="flex justify-between px-3 py-2 bg-muted/30 rounded-lg">
-                          <span className="text-xs text-foreground truncate flex-1">{s.atividade}</span>
-                          <span className="text-xs font-bold text-primary ml-2">{s.valor}%</span>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    A <strong>PINTEC</strong> (Pesquisa de Inovação) do IBGE mostra qual percentual das empresas de cada setor implementou inovações. Quanto maior o número, mais o setor inova.
+                  </p>
+                  <div className="space-y-2">
+                    {(data.layers as any).sidra.pintec.setores.slice(0, 5).map((s: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between px-4 py-3 bg-muted/30 rounded-xl">
+                        <span className="text-sm text-foreground">{s.atividade}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-base font-bold text-primary">{s.valor}%</span>
+                          <span className="text-xs text-muted-foreground">das empresas inovam</span>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+
             </TabsContent>
 
             <TabsContent value="empregabilidade" className="space-y-5">
@@ -724,86 +755,92 @@ const PesquisadorPanel = () => {
 
 
             {/* ICTs NACIONAIS */}
-            <TabsContent value="icts" className="space-y-4">
+            <TabsContent value="icts" className="space-y-5">
+
+              <div className="bg-card border border-border rounded-2xl p-5">
+                <h3 className="text-base font-semibold text-foreground mb-2">
+                  🏛️ Institutos e centros de pesquisa no Brasil
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  <strong>ICTs</strong> são Instituições Científicas, Tecnológicas e de Inovação — universidades, institutos federais, centros de pesquisa e laboratórios credenciados pelo governo. São os lugares onde a pesquisa acontece e onde você pode buscar parcerias, acesso a equipamentos e publicações.
+                </p>
+              </div>
+
               {isLoadingIcts ? (
-                <div className="flex items-center justify-center py-12 gap-3">
-                  <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                  <span className="text-sm text-muted-foreground">Identificando ICTs nacionais em {data.query}...</span>
+                <div className="bg-card border border-border rounded-2xl p-12 flex flex-col items-center gap-4">
+                  <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                  <p className="text-sm text-muted-foreground">Identificando institutos de pesquisa em <strong>{data.query}</strong>...</p>
                 </div>
               ) : icts ? (
                 <div className="space-y-4">
                   {icts.overview && (
-                    <div className="bg-card border border-border rounded-xl p-5">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Ecossistema brasileiro</p>
-                      <p className="text-sm text-foreground leading-relaxed">{icts.overview}</p>
+                    <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5">
+                      <p className="text-sm font-medium text-foreground mb-1">🗺️ Panorama do ecossistema</p>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{icts.overview}</p>
                     </div>
                   )}
 
                   {icts.icts?.length > 0 ? (
-                    <div className="bg-card border border-border rounded-xl p-5 space-y-3">
-                      <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                        <FlaskConical className="w-4 h-4 text-primary" />
-                        Centros e Institutos de P&D ({icts.icts.length})
-                      </h3>
-                      <div className="space-y-3">
-                        {icts.icts.map((ict: any, i: number) => (
-                          <div key={i} className="border border-border/50 rounded-lg p-4 hover:border-border transition-colors">
-                            <div className="flex items-start justify-between gap-3 mb-2">
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2 flex-wrap mb-1">
-                                  <p className="text-sm font-semibold text-foreground">{ict.name}</p>
-                                  {ict.acronym && (
-                                    <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary rounded font-mono">{ict.acronym}</span>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                                  {ict.city && ict.state && <span>📍 {ict.city}/{ict.state}</span>}
-                                  {ict.type && <span className="px-1.5 py-0.5 bg-muted rounded">{ict.type}</span>}
-                                  {ict.ministerio && <span className="text-muted-foreground/60">{ict.ministerio}</span>}
-                                </div>
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-foreground">{icts.icts.length} instituição{icts.icts.length > 1 ? "s" : ""} identificada{icts.icts.length > 1 ? "s" : ""}:</p>
+                      {icts.icts.map((ict: any, i: number) => (
+                        <div key={i} className="bg-card border border-border/60 rounded-2xl p-5 hover:border-border transition-colors">
+                          <div className="flex items-start justify-between gap-3 mb-3">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <p className="text-sm font-semibold text-foreground">{ict.name}</p>
+                                {ict.acronym && (
+                                  <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium">{ict.acronym}</span>
+                                )}
                               </div>
-                              {ict.url && (
-                                <a
-                                  href={ict.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex-shrink-0 flex items-center gap-1 text-[10px] text-primary hover:underline"
-                                >
-                                  <ExternalLink className="w-3 h-3" />
-                                  site
-                                </a>
-                              )}
+                              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                                {ict.city && ict.state && <span>📍 {ict.city}/{ict.state}</span>}
+                                {ict.type && <span className="px-2 py-0.5 bg-muted rounded-full">{ict.type}</span>}
+                              </div>
                             </div>
-                            {ict.focus && (
-                              <p className="text-xs text-muted-foreground border-t border-border/30 pt-2 mt-2">{ict.focus}</p>
+                            {ict.url && (
+                              <a href={ict.url} target="_blank" rel="noopener noreferrer"
+                                 className="flex-shrink-0 flex items-center gap-1 text-sm text-primary hover:underline font-medium">
+                                <ExternalLink className="w-3.5 h-3.5" /> Visitar
+                              </a>
                             )}
                           </div>
-                        ))}
-                      </div>
+                          {ict.focus && (
+                            <div className="border-t border-border/30 pt-3">
+                              <p className="text-xs text-muted-foreground font-medium mb-1">Áreas de atuação:</p>
+                              <p className="text-sm text-foreground leading-relaxed">{ict.focus}</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   ) : (
-                    <div className="bg-card border border-border rounded-xl p-8 text-center">
-                      <FlaskConical className="w-8 h-8 mx-auto mb-3 text-muted-foreground/40" />
-                      <p className="text-sm text-muted-foreground">Nenhum ICT nacional identificado para este tema específico.</p>
-                      <p className="text-xs text-muted-foreground mt-1">Tente um termo mais amplo ou verifique a aba Panorama.</p>
+                    <div className="bg-card border border-border rounded-2xl p-8 text-center">
+                      <p className="text-3xl mb-3">🔍</p>
+                      <p className="text-base font-medium text-foreground mb-1">Nenhum instituto identificado para este tema</p>
+                      <p className="text-sm text-muted-foreground">Tente buscar por um termo mais amplo, ou consulte o diretório completo de ICTs no MCTI.</p>
+                      <a href="https://www.gov.br/mcti/pt-br/acesso-a-informacao/institucional/icts" target="_blank" rel="noopener noreferrer"
+                         className="text-sm text-primary hover:underline mt-3 inline-flex items-center gap-1">
+                        <ExternalLink className="w-3 h-3" /> Diretório de ICTs — MCTI
+                      </a>
                     </div>
                   )}
 
                   {icts.networks?.length > 0 && (
-                    <div className="bg-card border border-border rounded-xl p-5 space-y-3">
-                      <h3 className="text-sm font-semibold text-foreground">Redes e Programas Nacionais</h3>
-                      <div className="space-y-2">
+                    <div className="bg-card border border-border rounded-2xl p-5">
+                      <h3 className="text-base font-semibold text-foreground mb-2">🔗 Redes e programas nacionais</h3>
+                      <p className="text-sm text-muted-foreground mb-4">Iniciativas que conectam institutos, empresas e governo em torno do tema.</p>
+                      <div className="space-y-3">
                         {icts.networks.map((net: any, i: number) => (
-                          <div key={i} className="flex items-start justify-between gap-3 py-2 border-b border-border/30 last:border-0">
+                          <div key={i} className="flex items-start justify-between gap-3 p-3 border border-border/40 rounded-xl hover:border-border transition-colors">
                             <div className="min-w-0 flex-1">
-                              <p className="text-xs font-medium text-foreground">{net.name}</p>
-                              {net.description && <p className="text-[10px] text-muted-foreground mt-0.5">{net.description}</p>}
+                              <p className="text-sm font-medium text-foreground">{net.name}</p>
+                              {net.description && <p className="text-xs text-muted-foreground mt-1">{net.description}</p>}
                             </div>
                             {net.url && (
                               <a href={net.url} target="_blank" rel="noopener noreferrer"
-                                 className="flex-shrink-0 flex items-center gap-1 text-[10px] text-primary hover:underline">
-                                <ExternalLink className="w-3 h-3" />
-                                acessar
+                                 className="flex-shrink-0 flex items-center gap-1 text-sm text-primary hover:underline">
+                                <ExternalLink className="w-3 h-3" /> Acessar
                               </a>
                             )}
                           </div>
@@ -812,184 +849,149 @@ const PesquisadorPanel = () => {
                     </div>
                   )}
 
-                  <p className="text-[9px] text-muted-foreground text-center">
-                    Dados gerados por IA com base em fontes públicas — verifique os links antes de usar
+                  <p className="text-xs text-muted-foreground text-center pt-2">
+                    ⚠️ Dados gerados por inteligência artificial com base em fontes públicas — verifique os links antes de entrar em contato
                   </p>
                 </div>
               ) : (
-                <div className="flex items-center justify-center py-12">
-                  <p className="text-sm text-muted-foreground">Clique na aba para carregar os ICTs nacionais.</p>
+                <div className="bg-card border border-border rounded-2xl p-12 text-center">
+                  <p className="text-3xl mb-3">🏛️</p>
+                  <p className="text-sm text-muted-foreground">Clique na aba para carregar os institutos de pesquisa.</p>
                 </div>
               )}
+
             </TabsContent>
 
             {/* BOLSAS CNPQ */}
-            <TabsContent value="cnpq" className="space-y-4">
+            <TabsContent value="cnpq" className="space-y-5">
               {(() => {
                 const cnpq = (data.layers as any).cnpq;
                 if (!cnpq) return (
-                  <div className="text-center py-8">
-                    <p className="text-sm text-muted-foreground">Carregando dados CNPq...</p>
+                  <div className="bg-card border border-border rounded-2xl p-8 text-center">
+                    <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">Carregando dados de bolsas...</p>
                   </div>
                 );
 
                 return (
-                  <div className="space-y-4">
+                  <div className="space-y-5">
 
-                    {/* Modalidades de bolsa */}
-                    <div className="bg-card border border-border rounded-xl p-5">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                          <BookOpen className="w-4 h-4 text-primary" />
-                          Modalidades de bolsa CNPq
-                        </h3>
-                        <a href="https://www.gov.br/cnpq/pt-br/acesso-a-informacao/acoes-e-programas/programas/programas-de-bolsas"
-                           target="_blank" rel="noopener noreferrer"
-                           className="text-[10px] text-primary hover:underline flex items-center gap-1">
-                          <ExternalLink className="w-3 h-3" /> CNPq
-                        </a>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {cnpq.modalidades?.map((m: any, i: number) => (
-                          <a key={i} href={m.url} target="_blank" rel="noopener noreferrer"
-                             className="flex items-start gap-3 p-3 border border-border/50 rounded-lg hover:border-primary/30 hover:bg-primary/5 transition-colors">
-                            <span className="text-xs font-bold font-mono text-primary bg-primary/10 px-2 py-1 rounded flex-shrink-0">{m.sigla}</span>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs font-medium text-foreground">{m.nome}</p>
-                              <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{m.descricao}</p>
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {m.niveis.map((n: string, j: number) => (
-                                  <span key={j} className="text-[9px] px-1 bg-muted rounded font-mono">{n}</span>
-                                ))}
-                              </div>
-                            </div>
-                            <ExternalLink className="w-3 h-3 text-muted-foreground flex-shrink-0 mt-0.5" />
-                          </a>
-                        ))}
-                      </div>
+                    <div className="bg-card border border-border rounded-2xl p-5">
+                      <h3 className="text-base font-semibold text-foreground mb-2">
+                        🎓 Bolsas de pesquisa disponíveis
+                      </h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        O <strong>CNPq</strong> (Conselho Nacional de Desenvolvimento Científico e Tecnológico) oferece bolsas para pesquisadores em diferentes estágios de carreira. Clique em cada modalidade para ver os critérios e se inscrever.
+                      </p>
                     </div>
 
-                    {/* Convênios CNPq por universidade (Transparência) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {cnpq.modalidades?.map((m: any, i: number) => (
+                        <a key={i} href={m.url} target="_blank" rel="noopener noreferrer"
+                           className="flex items-start gap-4 p-4 bg-card border border-border/60 rounded-2xl hover:border-primary/30 hover:bg-primary/5 transition-colors">
+                          <span className="text-2xl font-bold text-primary bg-primary/10 px-3 py-2 rounded-xl flex-shrink-0">{m.sigla}</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-foreground">{m.nome}</p>
+                            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{m.descricao}</p>
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {m.niveis.map((n: string, j: number) => (
+                                <span key={j} className="text-xs px-2 py-0.5 bg-muted rounded-full text-muted-foreground">{n}</span>
+                              ))}
+                            </div>
+                          </div>
+                          <ExternalLink className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                        </a>
+                      ))}
+                    </div>
+
                     {cnpq.convenios && cnpq.convenios.total > 0 && (
-                      <div className="bg-card border border-border rounded-xl p-5">
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                            <Users className="w-4 h-4 text-primary" />
-                            Convênios CNPq/MCTI por instituição — Portal da Transparência
+                      <div className="bg-card border border-border rounded-2xl p-5">
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <h3 className="text-base font-semibold text-foreground">
+                            🏫 Qual universidade recebe mais verba do MCTI?
                           </h3>
-                          <div className="text-right">
-                            <p className="text-xs font-bold text-primary">R$ {(cnpq.convenios.total_valor / 1e6).toFixed(1)}M</p>
-                            <p className="text-[9px] text-muted-foreground">{cnpq.convenios.total} convênios</p>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-lg font-bold text-primary">R$ {(cnpq.convenios.total_valor / 1e6).toFixed(1)}M</p>
+                            <p className="text-xs text-muted-foreground">total investido</p>
                           </div>
                         </div>
-                        <p className="text-[10px] text-muted-foreground mb-3">
-                          Convênios do MCTI (órgão 24000) relacionados ao tema "{data.query}" — dados reais do Portal da Transparência.
+                        <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                          Convênios do Ministério de Ciência, Tecnologia e Inovação relacionados ao tema <strong>"{data.query}"</strong> — dados reais do Portal da Transparência. O valor indica quanto cada instituição recebeu.
                         </p>
                         <div className="space-y-2">
                           {cnpq.convenios.ranking_ies.slice(0, 10).map((ies: any, i: number) => (
-                            <div key={i} className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-                              <span className="text-[10px] font-mono text-muted-foreground w-4 flex-shrink-0">{i + 1}</span>
+                            <div key={i} className="flex items-center gap-3 px-4 py-3 bg-muted/30 rounded-xl">
+                              <span className={`text-base font-bold flex-shrink-0 w-6 ${i === 0 ? "text-primary" : "text-muted-foreground"}`}>{i + 1}º</span>
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-foreground truncate">{ies.convenente}</p>
-                                <p className="text-[10px] text-muted-foreground">{ies.count} convênio{ies.count > 1 ? "s" : ""}{ies.uf ? ` · ${ies.uf}` : ""}</p>
+                                <p className="text-sm font-medium text-foreground truncate">{ies.convenente}</p>
+                                <p className="text-xs text-muted-foreground">{ies.count} convênio{ies.count > 1 ? "s" : ""}{ies.uf ? ` · ${ies.uf}` : ""}</p>
                               </div>
-                              <span className="text-xs font-bold text-primary flex-shrink-0">
+                              <span className="text-sm font-bold text-primary flex-shrink-0">
                                 R$ {(ies.valor / 1e6).toFixed(2)}M
                               </span>
                             </div>
                           ))}
                         </div>
+                        <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border/30">
+                          📌 Fonte: Portal da Transparência · Convênios MCTI (órgão 24000)
+                        </p>
                       </div>
                     )}
 
-                    {/* CNPq identificado nos papers (OpenAlex grants) */}
                     {(() => {
                       const papers = (data.layers.knowledge as any).papers || [];
-                      const cnpqPapers = papers.filter((p: any) =>
-                        (p.grants || []).some((g: any) =>
-                          g.funder?.toLowerCase().includes("cnpq") ||
-                          g.funder?.toLowerCase().includes("conselho nacional") ||
-                          g.funder?.toLowerCase().includes("capes") ||
-                          g.funder?.toLowerCase().includes("fapesp") ||
-                          g.funder?.toLowerCase().includes("fapemig") ||
-                          g.funder?.toLowerCase().includes("faperj")
-                        )
-                      );
-                      if (!cnpqPapers.length) return null;
-
                       const byFunder: Record<string, number> = {};
-                      for (const p of cnpqPapers) {
-                        for (const g of (p.grants || [])) {
-                          if (g.funder) byFunder[g.funder] = (byFunder[g.funder] || 0) + 1;
-                        }
-                      }
-
+                      papers.forEach((p: any) => {
+                        (p.grants || []).forEach((g: any) => {
+                          if (g.funder && (
+                            g.funder.toLowerCase().includes("cnpq") ||
+                            g.funder.toLowerCase().includes("conselho nacional") ||
+                            g.funder.toLowerCase().includes("capes") ||
+                            g.funder.toLowerCase().includes("fapesp") ||
+                            g.funder.toLowerCase().includes("fapemig") ||
+                            g.funder.toLowerCase().includes("faperj")
+                          )) {
+                            byFunder[g.funder] = (byFunder[g.funder] || 0) + 1;
+                          }
+                        });
+                      });
+                      const funders = Object.entries(byFunder).sort(([,a],[,b]) => b-a).slice(0, 8);
+                      if (!funders.length) return null;
                       return (
-                        <div className="bg-card border border-border rounded-xl p-5">
-                          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4 text-primary" />
-                            Agências financiadoras identificadas nos papers — OpenAlex
+                        <div className="bg-card border border-border rounded-2xl p-5">
+                          <h3 className="text-base font-semibold text-foreground mb-2">
+                            💰 Quem financiou a pesquisa publicada?
                           </h3>
-                          <p className="text-[10px] text-muted-foreground mb-3">
-                            {cnpqPapers.length} de {papers.length} papers têm agência de fomento declarada nos metadados.
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Agências identificadas nos artigos científicos sobre o tema — o número indica em quantos artigos cada agência aparece como financiadora.
                           </p>
-                          <div className="space-y-1.5">
-                            {Object.entries(byFunder)
-                              .sort(([, a], [, b]) => (b as number) - (a as number))
-                              .slice(0, 8)
-                              .map(([funder, count], i) => (
-                                <div key={i} className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-                                  <span className="text-[10px] font-mono text-muted-foreground w-4">{i + 1}</span>
-                                  <span className="text-xs text-foreground flex-1 truncate">{funder}</span>
-                                  <span className="text-xs font-bold text-primary flex-shrink-0">{count as number} paper{(count as number) > 1 ? "s" : ""}</span>
+                          <div className="space-y-2">
+                            {funders.map(([funder, count], i) => (
+                              <div key={i} className="flex items-center justify-between px-4 py-3 bg-muted/30 rounded-xl">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-sm text-muted-foreground w-5">{i + 1}</span>
+                                  <span className="text-sm text-foreground font-medium">{funder}</span>
                                 </div>
-                              ))}
+                                <span className="text-sm font-bold text-primary">{count} artigo{count > 1 ? "s" : ""}</span>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       );
                     })()}
 
-                    {/* Datasets CNPq */}
-                    {cnpq.datasets?.length > 0 && (
-                      <div className="bg-card border border-border rounded-xl p-5">
-                        <h3 className="text-sm font-semibold text-foreground mb-3">Bases de dados CNPq — dados.gov.br</h3>
-                        <div className="space-y-2">
-                          {cnpq.datasets.slice(0, 5).map((d: any, i: number) => (
-                            <a key={i} href={d.url} target="_blank" rel="noopener noreferrer"
-                               className="flex items-start gap-3 p-3 border border-border/50 rounded-lg hover:border-border transition-colors">
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-foreground line-clamp-1">{d.title}</p>
-                                {d.description && <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{d.description}</p>}
-                                {d.resources?.length > 0 && (
-                                  <div className="flex gap-1 mt-1">
-                                    {d.resources.map((r: any, j: number) => (
-                                      <span key={j} className="text-[9px] px-1 bg-muted rounded font-mono">{r.format || "CSV"}</span>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                              <ExternalLink className="w-3 h-3 text-muted-foreground flex-shrink-0 mt-0.5" />
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Links úteis */}
-                    <div className="bg-card border border-border rounded-xl p-5">
-                      <h3 className="text-sm font-semibold text-foreground mb-3">Links diretos — acesso ao fomento</h3>
+                    <div className="bg-card border border-border rounded-2xl p-5">
+                      <h3 className="text-base font-semibold text-foreground mb-2">🔗 Acesso direto ao fomento</h3>
+                      <p className="text-sm text-muted-foreground mb-4">Links para os principais portais de bolsas e financiamento à pesquisa no Brasil.</p>
                       <div className="space-y-2">
                         {cnpq.links_uteis?.map((l: any, i: number) => (
                           <a key={i} href={l.url} target="_blank" rel="noopener noreferrer"
-                             className="flex items-center justify-between px-3 py-2.5 border border-border/50 rounded-lg hover:border-primary/30 hover:bg-primary/5 transition-colors">
-                            <span className="text-xs text-foreground">{l.label}</span>
-                            <ExternalLink className="w-3 h-3 text-primary flex-shrink-0" />
+                             className="flex items-center justify-between px-4 py-3 border border-border/50 rounded-xl hover:border-primary/30 hover:bg-primary/5 transition-colors">
+                            <span className="text-sm text-foreground font-medium">{l.label}</span>
+                            <ExternalLink className="w-4 h-4 text-primary flex-shrink-0" />
                           </a>
                         ))}
                       </div>
-                      <p className="text-[9px] text-muted-foreground mt-3 text-center">
-                        Fonte: Portal da Transparência (convênios MCTI) · dados.gov.br (CNPq) · OpenAlex (grants em papers)
-                      </p>
                     </div>
 
                   </div>
