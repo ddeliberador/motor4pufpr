@@ -205,9 +205,9 @@ const PesquisadorPanel = () => {
                   { label: "Share BR/global", value: (knowledge as any).total_papers_global > 0 ? `${(((knowledge as any).total_papers / (knowledge as any).total_papers_global) * 100).toFixed(1)}%` : "—", sub: "da produção mundial" },
                 ].map((m, i) => (
                   <div key={i} className="bg-card border border-border rounded-xl p-4 text-center">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{m.label}</p>
-                    <p className="text-2xl font-bold font-mono text-foreground">{m.value}</p>
-                    <p className="text-[10px] text-muted-foreground mt-1">{m.sub}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">{m.label}</p>
+                    <p className="text-3xl font-bold font-mono text-foreground">{m.value}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{m.sub}</p>
                   </div>
                 ))}
               </div>
