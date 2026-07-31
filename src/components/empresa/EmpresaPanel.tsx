@@ -200,23 +200,22 @@ const EmpresaPanel = () => {
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted/30 rounded-xl mb-4">
-              <TabsTrigger value="mercado" className="text-xs rounded-lg">🏢 CEMPRE/Mercado</TabsTrigger>
-              <TabsTrigger value="caged" className="text-xs rounded-lg">👷 CAGED</TabsTrigger>
-              <TabsTrigger value="comex" className="text-xs rounded-lg">🌐 Comércio Exterior</TabsTrigger>
-              <TabsTrigger value="patentes" className="text-xs rounded-lg">🔏 Patentes EPO</TabsTrigger>
-              <TabsTrigger value="politicas" className="text-xs rounded-lg">📋 Políticas</TabsTrigger>
+              <TabsTrigger value="mercado" className="text-xs rounded-lg">🏢 Empresas do Setor</TabsTrigger>
+              <TabsTrigger value="caged" className="text-xs rounded-lg">👷 Mão de Obra</TabsTrigger>
+              <TabsTrigger value="comex" className="text-xs rounded-lg">🌐 Importação/Exportação</TabsTrigger>
+              <TabsTrigger value="patentes" className="text-xs rounded-lg">🔏 Concorrência em PI</TabsTrigger>
+              <TabsTrigger value="politicas" className="text-xs rounded-lg">📋 Incentivos Fiscais</TabsTrigger>
               <TabsTrigger value="ia" className="text-xs rounded-lg">🧠 Análise IA {isAnalyzing && "…"}</TabsTrigger>
-              {(data.layers as any).programs?.context?.industrial && (
-                <TabsTrigger value="nova-industria" className="text-xs rounded-lg">🏭 Nova Indústria</TabsTrigger>
-              )}
-              {(data.layers as any).programs?.context?.ia && (
-                <TabsTrigger value="pbia" className="text-xs rounded-lg">🤖 PBIA</TabsTrigger>
-              )}
-              <TabsTrigger value="fomento" className="text-xs rounded-lg">💡 Fomento</TabsTrigger>
             </TabsList>
 
 
             <TabsContent value="mercado" className="space-y-4">
+              <div className="bg-card border border-border rounded-2xl p-5 mb-4">
+                <h3 className="text-base font-semibold text-foreground mb-2">🏢 Como é o mercado deste setor no Brasil?</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  O <strong>CEMPRE</strong> (Cadastro Central de Empresas) do IBGE mostra quantas empresas existem em cada setor e quantas pessoas empregam. Esses dados ajudam a entender o tamanho do mercado, a concorrência e as oportunidades de posicionamento.
+                </p>
+              </div>
               <div className="bg-card border border-border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -273,6 +272,12 @@ const EmpresaPanel = () => {
             </TabsContent>
 
             <TabsContent value="caged" className="space-y-4">
+              <div className="bg-card border border-border rounded-2xl p-5 mb-4">
+                <h3 className="text-base font-semibold text-foreground mb-2">👷 Existe mão de obra disponível?</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Saber se há profissionais qualificados disponíveis é crucial antes de expandir ou entrar em um novo mercado. Os dados do <strong>Novo CAGED</strong> mostram o movimento de contratações e demissões — um saldo positivo significa que o setor está aquecido e disputando talentos.
+                </p>
+              </div>
               <div className="bg-card border border-border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -377,6 +382,12 @@ const EmpresaPanel = () => {
             </TabsContent>
 
             <TabsContent value="comex" className="space-y-4">
+              <div className="bg-card border border-border rounded-2xl p-5 mb-4">
+                <h3 className="text-base font-semibold text-foreground mb-2">🌐 O Brasil importa ou exporta este produto?</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Se o Brasil importa muito e exporta pouco, pode haver uma oportunidade de substituição de importações — produzir aqui o que vem de fora. Se exporta muito, o produto tem competitividade internacional. Dados do <strong>COMEX Stat</strong> (Ministério do Desenvolvimento) e do <strong>Banco Central</strong>.
+                </p>
+              </div>
               <div className="bg-card border border-border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -422,6 +433,12 @@ const EmpresaPanel = () => {
             </TabsContent>
 
             <TabsContent value="patentes" className="space-y-4">
+              <div className="bg-card border border-border rounded-2xl p-5 mb-4">
+                <h3 className="text-base font-semibold text-foreground mb-2">🔏 Quem são os concorrentes em propriedade intelectual?</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Antes de investir em P&D ou lançar um produto, é essencial saber se outras empresas já patentearam tecnologias similares. Patentes de concorrentes podem bloquear sua entrada no mercado. Esses dados vêm do <strong>EPO OPS</strong> (Escritório Europeu de Patentes), que cobre patentes globais.
+                </p>
+              </div>
               <TrlScaleBar
                 trlData={(data.layers as any).patents?.trl_from_patents}
                 fallback={(technology as any).trl_estimate}

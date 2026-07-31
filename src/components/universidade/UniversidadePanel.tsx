@@ -140,22 +140,21 @@ const UniversidadePanel = () => {
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted/30 rounded-xl mb-4">
-              <TabsTrigger value="openalex" className="text-xs rounded-lg">📄 OpenAlex</TabsTrigger>
-              <TabsTrigger value="sidra" className="text-xs rounded-lg">🎓 Formação/IBGE</TabsTrigger>
-              <TabsTrigger value="transparencia" className="text-xs rounded-lg">💰 Financiamento</TabsTrigger>
-              <TabsTrigger value="politicas" className="text-xs rounded-lg">📋 Políticas</TabsTrigger>
+              <TabsTrigger value="openalex" className="text-xs rounded-lg">📄 Produção Científica</TabsTrigger>
+              <TabsTrigger value="sidra" className="text-xs rounded-lg">🎓 Formação Acadêmica</TabsTrigger>
+              <TabsTrigger value="transparencia" className="text-xs rounded-lg">💰 Captação de Recursos</TabsTrigger>
+              <TabsTrigger value="politicas" className="text-xs rounded-lg">📋 Políticas e Incentivos</TabsTrigger>
               <TabsTrigger value="ia" className="text-xs rounded-lg">🧠 Análise IA {isAnalyzing && "…"}</TabsTrigger>
-              {(data.layers as any).programs?.context?.industrial && (
-                <TabsTrigger value="nova-industria" className="text-xs rounded-lg">🏭 Nova Indústria</TabsTrigger>
-              )}
-              {(data.layers as any).programs?.context?.ia && (
-                <TabsTrigger value="pbia" className="text-xs rounded-lg">🤖 PBIA</TabsTrigger>
-              )}
-              <TabsTrigger value="fomento" className="text-xs rounded-lg">💡 Fomento</TabsTrigger>
             </TabsList>
 
 
             <TabsContent value="openalex" className="space-y-4">
+              <div className="bg-card border border-border rounded-2xl p-5 mb-4">
+                <h3 className="text-base font-semibold text-foreground mb-2">📄 Como sua universidade se posiciona neste campo?</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Dados do <strong>OpenAlex</strong> mostram o volume de publicações científicas por instituição. Quanto mais artigos em um tema, maior a expertise e a credibilidade para captar recursos, formar parcerias e atrair estudantes de pós-graduação.
+                </p>
+              </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {[
                   { label: "Papers no campo", value: data.stats.papers.toLocaleString("pt-BR"), sub: "produção nacional" },
@@ -216,6 +215,12 @@ const UniversidadePanel = () => {
             </TabsContent>
 
             <TabsContent value="sidra" className="space-y-4">
+              <div className="bg-card border border-border rounded-2xl p-5 mb-4">
+                <h3 className="text-base font-semibold text-foreground mb-2">🎓 Quantos alunos e professores existem na área?</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Dados do <strong>IBGE</strong> e do <strong>INEP</strong> sobre docentes, matrículas e cursos de pós-graduação. Essas informações revelam a capacidade formativa do Brasil no tema e onde estão as lacunas de formação que sua instituição pode preencher.
+                </p>
+              </div>
               {(data.layers as any).sidra?.pos_graduacao?.areas?.length > 0 ? (
                 <div className="bg-card border border-border rounded-xl p-5">
                   <div className="flex items-center justify-between mb-3">
@@ -269,6 +274,12 @@ const UniversidadePanel = () => {
             </TabsContent>
 
             <TabsContent value="transparencia" className="space-y-4">
+              <div className="bg-card border border-border rounded-2xl p-5 mb-4">
+                <h3 className="text-base font-semibold text-foreground mb-2">💰 Como captar recursos para pesquisa neste tema?</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Convênios federais e contratos públicos são a principal fonte de financiamento externo para pesquisa universitária. Esses dados mostram quais instituições já estão captando recursos, os valores envolvidos e as agências que financiam — um mapa de onde buscar oportunidades.
+                </p>
+              </div>
               <div className="bg-card border border-border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-foreground">Convênios com CT&I — Portal da Transparência</h3>
