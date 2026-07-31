@@ -331,6 +331,7 @@ const UniversidadePanel = () => {
                   </div>
                 </div>
               )}
+              <ParceriaICTModal />
             </TabsContent>
 
             <TabsContent value="politicas" className="space-y-4">

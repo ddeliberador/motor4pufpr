@@ -264,6 +264,7 @@ const EmpresaPanel = () => {
                   </div>
                 </div>
               )}
+              <ParceriaICTModal />
             </TabsContent>
 
             <TabsContent value="caged" className="space-y-4">
