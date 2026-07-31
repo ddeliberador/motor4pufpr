@@ -147,23 +147,22 @@ const GovernoPanel = () => {
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted/30 rounded-xl mb-4">
-              <TabsTrigger value="pncp" className="text-xs rounded-lg">📋 PNCP</TabsTrigger>
-              <TabsTrigger value="transparencia" className="text-xs rounded-lg">💰 Transparência</TabsTrigger>
-              <TabsTrigger value="caged" className="text-xs rounded-lg">👷 CAGED</TabsTrigger>
-              <TabsTrigger value="sidra" className="text-xs rounded-lg">📊 SIDRA/IBGE</TabsTrigger>
-              <TabsTrigger value="patentes" className="text-xs rounded-lg">🔏 Patentes EPO</TabsTrigger>
-              {(data.layers as any).programs?.context?.industrial && (
-                <TabsTrigger value="nova-industria" className="text-xs rounded-lg">🏭 Nova Indústria BR</TabsTrigger>
-              )}
-              {(data.layers as any).programs?.context?.ia && (
-                <TabsTrigger value="pbia" className="text-xs rounded-lg">🤖 PBIA</TabsTrigger>
-              )}
-              <TabsTrigger value="fomento" className="text-xs rounded-lg">💡 Fomento</TabsTrigger>
+              <TabsTrigger value="pncp" className="text-xs rounded-lg">📋 Compras Públicas</TabsTrigger>
+              <TabsTrigger value="transparencia" className="text-xs rounded-lg">💰 Investimentos</TabsTrigger>
+              <TabsTrigger value="caged" className="text-xs rounded-lg">👷 Empregos</TabsTrigger>
+              <TabsTrigger value="sidra" className="text-xs rounded-lg">📊 Dados do Setor</TabsTrigger>
+              <TabsTrigger value="patentes" className="text-xs rounded-lg">🔏 Patentes</TabsTrigger>
               <TabsTrigger value="politicas" className="text-xs rounded-lg">📋 Políticas</TabsTrigger>
               <TabsTrigger value="ia" className="text-xs rounded-lg">🧠 Análise IA {isAnalyzing && "…"}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="pncp" className="space-y-4">
+              <div className="bg-card border border-border rounded-2xl p-5 mb-4">
+                <h3 className="text-base font-semibold text-foreground mb-2">📋 O governo está comprando neste tema?</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  O <strong>PNCP</strong> (Portal Nacional de Contratações Públicas) reúne todas as licitações e contratos do governo federal. Cada item abaixo é uma compra pública real — indica que o governo já identificou este tema como prioridade e está pagando por soluções.
+                </p>
+              </div>
               <div className="bg-card border border-border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -221,6 +220,12 @@ const GovernoPanel = () => {
             </TabsContent>
 
             <TabsContent value="transparencia" className="space-y-4">
+              <div className="bg-card border border-border rounded-2xl p-5 mb-4">
+                <h3 className="text-base font-semibold text-foreground mb-2">💰 Como o governo investe neste tema?</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Convênios são acordos em que o governo federal repassa dinheiro para estados, municípios ou organizações realizarem projetos. As emendas são verbas indicadas por parlamentares. Ambos revelam onde o dinheiro público está sendo direcionado.
+                </p>
+              </div>
               <div className="bg-card border border-border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-foreground">Convênios federais — Portal da Transparência</h3>
@@ -268,6 +273,12 @@ const GovernoPanel = () => {
             </TabsContent>
 
             <TabsContent value="caged" className="space-y-4">
+              <div className="bg-card border border-border rounded-2xl p-5 mb-4">
+                <h3 className="text-base font-semibold text-foreground mb-2">👷 Como está o emprego formal neste setor?</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  O <strong>Novo CAGED</strong> registra todas as contratações e demissões com carteira assinada no Brasil. Para gestores públicos, esses dados indicam se o mercado de trabalho do setor está crescendo ou retraindo — essencial para planejar políticas de qualificação profissional.
+                </p>
+              </div>
               <div className="bg-card border border-border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -377,6 +388,12 @@ const GovernoPanel = () => {
             </TabsContent>
 
             <TabsContent value="sidra" className="space-y-4">
+              <div className="bg-card border border-border rounded-2xl p-5 mb-4">
+                <h3 className="text-base font-semibold text-foreground mb-2">📊 O que os dados do IBGE dizem sobre este setor?</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  O <strong>SIDRA</strong> é o sistema de dados do IBGE — o instituto que produz as estatísticas oficiais do Brasil. A <strong>PINTEC</strong> mostra quanto as empresas inovam. O <strong>PIB setorial</strong> mostra o peso econômico do setor. Esses dados ajudam a fundamentar políticas públicas com evidência.
+                </p>
+              </div>
               <CnaeNcmCard technology={technology} />
               {(data.layers as any).sidra?.pintec?.setores?.length > 0 && (
                 <div className="bg-card border border-border rounded-xl p-5">
@@ -432,6 +449,12 @@ const GovernoPanel = () => {
             </TabsContent>
 
             <TabsContent value="patentes" className="space-y-4">
+              <div className="bg-card border border-border rounded-2xl p-5 mb-4">
+                <h3 className="text-base font-semibold text-foreground mb-2">🔏 Quem detém a propriedade intelectual neste campo?</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Uma patente dá ao seu dono o direito exclusivo de usar uma tecnologia por até 20 anos. Quando a maioria das patentes de um campo é de empresas estrangeiras, o Brasil corre risco de <strong>dependência tecnológica</strong> — precisando pagar para usar tecnologias que outros criaram. Esses dados orientam políticas de soberania tecnológica.
+                </p>
+              </div>
               <TrlScaleBar
                 trlData={(data.layers as any).patents?.trl_from_patents}
                 fallback={(technology as any).trl_estimate}
