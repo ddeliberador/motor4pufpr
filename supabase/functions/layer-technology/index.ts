@@ -496,9 +496,14 @@ function resolveSecoesFromQuery(query: string): { secoes: string[]; label: strin
 
 async function fetchCaged(
   cboCodes: Array<{ code: string; description: string; area?: string }>,
-  query: string
+  query: string,
+  secoesExternas?: string[] | null
 ): Promise<any> {
-  const { secoes, label: setorLabel } = resolveSecoesFromQuery(query);
+  const resolved = resolveSecoesFromQuery(query);
+  const secoes = (secoesExternas && secoesExternas.length > 0) ? secoesExternas : resolved.secoes;
+  const setorLabel = (secoesExternas && secoesExternas.length > 0)
+    ? `Seções CNAE identificadas via IBGE: ${secoesExternas.join(", ")}`
+    : resolved.label;
 
   const fetchSerie = async (code: string) => {
     const data = await safeFetch(
@@ -680,6 +685,12 @@ Deno.serve(async (req) => {
       searchCNPJQSA(query), searchTransportes(query), searchANVISA(query),
     ]);
 
+    // CNAE e NCM — busca em paralelo com as outras fontes
+    const [cnaeResult, ncmCodes] = await Promise.all([
+      fetchCnaeFromIbge(query, searchTerms),
+      fetchNcmFromMdic(query),
+    ]);
+
     const github = githubResult.br_repos;
     const globalRepos = githubResult.global_repos;
 
@@ -795,15 +806,19 @@ Deno.serve(async (req) => {
     if (anvisa.length > 0) sources.push("ANVISA");
 
     // Novo CAGED — série nacional (IPEAData), sem dependência de API key
+    // Enriquece o CAGED com seções CNAE reais quando a busca IBGE retornar resultado
+    const cnaeSecoes = cnaeResult.secoes.length > 0 ? cnaeResult.secoes : null;
     let cagedData = null;
     try {
-      cagedData = await fetchCaged(cbosFromOntology, query);
+      cagedData = await fetchCaged(cbosFromOntology, query, cnaeSecoes);
       if (cagedData) console.log(`CAGED: saldo 12m ${cagedData.nacional?.total_saldo}`);
     } catch (e) {
       console.warn("CAGED falhou:", e instanceof Error ? e.message : e);
     }
 
     if (cagedData) sources.push("Novo CAGED/MTE");
+    if (cnaeResult.subclasses.length > 0) sources.push("CNAE/IBGE");
+    if (ncmCodes.length > 0) sources.push("NCM/MDIC");
 
     return new Response(JSON.stringify({
       github_repos: github,
@@ -815,7 +830,10 @@ Deno.serve(async (req) => {
       tech_density, trl_estimate, trl_label, trl_faixa, trl_confidence, trl_rationale,
       trl_signals: signals, science_to_patent, language_distribution: languageDistribution,
       total_stars: totalStars, global_total_stars: globalStars,
-      ipc_codes: ipcCodes, search_terms_used: searchTerms,
+      ipc_codes: ipcCodes,
+      cnae_result: cnaeResult,
+      ncm_codes: ncmCodes,
+      search_terms_used: searchTerms,
       sources, processing_time_ms: Date.now() - start,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
