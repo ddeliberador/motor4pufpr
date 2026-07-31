@@ -161,6 +161,185 @@ let CNAE_CACHE: Array<{
   secao_desc: string;
 }> | null = null;
 
+// Dicionário semântico curado: termo técnico/comercial → subclasses CNAE corretas
+// Fonte: CONCLA/IBGE + CNAE 2.3 oficial
+// Garante precisão quando o texto da descrição CNAE não contém o termo buscado
+const CNAE_SEMANTIC: Record<string, string[]> = {
+  // Agropecuária (A)
+  "hidroponico": ["0121-1/01", "0121-1/02"],
+  "hidroponia": ["0121-1/01", "0121-1/02"],
+  "aquaponia": ["0321-3/04", "0121-1/01"],
+  "estufa agricola": ["0121-1/01", "0121-1/02"],
+  "cultivo protegido": ["0121-1/01", "0121-1/02"],
+  "horticultura": ["0121-1/01", "0121-1/02"],
+  "hortalica": ["0121-1/01"],
+  "morango": ["0121-1/02"],
+  "cogumelo": ["0121-1/03"],
+  "flores": ["0121-1/04"],
+  "floricultura": ["0121-1/04"],
+  "mudas": ["0121-1/05"],
+  "soja": ["0111-3/05"],
+  "milho": ["0111-3/02"],
+  "trigo": ["0111-3/01"],
+  "algodao": ["0111-3/03"],
+  "arroz": ["0111-3/04"],
+  "cafe": ["0134-4/00"],
+  "cana de acucar": ["0113-0/00"],
+  "citros": ["0131-8/00"],
+  "manga": ["0133-4/02"],
+  "mamao": ["0133-4/03"],
+  "banana": ["0132-6/00"],
+  "eucalipto": ["0210-1/06"],
+  "pinus": ["0210-1/06"],
+  "floresta plantada": ["0210-1/06"],
+  "aquicultura": ["0321-3/00"],
+  "piscicultura": ["0321-3/01"],
+  "tilapia": ["0321-3/01"],
+  "camarao": ["0322-1/02"],
+  "ovinocultura": ["0151-2/01"],
+  "suinocultura": ["0151-2/02"],
+  "avicultura": ["0155-5/01"],
+  "frango": ["0155-5/01"],
+  "apicultura": ["0159-8/02"],
+  "bovinocultura": ["0141-5/01"],
+  "leite": ["0141-5/02"],
+  // Mineração (B)
+  "mineracao": ["0810-0/01"],
+  "litio": ["0891-6/00"],
+  "niobio": ["0891-6/00"],
+  "potassio": ["0891-6/00"],
+  "fosfato": ["0891-6/00"],
+  "bauxita": ["0710-1/00"],
+  "ferro": ["0710-1/00"],
+  "cobre": ["0721-7/00"],
+  "ouro": ["0722-5/01"],
+  "grafite": ["0899-1/99"],
+  // Indústria de transformação — Alimentos (C)
+  "frigorifico": ["1011-2/01"],
+  "abatedouro": ["1011-2/01"],
+  "processamento alimentos": ["1099-6/01"],
+  "bebidas": ["1099-6/04"],
+  "cerveja": ["1113-5/01"],
+  "vinho": ["1112-7/00"],
+  // Têxtil/Calçados
+  "textil": ["1311-1/00"],
+  "calcados": ["1531-9/01"],
+  "couro": ["1410-2/01"],
+  // Papel/Celulose
+  "celulose": ["1710-9/00"],
+  "papel": ["1721-4/00"],
+  // Química/Petroquímica
+  "petroleo": ["1921-7/00"],
+  "refino": ["1921-7/00"],
+  "plastico": ["2221-8/00"],
+  "borracha": ["2211-1/00"],
+  "fertilizante": ["2012-6/00"],
+  "agroquimico": ["2013-4/01"],
+  "defensivo agricola": ["2013-4/01"],
+  "cosmetico": ["2063-1/00"],
+  "tintas": ["2041-4/00"],
+  "adesivos": ["2091-6/00"],
+  // Farmacêutica/Biotech
+  "farmaceutico": ["2121-1/01"],
+  "medicamento": ["2121-1/01"],
+  "vacina": ["2121-1/02"],
+  "fitoterapico": ["2121-1/03"],
+  "hemoderivado": ["2121-1/04"],
+  "equipamento medico": ["2660-4/00"],
+  "dispositivo medico": ["2660-4/00"],
+  "biotecnologia": ["2123-8/00", "7210-0/00"],
+  "biorreator": ["2123-8/00"],
+  "crispr": ["7210-0/00"],
+  "genomica": ["7210-0/00"],
+  // Eletroeletrônicos
+  "bateria litio": ["2710-4/02"],
+  "bateria sodio": ["2710-4/02"],
+  "acumulador eletrico": ["2710-4/02"],
+  "pilha": ["2710-4/01"],
+  "semicondutor": ["2629-1/00"],
+  "chip": ["2629-1/00"],
+  "microchip": ["2629-1/00"],
+  "circuito integrado": ["2629-1/00"],
+  "pcb": ["2629-1/00"],
+  "motor eletrico": ["2710-4/03"],
+  "gerador": ["2710-4/03"],
+  "transformador": ["2710-4/03"],
+  "equipamento eletrico": ["2790-2/00"],
+  "automacao industrial": ["2829-1/00"],
+  "robo industrial": ["2829-1/00"],
+  "plc": ["2829-1/00"],
+  "eletrodomestico": ["2751-1/00"],
+  "climatizador": ["2742-2/00"],
+  "ar condicionado": ["2742-2/00"],
+  // Energia
+  "painel solar": ["2679-4/99"],
+  "modulo fotovoltaico": ["2679-4/99"],
+  "fotovoltaico": ["2679-4/99", "3511-5/02"],
+  "energia solar": ["3511-5/02"],
+  "energia eolica": ["3511-5/01"],
+  "aerogerador": ["2822-4/02"],
+  "turbina eolica": ["2822-4/02"],
+  "hidrogenio verde": ["3520-4/00", "2012-6/00"],
+  "eletrolise": ["2012-6/00"],
+  "celula combustivel": ["2710-4/03"],
+  // TIC/Software (J)
+  "software": ["6201-5/00"],
+  "desenvolvimento software": ["6201-5/01"],
+  "aplicativo": ["6201-5/02"],
+  "saas": ["6204-0/00"],
+  "ecommerce": ["6201-5/00"],
+  "inteligencia artificial": ["6201-5/00", "7210-0/00"],
+  "machine learning": ["6201-5/00", "7210-0/00"],
+  "ciberseguranca": ["6209-1/00"],
+  "cloud computing": ["6311-9/00"],
+  "data center": ["6311-9/00"],
+  "blockchain": ["6201-5/00"],
+  "fintech": ["6612-6/04", "6201-5/00"],
+  "iot": ["2640-0/00", "6201-5/00"],
+  "drone": ["3011-3/02", "2750-3/00"],
+  "vant": ["3011-3/02"],
+  "satelite": ["3030-3/00"],
+  "sensor": ["2640-0/00"],
+  // Transportes/Logística
+  "veiculo eletrico": ["2910-7/01"],
+  "carro eletrico": ["2910-7/01"],
+  "onibus eletrico": ["2920-4/01"],
+  "logistica": ["5211-7/01"],
+  "armazem": ["5211-7/01"],
+  "caminhao eletrico": ["2920-4/01"],
+  "ferrovia": ["4912-4/01"],
+  "porto": ["5011-4/01"],
+  // P&D / Universidades (M)
+  "pesquisa basica": ["7210-0/00"],
+  "pesquisa aplicada": ["7220-7/00"],
+  "laboratorio": ["7120-1/00"],
+  "ensaio": ["7120-1/00"],
+  "metrologia": ["7120-1/00"],
+  "incubadora": ["7490-1/04"],
+  "aceleradora": ["7490-1/04"],
+  "startup": ["6209-1/00", "7490-1/04"],
+  "propriedade intelectual": ["6911-7/01"],
+  "patente": ["6911-7/01"],
+};
+
+// Resolve subclasse CNAE por termos semânticos — retorna IDs diretos sem precisar de score
+function resolveSemanticCnae(query: string, searchTerms: string[]): string[] {
+  const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  const allText = norm([query, ...searchTerms].join(" "));
+  const found = new Set<string>();
+
+  for (const [termo, cnaeIds] of Object.entries(CNAE_SEMANTIC)) {
+    if (allText.includes(norm(termo))) {
+      cnaeIds.forEach(id => found.add(id));
+    }
+  }
+  return [...found];
+}
+
+// Compara IDs CNAE ignorando formatação (0121-1/01 vs 0121101)
+const cnaeDigits = (s: string) => s.replace(/[^0-9]/g, "");
+
+
 async function loadCnaeCache(): Promise<typeof CNAE_CACHE> {
   if (CNAE_CACHE) return CNAE_CACHE;
   try {
@@ -218,6 +397,8 @@ async function fetchCnaeFromIbge(query: string, searchTerms: string[] = []): Pro
   divisoes: Array<{ id: string; descricao: string; secao_id: string }>;
   secoes: string[];
   fallback: boolean;
+  semantic_match?: boolean;
+  semantic_ids?: string[];
 }> {
   const cache = await loadCnaeCache();
   if (!cache || cache.length === 0) {
@@ -229,10 +410,25 @@ async function fetchCnaeFromIbge(query: string, searchTerms: string[] = []): Pro
     .filter((t, i, arr) => t.length >= 3 && arr.indexOf(t) === i)
     .slice(0, 12);
 
-  const scored = cache
+  // 1. Mapeamento semântico direto (maior precisão — não depende de texto)
+  const semanticIds = resolveSemanticCnae(query, searchTerms);
+  const semanticSubs = semanticIds
+    .map(id => cache.find(s => cnaeDigits(s.id) === cnaeDigits(id)))
+    .filter(Boolean) as typeof cache;
+
+  // 2. Score por texto nas demais subclasses (complementar)
+  const semanticSet = new Set(semanticSubs.map(s => s.id));
+  const textScored = cache
+    .filter(s => !semanticSet.has(s.id))
     .map(s => ({ ...s, score: scoreCnae(s, allTerms) }))
     .filter(s => s.score > 0)
     .sort((a, b) => b.score - a.score);
+
+  // Merge: semântico primeiro (score=999), texto depois
+  const scored = [
+    ...semanticSubs.map(s => ({ ...s, score: 999 })),
+    ...textScored,
+  ];
 
   const topSubs = scored.slice(0, 10).map(s => ({
     id: s.id,
@@ -258,6 +454,9 @@ async function fetchCnaeFromIbge(query: string, searchTerms: string[] = []): Pro
     divisoes: [...divMap.values()].slice(0, 6),
     secoes: secoes.slice(0, 4),
     fallback: false,
+    semantic_match: semanticSubs.length > 0,
+    semantic_ids: semanticIds,
+
   };
 }
 
