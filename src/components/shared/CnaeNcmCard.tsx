@@ -56,9 +56,17 @@ export default function CnaeNcmCard({ technology }: CnaeNcmCardProps) {
               ))}
             </div>
           )}
-          <p className="text-[9px] text-muted-foreground">
-            Fonte: API CNAE/IBGE · CONCLA 2.3 · {cnae.subclasses.length} subclasses identificadas
-          </p>
+          <div className="flex items-center gap-2">
+            {cnae.semantic_match && (
+              <span className="text-[9px] px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded border border-emerald-500/20">
+                match semântico curado
+              </span>
+            )}
+            <p className="text-[9px] text-muted-foreground">
+              Fonte: CNAE/IBGE · CONCLA 2.3 · {cnae.subclasses.length} subclasses
+            </p>
+          </div>
+
         </div>
       )}
 
