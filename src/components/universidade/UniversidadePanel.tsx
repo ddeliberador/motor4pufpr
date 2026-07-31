@@ -145,6 +145,13 @@ const UniversidadePanel = () => {
               <TabsTrigger value="transparencia" className="text-xs rounded-lg">💰 Captação de Recursos</TabsTrigger>
               <TabsTrigger value="politicas" className="text-xs rounded-lg">📋 Políticas e Incentivos</TabsTrigger>
               <TabsTrigger value="ia" className="text-xs rounded-lg">🧠 Análise IA {isAnalyzing && "…"}</TabsTrigger>
+              {(data.layers as any).programs?.context?.industrial && (
+                <TabsTrigger value="nova-industria" className="text-xs rounded-lg">🏭 Nova Indústria BR</TabsTrigger>
+              )}
+              {(data.layers as any).programs?.context?.ia && (
+                <TabsTrigger value="pbia" className="text-xs rounded-lg">🤖 PBIA</TabsTrigger>
+              )}
+              <TabsTrigger value="fomento" className="text-xs rounded-lg">💡 Fomento</TabsTrigger>
             </TabsList>
 
 
