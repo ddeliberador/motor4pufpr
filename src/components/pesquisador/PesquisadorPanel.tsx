@@ -161,22 +161,6 @@ const PesquisadorPanel = () => {
         <div className="max-w-6xl mx-auto px-4 py-6 space-y-6 animate-in fade-in-0 duration-500">
           {indices && <StrategicIndices indices={indices} />}
 
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-            {[
-              { icon: BookOpen, value: data.stats.papers, label: "Papers" },
-              { icon: Users, value: data.stats.institutions, label: "Instituições" },
-              { icon: Globe, value: data.stats.countries, label: "Países" },
-              { icon: GitBranch, value: data.stats.github_repos, label: "Repos" },
-              { icon: TrendingUp, value: data.stats.ipeadata_series, label: "Séries" },
-              { icon: Beaker, value: data.stats.datasets, label: "Datasets" },
-            ].map((s, i) => (
-              <div key={i} className="bg-card border border-border rounded-xl p-3 text-center">
-                <s.icon className="w-3.5 h-3.5 mx-auto mb-1 text-muted-foreground" />
-                <p className="text-lg font-bold text-foreground">{s.value}</p>
-                <p className="text-[10px] text-muted-foreground">{s.label}</p>
-              </div>
-            ))}
-          </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted/30 rounded-xl mb-4">
