@@ -9,7 +9,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CnaeSelectionModal, type CnaeCode } from "@/components/mvp";
 import { personaConfigs } from "@/config/personas";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, Navigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
@@ -72,36 +72,7 @@ const GovernoPanel = () => {
   const navigate = useNavigate();
   const handleNewSearch = () => { navigate("/"); };
 
-  if (!hasSearched) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="pt-16 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] px-4">
-          <div className="w-full max-w-2xl mx-auto text-center space-y-8">
-            <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"><ArrowLeft className="w-4 h-4" />Voltar</Link>
-            <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${config.color} flex items-center justify-center shadow-lg`}><Building2 className="w-8 h-8 text-white" /></div>
-            <div><h1 className="text-2xl md:text-3xl font-semibold text-foreground mb-2">Diagnóstico de Política Pública</h1><p className="text-muted-foreground text-sm">Onde investir? Qual região está atrasada? Os instrumentos funcionam?</p></div>
-            <form onSubmit={handleSearch} className="w-full space-y-3">
-              <div className="flex gap-2">
-                <select value={govLevel} onChange={(e) => setGovLevel(e.target.value as "federal" | "estadual" | "municipal")} className="h-12 rounded-2xl border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-sm">
-                  <option value="federal">Federal</option>
-                  <option value="estadual">Estadual</option>
-                  <option value="municipal">Municipal</option>
-                </select>
-                <input type="text" value={govLocation} onChange={(e) => setGovLocation(e.target.value)} placeholder={govLevel === "federal" ? "Brasil" : govLevel === "estadual" ? "Estado — ex: Paraná, São Paulo..." : "Cidade — ex: Curitiba, Recife..."} className="flex-1 h-12 rounded-2xl border border-border bg-card px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-sm" />
-              </div>
-              <div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" /><input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Objeto tecnológico — ex: grafeno, baterias de lítio, semicondutores..." className="w-full h-14 rounded-2xl border border-border bg-card pl-12 pr-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-sm" autoFocus /></div>
-              <Button type="submit" disabled={isLoading || !searchQuery.trim()} className={`w-full h-12 rounded-xl bg-gradient-to-r ${config.color} text-white text-base font-medium gap-2`}>{isLoading ? (<><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Consultando bases...</>) : (<><Search className="w-4 h-4" />Diagnosticar</>)}</Button>
-            </form>
-            <div className="flex flex-wrap justify-center gap-2">
-              {["semicondutores", "baterias de lítio", "grafeno", "hidrogênio verde"].map((q) => (<button key={q} onClick={() => setSearchQuery(q)} className="text-xs px-3 py-1.5 rounded-full border border-border bg-card text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all">{q}</button>))}
-            </div>
-          </div>
-        </main>
-        <CnaeSelectionModal isOpen={showCnaeModal} onClose={() => { setShowCnaeModal(false); setSuggestedCnaes([]); setPendingSearchQuery(""); }} onConfirm={handleCnaeConfirm} suggestedCnaes={suggestedCnaes} searchQuery={pendingSearchQuery} isLoading={isLoadingCnaes} />
-      </div>
-    );
-  }
+  if (!hasSearched) return <Navigate to="/" replace />;
 
   if (isLoading) return (<div className="min-h-screen bg-background"><Header /><main className="pt-16 flex items-center justify-center min-h-[calc(100vh-4rem)]"><div className="text-center space-y-6"><div className="relative w-16 h-16 mx-auto"><div className="absolute inset-0 border-4 border-primary/20 rounded-full" /><div className="absolute inset-0 border-4 border-transparent border-t-primary rounded-full animate-spin" /><Zap className="absolute inset-0 m-auto w-6 h-6 text-primary/60" /></div><p className="text-lg font-medium text-foreground">Consultando 4 camadas analíticas...</p></div></main></div>);
   if (error) return (<div className="min-h-screen bg-background"><Header /><main className="pt-16 flex items-center justify-center min-h-[calc(100vh-4rem)]"><div className="text-center space-y-4 max-w-md px-4"><AlertTriangle className="w-12 h-12 mx-auto text-destructive" /><h2 className="text-lg font-semibold text-foreground">Erro</h2><p className="text-sm text-muted-foreground">{error}</p><Button onClick={handleNewSearch} variant="outline" className="gap-2"><ArrowLeft className="w-4 h-4" />Nova busca</Button></div></main></div>);
