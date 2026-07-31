@@ -274,6 +274,96 @@ const PesquisadorPanel = () => {
                 );
               })()}
 
+              {/* Grupos de pesquisa com pesquisadores nominados */}
+              {institutionRanking.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                      🔬 Quem pesquisa este tema no Brasil?
+                    </h3>
+                    <a href={`https://openalex.org/works?filter=institutions.country_code:br,concepts.display_name.search:${encodeURIComponent(data.query)}&group_by=authorships.institutions.id`}
+                       target="_blank" rel="noopener noreferrer"
+                       className="text-xs text-primary hover:underline flex items-center gap-1">
+                      <ExternalLink className="w-3 h-3" /> OpenAlex
+                    </a>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Instituições brasileiras com mais publicações sobre <strong>{data.query}</strong>, com os pesquisadores mais ativos identificados nos papers.
+                  </p>
+
+                  <div className="space-y-3">
+                    {institutionRanking.slice(0, 8).map(([inst, count], i) => {
+                      const pesquisadores = knowledge.papers
+                        .flatMap((p: any) =>
+                          (p.authorships || [])
+                            .filter((a: any) =>
+                              (a.institution || a.institutions?.[0]?.display_name || "")
+                                .toLowerCase()
+                                .includes(inst.toLowerCase().slice(0, 15))
+                            )
+                            .map((a: any) => a.author?.display_name || a.name || "")
+                        )
+                        .filter(Boolean);
+
+                      const pesqUnicos = [...new Set(pesquisadores)].slice(0, 4) as string[];
+
+                      return (
+                        <div key={i} className={`rounded-xl border p-4 ${i === 0 ? "border-primary/30 bg-primary/5" : "border-border/60"}`}>
+                          <div className="flex items-start justify-between gap-3 mb-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={`text-base font-bold flex-shrink-0 ${i === 0 ? "text-primary" : "text-muted-foreground"}`}>
+                                {i + 1}º
+                              </span>
+                              <p className="text-sm font-semibold text-foreground leading-snug">{inst}</p>
+                            </div>
+                            <div className="flex-shrink-0 text-right">
+                              <p className="text-lg font-bold text-primary">{count as number}</p>
+                              <p className="text-[10px] text-muted-foreground">paper{(count as number) > 1 ? "s" : ""}</p>
+                            </div>
+                          </div>
+
+                          {pesqUnicos.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-[11px] text-muted-foreground mb-1.5">👤 Pesquisadores identificados:</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {pesqUnicos.map((nome, j) => (
+                                  <a
+                                    key={j}
+                                    href={`https://openalex.org/authors?filter=display_name.search:${encodeURIComponent(nome)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs px-2.5 py-1 bg-muted rounded-full hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
+                                  >
+                                    {nome}
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {pesqUnicos.length === 0 && (
+                            <p className="text-xs text-muted-foreground/60 mt-1">
+                              Pesquisadores não identificados nos metadados disponíveis
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-border/30 flex items-center justify-between">
+                    <p className="text-[10px] text-muted-foreground">
+                      Pesquisadores extraídos dos metadados de autorias nos papers via OpenAlex
+                    </p>
+                    <a href={`https://openalex.org/works?filter=institutions.country_code:br,display_name.search:${encodeURIComponent(data.query)}`}
+                       target="_blank" rel="noopener noreferrer"
+                       className="text-xs text-primary hover:underline flex-shrink-0 ml-2">
+                      Ver todos no OpenAlex →
+                    </a>
+                  </div>
+                </div>
+              )}
+
               {knowledge.papers && knowledge.papers.length > 0 && (
                 <div className="bg-card border border-border rounded-xl p-5">
                   <h3 className="text-sm font-semibold text-foreground mb-3">Papers recentes ({(knowledge as any).total_papers?.toLocaleString("pt-BR")} no total)</h3>
