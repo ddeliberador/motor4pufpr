@@ -8,7 +8,6 @@ const Footer = () => {
     projeto: [
       { label: "Conceito", href: "/conceito" },
       { label: "Documentação", href: "/documentacao" },
-      { label: "Pesquisador", href: "/pesquisador" },
     ],
     recursos: [
       { label: "CNPq", href: "https://lattes.cnpq.br/", external: true },
