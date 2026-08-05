@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ArrowRight, Microscope, Building2, Factory, X, Check } from "lucide-react";
+import { Search, ArrowRight, Microscope, Building2, Factory, X, Check, MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import type { CnaeCode } from "@/components/mvp/CnaeSelectionModal";
@@ -43,7 +43,35 @@ export default function PersonaSelector() {
   const [cnaes, setCnaes] = useState<CnaeCode[]>([]);
   const [selectedCnaes, setSelectedCnaes] = useState<CnaeCode[]>([]);
   const [showCnaes, setShowCnaes] = useState(false);
+  const [uf, setUf] = useState("");
+  const [municipio, setMunicipio] = useState("");
+  const [municipios, setMunicipios] = useState<Array<{ id: number; nome: string }>>([]);
+  const [loadingMunicipios, setLoadingMunicipios] = useState(false);
   const { searchCnaes, isLoading: loadingCnaes } = useCnaeSearch();
+
+  const UFS = [
+    { sigla: "AC", nome: "Acre" }, { sigla: "AL", nome: "Alagoas" }, { sigla: "AP", nome: "Amapá" },
+    { sigla: "AM", nome: "Amazonas" }, { sigla: "BA", nome: "Bahia" }, { sigla: "CE", nome: "Ceará" },
+    { sigla: "DF", nome: "Distrito Federal" }, { sigla: "ES", nome: "Espírito Santo" }, { sigla: "GO", nome: "Goiás" },
+    { sigla: "MA", nome: "Maranhão" }, { sigla: "MT", nome: "Mato Grosso" }, { sigla: "MS", nome: "Mato Grosso do Sul" },
+    { sigla: "MG", nome: "Minas Gerais" }, { sigla: "PA", nome: "Pará" }, { sigla: "PB", nome: "Paraíba" },
+    { sigla: "PR", nome: "Paraná" }, { sigla: "PE", nome: "Pernambuco" }, { sigla: "PI", nome: "Piauí" },
+    { sigla: "RJ", nome: "Rio de Janeiro" }, { sigla: "RN", nome: "Rio Grande do Norte" }, { sigla: "RS", nome: "Rio Grande do Sul" },
+    { sigla: "RO", nome: "Rondônia" }, { sigla: "RR", nome: "Roraima" }, { sigla: "SC", nome: "Santa Catarina" },
+    { sigla: "SP", nome: "São Paulo" }, { sigla: "SE", nome: "Sergipe" }, { sigla: "TO", nome: "Tocantins" },
+  ];
+
+  // Carrega municípios quando UF muda
+  useEffect(() => {
+    if (!uf) { setMunicipios([]); setMunicipio(""); return; }
+    setLoadingMunicipios(true);
+    setMunicipio("");
+    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`)
+      .then(r => r.json())
+      .then(data => setMunicipios(data.map((m: any) => ({ id: m.id, nome: m.nome }))))
+      .catch(() => setMunicipios([]))
+      .finally(() => setLoadingMunicipios(false));
+  }, [uf]);
 
   // Busca CNAEs em background ao digitar (debounced)
   useEffect(() => {
@@ -82,6 +110,13 @@ export default function PersonaSelector() {
     sessionStorage.setItem("motor4p_query", query.trim());
     sessionStorage.setItem("motor4p_persona", selectedPersona!);
     sessionStorage.setItem("motor4p_cnaes", JSON.stringify(selectedCnaes));
+    if (uf) sessionStorage.setItem("motor4p_uf", uf);
+    else sessionStorage.removeItem("motor4p_uf");
+    if (municipio) sessionStorage.setItem("motor4p_municipio", municipio);
+    else sessionStorage.removeItem("motor4p_municipio");
+    const ufObj = UFS.find(u => u.sigla === uf);
+    if (ufObj) sessionStorage.setItem("motor4p_uf_nome", ufObj.nome);
+    else sessionStorage.removeItem("motor4p_uf_nome");
     navigate(`/${selectedPersona}`);
   };
 
@@ -119,6 +154,62 @@ export default function PersonaSelector() {
           ))}
         </div>
       )}
+
+      {/* Localização — opcional mas recomendada */}
+      <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-md p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <MapPin className="w-4 h-4 text-blue-300/60" />
+          <p className="text-xs font-semibold text-blue-300/70 uppercase tracking-wider">
+            Onde você atua? <span className="text-blue-300/40 font-normal normal-case tracking-normal ml-1">— opcional · personaliza os dados para sua região</span>
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-[10px] text-blue-300/50 mb-1 block">Estado</label>
+            <select
+              value={uf}
+              onChange={e => setUf(e.target.value)}
+              className="w-full h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-400/40 appearance-none cursor-pointer"
+            >
+              <option value="" className="bg-gray-900">Todos os estados</option>
+              {UFS.map(u => (
+                <option key={u.sigla} value={u.sigla} className="bg-gray-900">{u.sigla} — {u.nome}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] text-blue-300/50 mb-1 block">
+              Município {loadingMunicipios && <span className="text-blue-300/30">carregando...</span>}
+            </label>
+            <select
+              value={municipio}
+              onChange={e => setMunicipio(e.target.value)}
+              disabled={!uf || loadingMunicipios}
+              className="w-full h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-400/40 appearance-none cursor-pointer disabled:opacity-40"
+            >
+              <option value="" className="bg-gray-900">{uf ? "Todo o estado" : "Selecione o estado"}</option>
+              {municipios.map(m => (
+                <option key={m.id} value={`${m.nome}|${m.id}`} className="bg-gray-900">{m.nome}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        {(uf || municipio) && (
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-[10px] text-blue-400/60 flex items-center gap-1">
+              <MapPin className="w-3 h-3" />
+              {municipio ? municipio.split("|")[0] + ", " : ""}{UFS.find(u => u.sigla === uf)?.nome}
+              {" — dados filtrados para sua região"}
+            </p>
+            <button
+              onClick={() => { setUf(""); setMunicipio(""); }}
+              className="text-[10px] text-blue-300/40 hover:text-white transition-colors"
+            >
+              limpar
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* CNAEs sugeridos */}
       <AnimatePresence>
@@ -249,6 +340,7 @@ export default function PersonaSelector() {
             <Search className="w-5 h-5" />
             <span className="truncate">
               Analisar "{query.trim()}" como {PERSONAS.find((p) => p.key === selectedPersona)?.label}
+              {uf && <span className="opacity-70"> · {municipio ? municipio.split("|")[0] : UFS.find(u => u.sigla === uf)?.nome}</span>}
             </span>
             <ArrowRight className="w-4 h-4 flex-shrink-0" />
           </>
