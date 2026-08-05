@@ -114,9 +114,10 @@ async function fetchPintec(cnaeDivisions: string[]) {
 
 // ── 2. CEMPRE — empresas e pessoal por atividade ──────────────────────────
 // Tabela 992: v2585 = nº de empresas, v707 = pessoal ocupado total
-async function fetchCempre(cnaeDivisions: string[]) {
+async function fetchCempre(cnaeDivisions: string[], ufIbge = "") {
+  const nivel = ufIbge ? `n3/${ufIbge}` : "n1/all";
   const data = await safeFetch(
-    `${SIDRA}/t/992/n1/all/v/2585,707/p/last%201/c12762/all`
+    `${SIDRA}/t/992/${nivel}/v/2585,707/p/last%201/c12762/all`
   );
   if (!data || !Array.isArray(data) || data.length < 2) return null;
 
@@ -239,7 +240,15 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { query, cnae_codes, cnpq_areas, persona } = await req.json();
+    const { query, cnae_codes, cnpq_areas, persona, location } = await req.json();
+    const uf = location?.uf || "";
+    // Código IBGE da UF para a API SIDRA
+    const UF_IBGE: Record<string, string> = {
+      "AC":"12","AL":"27","AP":"16","AM":"13","BA":"29","CE":"23","DF":"53","ES":"32","GO":"52",
+      "MA":"21","MT":"51","MS":"50","MG":"31","PA":"15","PB":"25","PR":"41","PE":"26","PI":"22",
+      "RJ":"33","RN":"24","RS":"43","RO":"11","RR":"14","SC":"42","SP":"35","SE":"28","TO":"17"
+    };
+    const ufIbge = uf ? (UF_IBGE[uf] || "") : "";
     if (!query) return new Response(JSON.stringify({ error: "query required" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -253,7 +262,7 @@ Deno.serve(async (req) => {
 
     const [pintec, cempre, posgrad, pib, graduacao] = await Promise.all([
       fetchPintec(cnaeDivisions),
-      fetchCempre(cnaeDivisions),
+      fetchCempre(cnaeDivisions, ufIbge),
       fetchPosGraduacao(cnpqAreas),
       fetchPibSetorial(),
       fetchGraduacao(),
@@ -278,6 +287,7 @@ Deno.serve(async (req) => {
         label: CNAE_TO_SIDRA_DIVISION[d] || `Divisão ${d}`,
       })),
       sources,
+      location_filter: uf ? { uf, uf_ibge: ufIbge, applied: true } : { applied: false },
       processing_time_ms: Date.now() - start,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 

@@ -249,7 +249,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { query } = await req.json();
+    const { query, location } = await req.json();
     if (!query) return new Response(JSON.stringify({ error: "query is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     console.log(`Layer Knowledge: ${query}`);
@@ -281,6 +281,23 @@ Deno.serve(async (req) => {
 
     const resolved_institutions = findCrossBaseMatches(openalex.institutionCounts);
 
+    // Busca instituições locais quando há localização configurada
+    let localInstitutions: any[] = [];
+    if (location?.uf) {
+      const cityQuery = location.municipio || location.uf_nome || location.uf;
+      const localData = await safeFetch(
+        `https://api.openalex.org/institutions?filter=country_code:br,display_name.search:${encodeURIComponent(cityQuery)}&select=id,display_name,works_count,cited_by_count,ror&per_page=10`,
+        { headers: { "User-Agent": "Motor4P-UFPR/1.0 (mailto:pesquisa@ufpr.br)" } }
+      );
+      localInstitutions = (localData?.results || []).map((i: any) => ({
+        id: i.id,
+        name: i.display_name,
+        works_count: i.works_count,
+        cited_by_count: i.cited_by_count,
+        ror: i.ror,
+      }));
+    }
+
     const sources: string[] = [];
     if (openalex.papers.length > 0) sources.push("OpenAlex");
     if (capes.length > 0) sources.push("CAPES");
@@ -295,6 +312,7 @@ Deno.serve(async (req) => {
       total_papers_global: openalex.totalPapersGlobal,
       institutions: openalex.institutionCounts,
       resolved_institutions,
+      local_institutions: localInstitutions,
       international: openalex.international,
       concepts: openalex.concepts,
       capes_datasets: capes,
