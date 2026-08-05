@@ -272,9 +272,22 @@ export function useMotorSearch() {
     setAnalysis(null);
 
     try {
+      const uf = sessionStorage.getItem("motor4p_uf") || "";
+      const municipioRaw = sessionStorage.getItem("motor4p_municipio") || "";
+      const municipioNome = municipioRaw ? municipioRaw.split("|")[0] : "";
+      const municipioIbge = municipioRaw ? municipioRaw.split("|")[1] : "";
+
       const { data: searchResult, error: searchError } = await supabase.functions.invoke(
         "motor-search",
-        { body: { query, persona, selectedCnaes: selectedCnaes || [] } }
+        { body: {
+          query,
+          persona,
+          selectedCnaes: selectedCnaes || [],
+          uf: uf || undefined,
+          uf_nome: sessionStorage.getItem("motor4p_uf_nome") || undefined,
+          municipio: municipioNome || undefined,
+          municipio_ibge: municipioIbge || undefined,
+        }}
       );
 
       if (searchError) throw searchError;

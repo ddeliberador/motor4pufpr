@@ -3,6 +3,8 @@ import TrlScaleBar from "@/components/shared/TrlScaleBar";
 import { useState, useEffect } from "react";
 import { Building2, Search, ArrowLeft, AlertTriangle, Zap, MapPin, Globe, BookOpen, Shield, FileText, Activity, GitBranch, Target, ExternalLink, Users } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
+import LocalContextBadge from "@/components/shared/LocalContextBadge";
+import { useMotorLocation } from "@/hooks/useLocation";
 import { TrlScaleChart } from "@/components/shared/TrlScaleChart";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import Header from "@/components/Header";
@@ -39,6 +41,7 @@ const GovernoPanel = () => {
   const [activeTab, setActiveTab] = useState("pncp");
 
   const { search, data, analysis, isLoading, isAnalyzing, error } = useMotorSearch();
+  const { uf, ufNome, municipioNome, label: locationLabel, hasLocation } = useMotorLocation();
 
   // Lê query pré-preenchida vinda da busca unificada
   useEffect(() => {
@@ -56,7 +59,7 @@ const GovernoPanel = () => {
       setSearchQuery(savedQuery);
       setSelectedCnaes(cnaes);
       setHasSearched(true);
-      search(savedQuery, expectedPersona, undefined, cnaes.map((c) => c.code));
+      search(savedQuery, expectedPersona, { govLevel: "municipal", location: locationLabel || undefined }, cnaes.map((c) => c.code));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -105,6 +108,7 @@ const GovernoPanel = () => {
         </div>
 
         <div className="max-w-6xl mx-auto px-4 py-6 space-y-6 animate-in fade-in-0 duration-500">
+          <LocalContextBadge persona="governo" />
           {indices && <StrategicIndices indices={indices} />}
 
           {(data as any).oportunidades?.length > 0 && (

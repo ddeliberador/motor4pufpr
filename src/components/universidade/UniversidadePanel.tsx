@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
 import { GraduationCap, Search, ArrowLeft, AlertTriangle, Zap, Globe, BookOpen, Building2, Award, Link2, ExternalLink } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
+import LocalContextBadge from "@/components/shared/LocalContextBadge";
+import { useMotorLocation } from "@/hooks/useLocation";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -38,6 +40,7 @@ const UniversidadePanel = () => {
   const [detailOpen, setDetailOpen] = useState(false);
 
   const { search, data, analysis, isLoading, isAnalyzing, error } = useMotorSearch();
+  const { uf, ufNome, municipioNome, label: locationLabel, hasLocation } = useMotorLocation();
 
   // Lê query pré-preenchida vinda da busca unificada
   useEffect(() => {
@@ -55,7 +58,7 @@ const UniversidadePanel = () => {
       setSearchQuery(savedQuery);
       setSelectedCnaes(cnaes);
       setHasSearched(true);
-      search(savedQuery, expectedPersona, undefined, cnaes.map((c) => c.code));
+      search(savedQuery, expectedPersona, { location: locationLabel || undefined }, cnaes.map((c) => c.code));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -112,6 +115,7 @@ const UniversidadePanel = () => {
         </div>
 
         <div className="max-w-6xl mx-auto px-4 py-6 space-y-6 animate-in fade-in-0 duration-500">
+          <LocalContextBadge persona="universidade" />
           {indices && <StrategicIndices indices={indices} />}
 
           {(data as any).oportunidades?.length > 0 && (
