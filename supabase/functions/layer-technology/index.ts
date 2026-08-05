@@ -877,28 +877,58 @@ function resolveSecoesFromQuery(query: string): { secoes: string[]; label: strin
 async function fetchCaged(
   cboCodes: Array<{ code: string; description: string; area?: string }>,
   query: string,
-  secoesExternas?: string[] | null
+  secoesExternas?: string[] | null,
+  uf?: string
 ): Promise<any> {
   const resolved = resolveSecoesFromQuery(query);
   const secoes = (secoesExternas && secoesExternas.length > 0) ? secoesExternas : resolved.secoes;
-  const setorLabel = (secoesExternas && secoesExternas.length > 0)
-    ? `Seções CNAE via IBGE: ${secoesExternas.join(", ")}`
-    : resolved.label;
+  const setorLabel = resolved.label;
 
-  const fetchSerie = async (code: string) => {
-    const data = await safeFetch(
-      `http://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='${code}')`,
-      { headers: { Accept: "application/json" } },
-      15000
-    );
+  const UF_TERCODIGO: Record<string, string> = {
+    "AC":"12","AL":"27","AP":"16","AM":"13","BA":"29","CE":"23","DF":"53","ES":"32","GO":"52",
+    "MA":"21","MT":"51","MS":"50","MG":"31","PA":"15","PB":"25","PR":"41","PE":"26","PI":"22",
+    "RJ":"33","RN":"24","RS":"43","RO":"11","RR":"14","SC":"42","SP":"35","SE":"28","TO":"17"
+  };
+
+  const tercodigo = uf ? UF_TERCODIGO[uf] : null;
+
+  const fetchSerie = async (code: string, filterUf?: string | null) => {
+    const isRegional = code === "ADMISNC" || code === "DESLIGNC";
+    let url: string;
+
+    if (isRegional && filterUf) {
+      url = `http://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='${code}')?$filter=TERCODIGO eq '${filterUf}'&$orderby=VALDATA desc&$top=12`;
+    } else {
+      url = `http://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='${code}')`;
+    }
+
+    const data = await safeFetch(url, { headers: { Accept: "application/json" } }, 15000);
     const rows: any[] = data?.value || [];
     return rows
       .filter((r) => r.VALVALOR != null)
       .map((r) => ({ data: String(r.VALDATA).slice(0, 7), valor: Number(r.VALVALOR) }))
+      .sort((a, b) => a.data.localeCompare(b.data))
       .slice(-12);
   };
 
-  // Nacional via IPEAData — rápido e confiável
+  // Tenta séries por UF quando há localização
+  let admUf: any[] = [];
+  let desUf: any[] = [];
+  let hasUfData = false;
+
+  if (tercodigo) {
+    try {
+      [admUf, desUf] = await Promise.all([
+        fetchSerie("ADMISNC", tercodigo),
+        fetchSerie("DESLIGNC", tercodigo),
+      ]);
+      hasUfData = admUf.length > 0 || desUf.length > 0;
+    } catch (e) {
+      console.warn("CAGED UF falhou:", e instanceof Error ? e.message : e);
+    }
+  }
+
+  // Nacional sempre como contexto comparativo
   let saldoNacional: any[] = [];
   let admNacional: any[] = [];
   let desNacional: any[] = [];
@@ -913,6 +943,12 @@ async function fetchCaged(
   }
 
   const sumArr = (arr: any[]) => Math.round(arr.reduce((s, r) => s + r.valor, 0));
+
+  const saldoUf = admUf.map((a, i) => ({
+    data: a.data,
+    valor: a.valor - (desUf[i]?.valor || 0),
+  }));
+
   const totalSaldoNacional = saldoNacional.length > 0 ? sumArr(saldoNacional) : 0;
   const ultimos3 = saldoNacional.slice(-3).reduce((s: number, r: any) => s + r.valor, 0);
 
@@ -927,6 +963,17 @@ async function fetchCaged(
       total_demissoes: null,
       detalhes: [],
     },
+    uf_data: hasUfData ? {
+      uf,
+      disponivel: true,
+      total_admissoes: admUf.length > 0 ? sumArr(admUf) : null,
+      total_demissoes: desUf.length > 0 ? sumArr(desUf) : null,
+      total_saldo: saldoUf.length > 0 ? sumArr(saldoUf) : null,
+      serie_saldo: saldoUf,
+      serie_admissoes: admUf,
+      serie_demissoes: desUf,
+      periodo: admUf.length > 0 ? `${admUf[0].data} a ${admUf[admUf.length - 1].data}` : "",
+    } : null,
     nacional: {
       periodo: saldoNacional.length > 0 ? `${saldoNacional[0].data} a ${saldoNacional[saldoNacional.length - 1].data}` : "",
       total_admissoes: admNacional.length > 0 ? sumArr(admNacional) : null,
@@ -936,11 +983,15 @@ async function fetchCaged(
       serie_saldo: saldoNacional,
     },
     ocupacoes: cboCodes.slice(0, 6),
-    escopo: `Saldo nacional do mercado formal (Novo CAGED/MTE) — recorte setorial por seção CNAE ${secoes.join(", ")} identificado mas série granular não disponível em API aberta.`,
+    limitacao_cnae: `Dado por CNAE específico não disponível em API pública — exibindo emprego formal agregado${uf ? ` do estado ${uf}` : " nacional"}. Seções CNAE mapeadas: ${secoes.join(", ")}.`,
+    escopo: hasUfData
+      ? `Admissões e demissões formais no estado ${uf} (Novo CAGED/MTE via IPEAData). Não filtrado por setor — abrange toda a economia formal do estado.`
+      : `Saldo nacional do mercado formal (Novo CAGED/MTE via IPEAData). Dado por setor ou UF não disponível via API.`,
     source: "Novo CAGED — MTE via IPEAData",
     url: "http://www.ipeadata.gov.br/",
   };
 }
+
 
 
 Deno.serve(async (req) => {
