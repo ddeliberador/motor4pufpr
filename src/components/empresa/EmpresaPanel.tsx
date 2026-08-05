@@ -274,29 +274,69 @@ const EmpresaPanel = () => {
             )}
 
             {/* Mercado de trabalho */}
-            {caged && (
-              <div className="space-y-3">
-                <p className="text-sm font-semibold text-foreground">👷 Mão de obra disponível?</p>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 text-center">
-                    <p className="text-lg font-bold text-emerald-500">{cagedAdm != null ? `+${cagedAdm.toLocaleString("pt-BR")}` : "—"}</p>
-                    <p className="text-[10px] text-muted-foreground">contratações</p>
-                  </div>
-                  <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-3 text-center">
-                    <p className="text-lg font-bold text-red-500">{cagedDem != null ? `-${cagedDem.toLocaleString("pt-BR")}` : "—"}</p>
-                    <p className="text-[10px] text-muted-foreground">demissões</p>
-                  </div>
-                  <div className={`rounded-xl p-3 text-center border ${(cagedSaldo ?? 0) >= 0 ? "bg-emerald-500/5 border-emerald-500/20" : "bg-red-500/5 border-red-500/20"}`}>
-                    <p className={`text-lg font-bold ${(cagedSaldo ?? 0) >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-                      {cagedSaldo != null ? `${cagedSaldo >= 0 ? "+" : ""}${cagedSaldo.toLocaleString("pt-BR")}` : "—"}
+            {caged && (() => {
+              const ufData = caged.uf_data;
+              const useUf = ufData?.disponivel && uf;
+              const displayAdm = useUf ? ufData.total_admissoes : cagedAdm;
+              const displayDem = useUf ? ufData.total_demissoes : cagedDem;
+              const displaySaldo = useUf ? ufData.total_saldo : cagedSaldo;
+              const displaySerie = useUf ? ufData.serie_saldo : cagedSerie;
+              const periodoLabel = useUf ? ufData.periodo : caged.nacional?.periodo;
+
+              return (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-foreground">
+                      👷 Mão de obra disponível?{useUf ? ` — ${uf}` : ""}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">saldo 12m</p>
+                    {useUf && (
+                      <span className="text-[10px] px-2 py-0.5 bg-emerald-500/10 text-emerald-600 rounded-full border border-emerald-500/20">
+                        📍 {uf}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 text-center">
+                      <p className="text-lg font-bold text-emerald-500">
+                        {displayAdm != null ? `+${displayAdm.toLocaleString("pt-BR")}` : "—"}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">contratações</p>
+                    </div>
+                    <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-3 text-center">
+                      <p className="text-lg font-bold text-red-500">
+                        {displayDem != null ? `-${displayDem.toLocaleString("pt-BR")}` : "—"}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">demissões</p>
+                    </div>
+                    <div className={`rounded-xl p-3 text-center border ${(displaySaldo ?? 0) >= 0 ? "bg-emerald-500/5 border-emerald-500/20" : "bg-red-500/5 border-red-500/20"}`}>
+                      <p className={`text-lg font-bold ${(displaySaldo ?? 0) >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                        {displaySaldo != null ? `${displaySaldo >= 0 ? "+" : ""}${displaySaldo.toLocaleString("pt-BR")}` : "—"}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">saldo 12m</p>
+                    </div>
+                  </div>
+
+                  {displaySerie?.length > 0 && (
+                    <CagedSaldoChart serie={displaySerie} gradientId="cagedEmpNew" />
+                  )}
+
+                  {/* Nota de limitação honesta */}
+                  <div className="bg-muted/20 rounded-lg px-3 py-2 space-y-1">
+                    <p className="text-[10px] text-muted-foreground">
+                      📌 {useUf
+                        ? `Dados de emprego formal do estado ${uf} — toda a economia, não filtrado por setor específico.`
+                        : "Dados de emprego formal agregados — toda a economia nacional, não filtrado por setor específico."}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground/70">
+                      ⚠️ Dado por CNAE específico ("fabricação de computadores", "horticultura" etc.) não está disponível em API pública aberta — requer acesso especial aos microdados RAIS/MTE.
+                    </p>
+                    {periodoLabel && <p className="text-[10px] text-muted-foreground/60">Período: {periodoLabel} · Fonte: Novo CAGED / MTE via IPEAData</p>}
                   </div>
                 </div>
-                {cagedSerie?.length > 0 && <CagedSaldoChart serie={cagedSerie} gradientId="cagedEmpNew" />}
-                <p className="text-[10px] text-muted-foreground">Fonte: Novo CAGED · MTE · via IPEAData — emprego formal com carteira assinada</p>
-              </div>
-            )}
+              );
+            })()}
+
 
             {/* Risco de patentes */}
             {patents?.patents?.length > 0 && (
