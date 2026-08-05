@@ -1,7 +1,7 @@
 import CagedSaldoChart from "@/components/shared/CagedSaldoChart";
 import TrlScaleBar from "@/components/shared/TrlScaleBar";
 import { useState, useCallback, useEffect } from "react";
-import { Factory, Search, ArrowLeft, AlertTriangle, Zap, Globe, GitBranch, Building2, TrendingUp, Target, Handshake, ShieldCheck, Users, Building, ExternalLink } from "lucide-react";
+import { Factory, Search, ArrowLeft, AlertTriangle, Zap, Globe, GitBranch, Building2, TrendingUp, Target, Handshake, ShieldCheck, Users, Building, ExternalLink, MapPin } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
 import LocalContextBadge from "@/components/shared/LocalContextBadge";
 import { useMotorLocation } from "@/hooks/useLocation";
@@ -223,6 +223,50 @@ const EmpresaPanel = () => {
                   O <strong>CEMPRE</strong> (Cadastro Central de Empresas) do IBGE mostra quantas empresas existem em cada setor e quantas pessoas empregam. Esses dados ajudam a entender o tamanho do mercado, a concorrência e as oportunidades de posicionamento.
                 </p>
               </div>
+
+              {/* Dados locais quando há localização configurada */}
+              {hasLocation && (data.layers as any).policy?.location_filter?.applied && (
+                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-5">
+                  <h3 className="text-base font-semibold text-foreground mb-2 flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-emerald-500" />
+                    Contratos públicos em {locationLabel}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Compras do governo estadual e municipal relacionadas a <strong>{data.query}</strong> no seu estado.
+                    Esses contratos representam oportunidades de receita direta para sua empresa.
+                  </p>
+                  {(() => {
+                    const localContracts = (data.layers.policy.contracts || []).filter((c: any) =>
+                      c.uf === uf || c.organ?.toLowerCase().includes(uf.toLowerCase())
+                    );
+                    return localContracts.length > 0 ? (
+                      <div className="space-y-2">
+                        {localContracts.slice(0, 5).map((c: any, i: number) => (
+                          <a key={i} href={c.url || "#"} target="_blank" rel="noopener noreferrer"
+                             className="flex items-start gap-3 p-3 border border-border/50 rounded-xl hover:border-emerald-500/30 transition-colors">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground line-clamp-2">{c.object}</p>
+                              <div className="flex gap-2 mt-1 flex-wrap">
+                                <span className="text-xs text-muted-foreground">{c.organ}</span>
+                                {c.value > 0 && <span className="text-xs font-bold text-emerald-500">R$ {(c.value / 1e3).toFixed(0)}k</span>}
+                              </div>
+                            </div>
+                            <ExternalLink className="w-3 h-3 text-muted-foreground flex-shrink-0 mt-1" />
+                          </a>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Nenhum contrato estadual/municipal identificado para este tema em {locationLabel}.
+                        <a href={`https://pncp.gov.br/app/editais?q=${encodeURIComponent(data.query)}&uf=${uf}`}
+                           target="_blank" rel="noopener noreferrer" className="text-primary hover:underline ml-1">
+                          Buscar no PNCP →
+                        </a>
+                      </p>
+                    );
+                  })()}
+                </div>
+              )}
               <div className="bg-card border border-border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
