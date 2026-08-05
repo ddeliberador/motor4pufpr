@@ -499,7 +499,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { query, selectedCnaes, persona = "pesquisador" } = await req.json();
+    const { query, selectedCnaes, persona = "pesquisador", uf, uf_nome, municipio, municipio_ibge } = await req.json();
+    const location = { uf: uf || "", uf_nome: uf_nome || "", municipio: municipio || "", municipio_ibge: municipio_ibge || "" };
+    const hasLocation = !!uf;
+    console.log(`Localização: ${hasLocation ? `${municipio || uf}` : "nacional"}`);
     if (!query) {
       return new Response(JSON.stringify({ error: "query is required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -525,7 +528,7 @@ Deno.serve(async (req) => {
     const cboCodes = ontology?.cbo_codes || [];
 
     // STEP 1: Knowledge layer first (other layers depend on it)
-    const knowledge = await invokeLayer("layer-knowledge", { query, search_terms: searchTerms });
+    const knowledge = await invokeLayer("layer-knowledge", { query, search_terms: searchTerms, location });
 
     // STEP 2: Remaining 3 layers in parallel, passing knowledge + ontology data
     const [technology, policy, international, sidra, market, patents, programs, cnpq, policies] = await Promise.all([
@@ -542,6 +545,7 @@ Deno.serve(async (req) => {
         knowledge_total_papers: knowledge?.total_papers || 0,
         search_terms: searchTerms,
         cnae_codes: cnaeCodes,
+        location,
       }),
       invokeLayer("layer-international", {
         query,
@@ -554,6 +558,7 @@ Deno.serve(async (req) => {
         cnae_codes: cnaeCodes,
         cnpq_areas: ontology?.cnpq_areas || [],
         persona: "all",
+        location,
       }),
       invokeLayer("market-analysis", {
         query,
