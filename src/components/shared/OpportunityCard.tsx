@@ -13,6 +13,7 @@ interface OpportunityCardProps {
   oportunidades: Opportunity[];
   persona: "pesquisador" | "universidade" | "empresa" | "governo";
   query: string;
+  cnaeLabel?: string;
 }
 
 const PERSONA_INTRO: Record<string, { titulo: string; subtitulo: string }> = {
@@ -46,7 +47,7 @@ const URGENCIA_LABEL: Record<string, string> = {
   baixa: "🟢 Médio prazo",
 };
 
-export default function OpportunityCard({ oportunidades, persona, query }: OpportunityCardProps) {
+export default function OpportunityCard({ oportunidades, persona, query, cnaeLabel }: OpportunityCardProps) {
   const intro = PERSONA_INTRO[persona];
   if (!oportunidades || oportunidades.length === 0) return null;
 
@@ -58,7 +59,17 @@ export default function OpportunityCard({ oportunidades, persona, query }: Oppor
           <Zap className="w-5 h-5 text-primary" />
           <h3 className="text-base font-semibold text-foreground">{intro.titulo}</h3>
         </div>
-        <p className="text-sm text-muted-foreground">{intro.subtitulo} — tema: <strong>{query}</strong></p>
+        <div className="space-y-0.5">
+          <p className="text-sm text-muted-foreground">{intro.subtitulo}</p>
+          {cnaeLabel ? (
+            <p className="text-sm text-foreground">
+              Setor: <strong>{cnaeLabel}</strong>
+              <span className="text-muted-foreground text-xs ml-2">· busca: "{query}"</span>
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">Tema: <strong>{query}</strong></p>
+          )}
+        </div>
       </div>
 
       {/* Oportunidades */}
