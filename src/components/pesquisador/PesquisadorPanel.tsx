@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect } from "react";
 import { Microscope, Search, ArrowLeft, AlertTriangle, Zap, Globe, BookOpen, Users, GitBranch, TrendingUp, ExternalLink, Beaker, Target, Lightbulb, Briefcase, FlaskConical } from "lucide-react";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
+import LocalContextBadge from "@/components/shared/LocalContextBadge";
+import { useMotorLocation } from "@/hooks/useLocation";
 import { TrlScaleChart } from "@/components/shared/TrlScaleChart";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import Header from "@/components/Header";
@@ -42,6 +44,7 @@ const PesquisadorPanel = () => {
 
 
   const { search, data, analysis, isLoading, isAnalyzing, error } = useMotorSearch();
+  const { uf, ufNome, municipioNome, label: locationLabel, hasLocation } = useMotorLocation();
 
   // Lê query pré-preenchida vinda da busca unificada
   useEffect(() => {
@@ -59,7 +62,7 @@ const PesquisadorPanel = () => {
       setSearchQuery(savedQuery);
       setSelectedCnaes(cnaes);
       setHasSearched(true);
-      search(savedQuery, expectedPersona, undefined, cnaes.map((c) => c.code));
+      search(savedQuery, expectedPersona, { location: locationLabel || undefined }, cnaes.map((c) => c.code));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -142,6 +145,7 @@ const PesquisadorPanel = () => {
 
         {/* Results dashboard */}
         <div className="max-w-6xl mx-auto px-4 py-6 space-y-6 animate-in fade-in-0 duration-500">
+          <LocalContextBadge persona="pesquisador" />
           {indices && <StrategicIndices indices={indices} />}
 
           {(data as any).oportunidades?.length > 0 && (

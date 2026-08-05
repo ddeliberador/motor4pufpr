@@ -3,6 +3,8 @@ import TrlScaleBar from "@/components/shared/TrlScaleBar";
 import { useState, useCallback, useEffect } from "react";
 import { Factory, Search, ArrowLeft, AlertTriangle, Zap, Globe, GitBranch, Building2, TrendingUp, Target, Handshake, ShieldCheck, Users, Building, ExternalLink } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
+import LocalContextBadge from "@/components/shared/LocalContextBadge";
+import { useMotorLocation } from "@/hooks/useLocation";
 import { TrlScaleChart } from "@/components/shared/TrlScaleChart";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import Header from "@/components/Header";
@@ -78,6 +80,7 @@ const EmpresaPanel = () => {
   const [isLoadingCompetitors, setIsLoadingCompetitors] = useState(false);
 
   const { search, data, analysis, isLoading, isAnalyzing, error } = useMotorSearch();
+  const { uf, ufNome, municipioNome, label: locationLabel, hasLocation } = useMotorLocation();
 
   // Lê query pré-preenchida vinda da busca unificada
   useEffect(() => {
@@ -95,7 +98,7 @@ const EmpresaPanel = () => {
       setSearchQuery(savedQuery);
       setSelectedCnaes(cnaes);
       setHasSearched(true);
-      search(savedQuery, expectedPersona, undefined, cnaes.map((c) => c.code));
+      search(savedQuery, expectedPersona, { location: locationLabel || undefined }, cnaes.map((c) => c.code));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -173,6 +176,7 @@ const EmpresaPanel = () => {
         </div>
 
         <div className="max-w-6xl mx-auto px-4 py-6 space-y-6 animate-in fade-in-0 duration-500">
+          <LocalContextBadge persona="empresa" />
           {indices && <StrategicIndices indices={indices} />}
 
           {(data as any).oportunidades?.length > 0 && (
