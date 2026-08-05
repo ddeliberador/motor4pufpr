@@ -1144,7 +1144,7 @@ Deno.serve(async (req) => {
     const cnaeSecoes = cnaeResult.secoes.length > 0 ? cnaeResult.secoes : null;
     let cagedData = null;
     try {
-      cagedData = await fetchCaged(cbosFromOntology, query, cnaeSecoes);
+      cagedData = await fetchCaged(cbosFromOntology, query, cnaeSecoes, location?.uf || "");
       if (cagedData) console.log(`CAGED: saldo 12m ${cagedData.nacional?.total_saldo}`);
     } catch (e) {
       console.warn("CAGED falhou:", e instanceof Error ? e.message : e);
