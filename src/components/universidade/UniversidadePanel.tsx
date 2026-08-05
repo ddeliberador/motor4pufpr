@@ -115,7 +115,15 @@ const UniversidadePanel = () => {
           {indices && <StrategicIndices indices={indices} />}
 
           {(data as any).oportunidades?.length > 0 && (
-            <OpportunityCard oportunidades={(data as any).oportunidades} persona="universidade" query={data.query} />
+            <OpportunityCard
+              oportunidades={(data as any).oportunidades}
+              persona="universidade"
+              query={data.query}
+              cnaeLabel={
+                (data.layers as any).technology?.cnae_result?.subclasses?.[0]?.descricao ||
+                (data.layers as any).technology?.cnae_result?.divisoes?.[0]?.descricao
+              }
+            />
           )}
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
