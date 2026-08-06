@@ -209,7 +209,7 @@ const EmpresaPanel = () => {
             </div>
 
             {/* Métricas de mercado */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <BigMetric label="Grupos de P&D" value={String(institutionRanking.length)} sub="possíveis parceiros ICT" />
               <BigMetric label="Mercado público"
                 value={mercadoPublico > 0 ? `R$ ${(mercadoPublico / 1e6).toFixed(1)}M` : "—"}
@@ -223,8 +223,9 @@ const EmpresaPanel = () => {
                 sub="BR + global" />
             </div>
 
+            <div className="panel-grid">
             {/* Contratos públicos */}
-            <div className="space-y-2">
+            <div className="space-y-2 rounded-xl border border-border/50 p-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-foreground flex items-center gap-2">
                   {hasLocation ? <><MapPin className="w-4 h-4 text-emerald-500" />Contratos públicos em {locationLabel}</> : "📋 Contratos públicos federais"}
@@ -259,7 +260,7 @@ const EmpresaPanel = () => {
 
             {/* Importação × Exportação — gap de mercado */}
             {(intl?.macro_indicators || []).filter((m: any) => m.value !== null).length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-2 rounded-xl border border-border/50 p-4">
                 <p className="text-sm font-semibold text-foreground">🌐 Importação × Exportação — oportunidade de substituição</p>
                 <p className="text-xs text-muted-foreground">Se o Brasil importa mais do que exporta neste produto, há espaço para produção nacional. Dados: COMEX Stat / BCB.</p>
                 <div className="space-y-1.5">
@@ -284,7 +285,7 @@ const EmpresaPanel = () => {
               const periodoLabel = useUf ? ufData.periodo : caged.nacional?.periodo;
 
               return (
-                <div className="space-y-3">
+                <div className="space-y-3 rounded-xl border border-border/50 p-4">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-foreground">
                       👷 Mão de obra disponível?{useUf ? ` — ${uf}` : ""}
@@ -357,6 +358,7 @@ const EmpresaPanel = () => {
                 </div>
               </div>
             )}
+            </div>
           </Section>
 
           {/* ── SEÇÃO 2: Quanto custa inovar? ── */}
@@ -367,10 +369,11 @@ const EmpresaPanel = () => {
                 A maioria dos empresários não sabe que <strong className="text-foreground">o governo paga até 80% dos seus custos de P&D</strong> via incentivo fiscal da Lei do Bem. Informe o faturamento da sua empresa e veja quanto você recupera.
               </p>
             </div>
-            <LeiBemCalculadora />
+            <div className="panel-grid">
+              <LeiBemCalculadora />
 
             {/* Outros incentivos disponíveis */}
-            <div className="space-y-2">
+            <div className="space-y-2 rounded-xl border border-border/50 p-4">
               <p className="text-sm font-semibold text-foreground">Outros incentivos aplicáveis a este campo:</p>
               {[
                 { sigla: "BNDES Inovação", desc: "Financiamento a partir de 6% a.a. para P&D e inovação", url: "https://www.bndes.gov.br" },
@@ -386,6 +389,7 @@ const EmpresaPanel = () => {
                   <ExternalLink className="w-4 h-4 text-primary flex-shrink-0" />
                 </a>
               ))}
+              </div>
             </div>
           </Section>
 
@@ -400,7 +404,7 @@ const EmpresaPanel = () => {
               </p>
             </div>
 
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
               {institutionRanking.map(([name, count], i) => {
                 const papers = knowledge.papers || [];
                 const pesqs = [...new Set(
@@ -453,7 +457,7 @@ const EmpresaPanel = () => {
                 <p className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
                   <MapPin className="w-4 h-4 text-emerald-500" /> Instituições em {locationLabel}
                 </p>
-                <div className="space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {(data.layers as any).knowledge.local_institutions.slice(0, 5).map((inst: any, i: number) => (
                     <div key={i} className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg">
                       <p className="text-sm text-foreground">{inst.name}</p>
