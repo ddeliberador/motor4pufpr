@@ -190,26 +190,43 @@ export default function MuralOportunidades({ query, uf, ufNome, searchTerms }: M
             </div>
           </div>
           <button onClick={carregar} disabled={loading}
-            className="p-2 rounded-lg hover:bg-muted/50 transition-colors disabled:opacity-40">
+            className="p-2 rounded-lg hover:bg-muted/50 transition-colors disabled:opacity-40"
+            title="Atualizar">
             <RefreshCw className={`w-4 h-4 text-muted-foreground ${loading ? "animate-spin" : ""}`} />
           </button>
         </div>
 
+        {/* Banner de verba disponível */}
+        {!loading && dados && (
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3 mb-3">
+            <p className="text-xs text-emerald-600 font-semibold uppercase tracking-wider mb-1">💰 Dinheiro na mesa em 2026</p>
+            <p className="text-sm font-bold text-foreground">
+              R$ 3,6 bilhões+ em subvenção Finep
+              <span className="text-xs font-normal text-muted-foreground ml-2">sem devolução · editais abertos</span>
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              + crédito BNDES permanente · Lei do Bem (R$ 11,98bi deduzidos em 2024) · EMBRAPII sem edital
+            </p>
+          </div>
+        )}
+
+        {/* Alertas de urgência */}
         {!loading && (urgentes > 0 || proximas > 0) && (
-          <div className="flex gap-2 flex-wrap mt-3">
+          <div className="flex gap-2 flex-wrap">
             {urgentes > 0 && (
-              <span className="text-xs px-3 py-1 bg-red-500 text-white rounded-full font-semibold flex items-center gap-1">
+              <span className="text-xs px-3 py-1 bg-red-500 text-white rounded-full font-semibold">
                 🔴 {urgentes} encerrando em breve
               </span>
             )}
             {proximas > 0 && (
-              <span className="text-xs px-3 py-1 bg-amber-500 text-white rounded-full font-semibold flex items-center gap-1">
+              <span className="text-xs px-3 py-1 bg-amber-500 text-white rounded-full font-semibold">
                 🟡 {proximas} no próximo mês
               </span>
             )}
           </div>
         )}
       </div>
+
 
       {!loading && todasOps.length > 0 && (
         <div className="flex gap-1 px-4 py-3 border-b border-border/30 overflow-x-auto">
