@@ -189,15 +189,7 @@ const EmpresaPanel = () => {
             searchTerms={(data as any).ontology?.search_terms}
           />
 
-          {/* Card de oportunidades */}
-          {(data as any).oportunidades?.length > 0 && (
-            <OpportunityCard
-              oportunidades={(data as any).oportunidades}
-              persona="empresa"
-              query={data.query}
-              cnaeLabel={cnaeLabel}
-            />
-          )}
+
 
           {/* ── SEÇÃO 1: Vale entrar? ── */}
           <Section id="mercado" emoji="📊" title="Vale entrar nesse mercado?"
