@@ -15,11 +15,11 @@ const Header = () => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass-card">
       <div className="container-wide">
-        <nav className="flex items-center justify-between h-16">
+        <nav className="flex items-center justify-between gap-3 h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link to="/" className="flex items-center gap-2.5 sm:gap-3 group min-w-0">
             {/* Engrenagem SVG inline */}
-            <svg width="40" height="40" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <svg className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <rect width="64" height="64" rx="14" fill="#07101c"/>
               <g transform="translate(32,32)">
                 <g fill="#3b82f6">
@@ -38,18 +38,18 @@ const Header = () => {
                 <rect x="-1.5" y="0.5" width="3" height="7" rx="1.2" fill="#3b82f6"/>
               </g>
             </svg>
-            <div className="hidden sm:block">
-              <span className="font-semibold text-base text-foreground tracking-tight">
+            <div className="min-w-0">
+              <span className="font-semibold text-sm sm:text-base text-foreground tracking-tight whitespace-nowrap">
                 Motor da <span className="text-primary">Inovação</span>
               </span>
-              <span className="text-[10px] text-muted-foreground block -mt-0.5 tracking-widest uppercase">UFPR · PPGPP</span>
+              <span className="text-[9px] sm:text-[10px] text-muted-foreground block -mt-0.5 tracking-widest uppercase whitespace-nowrap">UFPR · PPGPP</span>
             </div>
           </Link>
 
 
 
           {/* Nav Links + CTA */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-4 lg:gap-6 flex-shrink-0">
             <Link
               to="/conceito"
               className={`text-sm font-medium transition-colors ${isActive('/conceito') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}

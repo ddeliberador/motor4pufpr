@@ -200,8 +200,19 @@
   }
 
   .container-wide {
-    @apply max-w-7xl mx-auto px-4 sm:px-6;
+    @apply max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8;
   }
+
+  /* Painéis de persona — largura e respiro padronizados */
+  .panel-container {
+    @apply w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Grid padrão para conteúdo denso dentro dos painéis */
+  .panel-grid {
+    @apply grid grid-cols-1 xl:grid-cols-2 gap-4 items-start;
+  }
+
 
   .section-spacing {
     @apply py-16 md:py-24;
