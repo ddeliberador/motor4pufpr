@@ -328,6 +328,8 @@ Deno.serve(async (req) => {
         total_pregoes: pregoesAbertos.length,
         pregoes_urgentes: pregoesAbertos.filter((p: any) => p.prazo_urgencia === "urgente").length,
         pregoes_proximos: pregoesAbertos.filter((p: any) => p.prazo_urgencia === "proximo").length,
+        total_verba_disponivel: "R$ 3,6bi+ em subvenção Finep 2026 + crédito BNDES permanente",
+
       },
       sources: ["PNCP", "Curadoria Motor da Inovação"],
       processing_time_ms: Date.now() - start,
