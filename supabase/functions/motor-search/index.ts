@@ -583,6 +583,12 @@ Deno.serve(async (req) => {
         query,
         cnpq_areas: ontology?.cnpq_areas || [],
       }),
+      invokeLayer("layer-oportunidades", {
+        query,
+        search_terms: searchTerms,
+        uf: uf || "",
+        cnae_secoes: cnaeCodes,
+      }),
     ]);
 
 
