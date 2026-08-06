@@ -179,7 +179,7 @@ const EmpresaPanel = () => {
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
+        <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 py-6 space-y-4">
           <LocalContextBadge persona="empresa" />
 
           <MuralOportunidades
