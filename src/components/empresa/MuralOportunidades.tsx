@@ -87,6 +87,17 @@ function OportunidadeCard({ op, index }: { op: any; index: number }) {
 
       {expandido && (
         <div className="border-t border-border/30 px-4 pb-4 pt-3 space-y-3 bg-background/50">
+          {/* Verba em destaque */}
+          {op.valor_total && (
+            <div className="bg-emerald-500/8 border border-emerald-500/20 rounded-xl px-4 py-3">
+              <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider mb-0.5">💰 Verba disponível</p>
+              <p className="text-base font-bold text-foreground">{op.valor_total}</p>
+              {op.valor_por_projeto && op.valor_por_projeto !== op.valor_total && (
+                <p className="text-xs text-muted-foreground mt-0.5">Por projeto: {op.valor_por_projeto}</p>
+              )}
+            </div>
+          )}
+
           {op.descricao && (
             <p className="text-sm text-muted-foreground leading-relaxed">{op.descricao}</p>
           )}
