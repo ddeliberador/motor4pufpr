@@ -65,7 +65,7 @@ const EmpresaPanel = () => {
   const [showAI, setShowAI] = useState(false);
 
   const { search, data, analysis, isLoading, isAnalyzing, error } = useMotorSearch();
-  const { uf, label: locationLabel, hasLocation } = useMotorLocation();
+  const { uf, ufNome, label: locationLabel, hasLocation } = useMotorLocation();
   const { searchCnaes, isLoading: isLoadingCnaes } = useCnaeSearch();
   const navigate = useNavigate();
 
@@ -185,7 +185,7 @@ const EmpresaPanel = () => {
           <MuralOportunidades
             query={data.query}
             uf={uf}
-            ufNome={locationLabel}
+            ufNome={ufNome}
             searchTerms={(data as any).ontology?.search_terms}
           />
 
