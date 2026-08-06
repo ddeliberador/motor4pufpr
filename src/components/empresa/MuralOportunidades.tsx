@@ -250,7 +250,7 @@ export default function MuralOportunidades({ query, uf, ufNome, searchTerms }: M
             <p className="text-sm text-muted-foreground">Buscando oportunidades em {uf ? `${uf} e` : ""} bases federais...</p>
           </div>
         ) : filtradas.length > 0 ? (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
             {filtradas.map((op: any, i: number) => (
               <OportunidadeCard key={i} op={op} index={i} />
             ))}

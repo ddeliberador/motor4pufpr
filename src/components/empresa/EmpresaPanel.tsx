@@ -167,7 +167,7 @@ const EmpresaPanel = () => {
       <main className="pt-16">
         {/* Sticky header */}
         <div className="sticky top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
-          <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-4">
+          <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 py-3 flex items-center gap-4">
             <button onClick={() => navigate("/")} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors flex-shrink-0">
               <ArrowLeft className="w-4 h-4" />Nova busca
             </button>
@@ -179,7 +179,7 @@ const EmpresaPanel = () => {
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
+        <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 py-6 space-y-4">
           <LocalContextBadge persona="empresa" />
 
           <MuralOportunidades
