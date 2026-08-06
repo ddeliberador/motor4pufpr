@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { X, ExternalLink, ChevronRight } from "lucide-react";
+import { ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 
 interface ParceriaICTModalProps {
   trigger?: React.ReactNode;
+  defaultOpen?: boolean;
 }
 
 const PASSOS = [
@@ -38,69 +39,54 @@ const PASSOS = [
   },
 ];
 
-export default function ParceriaICTModal({ trigger }: ParceriaICTModalProps) {
-  const [open, setOpen] = useState(false);
+export default function ParceriaICTModal({ defaultOpen = true }: ParceriaICTModalProps) {
+  const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <>
-      <div onClick={() => setOpen(true)} className="cursor-pointer">
-        {trigger || (
-          <button className="w-full flex items-center justify-between px-4 py-3 bg-primary/5 border border-primary/20 rounded-xl hover:bg-primary/10 transition-colors">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🤝</span>
-              <span className="text-sm font-medium text-foreground">Como iniciar uma parceria com uma ICT?</span>
-            </div>
-            <ChevronRight className="w-4 h-4 text-primary" />
-          </button>
-        )}
-      </div>
+    <section className="w-full bg-card border border-border rounded-2xl overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-muted/40 transition-colors"
+      >
+        <div>
+          <h2 className="text-base font-semibold text-foreground">🤝 Como fazer parceria com uma ICT</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Passo a passo pelo Marco Legal de CT&I</p>
+        </div>
+        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+      </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)}>
-          <div className="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto shadow-xl" onClick={e => e.stopPropagation()}>
-            <div className="sticky top-0 bg-card border-b border-border px-5 py-4 flex items-center justify-between z-10">
-              <div>
-                <h2 className="text-base font-semibold text-foreground">🤝 Como fazer parceria com uma ICT</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">Passo a passo pelo Marco Legal de CT&I</p>
-              </div>
-              <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
-                <X className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </div>
-
-            <div className="p-5 space-y-4">
-              {PASSOS.map((passo, i) => (
-                <div key={i} className="flex gap-4">
-                  <div className="flex-shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
-                      <span className="text-xs font-bold text-primary">{passo.numero}</span>
-                    </div>
-                    {i < PASSOS.length - 1 && (
-                      <div className="w-px h-full bg-border/50 mx-auto mt-2" />
-                    )}
-                  </div>
-                  <div className="flex-1 pb-4">
-                    <p className="text-sm font-semibold text-foreground mb-1">{passo.titulo}</p>
-                    <p className="text-sm text-muted-foreground leading-relaxed mb-2">{passo.descricao}</p>
-                    {passo.link && (
-                      <a href={passo.link.url} target="_blank" rel="noopener noreferrer"
-                         className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium">
-                        <ExternalLink className="w-3 h-3" />
-                        {passo.link.label}
-                      </a>
-                    )}
-                  </div>
+        <div className="border-t border-border px-5 py-5 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
+            {PASSOS.map((passo, i) => (
+              <div key={i} className="flex gap-3 p-4 rounded-xl border border-border/50 bg-muted/20 h-full">
+                <div className="w-9 h-9 flex-shrink-0 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+                  <span className="text-xs font-bold text-primary">{passo.numero}</span>
                 </div>
-              ))}
-
-              <div className="bg-muted/30 rounded-xl p-4 mt-2">
-                <p className="text-xs font-semibold text-foreground mb-1">⏱️ Quanto tempo leva?</p>
-                <p className="text-xs text-muted-foreground">Negociação e assinatura: 2–4 meses. Projetos simples (acordo de cooperação): 3–6 semanas. Acelerou desde o Marco Legal 2016 — hoje é mais simples do que parece.</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground mb-1">{passo.titulo}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-2">{passo.descricao}</p>
+                  {passo.link && (
+                    <a href={passo.link.url} target="_blank" rel="noopener noreferrer"
+                       className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium">
+                      <ExternalLink className="w-3 h-3" />
+                      {passo.link.label}
+                    </a>
+                  )}
+                </div>
               </div>
+            ))}
+
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 h-full">
+              <p className="text-sm font-semibold text-foreground mb-1">⏱️ Quanto tempo leva?</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Negociação e assinatura: 2–4 meses. Projetos simples (acordo de cooperação): 3–6 semanas.
+                Acelerou desde o Marco Legal 2016 — hoje é mais simples do que parece.
+              </p>
             </div>
           </div>
         </div>
       )}
-    </>
+    </section>
   );
 }
