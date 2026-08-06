@@ -63,7 +63,10 @@ function OportunidadeCard({ op, index }: { op: any; index: number }) {
                   R$ {op.valor >= 1e6 ? `${(op.valor / 1e6).toFixed(1)}M` : `${(op.valor / 1e3).toFixed(0)}k`}
                 </span>
               )}
-              {op.valor_max && !op.valor && (
+              {op.valor_total && !op.valor && (
+                <span className="text-xs font-bold text-emerald-600">{op.valor_total}</span>
+              )}
+              {!op.valor_total && op.valor_max && !op.valor && (
                 <span className="text-xs text-muted-foreground">{op.valor_max}</span>
               )}
               {op.dias_restantes != null && op.dias_restantes > 0 && (
