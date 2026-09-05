@@ -253,11 +253,14 @@ async function searchOpenAlex(query: string) {
 
   return {
     papers,
+    papers_cited: citedPapers,
+    papers_recent: recentPapers,
     institutionCounts,
     international,
     concepts,
-    totalPapersBR: papersData?.meta?.count || papers.length,
+    totalPapersBR: papersData?.meta?.count || recentData?.meta?.count || papers.length,
     totalPapersGlobal: totalGlobalData?.meta?.count || papersData?.meta?.count || papers.length,
+
     resolved_concept: resolved
       ? { id: resolved.id, name: resolved.name, level: resolved.level, works_count: resolved.works_count, strategy: "concept" }
       : { id: null, name: null, strategy: "text" },
