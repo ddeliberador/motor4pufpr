@@ -450,6 +450,9 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       papers: openalex.papers,
+      papers_cited: openalex.papers_cited,
+      papers_recent: openalex.papers_recent,
+
       total_papers: totalPapers,
       total_papers_global: openalex.totalPapersGlobal,
       institutions: openalex.institutionCounts,
