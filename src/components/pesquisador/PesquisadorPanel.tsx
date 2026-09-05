@@ -82,6 +82,21 @@ const PesquisadorPanel = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.query]);
 
+  // Busca empresas nacionais e referências globais quando os dados chegam
+  useEffect(() => {
+    if (!data?.query || competitors !== null || isLoadingCompetitors) return;
+    setIsLoadingCompetitors(true);
+    supabase.functions.invoke("competitor-search", { body: { query: data.query } })
+      .then(({ data: result }) => {
+        if (result && !result.error) setCompetitors(result);
+      })
+      .catch(console.warn)
+      .finally(() => setIsLoadingCompetitors(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.query]);
+
+
+
   const { searchCnaes, isLoading: isLoadingCnaes } = useCnaeSearch();
 
   const openDetail = useCallback((item: DetailItem) => { setDetailItem(item); setDetailOpen(true); }, []);
@@ -170,6 +185,7 @@ const PesquisadorPanel = () => {
               <TabsTrigger value="empregabilidade" className="text-xs rounded-lg">💼 CAGED</TabsTrigger>
               <TabsTrigger value="icts" className="text-xs rounded-lg">🏛️ ICTs Nacionais</TabsTrigger>
               <TabsTrigger value="cnpq" className="text-xs rounded-lg">🎓 Bolsas CNPq</TabsTrigger>
+              <TabsTrigger value="empresas" className="text-xs rounded-lg">🏢 Empresas & Referências</TabsTrigger>
               {(data.layers as any).programs?.context?.industrial && (
                 <TabsTrigger value="nova-industria" className="text-xs rounded-lg">🏭 Nova Indústria BR</TabsTrigger>
               )}
