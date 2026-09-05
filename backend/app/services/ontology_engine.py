@@ -352,6 +352,10 @@ class OntologyEngine:
 
 # Classificação Internacional de Patentes (IPC)
 IPC_INDEX = {
+    # Reologia e escoamento
+    "G01N11": {"description": "Investigação de propriedades de escoamento de materiais (viscosidade, plasticidade)"},
+    "G01N11/14": {"description": "Medição de viscosidade por elementos rotativos (reômetros rotacionais)"},
+    "G01F1": {"description": "Medição de vazão volumétrica ou mássica de fluidos"},
     # Baterias e energia
     "H01M": {"description": "Processos ou meios para conversão direta de energia química em elétrica (baterias)"},
     "H01M10/05": {"description": "Acumuladores com eletrólitos não aquosos"},
@@ -405,6 +409,9 @@ IPC_INDEX = {
 
 # Nomenclatura Comum do Mercosul (NCM)
 NCM_INDEX = {
+    # Instrumentação para reologia / escoamento
+    "9027.80.99": {"description": "Outros instrumentos e aparelhos para análises físicas ou químicas (viscosímetros, reômetros)"},
+    "9026.10.00": {"description": "Instrumentos para medida ou controle de vazão ou nível de líquidos"},
     # Baterias e acumuladores
     "8507.60.00": {"description": "Acumuladores de íons de lítio"},
     "8507.80.00": {"description": "Outros acumuladores elétricos"},
@@ -459,6 +466,16 @@ CNAE_INDEX = {
     "62.04-0": {"description": "Consultoria em tecnologia da informação"},
     "35.11-5": {"description": "Geração de energia elétrica"},
     "28.69-1": {"description": "Fabricação de máquinas e equipamentos para uso industrial"},
+    # Setores onde disciplinas transversais (ex.: reologia) se aplicam — códigos oficiais CNAE 2.0
+    "19.21-7": {"description": "Fabricação de produtos do refino de petróleo"},
+    "20.29-1": {"description": "Fabricação de produtos químicos orgânicos não especificados anteriormente"},
+    "20.31-2": {"description": "Fabricação de resinas termoplásticas"},
+    "20.71-1": {"description": "Fabricação de tintas, vernizes, esmaltes e lacas"},
+    "20.63-1": {"description": "Fabricação de cosméticos, produtos de perfumaria e de higiene pessoal"},
+    "10.52-0": {"description": "Fabricação de laticínios"},
+    "10.99-6": {"description": "Fabricação de produtos alimentícios não especificados anteriormente"},
+    "23.20-6": {"description": "Fabricação de cimento"},
+    "22.29-3": {"description": "Fabricação de artefatos de material plástico não especificados anteriormente"},
 }
 
 # Áreas do conhecimento CNPq
@@ -636,6 +653,38 @@ KEYWORD_MAPPINGS = {
         "cnae": ["28.69-1", "30800005"],
         "cnpq": ["30800005", "30500001"],
     },
+    # Disciplinas científicas transversais (sem CNAE próprio -> múltiplos setores)
+    # Reologia: aplica-se a refino de petróleo, química, tintas, alimentos, cosméticos, cimento e polímeros
+    "reologia": {
+        "ipc": ["G01N11", "G01N11/14"],
+        "ncm": ["9027.80.99"],
+        "cnae": ["19.21-7", "20.29-1", "20.31-2", "20.71-1", "20.63-1", "10.99-6", "10.52-0", "23.20-6", "22.29-3", "72.10-0"],
+        "cnpq": ["30600006", "10500006", "30300002"],
+    },
+    "reologico": {
+        "ipc": ["G01N11", "G01N11/14"],
+        "ncm": ["9027.80.99"],
+        "cnae": ["19.21-7", "20.29-1", "20.31-2", "20.71-1", "20.63-1", "10.99-6", "10.52-0", "23.20-6", "22.29-3", "72.10-0"],
+        "cnpq": ["30600006", "10500006", "30300002"],
+    },
+    "reologica": {
+        "ipc": ["G01N11", "G01N11/14"],
+        "ncm": ["9027.80.99"],
+        "cnae": ["19.21-7", "20.29-1", "20.31-2", "20.71-1", "20.63-1", "10.99-6", "10.52-0", "23.20-6", "22.29-3", "72.10-0"],
+        "cnpq": ["30600006", "10500006", "30300002"],
+    },
+    "viscosidade": {
+        "ipc": ["G01N11", "G01N11/14"],
+        "ncm": ["9027.80.99"],
+        "cnae": ["19.21-7", "20.29-1", "20.71-1", "20.63-1", "10.99-6", "22.29-3"],
+        "cnpq": ["30600006", "10500006", "30300002"],
+    },
+    "escoamento": {
+        "ipc": ["G01N11", "G01F1"],
+        "ncm": ["9027.80.99", "9026.10.00"],
+        "cnae": ["19.21-7", "20.29-1", "23.20-6", "22.29-3"],
+        "cnpq": ["30600006", "10500006", "30500001"],
+    },
 }
 
 # Sinônimos para expansão de busca
@@ -650,4 +699,10 @@ SYNONYMS = {
     "nano": ["nanomaterial", "nanopartícula", "nanoestrutura"],
     "automacao": ["automatização", "controle automático"],
     "robotica": ["robô", "manipulador", "cobot"],
+    # Disciplinas científicas transversais
+    "reologia": ["rheology", "comportamento reológico", "propriedades reológicas"],
+    "reologico": ["rheology", "rheological", "comportamento reológico"],
+    "reologica": ["rheology", "rheological", "propriedades reológicas"],
+    "viscosidade": ["viscosity", "viscosímetro", "reologia"],
+    "escoamento": ["flow", "fluid flow", "reologia"],
 }

@@ -24,20 +24,136 @@ async function safeFetch(url: string, options?: RequestInit, timeoutMs = 20000):
   }
 }
 
+function normalizeText(s: string): string {
+  return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
+/** Aproxima um termo em português do seu cognato em inglês (sufixos latinos comuns). */
+function ptToEnStem(s: string): string {
+  return normalizeText(s)
+    .replace(/logia$/, "logy").replace(/grafia$/, "graphy").replace(/metria$/, "metry")
+    .replace(/nomia$/, "nomy").replace(/c[aã]o$/, "tion").replace(/s[aã]o$/, "sion")
+    .replace(/dade$/, "ty").replace(/ismo$/, "ism").replace(/ico$/, "ic").replace(/ica$/, "ic")
+    .replace(/ia$/, "y").replace(/ura$/, "ure").replace(/encia$/, "ence").replace(/ancia$/, "ance");
+}
+
+function levenshtein(a: string, b: string): number {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 1; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) {
+    dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  }
+  return dp[m][n];
+}
+
+/** Similaridade 0..1 entre o termo buscado e o nome (inglês) de um conceito. */
+function conceptNameSimilarity(query: string, conceptName: string): number {
+  const q = normalizeText(query);
+  const n = normalizeText(conceptName);
+  if (!q || !n) return 0;
+  if (q === n) return 1;
+  // "rheology" vs "reology": ignora 'h' mudo em posições típicas de transliteração
+  const strip = (s: string) => s.replace(/(?<=[rtcp])h/g, "");
+  const candidates = [q, ptToEnStem(q)];
+  let best = 0;
+  for (const c of candidates) {
+    const a = strip(c), b = strip(n);
+    const sim = 1 - levenshtein(a, b) / Math.max(a.length, b.length);
+    best = Math.max(best, sim);
+    if (b.startsWith(a) && a.length >= 5) best = Math.max(best, 0.8);
+  }
+  return best;
+}
+
+/**
+ * Resolve o termo (em qualquer idioma) para um conceito canônico do OpenAlex.
+ * Ex.: "Reologia" -> C200990466 "Rheology". Retorna null se não houver confiança razoável.
+ *
+ * Estratégia:
+ *  1. /concepts?search=<query> (funciona para termos em inglês ou empréstimos).
+ *  2. Se nada: busca textual em works agrupada por concepts.id e escolhe o conceito
+ *     cujo nome em inglês é cognato do termo buscado (multilíngue via similaridade).
+ */
+async function resolveOpenAlexConcept(query: string, headers: Record<string, string>) {
+  const MIN_SIM = 0.75;
+  const MIN_WORKS = 100;
+
+  // 1) Busca direta no índice de conceitos
+  const direct = await safeFetch(
+    `https://api.openalex.org/concepts?search=${encodeURIComponent(query)}&per_page=5&select=id,display_name,level,works_count`,
+    { headers },
+    8000
+  );
+  let best: any = null;
+  let bestScore = 0;
+  for (const c of (direct?.results || [])) {
+    const sim = conceptNameSimilarity(query, c.display_name);
+    if (sim > bestScore && (c.works_count || 0) >= MIN_WORKS) { bestScore = sim; best = c; }
+  }
+
+  // 2) Resolução multilíngue via conceitos dos works que casam com o texto
+  if (!best || bestScore < MIN_SIM) {
+    const grouped = await safeFetch(
+      `https://api.openalex.org/works?search=${encodeURIComponent(query)}&group_by=concepts.id&per_page=50`,
+      { headers },
+      8000
+    );
+    for (const g of (grouped?.group_by || [])) {
+      if (!g.key_display_name) continue;
+      const sim = conceptNameSimilarity(query, g.key_display_name);
+      // leve bônus por volume relativo (evita conceitos raros com nome parecido)
+      const score = sim + Math.min((g.count || 0) / 5000, 0.05);
+      if (sim >= MIN_SIM && score > bestScore && (g.count || 0) >= 20) {
+        bestScore = score;
+        best = { id: g.key, display_name: g.key_display_name, level: null, works_count: g.count };
+      }
+    }
+  }
+
+  if (!best || bestScore < MIN_SIM) return null;
+  return {
+    id: String(best.id || "").replace("https://openalex.org/", ""),
+    name: best.display_name as string,
+    level: best.level as number | null,
+    works_count: best.works_count as number,
+    score: Math.min(bestScore, 1),
+  };
+}
+
 async function searchOpenAlex(query: string) {
   const encoded = encodeURIComponent(query);
   const headers = { "User-Agent": "Motor4P-UFPR/1.0 (mailto:pesquisa@ufpr.br)" };
 
-  // Chamada 1: dados básicos — rápida e confiável
-  const [papersData, intlData, conceptsData, totalGlobalData] = await Promise.all([
+  // Passo 0: resolve o conceito multilíngue (amplia recall para produção em inglês)
+  let resolved = await resolveOpenAlexConcept(query, headers);
+  const base = resolved
+    ? `https://api.openalex.org/works?filter=concepts.id:${resolved.id}`
+    : `https://api.openalex.org/works?search=${encoded}`;
+  const brFilter = resolved ? `,institutions.country_code:BR` : `&filter=institutions.country_code:BR`;
+  if (resolved) console.log(`OpenAlex concept resolved: "${query}" -> ${resolved.id} (${resolved.name}, score ${resolved.score.toFixed(2)})`);
+
+  const fetchAll = (b: string, br: string) => Promise.all([
     safeFetch(
-      `https://api.openalex.org/works?search=${encoded}&filter=institutions.country_code:BR&per_page=15&sort=cited_by_count:desc&select=id,title,publication_year,cited_by_count,authorships,primary_location,open_access,concepts,doi`,
+      `${b}${br}&per_page=15&sort=cited_by_count:desc&select=id,title,publication_year,cited_by_count,authorships,primary_location,open_access,concepts,doi`,
       { headers }
     ),
-    safeFetch(`https://api.openalex.org/works?search=${encoded}&group_by=authorships.institutions.country_code&per_page=15`, { headers }),
-    safeFetch(`https://api.openalex.org/works?search=${encoded}&group_by=concepts.id&per_page=20`, { headers }),
-    safeFetch(`https://api.openalex.org/works?search=${encoded}&per_page=1`, { headers }),
+    safeFetch(`${b}&group_by=authorships.institutions.country_code&per_page=15`, { headers }),
+    safeFetch(`${b}&group_by=concepts.id&per_page=20`, { headers }),
+    safeFetch(`${b}&per_page=1`, { headers }),
   ]);
+
+  let [papersData, intlData, conceptsData, totalGlobalData] = await fetchAll(base, brFilter);
+
+  // Fallback: se a busca por conceito não trouxe papers BR, volta à busca textual literal
+  if (resolved && !(papersData?.results?.length)) {
+    console.warn(`OpenAlex concept ${resolved.id} returned no BR papers, falling back to text search`);
+    [papersData, intlData, conceptsData, totalGlobalData] = await fetchAll(
+      `https://api.openalex.org/works?search=${encoded}`,
+      `&filter=institutions.country_code:BR`
+    );
+    resolved = null;
+  }
 
   // Mapeamento básico dos papers
   const papers = (papersData?.results || []).map((w: any) => ({
@@ -122,6 +238,9 @@ async function searchOpenAlex(query: string) {
     concepts,
     totalPapersBR: papersData?.meta?.count || papers.length,
     totalPapersGlobal: totalGlobalData?.meta?.count || papersData?.meta?.count || papers.length,
+    resolved_concept: resolved
+      ? { id: resolved.id, name: resolved.name, level: resolved.level, works_count: resolved.works_count, strategy: "concept" }
+      : { id: null, name: null, strategy: "text" },
   };
 }
 
