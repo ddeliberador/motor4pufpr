@@ -82,6 +82,21 @@ const PesquisadorPanel = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.query]);
 
+  // Busca empresas nacionais e referências globais quando os dados chegam
+  useEffect(() => {
+    if (!data?.query || competitors !== null || isLoadingCompetitors) return;
+    setIsLoadingCompetitors(true);
+    supabase.functions.invoke("competitor-search", { body: { query: data.query } })
+      .then(({ data: result }) => {
+        if (result && !result.error) setCompetitors(result);
+      })
+      .catch(console.warn)
+      .finally(() => setIsLoadingCompetitors(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.query]);
+
+
+
   const { searchCnaes, isLoading: isLoadingCnaes } = useCnaeSearch();
 
   const openDetail = useCallback((item: DetailItem) => { setDetailItem(item); setDetailOpen(true); }, []);
