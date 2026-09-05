@@ -650,4 +650,10 @@ SYNONYMS = {
     "nano": ["nanomaterial", "nanopartícula", "nanoestrutura"],
     "automacao": ["automatização", "controle automático"],
     "robotica": ["robô", "manipulador", "cobot"],
+    # Disciplinas científicas transversais
+    "reologia": ["rheology", "comportamento reológico", "propriedades reológicas"],
+    "reologico": ["rheology", "rheological", "comportamento reológico"],
+    "reologica": ["rheology", "rheological", "propriedades reológicas"],
+    "viscosidade": ["viscosity", "viscosímetro", "reologia"],
+    "escoamento": ["flow", "fluid flow", "reologia"],
 }
