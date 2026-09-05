@@ -133,27 +133,29 @@ async function searchOpenAlex(query: string) {
   const brFilter = resolved ? `,institutions.country_code:BR` : `&filter=institutions.country_code:BR`;
   if (resolved) console.log(`OpenAlex concept resolved: "${query}" -> ${resolved.id} (${resolved.name}, score ${resolved.score.toFixed(2)})`);
 
+  const SELECT = "id,title,publication_year,cited_by_count,authorships,primary_location,open_access,concepts,doi";
+
   const fetchAll = (b: string, br: string) => Promise.all([
-    safeFetch(
-      `${b}${br}&per_page=15&sort=cited_by_count:desc&select=id,title,publication_year,cited_by_count,authorships,primary_location,open_access,concepts,doi`,
-      { headers }
-    ),
+    safeFetch(`${b}${br}&per_page=15&sort=cited_by_count:desc&select=${SELECT}`, { headers }),
     safeFetch(`${b}&group_by=authorships.institutions.country_code&per_page=15`, { headers }),
     safeFetch(`${b}&group_by=concepts.id&per_page=20`, { headers }),
     safeFetch(`${b}&per_page=1`, { headers }),
+    // 2ª chamada: mais recentes (pesquisa aplicada recente, pouco citada)
+    safeFetch(`${b}${br}&per_page=15&sort=publication_date:desc&select=${SELECT}`, { headers }),
   ]);
 
-  let [papersData, intlData, conceptsData, totalGlobalData] = await fetchAll(base, brFilter);
+  let [papersData, intlData, conceptsData, totalGlobalData, recentData] = await fetchAll(base, brFilter);
 
   // Fallback: se a busca por conceito não trouxe papers BR, volta à busca textual literal
   if (resolved && !(papersData?.results?.length)) {
     console.warn(`OpenAlex concept ${resolved.id} returned no BR papers, falling back to text search`);
-    [papersData, intlData, conceptsData, totalGlobalData] = await fetchAll(
+    [papersData, intlData, conceptsData, totalGlobalData, recentData] = await fetchAll(
       `https://api.openalex.org/works?search=${encoded}`,
       `&filter=institutions.country_code:BR`
     );
     resolved = null;
   }
+
 
   // Mapeamento básico dos papers
   const papers = (papersData?.results || []).map((w: any) => ({
