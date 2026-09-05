@@ -41,6 +41,8 @@ const PesquisadorPanel = () => {
   const [icts, setIcts] = useState<any>(null);
   const [isLoadingIcts, setIsLoadingIcts] = useState(false);
   const [cnpqData, setCnpqData] = useState<any>(null);
+  const [competitors, setCompetitors] = useState<any>(null);
+  const [isLoadingCompetitors, setIsLoadingCompetitors] = useState(false);
 
 
   const { search, data, analysis, isLoading, isAnalyzing, error } = useMotorSearch();
