@@ -170,6 +170,7 @@ const PesquisadorPanel = () => {
               <TabsTrigger value="empregabilidade" className="text-xs rounded-lg">💼 CAGED</TabsTrigger>
               <TabsTrigger value="icts" className="text-xs rounded-lg">🏛️ ICTs Nacionais</TabsTrigger>
               <TabsTrigger value="cnpq" className="text-xs rounded-lg">🎓 Bolsas CNPq</TabsTrigger>
+              <TabsTrigger value="empresas" className="text-xs rounded-lg">🏢 Empresas & Referências</TabsTrigger>
               {(data.layers as any).programs?.context?.industrial && (
                 <TabsTrigger value="nova-industria" className="text-xs rounded-lg">🏭 Nova Indústria BR</TabsTrigger>
               )}
