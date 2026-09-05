@@ -28,48 +28,96 @@ function normalizeText(s: string): string {
   return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 }
 
+/** Aproxima um termo em português do seu cognato em inglês (sufixos latinos comuns). */
+function ptToEnStem(s: string): string {
+  return normalizeText(s)
+    .replace(/logia$/, "logy").replace(/grafia$/, "graphy").replace(/metria$/, "metry")
+    .replace(/nomia$/, "nomy").replace(/c[aã]o$/, "tion").replace(/s[aã]o$/, "sion")
+    .replace(/dade$/, "ty").replace(/ismo$/, "ism").replace(/ico$/, "ic").replace(/ica$/, "ic")
+    .replace(/ia$/, "y").replace(/ura$/, "ure").replace(/encia$/, "ence").replace(/ancia$/, "ance");
+}
+
+function levenshtein(a: string, b: string): number {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 1; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) {
+    dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  }
+  return dp[m][n];
+}
+
+/** Similaridade 0..1 entre o termo buscado e o nome (inglês) de um conceito. */
+function conceptNameSimilarity(query: string, conceptName: string): number {
+  const q = normalizeText(query);
+  const n = normalizeText(conceptName);
+  if (!q || !n) return 0;
+  if (q === n) return 1;
+  // "rheology" vs "reology": ignora 'h' mudo em posições típicas de transliteração
+  const strip = (s: string) => s.replace(/(?<=[rtcp])h/g, "");
+  const candidates = [q, ptToEnStem(q)];
+  let best = 0;
+  for (const c of candidates) {
+    const a = strip(c), b = strip(n);
+    const sim = 1 - levenshtein(a, b) / Math.max(a.length, b.length);
+    best = Math.max(best, sim);
+    if (b.startsWith(a) && a.length >= 5) best = Math.max(best, 0.8);
+  }
+  return best;
+}
+
 /**
  * Resolve o termo (em qualquer idioma) para um conceito canônico do OpenAlex.
- * Ex.: "Reologia" -> C9634124 "Rheology". Retorna null se não houver confiança razoável.
+ * Ex.: "Reologia" -> C200990466 "Rheology". Retorna null se não houver confiança razoável.
+ *
+ * Estratégia:
+ *  1. /concepts?search=<query> (funciona para termos em inglês ou empréstimos).
+ *  2. Se nada: busca textual em works agrupada por concepts.id e escolhe o conceito
+ *     cujo nome em inglês é cognato do termo buscado (multilíngue via similaridade).
  */
 async function resolveOpenAlexConcept(query: string, headers: Record<string, string>) {
-  const data = await safeFetch(
-    `https://api.openalex.org/concepts?search=${encodeURIComponent(query)}&per_page=5&select=id,display_name,level,works_count,international,relevance_score`,
+  const MIN_SIM = 0.75;
+  const MIN_WORKS = 100;
+
+  // 1) Busca direta no índice de conceitos
+  const direct = await safeFetch(
+    `https://api.openalex.org/concepts?search=${encodeURIComponent(query)}&per_page=5&select=id,display_name,level,works_count`,
     { headers },
     8000
   );
-  const results: any[] = data?.results || [];
-  if (!results.length) return null;
-
-  const q = normalizeText(query);
   let best: any = null;
   let bestScore = 0;
-
-  for (const c of results) {
-    const names = new Set<string>([normalizeText(c.display_name)]);
-    const intl = c.international?.display_name || {};
-    for (const v of Object.values(intl)) names.add(normalizeText(String(v)));
-
-    let nameScore = 0;
-    for (const n of names) {
-      if (!n) continue;
-      if (n === q) { nameScore = 1; break; }
-      if (n.startsWith(q) || q.startsWith(n)) nameScore = Math.max(nameScore, 0.85);
-      else if (n.includes(q) || q.includes(n)) nameScore = Math.max(nameScore, 0.7);
-    }
-    const relevance = typeof c.relevance_score === "number" ? Math.min(c.relevance_score / 1000, 1) : 0;
-    const score = Math.max(nameScore, relevance * 0.6);
-    if (score > bestScore) { bestScore = score; best = c; }
+  for (const c of (direct?.results || [])) {
+    const sim = conceptNameSimilarity(query, c.display_name);
+    if (sim > bestScore && (c.works_count || 0) >= MIN_WORKS) { bestScore = sim; best = c; }
   }
 
-  // Exige nome muito próximo (ou relevância alta) e volume mínimo de trabalhos
-  if (!best || bestScore < 0.7 || (best.works_count || 0) < 100) return null;
+  // 2) Resolução multilíngue via conceitos dos works que casam com o texto
+  if (!best || bestScore < MIN_SIM) {
+    const grouped = await safeFetch(
+      `https://api.openalex.org/works?search=${encodeURIComponent(query)}&group_by=concepts.id&per_page=50`,
+      { headers },
+      8000
+    );
+    for (const g of (grouped?.group_by || [])) {
+      if (!g.key_display_name) continue;
+      const sim = conceptNameSimilarity(query, g.key_display_name);
+      // leve bônus por volume relativo (evita conceitos raros com nome parecido)
+      const score = sim + Math.min((g.count || 0) / 5000, 0.05);
+      if (sim >= MIN_SIM && score > bestScore && (g.count || 0) >= 20) {
+        bestScore = score;
+        best = { id: g.key, display_name: g.key_display_name, level: null, works_count: g.count };
+      }
+    }
+  }
+
+  if (!best || bestScore < MIN_SIM) return null;
   return {
     id: String(best.id || "").replace("https://openalex.org/", ""),
     name: best.display_name as string,
-    level: best.level as number,
+    level: best.level as number | null,
     works_count: best.works_count as number,
-    score: bestScore,
+    score: Math.min(bestScore, 1),
   };
 }
 
