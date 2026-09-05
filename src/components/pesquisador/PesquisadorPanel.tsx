@@ -529,15 +529,60 @@ const PesquisadorPanel = () => {
                 />
               </div>
 
-              <div className="bg-card border border-border rounded-2xl p-5">
-                <h3 className="text-base font-semibold text-foreground mb-2">
-                  🏷️ Classificação oficial do setor
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                  O <strong>CNAE</strong> é o código que o governo usa para identificar o setor de uma empresa. O <strong>NCM</strong> é o código aduaneiro do produto — usado em notas fiscais e exportações. Esses códigos conectam a pesquisa com os dados econômicos do setor.
-                </p>
-                <CnaeNcmCard technology={technology} />
-              </div>
+              {(() => {
+                const ont = data.ontology;
+                const cnpqAreas = ont?.cnpq_areas || [];
+                const cnaeEmpty = !ont?.cnae_codes || ont.cnae_codes.length === 0;
+                const showCnpqPrimary = cnaeEmpty && cnpqAreas.length > 0;
+                return (
+                  <>
+                    {showCnpqPrimary && (
+                      <div className="bg-card border border-primary/30 rounded-2xl p-5">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-base font-semibold text-foreground">🔬 Área científica identificada (CNPq)</h3>
+                          <span className="text-[10px] uppercase tracking-wide font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                            classificação de referência
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                          Este tema é uma <strong>disciplina científica transversal</strong>: não corresponde a uma única atividade econômica (CNAE), mas foi reconhecido nas áreas do conhecimento do CNPq abaixo. Use-as como referência para editais, bolsas e programas de pós-graduação.
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {cnpqAreas.map((a) => (
+                            <span
+                              key={a.code}
+                              className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-1.5 text-sm"
+                            >
+                              <span className="font-medium text-foreground">{a.name}</span>
+                              <span className="font-mono text-xs text-muted-foreground">{a.code}</span>
+                            </span>
+                          ))}
+                        </div>
+                        {ont?.search_terms && ont.search_terms.length > 1 && (
+                          <p className="text-xs text-muted-foreground mt-3">
+                            📌 Termos usados na busca: {ont.search_terms.slice(0, 6).join(" · ")}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="bg-card border border-border rounded-2xl p-5">
+                      <h3 className="text-base font-semibold text-foreground mb-2">
+                        🏷️ Classificação oficial do setor
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                        O <strong>CNAE</strong> é o código que o governo usa para identificar o setor de uma empresa. O <strong>NCM</strong> é o código aduaneiro do produto — usado em notas fiscais e exportações. Esses códigos conectam a pesquisa com os dados econômicos do setor.
+                      </p>
+                      {showCnpqPrimary && (
+                        <p className="text-xs text-muted-foreground mb-3 rounded-lg border border-dashed border-border px-3 py-2">
+                          ℹ️ Nenhum CNAE específico corresponde a este tema — os setores abaixo, quando exibidos, são aplicações industriais plausíveis e não uma classificação direta.
+                        </p>
+                      )}
+                      <CnaeNcmCard technology={technology} />
+                    </div>
+                  </>
+                );
+              })()}
 
               {(technology as any).innovation_datasets && (technology as any).innovation_datasets.length > 0 && (
                 <div className="bg-card border border-border rounded-2xl p-5">
