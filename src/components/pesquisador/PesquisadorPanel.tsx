@@ -998,6 +998,131 @@ const PesquisadorPanel = () => {
               })()}
             </TabsContent>
 
+            {/* EMPRESAS & REFERÊNCIAS */}
+            <TabsContent value="empresas" className="space-y-5">
+              <div className="bg-card border border-border rounded-2xl p-5">
+                <h3 className="text-base font-semibold text-foreground mb-1">🏢 Quem já trabalha com esse tema</h3>
+                <p className="text-sm text-muted-foreground">
+                  Aqui aparecem empresas brasileiras e organizações do mundo que atuam no mesmo assunto da sua pesquisa.
+                  Serve para você achar parceiros, casos reais e referências para citar.
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">📌 Fontes: PNCP (contratos públicos), Receita Federal/BrasilAPI (CNPJ), OpenAlex e GitHub.</p>
+              </div>
+
+              {isLoadingCompetitors && (
+                <div className="bg-card border border-border rounded-2xl p-5 text-sm text-muted-foreground">
+                  Buscando empresas e referências…
+                </div>
+              )}
+
+              {!isLoadingCompetitors && competitors && (() => {
+                const br: any[] = competitors.competitors_br || [];
+                const intl: any[] = competitors.competitors_intl || [];
+                const locais = hasLocation
+                  ? br.filter((c) =>
+                      municipioNome
+                        ? (c.municipio || "").toLowerCase() === municipioNome.toLowerCase()
+                        : (c.uf || "").toUpperCase() === uf.toUpperCase()
+                    )
+                  : [];
+
+                return (
+                  <div className="space-y-5">
+                    {/* 1. Empresas na sua cidade */}
+                    <div className="bg-card border border-border rounded-2xl p-5">
+                      <h4 className="text-sm font-semibold text-foreground mb-3">
+                        📍 Empresas na sua região {hasLocation && <span className="text-muted-foreground font-normal">({locationLabel})</span>}
+                      </h4>
+                      {locais.length > 0 ? (
+                        <div className="grid gap-3 md:grid-cols-2">
+                          {locais.map((c, i) => (
+                            <div key={i} className="border border-border rounded-xl p-4">
+                              <p className="text-sm font-medium text-foreground">{c.razao_social || c.name}</p>
+                              <p className="text-xs text-muted-foreground mt-1">{c.cnae_descricao || c.signal || "Setor não informado"}</p>
+                              <div className="flex flex-wrap gap-2 mt-2 text-xs text-muted-foreground">
+                                {c.porte && <span className="px-2 py-0.5 bg-muted rounded-md">{c.porte}</span>}
+                                {(c.municipio || c.uf) && <span className="px-2 py-0.5 bg-muted rounded-md">{[c.municipio, c.uf].filter(Boolean).join(" · ")}</span>}
+                                {c.cnpj && (
+                                  <a href={`https://cnpj.biz/${String(c.cnpj).replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="text-primary inline-flex items-center gap-1 hover:underline">
+                                    Ver CNPJ <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          {hasLocation
+                            ? `Não encontramos, nas bases públicas, empresas desse tema registradas em ${locationLabel}. Isso é comum: as bases só mostram empresas que assinaram contratos com o governo. Uma alternativa é consultar o CNPJ por cidade e atividade na Receita Federal (BrasilAPI/CNPJ) ou na Junta Comercial do seu estado.`
+                            : "Você ainda não escolheu estado e cidade na busca. Refaça a busca informando sua localização para ver empresas próximas de você — ou consulte o CNPJ por cidade e atividade na Receita Federal (BrasilAPI/CNPJ)."}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* 2. Referências brasileiras */}
+                    <div className="bg-card border border-border rounded-2xl p-5">
+                      <h4 className="text-sm font-semibold text-foreground mb-1">🇧🇷 Referências brasileiras</h4>
+                      <p className="text-xs text-muted-foreground mb-3">Empresas do Brasil ligadas ao tema, identificadas por contratos públicos e registro de CNPJ.</p>
+                      {br.length > 0 ? (
+                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                          {br.slice(0, 15).map((c, i) => (
+                            <div key={i} className="border border-border rounded-xl p-4">
+                              <p className="text-sm font-medium text-foreground">{c.razao_social || c.name}</p>
+                              <p className="text-xs text-muted-foreground mt-1">{c.cnae_descricao || "Atividade não informada"}</p>
+                              <div className="flex flex-wrap gap-2 mt-2 text-xs text-muted-foreground">
+                                {c.signal && <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-md">{c.signal}</span>}
+                                {(c.municipio || c.uf) && <span className="px-2 py-0.5 bg-muted rounded-md">{[c.municipio, c.uf].filter(Boolean).join(" · ")}</span>}
+                                {typeof c.contracts === "number" && <span>{c.contracts} contrato(s)</span>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Nenhuma empresa brasileira foi identificada nas bases públicas para este tema.</p>
+                      )}
+                    </div>
+
+                    {/* 3. Referências globais */}
+                    <div className="bg-card border border-border rounded-2xl p-5">
+                      <h4 className="text-sm font-semibold text-foreground mb-1">🌍 Referências globais</h4>
+                      <p className="text-xs text-muted-foreground mb-3">Organizações de fora do Brasil que publicam artigos ou desenvolvem tecnologia sobre o mesmo assunto.</p>
+                      {intl.length > 0 ? (
+                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                          {intl.slice(0, 18).map((c, i) => (
+                            <div key={i} className="border border-border rounded-xl p-4">
+                              <p className="text-sm font-medium text-foreground">{c.name}</p>
+                              <div className="flex flex-wrap gap-2 mt-2 text-xs text-muted-foreground">
+                                {c.country && <span className="px-2 py-0.5 bg-muted rounded-md">{c.country}</span>}
+                                {c.type && <span className="px-2 py-0.5 bg-muted rounded-md">{c.type === "company" ? "empresa" : c.type === "tech_org" ? "organização de tecnologia" : c.type}</span>}
+                                {typeof c.publications === "number" && <span>{c.publications} publicação(ões)</span>}
+                                {typeof c.github_stars === "number" && <span>⭐ {c.github_stars}</span>}
+                                {c.github_url && (
+                                  <a href={c.github_url} target="_blank" rel="noreferrer" className="text-primary inline-flex items-center gap-1 hover:underline">
+                                    GitHub <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Nenhuma organização internacional foi identificada para este tema.</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {!isLoadingCompetitors && !competitors && (
+                <div className="bg-card border border-border rounded-2xl p-5 text-sm text-muted-foreground">
+                  Não foi possível consultar as bases de empresas agora. Tente refazer a busca.
+                </div>
+              )}
+            </TabsContent>
+
+
+
             {/* PRESCRIÇÃO IA */}
             <TabsContent value="politicas" className="space-y-4">
               <PoliciesTab
