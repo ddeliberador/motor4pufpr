@@ -133,30 +133,32 @@ async function searchOpenAlex(query: string) {
   const brFilter = resolved ? `,institutions.country_code:BR` : `&filter=institutions.country_code:BR`;
   if (resolved) console.log(`OpenAlex concept resolved: "${query}" -> ${resolved.id} (${resolved.name}, score ${resolved.score.toFixed(2)})`);
 
+  const SELECT = "id,title,publication_year,cited_by_count,authorships,primary_location,open_access,concepts,doi";
+
   const fetchAll = (b: string, br: string) => Promise.all([
-    safeFetch(
-      `${b}${br}&per_page=15&sort=cited_by_count:desc&select=id,title,publication_year,cited_by_count,authorships,primary_location,open_access,concepts,doi`,
-      { headers }
-    ),
+    safeFetch(`${b}${br}&per_page=15&sort=cited_by_count:desc&select=${SELECT}`, { headers }),
     safeFetch(`${b}&group_by=authorships.institutions.country_code&per_page=15`, { headers }),
     safeFetch(`${b}&group_by=concepts.id&per_page=20`, { headers }),
     safeFetch(`${b}&per_page=1`, { headers }),
+    // 2ª chamada: mais recentes (pesquisa aplicada recente, pouco citada)
+    safeFetch(`${b}${br}&per_page=15&sort=publication_date:desc&select=${SELECT}`, { headers }),
   ]);
 
-  let [papersData, intlData, conceptsData, totalGlobalData] = await fetchAll(base, brFilter);
+  let [papersData, intlData, conceptsData, totalGlobalData, recentData] = await fetchAll(base, brFilter);
 
   // Fallback: se a busca por conceito não trouxe papers BR, volta à busca textual literal
   if (resolved && !(papersData?.results?.length)) {
     console.warn(`OpenAlex concept ${resolved.id} returned no BR papers, falling back to text search`);
-    [papersData, intlData, conceptsData, totalGlobalData] = await fetchAll(
+    [papersData, intlData, conceptsData, totalGlobalData, recentData] = await fetchAll(
       `https://api.openalex.org/works?search=${encoded}`,
       `&filter=institutions.country_code:BR`
     );
     resolved = null;
   }
 
+
   // Mapeamento básico dos papers
-  const papers = (papersData?.results || []).map((w: any) => ({
+  const mapWork = (w: any, origin: "cited" | "recent") => ({
     id: w.id?.replace("https://openalex.org/", "") || "",
     title: w.title || "",
     year: w.publication_year,
@@ -177,13 +179,30 @@ async function searchOpenAlex(query: string) {
     keywords: [] as string[],
     grants: [] as any[],
     sdgs: [] as string[],
-  }));
+    origin,
+  });
 
-  // Chamada 2: enriquecimento dos top 5 com abstract + grants
+  const citedPapers = (papersData?.results || []).map((w: any) => mapWork(w, "cited"));
+  const recentPapers = (recentData?.results || []).map((w: any) => mapWork(w, "recent"));
+
+  // Lista combinada sem duplicatas (por id), mais recentes primeiro
+  const seen = new Set<string>();
+  const papers: any[] = [];
+  for (const p of [...recentPapers, ...citedPapers]) {
+    if (!p.id || seen.has(p.id)) continue;
+    seen.add(p.id);
+    papers.push(p);
+  }
+
+  // Enriquecimento: top 5 mais citados + top 5 mais recentes (abstract + grants)
   if (papers.length > 0) {
-    const topIds = papers.slice(0, 5).map((p: any) => p.id).filter(Boolean);
+    const topIds = [
+      ...citedPapers.slice(0, 5).map((p: any) => p.id),
+      ...recentPapers.slice(0, 5).map((p: any) => p.id),
+    ].filter(Boolean);
+    const uniqueIds = [...new Set(topIds)];
     const enriched = await safeFetch(
-      `https://api.openalex.org/works?filter=openalex_id:${topIds.join("|")}&select=id,abstract_inverted_index,keywords,grants,sustainable_development_goals`,
+      `https://api.openalex.org/works?per_page=${uniqueIds.length}&filter=openalex_id:${uniqueIds.join("|")}&select=id,abstract_inverted_index,keywords,grants,sustainable_development_goals`,
       { headers },
       15000
     );
@@ -204,6 +223,7 @@ async function searchOpenAlex(query: string) {
       }
     }
   }
+
 
   const institutionCounts: Record<string, number> = {};
   for (const p of papers) {
@@ -233,11 +253,14 @@ async function searchOpenAlex(query: string) {
 
   return {
     papers,
+    papers_cited: citedPapers,
+    papers_recent: recentPapers,
     institutionCounts,
     international,
     concepts,
-    totalPapersBR: papersData?.meta?.count || papers.length,
+    totalPapersBR: papersData?.meta?.count || recentData?.meta?.count || papers.length,
     totalPapersGlobal: totalGlobalData?.meta?.count || papersData?.meta?.count || papers.length,
+
     resolved_concept: resolved
       ? { id: resolved.id, name: resolved.name, level: resolved.level, works_count: resolved.works_count, strategy: "concept" }
       : { id: null, name: null, strategy: "text" },
@@ -427,6 +450,9 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       papers: openalex.papers,
+      papers_cited: openalex.papers_cited,
+      papers_recent: openalex.papers_recent,
+
       total_papers: totalPapers,
       total_papers_global: openalex.totalPapersGlobal,
       institutions: openalex.institutionCounts,
