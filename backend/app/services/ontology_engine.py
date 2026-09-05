@@ -459,6 +459,16 @@ CNAE_INDEX = {
     "62.04-0": {"description": "Consultoria em tecnologia da informação"},
     "35.11-5": {"description": "Geração de energia elétrica"},
     "28.69-1": {"description": "Fabricação de máquinas e equipamentos para uso industrial"},
+    # Setores onde disciplinas transversais (ex.: reologia) se aplicam — códigos oficiais CNAE 2.0
+    "19.21-7": {"description": "Fabricação de produtos do refino de petróleo"},
+    "20.29-1": {"description": "Fabricação de produtos químicos orgânicos não especificados anteriormente"},
+    "20.31-2": {"description": "Fabricação de resinas termoplásticas"},
+    "20.71-1": {"description": "Fabricação de tintas, vernizes, esmaltes e lacas"},
+    "20.63-1": {"description": "Fabricação de cosméticos, produtos de perfumaria e de higiene pessoal"},
+    "10.52-0": {"description": "Fabricação de laticínios"},
+    "10.99-6": {"description": "Fabricação de produtos alimentícios não especificados anteriormente"},
+    "23.20-6": {"description": "Fabricação de cimento"},
+    "22.29-3": {"description": "Fabricação de artefatos de material plástico não especificados anteriormente"},
 }
 
 # Áreas do conhecimento CNPq
