@@ -352,6 +352,10 @@ class OntologyEngine:
 
 # Classificação Internacional de Patentes (IPC)
 IPC_INDEX = {
+    # Reologia e escoamento
+    "G01N11": {"description": "Investigação de propriedades de escoamento de materiais (viscosidade, plasticidade)"},
+    "G01N11/14": {"description": "Medição de viscosidade por elementos rotativos (reômetros rotacionais)"},
+    "G01F1": {"description": "Medição de vazão volumétrica ou mássica de fluidos"},
     # Baterias e energia
     "H01M": {"description": "Processos ou meios para conversão direta de energia química em elétrica (baterias)"},
     "H01M10/05": {"description": "Acumuladores com eletrólitos não aquosos"},
@@ -405,6 +409,9 @@ IPC_INDEX = {
 
 # Nomenclatura Comum do Mercosul (NCM)
 NCM_INDEX = {
+    # Instrumentação para reologia / escoamento
+    "9027.80.99": {"description": "Outros instrumentos e aparelhos para análises físicas ou químicas (viscosímetros, reômetros)"},
+    "9026.10.00": {"description": "Instrumentos para medida ou controle de vazão ou nível de líquidos"},
     # Baterias e acumuladores
     "8507.60.00": {"description": "Acumuladores de íons de lítio"},
     "8507.80.00": {"description": "Outros acumuladores elétricos"},
