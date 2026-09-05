@@ -78,7 +78,7 @@ async function searchOpenAlex(query: string) {
   const headers = { "User-Agent": "Motor4P-UFPR/1.0 (mailto:pesquisa@ufpr.br)" };
 
   // Passo 0: resolve o conceito multilíngue (amplia recall para produção em inglês)
-  const resolved = await resolveOpenAlexConcept(query, headers);
+  let resolved = await resolveOpenAlexConcept(query, headers);
   const base = resolved
     ? `https://api.openalex.org/works?filter=concepts.id:${resolved.id}`
     : `https://api.openalex.org/works?search=${encoded}`;
@@ -104,6 +104,7 @@ async function searchOpenAlex(query: string) {
       `https://api.openalex.org/works?search=${encoded}`,
       `&filter=institutions.country_code:BR`
     );
+    resolved = null;
   }
 
   // Mapeamento básico dos papers
