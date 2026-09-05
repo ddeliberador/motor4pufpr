@@ -122,6 +122,9 @@ async function searchOpenAlex(query: string) {
     concepts,
     totalPapersBR: papersData?.meta?.count || papers.length,
     totalPapersGlobal: totalGlobalData?.meta?.count || papersData?.meta?.count || papers.length,
+    resolved_concept: resolved
+      ? { id: resolved.id, name: resolved.name, level: resolved.level, works_count: resolved.works_count, strategy: "concept" }
+      : { id: null, name: null, strategy: "text" },
   };
 }
 
