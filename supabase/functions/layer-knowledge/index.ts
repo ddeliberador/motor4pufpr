@@ -158,7 +158,7 @@ async function searchOpenAlex(query: string) {
 
 
   // Mapeamento básico dos papers
-  const papers = (papersData?.results || []).map((w: any) => ({
+  const mapWork = (w: any, origin: "cited" | "recent") => ({
     id: w.id?.replace("https://openalex.org/", "") || "",
     title: w.title || "",
     year: w.publication_year,
@@ -179,13 +179,30 @@ async function searchOpenAlex(query: string) {
     keywords: [] as string[],
     grants: [] as any[],
     sdgs: [] as string[],
-  }));
+    origin,
+  });
 
-  // Chamada 2: enriquecimento dos top 5 com abstract + grants
+  const citedPapers = (papersData?.results || []).map((w: any) => mapWork(w, "cited"));
+  const recentPapers = (recentData?.results || []).map((w: any) => mapWork(w, "recent"));
+
+  // Lista combinada sem duplicatas (por id), mais recentes primeiro
+  const seen = new Set<string>();
+  const papers: any[] = [];
+  for (const p of [...recentPapers, ...citedPapers]) {
+    if (!p.id || seen.has(p.id)) continue;
+    seen.add(p.id);
+    papers.push(p);
+  }
+
+  // Enriquecimento: top 5 mais citados + top 5 mais recentes (abstract + grants)
   if (papers.length > 0) {
-    const topIds = papers.slice(0, 5).map((p: any) => p.id).filter(Boolean);
+    const topIds = [
+      ...citedPapers.slice(0, 5).map((p: any) => p.id),
+      ...recentPapers.slice(0, 5).map((p: any) => p.id),
+    ].filter(Boolean);
+    const uniqueIds = [...new Set(topIds)];
     const enriched = await safeFetch(
-      `https://api.openalex.org/works?filter=openalex_id:${topIds.join("|")}&select=id,abstract_inverted_index,keywords,grants,sustainable_development_goals`,
+      `https://api.openalex.org/works?per_page=${uniqueIds.length}&filter=openalex_id:${uniqueIds.join("|")}&select=id,abstract_inverted_index,keywords,grants,sustainable_development_goals`,
       { headers },
       15000
     );
@@ -206,6 +223,7 @@ async function searchOpenAlex(query: string) {
       }
     }
   }
+
 
   const institutionCounts: Record<string, number> = {};
   for (const p of papers) {
