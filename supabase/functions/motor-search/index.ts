@@ -531,7 +531,7 @@ Deno.serve(async (req) => {
     const knowledge = await invokeLayer("layer-knowledge", { query, search_terms: searchTerms, location });
 
     // STEP 2: Remaining 3 layers in parallel, passing knowledge + ontology data
-    const [technology, policy, international, sidra, market, patents, programs, cnpq, policies, oportunidades] = await Promise.all([
+    const [technology, policy, international, sidra, market, patents, programs, cnpq, policies, oportunidades, regional] = await Promise.all([
       invokeLayer("layer-technology", {
         query,
         knowledge_papers: knowledge?.papers?.length || 0,
@@ -663,8 +663,7 @@ Deno.serve(async (req) => {
       ...(programs?.fomento?.sources || []),
       ...(cnpq?.sources || []),
       ...(policies?.sources || []),
-
-
+      ...(regional?.sources || []),
     ];
     const uniqueSources = [...new Set(allSources)];
 
@@ -768,8 +767,7 @@ Deno.serve(async (req) => {
         cnpq: cnpq || { datasets: [], chamadas: [], convenios: null, modalidades: [], sources: [] },
         policies: policies || { politicas: { federal: [], estadual_sp: [], municipal: [] }, gazettes_mencoes: [], editais_inovacao: [], sources: [] },
         oportunidades: oportunidades || { pregoes_abertos: [], linhas_financiamento: [], chamadas_abertas: [], contexto: {} },
-
-
+        regional: regional || { available: false, reason: "Camada regional indisponível", sources: [] },
       },
       indices,
       persona_insights: personaInsights,
