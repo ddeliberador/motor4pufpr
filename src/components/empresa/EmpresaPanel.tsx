@@ -4,6 +4,7 @@ import { Factory, ArrowLeft, AlertTriangle, MapPin, TrendingUp, TrendingDown, Mi
 import { useMotorSearch } from "@/hooks/useMotorSearch";
 import { useMotorLocation } from "@/hooks/useLocation";
 import LocalContextBadge from "@/components/shared/LocalContextBadge";
+import PerspectiveSwitcher from "@/components/shared/PerspectiveSwitcher";
 import MuralOportunidades from "@/components/empresa/MuralOportunidades";
 import LeiBemCalculadora from "@/components/shared/LeiBemCalculadora";
 import ParceriaICTModal from "@/components/shared/ParceriaICTModal";
@@ -176,7 +177,8 @@ const EmpresaPanel = () => {
               <p className="text-sm font-semibold text-foreground truncate">Análise de mercado: "{data.query}"</p>
               <p className="text-[10px] text-muted-foreground">{cnaeLabel}{locationLabel ? ` · 📍 ${locationLabel}` : ""}</p>
             </div>
-            <span className="text-[9px] px-2 py-1 bg-primary/10 text-primary rounded-full border border-primary/20 flex-shrink-0">{data.meta.source_count} fontes</span>
+            <PerspectiveSwitcher current="empresa" query={data.query} />
+            <span className="hidden sm:inline text-[9px] px-2 py-1 bg-primary/10 text-primary rounded-full border border-primary/20 flex-shrink-0">{data.meta.source_count} fontes</span>
           </div>
         </div>
 

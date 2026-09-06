@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Building2, Search, ArrowLeft, AlertTriangle, Zap, MapPin, Globe, BookOpen, Shield, FileText, Activity, GitBranch, Target, ExternalLink, Users } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
 import LocalContextBadge from "@/components/shared/LocalContextBadge";
+import PerspectiveSwitcher from "@/components/shared/PerspectiveSwitcher";
 import { useMotorLocation } from "@/hooks/useLocation";
 import { TrlScaleChart } from "@/components/shared/TrlScaleChart";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
@@ -104,7 +105,8 @@ const GovernoPanel = () => {
           <div className="panel-container py-3 flex items-center gap-3 sm:gap-4">
             <button onClick={handleNewSearch} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"><ArrowLeft className="w-4 h-4" />Nova busca</button>
             <div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground truncate">{govLocation ? `Gov. ${govLevel} — ${govLocation} ×` : "Diagnóstico:"} "{data.query}"</p><p className="text-[10px] text-muted-foreground truncate">{data.meta.sources.join(" · ")} · {data.meta.processing_time_ms}ms</p></div>
-            <span className="text-[9px] px-2 py-1 bg-primary/10 text-primary rounded-full border border-primary/20 flex-shrink-0">{data.meta.source_count} fontes</span>
+            <PerspectiveSwitcher current="governo" query={data.query} />
+            <span className="hidden sm:inline text-[9px] px-2 py-1 bg-primary/10 text-primary rounded-full border border-primary/20 flex-shrink-0">{data.meta.source_count} fontes</span>
           </div>
         </div>
 

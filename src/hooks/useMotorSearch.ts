@@ -252,6 +252,34 @@ export interface EntityContext {
   location?: string;
 }
 
+// ===== Cache em memória da última busca =====
+// Permite trocar de perspectiva (persona) sem refazer as consultas às 40+ bases.
+interface CachedSearch {
+  key: string;
+  query: string;
+  cnaeCodes: string[];
+  result: MotorSearchResult;
+  analyses: Partial<Record<string, MotorAnalysis>>;
+}
+let lastSearch: CachedSearch | null = null;
+
+function buildCacheKey(query: string, cnaes: string[]) {
+  const uf = sessionStorage.getItem("motor4p_uf") || "";
+  const mun = sessionStorage.getItem("motor4p_municipio") || "";
+  return [query.trim().toLowerCase(), uf, mun, [...cnaes].sort().join(",")].join("|");
+}
+
+/** Dados da última busca concluída (para o seletor de perspectiva). */
+export function getLastSearch(): { query: string; cnaeCodes: string[] } | null {
+  return lastSearch ? { query: lastSearch.query, cnaeCodes: lastSearch.cnaeCodes } : null;
+}
+
+function applyPersona(result: MotorSearchResult, persona: string): MotorSearchResult {
+  const porPersona = (result as any).oportunidades_por_persona;
+  if (porPersona?.[persona]) return { ...result, oportunidades: porPersona[persona] } as MotorSearchResult;
+  return result;
+}
+
 export function useMotorSearch() {
   const [data, setData] = useState<MotorSearchResult | null>(null);
   const [analysis, setAnalysis] = useState<MotorAnalysis | null>(null);
@@ -272,33 +300,47 @@ export function useMotorSearch() {
     setAnalysis(null);
 
     try {
-      const uf = sessionStorage.getItem("motor4p_uf") || "";
-      const municipioRaw = sessionStorage.getItem("motor4p_municipio") || "";
-      const municipioNome = municipioRaw ? municipioRaw.split("|")[0] : "";
-      const municipioIbge = municipioRaw ? municipioRaw.split("|")[1] : "";
+      const cnaes = selectedCnaes || [];
+      const cacheKey = buildCacheKey(query, cnaes);
+      let searchResult: MotorSearchResult;
 
-      const { data: searchResult, error: searchError } = await supabase.functions.invoke(
-        "motor-search",
-        { body: {
-          query,
-          persona,
-          selectedCnaes: selectedCnaes || [],
-          uf: uf || undefined,
-          uf_nome: sessionStorage.getItem("motor4p_uf_nome") || undefined,
-          municipio: municipioNome || undefined,
-          municipio_ibge: municipioIbge || undefined,
-        }}
-      );
+      if (lastSearch && lastSearch.key === cacheKey) {
+        // Troca de perspectiva: reaproveita os dados já coletados
+        searchResult = lastSearch.result;
+      } else {
+        const uf = sessionStorage.getItem("motor4p_uf") || "";
+        const municipioRaw = sessionStorage.getItem("motor4p_municipio") || "";
+        const municipioNome = municipioRaw ? municipioRaw.split("|")[0] : "";
+        const municipioIbge = municipioRaw ? municipioRaw.split("|")[1] : "";
 
-      if (searchError) throw searchError;
-      if (!searchResult || searchResult.error) {
-        throw new Error(searchResult?.error || "Erro ao buscar dados");
+        const { data: fetched, error: searchError } = await supabase.functions.invoke(
+          "motor-search",
+          { body: {
+            query,
+            persona,
+            selectedCnaes: cnaes,
+            uf: uf || undefined,
+            uf_nome: sessionStorage.getItem("motor4p_uf_nome") || undefined,
+            municipio: municipioNome || undefined,
+            municipio_ibge: municipioIbge || undefined,
+          }}
+        );
+
+        if (searchError) throw searchError;
+        if (!fetched || fetched.error) {
+          throw new Error(fetched?.error || "Erro ao buscar dados");
+        }
+        searchResult = fetched as MotorSearchResult;
+        lastSearch = { key: cacheKey, query: query.trim(), cnaeCodes: cnaes, result: searchResult, analyses: {} };
       }
 
-      setData(searchResult as MotorSearchResult);
+      setData(applyPersona(searchResult, persona));
       setIsLoading(false);
 
-      // Step 2: Get AI analysis (non-blocking)
+      // Step 2: Get AI analysis (non-blocking) — cacheada por persona
+      const cachedAnalysis = lastSearch?.analyses[persona];
+      if (cachedAnalysis) { setAnalysis(cachedAnalysis); return; }
+
       setIsAnalyzing(true);
       try {
         const { data: analysisResult, error: analysisError } = await supabase.functions.invoke(
@@ -308,6 +350,7 @@ export function useMotorSearch() {
 
         if (!analysisError && analysisResult && !analysisResult.error) {
           setAnalysis(analysisResult as MotorAnalysis);
+          if (lastSearch && lastSearch.key === cacheKey) lastSearch.analyses[persona] = analysisResult as MotorAnalysis;
         } else {
           console.warn("AI analysis unavailable:", analysisError || analysisResult?.error);
         }

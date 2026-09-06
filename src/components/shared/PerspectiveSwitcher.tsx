@@ -1,0 +1,68 @@
+import { useNavigate } from "react-router-dom";
+import { personaConfigs } from "@/config/personas";
+import type { Persona } from "@/types/persona";
+import { getLastSearch } from "@/hooks/useMotorSearch";
+import { cn } from "@/lib/utils";
+
+const ORDER: Persona[] = ["pesquisador", "universidade", "empresa", "governo"];
+
+interface Props {
+  current: Persona;
+  query: string;
+}
+
+/**
+ * Exibe a perspectiva ativa e permite alternar entre as 4 personas
+ * reaproveitando os dados já coletados (sem nova consulta às bases).
+ */
+const PerspectiveSwitcher = ({ current, query }: Props) => {
+  const navigate = useNavigate();
+  const CurrentIcon = personaConfigs[current].icon;
+
+  const switchTo = (persona: Persona) => {
+    if (persona === current) return;
+    const last = getLastSearch();
+    const q = last?.query || query;
+    const cnaes = (last?.cnaeCodes || []).map((code) => ({ code, description: "" }));
+    sessionStorage.setItem("motor4p_query", q);
+    sessionStorage.setItem("motor4p_persona", persona);
+    sessionStorage.setItem("motor4p_cnaes", JSON.stringify(cnaes));
+    navigate(`/${persona}`);
+  };
+
+  return (
+    <div className="flex items-center gap-2 flex-shrink-0" role="group" aria-label="Perspectiva de análise">
+      <span className="hidden md:inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-mono">
+        <CurrentIcon className="w-3.5 h-3.5 text-primary" />
+        Perspectiva
+      </span>
+      <div className="flex items-center rounded-md border border-border bg-muted/40 p-0.5">
+        {ORDER.map((p) => {
+          const cfg = personaConfigs[p];
+          const Icon = cfg.icon;
+          const active = p === current;
+          return (
+            <button
+              key={p}
+              type="button"
+              onClick={() => switchTo(p)}
+              aria-pressed={active}
+              title={`Ver como ${cfg.label}`}
+              className={cn(
+                "flex items-center gap-1.5 px-2 py-1 rounded text-[11px] transition-colors",
+                active
+                  ? "bg-primary text-primary-foreground font-medium shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted",
+              )}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span className={active ? "inline" : "hidden lg:inline"}>{cfg.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+export default PerspectiveSwitcher;
