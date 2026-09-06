@@ -1,4 +1,4 @@
-import { ExternalLink, FileText, Building2, ChevronDown, ChevronUp, Rocket, TrendingUp, Link as LinkIcon } from "lucide-react";
+import { ExternalLink, FileText, Building2, ChevronDown, ChevronUp, Rocket, TrendingUp, Link as LinkIcon, ScrollText } from "lucide-react";
 import { useState } from "react";
 
 interface PoliciesTabProps {
