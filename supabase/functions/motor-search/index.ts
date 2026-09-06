@@ -589,6 +589,15 @@ Deno.serve(async (req) => {
         uf: uf || "",
         cnae_secoes: cnaeCodes,
       }),
+      invokeLayer("layer-regional", {
+        query,
+        search_terms: searchTerms,
+        cnae_codes: cnaeCodes,
+        uf: uf || "",
+        uf_nome: uf_nome || "",
+        municipio: municipio || "",
+        municipio_ibge: municipio_ibge || "",
+      }),
     ]);
 
 
