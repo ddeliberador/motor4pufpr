@@ -263,6 +263,58 @@ async function fetchEditaisRelacionados(query: string) {
   return allResults.slice(0, 8);
 }
 
+// --- Câmara dos Deputados — Dados Abertos ---
+// API pública, sem autenticação: https://dadosabertos.camara.leg.br/swagger/api.html
+async function fetchTramitacaoCamara(query: string) {
+  const data = await safeFetch(
+    `https://dadosabertos.camara.leg.br/api/v2/proposicoes?keywords=${encodeURIComponent(query)}&ordem=DESC&ordenarPor=id&itens=10`
+  );
+  return (data?.dados || []).map((p: any) => ({
+    id: p.id,
+    casa: "Câmara dos Deputados",
+    identificacao: `${p.siglaTipo} ${p.numero}/${p.ano}`,
+    siglaTipo: p.siglaTipo || "",
+    numero: p.numero || null,
+    ano: p.ano || null,
+    ementa: p.ementa || "",
+    url: `https://www.camara.leg.br/proposicoesWeb/fichadetramitacao?idProposicao=${p.id}`,
+  }));
+}
+
+// --- Senado Federal — Dados Abertos ---
+// Endpoint documentado em https://legis.senado.leg.br/dadosabertos/docs (OpenAPI):
+// GET /dadosabertos/processo?termo=... — serviço substituto do antigo /materia/pesquisa/lista,
+// que foi descontinuado (desativação completa em 2026-02-01, segundo metadados da própria API).
+// Obs.: a busca por termo é por palavras-chave indexadas e funciona melhor com termos simples.
+async function fetchTramitacaoSenado(query: string) {
+  // Tenta a query completa; se vazia, tenta o primeiro termo significativo
+  const tentativas = [query, query.split(" ")[0]].filter((t, i, a) => t && a.indexOf(t) === i);
+  for (const termo of tentativas) {
+    const data = await safeFetch(
+      `https://legis.senado.leg.br/dadosabertos/processo?termo=${encodeURIComponent(termo)}`,
+      { headers: { Accept: "application/json" } }
+    );
+    const itens = Array.isArray(data) ? data : [];
+    if (itens.length === 0) continue;
+    return itens.slice(0, 10).map((p: any) => ({
+      id: p.id,
+      casa: "Senado Federal",
+      identificacao: p.identificacao || "",
+      siglaTipo: (p.identificacao || "").split(" ")[0] || "",
+      numero: null,
+      ano: null,
+      ementa: p.ementa || "",
+      situacao: p.situacaoAtual || "",
+      tramitando: p.tramitando === "Sim",
+      autor: p.autoria || "",
+      url: p.codigoMateria
+        ? `https://www25.senado.leg.br/web/atividade/materias/-/materia/${p.codigoMateria}`
+        : (p.urlDocumento || ""),
+    }));
+  }
+  return [];
+}
+
 async function fetchDatasetsEcossistema(query: string) {
   const data = await safeFetch(
     `https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent("incubadora aceleradora startup inovação " + query)}&rows=5`
@@ -286,11 +338,15 @@ Deno.serve(async (req) => {
     console.log(`Layer Policies: ${query}`);
     const start = Date.now();
 
-    const [gazettesMencoes, editaisPNCP, datasetsEco] = await Promise.all([
+    const [gazettesMencoes, editaisPNCP, datasetsEco, camara, senado] = await Promise.all([
       fetchMencoesQueridoDiario(query),
       fetchEditaisRelacionados(query),
       fetchDatasetsEcossistema(query),
+      fetchTramitacaoCamara(query),
+      fetchTramitacaoSenado(query),
     ]);
+
+    const proposicoes = [...camara, ...senado];
 
     return new Response(JSON.stringify({
       politicas: getPoliticasCuradas(),
@@ -298,7 +354,17 @@ Deno.serve(async (req) => {
       gazettes_mencoes: gazettesMencoes,
       editais_inovacao: editaisPNCP,
       datasets_ecossistema: datasetsEco,
-      sources: ["Políticas públicas curadas", "Lei do Bem/MCTI", "Lei da Informática/SEPIN", "ANPROTEC", "Querido Diário", "PNCP"],
+      tramitacao_legislativa: {
+        proposicoes,
+        total: proposicoes.length,
+        total_camara: camara.length,
+        total_senado: senado.length,
+        fontes: [
+          { fonte: "Câmara dos Deputados — Dados Abertos", url: "https://dadosabertos.camara.leg.br/api/v2/proposicoes", total: camara.length },
+          { fonte: "Senado Federal — Dados Abertos", url: "https://legis.senado.leg.br/dadosabertos/processo", total: senado.length },
+        ],
+      },
+      sources: ["Políticas públicas curadas", "Lei do Bem/MCTI", "Lei da Informática/SEPIN", "ANPROTEC", "Querido Diário", "PNCP", "Câmara dos Deputados", "Senado Federal"],
       processing_time_ms: Date.now() - start,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
