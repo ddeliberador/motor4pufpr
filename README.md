@@ -1,4 +1,4 @@
-# MOTOR 4P UFPR
+# MOTOR 4P UFPR — Motor da Inovação
 
 > A Camada Ausente da Política Industrial Brasileira
 
@@ -24,6 +24,60 @@ O MOTOR 4P UFPR é uma proposta de infraestrutura computacional pública que, da
 | **CD** | Concentração e Dependência | Mede dependência de tecnologia e insumos externos |
 | **ILT** | Índice de Lacuna de Tradução | Índice composto da situação de tradução tecnológica |
 
+## Arquitetura
+
+O sistema é composto por três camadas. Detalhamento completo em [ARCHITECTURE.md](ARCHITECTURE.md).
+
+### 1. Backend Python / FastAPI (Railway)
+
+Motor analítico do projeto:
+
+- **Motor ontológico** (`backend/app/services/ontology_engine.py`): traduz um termo livre em códigos oficiais — CNAE, NCM, IPC e áreas CNPq — com dicionário de sinônimos e expansão multilíngue.
+- **Indicadores estruturais**: cálculo metodológico de C2T, GT, P2C, CD e ILT.
+- **Conectores** (`backend/app/connectors/`): ~30 conectores para APIs públicas, todos herdando de `BaseConnector` (cache, retry, concorrência controlada).
+
+### 2. Edge Functions (Supabase)
+
+Camadas de dados em Deno/TypeScript, executadas em paralelo pelo orquestrador `motor-search`:
+
+| Função | Papel |
+|---|---|
+| `motor-search` | Orquestrador: dispara as camadas, agrega e calcula os índices |
+| `layer-knowledge` | OpenAlex — artigos, instituições, conceitos |
+| `layer-technology` | TRL, emprego (CAGED/IPEAData), GitHub |
+| `layer-policy` | Portal da Transparência, PNCP, emendas, orçamento |
+| `layer-policies` | Lei do Bem, Lei da Informática, FAPs, ecossistema |
+| `layer-programs` | Missões NIB/PBIA, dados.gov.br, SIDRA |
+| `layer-patents` | EPO OPS e soberania tecnológica |
+| `layer-sidra` | SIDRA/IBGE — PIB, PINTEC |
+| `layer-cnpq` | Bolsas e fomento CNPq |
+| `layer-international` | Comparações internacionais |
+| `layer-oportunidades` | Editais e chamadas com verba aberta |
+| `competitor-search` | Empresas e referências nacionais e globais |
+| `ict-search` | ICTs nacionais |
+| `enrichment-search`, `market-analysis`, `motor-analysis`, `policy-simulator`, `research-agent`, `research-gaps`, `smart-insights` | Análises derivadas e apoio de IA |
+
+### 3. Frontend React / TypeScript
+
+Uma leitura dos mesmos dados para cada persona:
+
+- **Pesquisador** — `src/components/pesquisador/`
+- **Empresa** — `src/components/empresa/`
+- **Governo** — `src/components/governo/`
+- **Universidade / ICT** — `src/components/universidade/`
+- Seleção de persona, localização e CNAE em `src/components/mvp/`
+
+### Fluxo de uma busca
+
+```text
+Frontend (persona + termo + localização)
+   → motor-search (edge function)
+       → tradução ontológica (backend Python)
+       → layer-* em paralelo
+       → agregação e cálculo dos índices
+   → resposta única JSON → painel da persona
+```
+
 ## Estrutura do Projeto
 
 ```
@@ -39,8 +93,12 @@ MOTOR 4P UFPR/
 │   ├── requirements.txt
 │   └── run.py
 │
+├── supabase/functions/         # Edge Functions (Deno/TypeScript)
+│   ├── motor-search/          # Orquestrador
+│   └── layer-*/               # Camadas de dados
+│
 ├── src/                        # Frontend React (TypeScript)
-│   ├── components/            # Componentes React
+│   ├── components/            # Componentes React (por persona)
 │   ├── hooks/                 # Hooks customizados
 │   ├── lib/                   # Utilitários e API client
 │   ├── pages/                 # Páginas da aplicação
@@ -67,6 +125,7 @@ MOTOR 4P UFPR/
 - Python 3.11+
 - Node.js 18+
 - npm ou yarn
+- Supabase CLI (para as edge functions)
 
 ### Backend (FastAPI)
 
@@ -115,6 +174,30 @@ npm run dev
 
 O frontend estará disponível em: http://localhost:5173
 
+### Edge Functions (Supabase CLI)
+
+```bash
+# Instale a CLI
+npm install -g supabase
+# ou: brew install supabase/tap/supabase
+
+supabase login
+supabase link --project-ref <ref-do-projeto>
+
+# Execute uma função localmente
+supabase functions serve layer-knowledge --env-file supabase/.env.local
+
+# Teste
+curl -X POST http://localhost:54321/functions/v1/layer-knowledge \
+  -H "Content-Type: application/json" \
+  -d '{"query":"reologia"}'
+
+# Publique (requer permissão no projeto)
+supabase functions deploy layer-knowledge
+```
+
+Cada função é autocontida em `supabase/functions/<nome>/index.ts`.
+
 ## Endpoints da API
 
 ### Principais
@@ -145,6 +228,10 @@ curl "http://localhost:8000/api/v1/incidence/ontology?query=inteligencia%20artif
 - httpx (async HTTP)
 - Python 3.11+
 
+### Edge Functions
+- Deno / TypeScript
+- Supabase Functions
+
 ### Frontend
 - React 18
 - TypeScript
@@ -153,6 +240,12 @@ curl "http://localhost:8000/api/v1/incidence/ontology?query=inteligencia%20artif
 - Shadcn/ui
 - Framer Motion
 
+## Compromisso Open Source
+
+O Motor da Inovação é um projeto 100% open source, desenvolvido como parte de uma tese de doutorado em Políticas Públicas na UFPR. Toda a infraestrutura — frontend, backend, conectores de dados e modelos analíticos — é pública e auditável.
+
+Veja também: [CONTRIBUTING.md](CONTRIBUTING.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) · [SECURITY.md](SECURITY.md)
+
 ## Autores
 
 - **Decio Dalton Deliberador Filho** - Doutorando
@@ -160,6 +253,12 @@ curl "http://localhost:8000/api/v1/incidence/ontology?query=inteligencia%20artif
 
 Doutorado em Políticas Públicas - Universidade Federal do Paraná (UFPR)
 
+## Como citar
+
+Consulte o arquivo [CITATION.cff](CITATION.cff) — o GitHub gera automaticamente a citação em APA/BibTeX a partir dele.
+
 ## Licença
 
-Este projeto é desenvolvido como parte de pesquisa acadêmica na UFPR.
+Distribuído sob a **Licença MIT**. Veja o arquivo [LICENSE](LICENSE) para o texto completo.
+
+Copyright (c) 2026 Decio Dalton Deliberador Filho.

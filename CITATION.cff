@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "Se você utilizar este software, por favor cite-o conforme abaixo."
+title: "Motor 4P UFPR / Motor da Inovação"
+abstract: >-
+  Infraestrutura computacional pública e open source que conecta Pesquisa,
+  Produção, Política e Patentes no sistema de inovação brasileiro. Artefato de
+  pesquisa do doutorado em Políticas Públicas do Programa de Pós-Graduação em
+  Políticas Públicas (PPGPP) da Universidade Federal do Paraná (UFPR).
+type: software
+authors:
+  - family-names: "Deliberador Filho"
+    given-names: "Decio Dalton"
+    affiliation: "Universidade Federal do Paraná (UFPR) — PPGPP, doutorando"
+    country: BR
+  - family-names: "Shima"
+    given-names: "Walter Tadahiro"
+    affiliation: "Universidade Federal do Paraná (UFPR) — PPGPP, orientador"
+    country: BR
+license: MIT
+repository-code: "https://github.com/ddeliberador/motor4pufpr"
+url: "https://motorinovacao.com.br"
+keywords:
+  - política industrial
+  - políticas públicas
+  - sistema nacional de inovação
+  - dados abertos
+  - ciência e tecnologia
+  - UFPR
+year: 2026
