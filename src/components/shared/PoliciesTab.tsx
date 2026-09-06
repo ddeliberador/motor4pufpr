@@ -148,7 +148,7 @@ export default function PoliciesTab({ policies, persona, query }: PoliciesTabPro
     </div>
   );
 
-  const { politicas, ecossistema, gazettes_mencoes, editais_inovacao } = policies;
+  const { politicas, ecossistema, gazettes_mencoes, editais_inovacao, tramitacao_legislativa } = policies;
 
   // Separa incentivos fiscais das outras políticas
   const incentivos = (politicas?.federal || []).filter((p: any) => p.sigla === "LEI-BEM" || p.sigla === "LEI-INFO");
