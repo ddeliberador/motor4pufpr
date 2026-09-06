@@ -1,3 +1,4 @@
+import RegionalTab from "@/components/shared/RegionalTab";
 import { useState, useEffect } from "react";
 import { Factory, ArrowLeft, AlertTriangle, MapPin, TrendingUp, TrendingDown, Minus, ExternalLink, ChevronDown, ChevronUp, Zap, Shield, Package, Users, BookOpen } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
@@ -467,6 +468,16 @@ const EmpresaPanel = () => {
                 </div>
               </div>
             )}
+          </Section>
+
+          {/* ── SEÇÃO 4: Visão Regional ── */}
+          <Section id="regional" emoji="📍" title="Visão Regional" subtitle={hasLocation ? `Empresas, PIB e investimento público em ${locationLabel}` : "Selecione um município para ver dados locais"} defaultOpen={hasLocation}>
+            <RegionalTab
+              persona="empresa"
+              data={data}
+              competitors={competitors}
+              cagedNote={<p className="text-sm text-muted-foreground">O saldo de admissões e demissões (Novo CAGED) já está na seção <strong>"Vale entrar?"</strong> acima — dados estaduais quando disponíveis, nacionais como referência. Fonte: IPEAData/Ministério do Trabalho.</p>}
+            />
           </Section>
 
           {/* ── ANÁLISE IA (colapsável, ao final) ── */}

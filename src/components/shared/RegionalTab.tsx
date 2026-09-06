@@ -371,12 +371,12 @@ export default function RegionalTab({ persona, data, competitors, cagedNote }: R
         <Card icon={<Building2 className="w-4 h-4 text-primary" />} title={`Comparação com outros municípios de ${ufNome || uf}`}>
           {(() => {
             const insts: any[] = (data.layers as any).knowledge?.local_institutions || [];
-            const byCity = insts.reduce((acc: Record<string, { n: number; works: number }>, i: any) => {
+            const byCity: Record<string, { n: number; works: number }> = insts.reduce((acc: Record<string, { n: number; works: number }>, i: any) => {
               const city = i.city || i.municipio || "não informado";
               acc[city] = acc[city] || { n: 0, works: 0 };
               acc[city].n += 1; acc[city].works += i.works_count ?? i.count ?? 0;
               return acc;
-            }, {});
+            }, {} as Record<string, { n: number; works: number }>);
             const cities = Object.entries(byCity).sort((a, b) => b[1].works - a[1].works);
             if (cities.length <= 1) {
               return <Unavailable reason={`o OpenAlex retornou instituições de apenas ${cities.length} município do estado para este tema — não há base para comparação`} source={{ name: "OpenAlex", url: "https://openalex.org" }} />;
