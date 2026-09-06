@@ -338,11 +338,15 @@ Deno.serve(async (req) => {
     console.log(`Layer Policies: ${query}`);
     const start = Date.now();
 
-    const [gazettesMencoes, editaisPNCP, datasetsEco] = await Promise.all([
+    const [gazettesMencoes, editaisPNCP, datasetsEco, camara, senado] = await Promise.all([
       fetchMencoesQueridoDiario(query),
       fetchEditaisRelacionados(query),
       fetchDatasetsEcossistema(query),
+      fetchTramitacaoCamara(query),
+      fetchTramitacaoSenado(query),
     ]);
+
+    const proposicoes = [...camara, ...senado];
 
     return new Response(JSON.stringify({
       politicas: getPoliticasCuradas(),
@@ -350,7 +354,17 @@ Deno.serve(async (req) => {
       gazettes_mencoes: gazettesMencoes,
       editais_inovacao: editaisPNCP,
       datasets_ecossistema: datasetsEco,
-      sources: ["Políticas públicas curadas", "Lei do Bem/MCTI", "Lei da Informática/SEPIN", "ANPROTEC", "Querido Diário", "PNCP"],
+      tramitacao_legislativa: {
+        proposicoes,
+        total: proposicoes.length,
+        total_camara: camara.length,
+        total_senado: senado.length,
+        fontes: [
+          { fonte: "Câmara dos Deputados — Dados Abertos", url: "https://dadosabertos.camara.leg.br/api/v2/proposicoes", total: camara.length },
+          { fonte: "Senado Federal — Dados Abertos", url: "https://legis.senado.leg.br/dadosabertos/processo", total: senado.length },
+        ],
+      },
+      sources: ["Políticas públicas curadas", "Lei do Bem/MCTI", "Lei da Informática/SEPIN", "ANPROTEC", "Querido Diário", "PNCP", "Câmara dos Deputados", "Senado Federal"],
       processing_time_ms: Date.now() - start,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
