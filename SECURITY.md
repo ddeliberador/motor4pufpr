@@ -4,7 +4,7 @@
 
 **Não abra uma issue pública** para relatar falhas de segurança.
 
-Envie um relato privado para **[e-mail de contato do mantenedor]** com:
+Envie um relato privado para **deciodeliberador@ufpr.br** com:
 
 - descrição da falha e impacto potencial;
 - passos para reproduzir;

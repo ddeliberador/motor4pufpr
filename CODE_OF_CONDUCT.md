@@ -49,7 +49,7 @@ indivíduo estiver representando oficialmente a comunidade em espaços públicos
 ## Aplicação
 
 Casos de comportamento abusivo, de assédio ou inaceitável podem ser reportados aos líderes
-da comunidade responsáveis pela aplicação em **[e-mail de contato do mantenedor]**.
+da comunidade responsáveis pela aplicação em **deciodeliberador@ufpr.br**.
 Todas as reclamações serão analisadas e investigadas de forma rápida e justa.
 
 Todos os líderes da comunidade têm a obrigação de respeitar a privacidade e a segurança de
