@@ -153,7 +153,7 @@ const Documentacao = () => {
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <a
-                    href="https://github.com/ddeliberador/motor4pufpr"
+                    href="https://github.com/ddeliberador/motor4pufpr.git"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
