@@ -222,6 +222,49 @@ export default function PoliciesTab({ policies, persona, query }: PoliciesTabPro
             </div>
           )}
 
+          {/* Tramitação Legislativa — Câmara + Senado */}
+          <div className="bg-card border border-border rounded-xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <ScrollText className="w-4 h-4 text-primary" />
+                📜 Tramitação Legislativa
+              </h3>
+              <div className="flex items-center gap-3">
+                {(tramitacao_legislativa?.fontes || []).map((f: any, i: number) => (
+                  <a key={i} href={f.url} target="_blank" rel="noopener noreferrer"
+                     className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                    <ExternalLink className="w-3 h-3" /> {i === 0 ? "Câmara" : "Senado"} ({f.total})
+                  </a>
+                ))}
+              </div>
+            </div>
+            {(tramitacao_legislativa?.proposicoes || []).length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Nenhuma proposição em tramitação identificada para este tema
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {tramitacao_legislativa.proposicoes.slice(0, 5).map((p: any, i: number) => (
+                  <a key={`${p.casa}-${p.id || i}`} href={p.url || "#"} target="_blank" rel="noopener noreferrer"
+                     className="flex items-start gap-3 p-3 border border-border/50 rounded-lg hover:border-border transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="text-[10px] font-bold font-mono text-foreground">{p.identificacao}</span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded border bg-muted text-muted-foreground border-border">{p.casa}</span>
+                        {p.situacao && <span className="text-[9px] text-muted-foreground">{p.situacao}</span>}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground line-clamp-2">{p.ementa}</p>
+                    </div>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  </a>
+                ))}
+                <p className="text-[9px] text-muted-foreground px-1">
+                  Fontes: Câmara dos Deputados — Dados Abertos · Senado Federal — Dados Abertos
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Editais PNCP */}
           {editais_inovacao?.length > 0 && (
             <div className="bg-card border border-border rounded-xl p-5">
