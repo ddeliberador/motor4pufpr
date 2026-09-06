@@ -1,3 +1,4 @@
+import RegionalTab from "@/components/shared/RegionalTab";
 import CagedSaldoChart from "@/components/shared/CagedSaldoChart";
 import TrlScaleBar from "@/components/shared/TrlScaleBar";
 import { useState, useEffect } from "react";
@@ -143,6 +144,7 @@ const GovernoPanel = () => {
               <TabsTrigger value="caged" className="text-xs rounded-lg">👷 Empregos</TabsTrigger>
               <TabsTrigger value="sidra" className="text-xs rounded-lg">📊 Dados do Setor</TabsTrigger>
               <TabsTrigger value="patentes" className="text-xs rounded-lg">🔏 Patentes</TabsTrigger>
+              <TabsTrigger value="regional" className="text-xs rounded-lg">📍 Visão Regional</TabsTrigger>
               <TabsTrigger value="politicas" className="text-xs rounded-lg">📋 Políticas</TabsTrigger>
               <TabsTrigger value="ia" className="text-xs rounded-lg">🧠 Análise IA {isAnalyzing && "…"}</TabsTrigger>
               {(data.layers as any).programs?.context?.industrial && (
@@ -460,6 +462,9 @@ const GovernoPanel = () => {
               <PatentsTab patents={(data.layers as any).patents} persona="governo" />
             </TabsContent>
 
+            <TabsContent value="regional" className="space-y-4">
+              <RegionalTab persona="governo" data={data} />
+            </TabsContent>
             <TabsContent value="politicas" className="space-y-4">
               <PoliciesTab
                 policies={(data.layers as any).policies}

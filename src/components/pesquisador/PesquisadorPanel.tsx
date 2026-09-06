@@ -1,3 +1,4 @@
+import RegionalTab from "@/components/shared/RegionalTab";
 import CagedSaldoChart from "@/components/shared/CagedSaldoChart";
 import TrlScaleBar from "@/components/shared/TrlScaleBar";
 import { useState, useCallback, useEffect } from "react";
@@ -193,6 +194,7 @@ const PesquisadorPanel = () => {
                 <TabsTrigger value="pbia" className="text-xs rounded-lg">🤖 PBIA</TabsTrigger>
               )}
               <TabsTrigger value="fomento" className="text-xs rounded-lg">💡 Fomento</TabsTrigger>
+              <TabsTrigger value="regional" className="text-xs rounded-lg">📍 Visão Regional</TabsTrigger>
               <TabsTrigger value="politicas" className="text-xs rounded-lg">📋 Políticas</TabsTrigger>
               <TabsTrigger value="ia" className="text-xs rounded-lg">🧠 Análise IA {isAnalyzing && "…"}</TabsTrigger>
             </TabsList>
@@ -1187,6 +1189,9 @@ const PesquisadorPanel = () => {
 
 
             {/* PRESCRIÇÃO IA */}
+            <TabsContent value="regional" className="space-y-4">
+              <RegionalTab persona="pesquisador" data={data} competitors={competitors} />
+            </TabsContent>
             <TabsContent value="politicas" className="space-y-4">
               <PoliciesTab
                 policies={(data.layers as any).policies}

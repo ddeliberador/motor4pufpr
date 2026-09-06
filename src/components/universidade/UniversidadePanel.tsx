@@ -1,3 +1,4 @@
+import RegionalTab from "@/components/shared/RegionalTab";
 import { useState, useCallback, useEffect } from "react";
 import { GraduationCap, Search, ArrowLeft, AlertTriangle, Zap, Globe, BookOpen, Building2, Award, Link2, ExternalLink } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
@@ -142,6 +143,7 @@ const UniversidadePanel = () => {
               <TabsTrigger value="openalex" className="text-xs rounded-lg">📄 Produção Científica</TabsTrigger>
               <TabsTrigger value="sidra" className="text-xs rounded-lg">🎓 Formação Acadêmica</TabsTrigger>
               <TabsTrigger value="transparencia" className="text-xs rounded-lg">💰 Captação de Recursos</TabsTrigger>
+              <TabsTrigger value="regional" className="text-xs rounded-lg">📍 Visão Regional</TabsTrigger>
               <TabsTrigger value="politicas" className="text-xs rounded-lg">📋 Políticas e Incentivos</TabsTrigger>
               <TabsTrigger value="ia" className="text-xs rounded-lg">🧠 Análise IA {isAnalyzing && "…"}</TabsTrigger>
               {(data.layers as any).programs?.context?.industrial && (
@@ -346,6 +348,9 @@ const UniversidadePanel = () => {
               <ParceriaICTModal />
             </TabsContent>
 
+            <TabsContent value="regional" className="space-y-4">
+              <RegionalTab persona="universidade" data={data} />
+            </TabsContent>
             <TabsContent value="politicas" className="space-y-4">
               <PoliciesTab
                 policies={(data.layers as any).policies}
