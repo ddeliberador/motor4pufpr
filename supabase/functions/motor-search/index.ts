@@ -793,6 +793,10 @@ Deno.serve(async (req) => {
     };
 
     (result as any).oportunidades = gerarOportunidades(persona, result);
+    // Pré-calcula para as 4 perspectivas: permite trocar de persona no frontend sem nova consulta
+    (result as any).oportunidades_por_persona = Object.fromEntries(
+      ["pesquisador", "universidade", "empresa", "governo"].map((p) => [p, gerarOportunidades(p, result)]),
+    );
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
