@@ -1,7 +1,7 @@
-import { Landmark, TrendingUp, PieChart as PieIcon, Factory, Users, Zap, ExternalLink, AlertTriangle } from "lucide-react";
+import { Landmark, TrendingUp, PieChart as PieIcon, Factory, Users, ExternalLink, AlertTriangle } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell, AreaChart, Area,
+  PieChart, Pie, Cell, AreaChart, Area, BarChart, Bar,
 } from "recharts";
 import type { MotorSearchResult } from "@/hooks/useMotorSearch";
 
@@ -23,17 +23,6 @@ const SECTOR_COLORS: Record<string, string> = {
   servicos: "hsl(35 85% 55%)",
   administracao: "hsl(275 45% 55%)",
 };
-
-function energyColor(fonte: string) {
-  const f = fonte.toLowerCase();
-  if (/hidr|hídr|cgh|uhe|pch/.test(f)) return "hsl(205 80% 48%)";
-  if (/eólic|eolic|eol/.test(f)) return "hsl(160 60% 45%)";
-  if (/solar|fotovolt/.test(f)) return "hsl(45 90% 55%)";
-  if (/biomassa|biogás|biogas|resídu/.test(f)) return "hsl(100 45% 40%)";
-  if (/nuclear/.test(f)) return "hsl(280 50% 55%)";
-  if (/térmi|termi|fóssil|fossil|gás|gas|carvão|carvao|óleo|oleo|diesel/.test(f)) return "hsl(220 8% 50%)";
-  return "hsl(var(--muted-foreground))";
-}
 
 const chartTooltip = {
   contentStyle: { background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 },
@@ -107,8 +96,10 @@ export default function PanoramaEstadualTab({ data }: Props) {
   const indSeries = (estado.industria_nacional?.data?.series || []).filter((s: any) => s.share_pct !== null);
   const indLast = estado.industria_nacional?.data?.last;
   const demo = estado.demografia;
-  const energia = estado.energia;
-  const energyItems: any[] = energia?.available ? (energia.data?.items || []).slice(0, 8) : [];
+  const comp = estado.composicao_industrial;
+  const compItems: any[] = comp?.available
+    ? (comp.data?.items || []).filter((i: any) => i.vti_share_pct !== null && i.vti_share_pct > 0).slice(0, 12)
+    : [];
 
   return (
     <div className="space-y-5">
@@ -305,38 +296,62 @@ export default function PanoramaEstadualTab({ data }: Props) {
           <SourceLine source={demo?.source} />
         </Panel>
 
-        {/* Matriz energética */}
-        <Panel icon={<Zap className="w-5 h-5 text-primary" />} title="Matriz de geração de energia do estado" subtitle="Capacidade instalada por fonte">
-          {!energia?.available ? (
-            <Note reason={energia?.reason || "Matriz energética por estado não confirmada em base oficial."} source={energia?.source} />
+        {/* Composição da indústria estadual */}
+        <Panel
+          icon={<Factory className="w-5 h-5 text-primary" />}
+          title="De que é feita a indústria do estado"
+          subtitle={comp?.data?.year ? `Participação de cada tipo de indústria no valor gerado (${comp.data.year})` : "Alimentos, metalurgia, calçados, veículos..."}
+        >
+          {!comp?.available || compItems.length === 0 ? (
+            <Note reason={comp?.reason || "Composição industrial deste estado não divulgada pelo IBGE."} source={comp?.source} />
           ) : (
             <>
-              <p className="text-sm text-muted-foreground mb-2">
-                Capacidade instalada total: <span className="font-semibold text-foreground">{fmtNum(energia.data.total_mw)} MW</span>
-              </p>
-              <div className="h-64">
+              {comp.data.top?.length > 0 && (
+                <p className="text-sm text-muted-foreground mb-3">
+                  Principais setores:{" "}
+                  <span className="font-semibold text-foreground">{comp.data.top.join(" · ")}</span>
+                </p>
+              )}
+              <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={energyItems} dataKey="share_pct" nameKey="fonte" innerRadius="52%" outerRadius="82%" paddingAngle={2} isAnimationActive={false}>
-                      {energyItems.map((e: any) => <Cell key={e.fonte} fill={energyColor(e.fonte)} />)}
-                    </Pie>
-                    <Tooltip {...chartTooltip} formatter={(v: any, n: any) => [`${v}%`, n]} />
-                  </PieChart>
+                  <BarChart data={compItems} layout="vertical" margin={{ top: 4, right: 40, left: 4, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                    <XAxis type="number" tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                    <YAxis type="category" dataKey="label" width={140} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                    <Tooltip
+                      {...chartTooltip}
+                      formatter={(v: any, _n: any, item: any) => [
+                        `${v}% do valor industrial · ${fmtBRL(item?.payload?.vti)}`,
+                        item?.payload?.cnae_label || "",
+                      ]}
+                    />
+                    <Bar dataKey="vti_share_pct" fill="hsl(215 70% 50%)" radius={[0, 4, 4, 0]} isAnimationActive={false} />
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
-              <div className="grid sm:grid-cols-2 gap-2 mt-2">
-                {energyItems.map((e: any) => (
-                  <div key={e.fonte} className="flex items-center gap-2 text-xs">
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: energyColor(e.fonte) }} />
-                    <span className="text-muted-foreground truncate" title={e.fonte}>{e.fonte}</span>
-                    <span className="ml-auto font-medium text-foreground">{e.share_pct}%</span>
+              <div className="grid sm:grid-cols-2 gap-2 mt-3">
+                {compItems.slice(0, 6).map((i: any) => (
+                  <div key={i.code} className="flex items-center gap-2 text-xs">
+                    <span className="text-muted-foreground truncate" title={i.cnae_label}>{i.label}</span>
+                    <span className="ml-auto font-medium text-foreground whitespace-nowrap">
+                      {i.vti_share_pct}%{i.jobs ? ` · ${fmtNum(i.jobs)} empregos` : ""}
+                    </span>
                   </div>
                 ))}
               </div>
+              {comp.data.total_vti && (
+                <p className="text-[11px] text-muted-foreground mt-3">
+                  Valor total gerado pela indústria do estado: {fmtBRL(comp.data.total_vti)}
+                  {comp.data.total_jobs ? ` · ${fmtNum(comp.data.total_jobs)} pessoas ocupadas` : ""}
+                  {comp.data.suppressed_count ? ` · ${comp.data.suppressed_count} setores sob sigilo estatístico` : ""}
+                </p>
+              )}
+              <p className="text-[11px] text-muted-foreground mt-1">{comp.note}</p>
             </>
           )}
-          <SourceLine source={energia?.source} />
+          <SourceLine source={comp?.source} />
         </Panel>
+
       </div>
 
       <div className="bg-card border border-border rounded-2xl p-4 flex items-start gap-2">
