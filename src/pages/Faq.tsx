@@ -77,7 +77,7 @@ export default function Faq() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
-      <main className="panel-container flex-1 py-8 md:py-12">
+      <main className="panel-container flex-1 pt-24 pb-12 md:pt-28">
         <div className="max-w-3xl">
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Base de conhecimento e sugestões</h1>
           <p className="text-muted-foreground mt-2 text-sm md:text-base">
