@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Github, Mail, ExternalLink } from "lucide-react";
+import { Github, Mail, ExternalLink, MessageSquarePlus } from "lucide-react";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -19,6 +19,7 @@ const Footer = () => {
       { label: "Embrapii", href: "https://embrapii.org.br/", external: true },
     ],
     contato: [
+      { label: "Sugerir melhoria / FAQ", href: "/faq", external: false, icon: MessageSquarePlus },
       { label: "GitHub", href: "https://github.com/ddeliberador/motor4pufpr.git", external: true, icon: Github },
       { label: "Contato", href: "mailto:contato@motor4p.ufpr.br", external: true, icon: Mail },
     ],
@@ -114,8 +115,8 @@ const Footer = () => {
                 <li key={link.label}>
                   <a
                     href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    target={link.external ? "_blank" : undefined}
+                    rel={link.external ? "noopener noreferrer" : undefined}
                     className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors inline-flex items-center gap-2"
                   >
                     {link.icon && <link.icon className="w-4 h-4" />}

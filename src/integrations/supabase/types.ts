@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      community_feedback: {
+        Row: {
+          context_persona: string | null
+          context_query: string | null
+          created_at: string
+          email: string | null
+          faq_answer: string | null
+          faq_question: string | null
+          id: string
+          message: string
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          context_persona?: string | null
+          context_query?: string | null
+          created_at?: string
+          email?: string | null
+          faq_answer?: string | null
+          faq_question?: string | null
+          id?: string
+          message: string
+          status?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          context_persona?: string | null
+          context_query?: string | null
+          created_at?: string
+          email?: string | null
+          faq_answer?: string | null
+          faq_question?: string | null
+          id?: string
+          message?: string
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       research_articles: {
         Row: {
           created_at: string
@@ -254,7 +296,30 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      faq_public: {
+        Row: {
+          created_at: string | null
+          faq_answer: string | null
+          faq_question: string | null
+          id: string | null
+          type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          faq_answer?: string | null
+          faq_question?: string | null
+          id?: string | null
+          type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          faq_answer?: string | null
+          faq_question?: string | null
+          id?: string | null
+          type?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
