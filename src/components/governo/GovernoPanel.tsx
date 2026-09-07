@@ -102,14 +102,14 @@ const GovernoPanel = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="pt-16">
-        <div className="sticky top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
-          <div className="panel-container py-3 flex items-center gap-3 sm:gap-4">
-            <button onClick={handleNewSearch} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"><ArrowLeft className="w-4 h-4" />Nova busca</button>
-            <div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground truncate">{govLocation ? `Gov. ${govLevel} — ${govLocation} ×` : "Diagnóstico:"} "{data.query}"</p><p className="text-[10px] text-muted-foreground truncate">{data.meta.sources.join(" · ")} · {data.meta.processing_time_ms}ms</p></div>
-            <PerspectiveSwitcher current="governo" query={data.query} />
-            <span className="hidden sm:inline text-[9px] px-2 py-1 bg-primary/10 text-primary rounded-full border border-primary/20 flex-shrink-0">{data.meta.source_count} fontes</span>
-          </div>
-        </div>
+        <DiagnosticHeader
+          query={data.query}
+          current="governo"
+          onNewSearch={handleNewSearch}
+          sourceCount={data.meta.source_count}
+          processingTimeMs={data.meta.processing_time_ms}
+          context={govLocation ? `Gov. ${govLevel} — ${govLocation}` : undefined}
+        />
 
         <div className="panel-container py-6 space-y-6 animate-in fade-in-0 duration-500">
           <LocalContextBadge persona="governo" />
