@@ -273,6 +273,11 @@ class CVMConnector(BaseConnector):
         if cached and (time.time() - cached[0]) < CACHE_TTL_SECONDS:
             return cached[2], cached[1]
 
+        # O arquivo do ano corrente costuma estar incompleto (safra em andamento),
+        # então só é aceito se tiver cobertura mínima; senão cai para o ano anterior.
+        MIN_COBERTURA = 200
+        melhor: Tuple[Dict[str, Dict[str, Any]], Optional[int]] = ({}, None)
+
         for ano in self._candidate_years():
             zf = await self._download_zip(DFP_URL.format(ano=ano))
             if not zf:
