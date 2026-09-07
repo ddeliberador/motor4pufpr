@@ -313,6 +313,73 @@ const Documentacao = () => {
         </div>
       </section>
 
+      {/* METODOLOGIA DOS ÍNDICES */}
+      <section id="metodologia-indices" className="py-16 border-t border-border">
+        <div className="max-w-4xl mx-auto px-6">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }}>
+            <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold mb-4 text-center">
+              Metodologia dos Índices Estratégicos
+            </motion.h2>
+            <motion.p variants={fadeUp} custom={1} className="text-muted-foreground text-center mb-8 max-w-2xl mx-auto">
+              Cada busca calcula quatro índices a partir dos dados brutos retornados pelas camadas analíticas.
+              No painel de resultados, clique em qualquer card de índice para ver a fórmula e os números exatos
+              usados naquele cálculo específico, além do nível de confiança (alta, média ou baixa) conforme a
+              disponibilidade de dados.
+            </motion.p>
+
+            <div className="space-y-4">
+              {[
+                {
+                  sigla: "GT — Gargalo de Tradução",
+                  formula: "GT = min(100, (papers_BR / sinais_aplicação) × fator_log)",
+                  desc: "Compara o volume de publicações científicas brasileiras com sinais de aplicação prática (contratos públicos, patentes, empresas ativas, empregos). Escala logarítmica evita distorções em campos muito grandes. Valores altos indicam produção científica que não está virando produto ou serviço. Confiança alta quando há dados de aplicação; média/baixa quando estimado por proxies.",
+                },
+                {
+                  sigla: "CD — Concentração de Dependência",
+                  formula: "CD = (papers_com_coautoria_internacional / papers_BR) × 100",
+                  desc: "Percentual de papers brasileiros escritos em coautoria com pesquisadores estrangeiros, conforme metadados do OpenAlex. Dependência alta pode indicar fragilidade da capacidade científica nacional no tema. Confiança alta quando há coautorias de mais de 3 países distintos.",
+                },
+                {
+                  sigla: "AUE — Articulação Universidade-Empresa",
+                  formula: "AUE = min(100, Σ sinais de articulação × peso)",
+                  desc: "Soma ponderada de sinais de conexão entre pesquisa e setor produtivo: contratos e convênios públicos, repositórios de código aberto, redes internacionais e financiamento empresarial de pesquisa (grants). Confiança alta quando há instrumentos públicos identificados; baixa quando apenas sinais alternativos.",
+                },
+                {
+                  sigla: "EI — Efetividade Instrumental",
+                  formula: "EI = min(100, TRL_normalizado × cobertura_instrumentos)",
+                  desc: "Cruza o nível de maturidade tecnológica (TRL 1–9) com a cobertura de instrumentos públicos disponíveis (editais, convênios, contratos, programas). Valores baixos indicam que as políticas existentes não estão alcançando o potencial do campo. Confiança varia conforme a disponibilidade de dados de instrumentos e de maturidade.",
+                },
+              ].map((m, i) => (
+                <motion.div
+                  key={m.sigla}
+                  variants={fadeUp}
+                  custom={i + 2}
+                  className="bg-card border border-border rounded-xl p-5"
+                >
+                  <h3 className="font-semibold mb-2">{m.sigla}</h3>
+                  <code className="block bg-muted rounded-md px-3 py-2 font-mono text-xs mb-3 break-all">
+                    {m.formula}
+                  </code>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{m.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+
+            <motion.div variants={fadeUp} custom={6} className="mt-8 text-center">
+              <a
+                href="https://github.com/ddeliberador/motor4pufpr/blob/main/supabase/functions/motor-search/index.ts"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
+              >
+                Ver código-fonte da função computeCrossLayerIndices
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* PRINCÍPIOS */}
       <section className="py-16 border-t border-border">
         <div className="max-w-4xl mx-auto px-6">
