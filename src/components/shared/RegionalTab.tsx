@@ -4,6 +4,7 @@ import { safeSupabase as supabase } from "@/lib/supabaseClient";
 import { useMotorLocation } from "@/hooks/useLocation";
 import type { Persona } from "@/types/persona";
 import type { MotorSearchResult } from "@/hooks/useMotorSearch";
+import PanoramaEstadualTab from "./PanoramaEstadualTab";
 
 interface RegionalTabProps {
   persona: Persona;
@@ -266,6 +267,7 @@ function LocalCompaniesBlock({ competitors, loading }: { competitors: any; loadi
 export default function RegionalTab({ persona, data, competitors, cagedNote }: RegionalTabProps) {
   const { uf, ufNome, municipioNome, municipioIbge, label, hasLocation } = useMotorLocation();
   const regional = (data.layers as any).regional;
+  const [view, setView] = useState<"municipio" | "estado">(municipioIbge ? "municipio" : "estado");
   const intro = PERSONA_INTRO[persona];
 
   // competitor-search só quando a persona precisa e o painel não forneceu
@@ -300,6 +302,26 @@ export default function RegionalTab({ persona, data, competitors, cagedNote }: R
 
   return (
     <div className="space-y-5">
+      {/* Sub-abas: município × panorama estadual */}
+      <div className="inline-flex gap-1 p-1 bg-muted/40 border border-border rounded-xl">
+        <button
+          onClick={() => setView("municipio")}
+          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${view === "municipio" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          📍 {municipioNome || "Município"}
+        </button>
+        <button
+          onClick={() => setView("estado")}
+          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${view === "estado" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          🏛️ Panorama Estadual
+        </button>
+      </div>
+
+      {view === "estado" && <PanoramaEstadualTab data={data} />}
+
+      {view === "municipio" && (
+      <div className="space-y-5">
       <div className="bg-card border border-border rounded-2xl p-5">
         <h3 className="text-base font-semibold text-foreground mb-1 flex items-center gap-2"><MapPin className="w-4 h-4 text-primary" /> {intro.title} <span className="text-muted-foreground font-normal">— {label}</span></h3>
         <p className="text-sm text-muted-foreground">{intro.text}</p>
@@ -404,6 +426,8 @@ export default function RegionalTab({ persona, data, competitors, cagedNote }: R
           <h4 className="text-sm font-semibold text-foreground mb-2">👷 Mão de obra</h4>
           {cagedNote}
         </div>
+      )}
+      </div>
       )}
     </div>
   );

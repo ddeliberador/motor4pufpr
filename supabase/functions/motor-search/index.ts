@@ -569,7 +569,7 @@ Deno.serve(async (req) => {
     const knowledge = await invokeLayer("layer-knowledge", { query, search_terms: searchTerms, location });
 
     // STEP 2: Remaining 3 layers in parallel, passing knowledge + ontology data
-    const [technology, policy, international, sidra, market, patents, programs, cnpq, policies, oportunidades, regional] = await Promise.all([
+    const [technology, policy, international, sidra, market, patents, programs, cnpq, policies, oportunidades, regional, estado] = await Promise.all([
       invokeLayer("layer-technology", {
         query,
         knowledge_papers: knowledge?.papers?.length || 0,
@@ -636,6 +636,9 @@ Deno.serve(async (req) => {
         municipio: municipio || "",
         municipio_ibge: municipio_ibge || "",
       }),
+      uf
+        ? invokeLayer("layer-estado", { uf, uf_nome: uf_nome || "" })
+        : Promise.resolve(null),
     ]);
 
 
@@ -737,6 +740,7 @@ Deno.serve(async (req) => {
       ...(cnpq?.sources || []),
       ...(policies?.sources || []),
       ...(regional?.sources || []),
+      ...(estado?.sources || []),
     ];
     const uniqueSources = [...new Set(allSources)];
 
@@ -841,6 +845,7 @@ Deno.serve(async (req) => {
         policies: policies || { politicas: { federal: [], estadual_sp: [], municipal: [] }, gazettes_mencoes: [], editais_inovacao: [], sources: [] },
         oportunidades: oportunidades || { pregoes_abertos: [], linhas_financiamento: [], chamadas_abertas: [], contexto: {} },
         regional: regional || { available: false, reason: "Camada regional indisponível", sources: [] },
+        estado: estado || { available: false, reason: "Nenhum estado selecionado", sources: [] },
       },
       indices,
       persona_insights: personaInsights,
