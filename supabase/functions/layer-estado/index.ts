@@ -6,8 +6,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
  *  - SIDRA/IBGE tabela 5938 (PIB) nos níveis N3 (UF) e N1 (Brasil)
  *    variáveis confirmadas em https://servicodados.ibge.gov.br/api/v3/agregados/5938/metadados
  *  - SIDRA/IBGE tabela 6579 (Estimativas de população residente)
- *  - ANEEL — catálogo CKAN de dados abertos (matriz de geração por fonte/UF),
- *    detectado dinamicamente; se não confirmado, retorna available:false
+ *  - SIDRA/IBGE tabela 10457 (Pesquisa Industrial Anual — composição da indústria
+ *    por divisão da CNAE 2.0 no nível UF)
  */
 
 const corsHeaders = {
@@ -16,7 +16,6 @@ const corsHeaders = {
 };
 
 const SIDRA = "https://apisidra.ibge.gov.br/values";
-const ANEEL_CKAN = "https://dadosabertos.aneel.gov.br/api/3/action";
 
 const UF_IBGE: Record<string, string> = {
   RO: "11", AC: "12", AM: "13", RR: "14", PA: "15", AP: "16", TO: "17",
@@ -230,12 +229,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    const [ufPib, brPib, popUf, popBr, energia] = await Promise.all([
+    const [ufPib, brPib, popUf, popBr, composicao_industrial] = await Promise.all([
       fetchPibLevel(`n3/${ufCode}`),
       fetchPibLevel("n1/1"),
       fetchPopulation(ufCode),
       fetchPopulationBR(),
-      fetchEnergyMatrix(uf),
+      fetchIndustrialComposition(ufCode),
     ]);
 
     const pibSource = { name: "IBGE/SIDRA — Tabela 5938 (PIB, níveis UF e Brasil)", url: "https://sidra.ibge.gov.br/tabela/5938" };
@@ -247,8 +246,8 @@ Deno.serve(async (req) => {
         available: false,
         reason: `IBGE/SIDRA indisponível (${err})`,
         location: { uf, uf_nome: ufNomeIn },
-        energia,
-        sources: energia.available ? [energia.source.name] : [],
+        composicao_industrial,
+        sources: composicao_industrial.available ? [composicao_industrial.source.name] : [],
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -336,7 +335,7 @@ Deno.serve(async (req) => {
 
     const lastPibRow = [...pib_total].reverse().find((r) => r.uf !== null) || null;
 
-    const sources = [pibSource.name, ...(demografia.available ? [popSource.name] : []), ...(energia.available ? [energia.source.name] : [])];
+    const sources = [pibSource.name, ...(demografia.available ? [popSource.name] : []), ...(composicao_industrial.available ? [composicao_industrial.source.name] : [])];
 
     return new Response(JSON.stringify({
       available: true,
@@ -364,7 +363,7 @@ Deno.serve(async (req) => {
         note: "Cálculo do Motor da Inovação: valor adicionado da indústria da UF ÷ valor adicionado da indústria do Brasil, ano a ano (IBGE/SIDRA 5938).",
       },
       demografia,
-      energia,
+      composicao_industrial,
       per_capita_note: "PIB per capita calculado pelo Motor da Inovação: PIB (tabela 5938) ÷ população estimada (tabela 6579), ambos do IBGE.",
       sources,
       processing_time_ms: Date.now() - start,
@@ -376,4 +375,4 @@ Deno.serve(async (req) => {
   }
 });
 
-// deploy: painel estadual
+// deploy: composicao industrial do estado
