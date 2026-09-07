@@ -709,6 +709,8 @@ Deno.serve(async (req) => {
     const snapshotRow = {
       tema_normalizado: temaNormalizado,
       tema_original: String(query).trim(),
+      uf: location.uf || null,
+      municipio_ibge: location.municipio_ibge || null,
       gt: indices?.gt?.value ?? null,
       cd: indices?.cd?.value ?? null,
       aue: indices?.aue?.value ?? null,
