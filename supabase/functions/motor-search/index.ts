@@ -687,6 +687,40 @@ Deno.serve(async (req) => {
       ipeadata_series: international?.ipeadata_series?.length || 0,
     };
 
+    // STEP 4b: Memória temporal — grava snapshot e busca histórico do tema (em paralelo)
+    const temaNormalizado = normalizeTema(String(query));
+    const trlValue = Number(
+      (technology as any)?.trl_from_patents?.trl ?? technology?.trl_estimate ?? 0,
+    );
+    const snapshotRow = {
+      tema_normalizado: temaNormalizado,
+      tema_original: String(query).trim(),
+      gt: indices?.gt?.value ?? null,
+      cd: indices?.cd?.value ?? null,
+      aue: indices?.aue?.value ?? null,
+      ei: indices?.ei?.value ?? null,
+      total_papers: stats.papers,
+      total_contracts: stats.contracts,
+      trl: Number.isFinite(trlValue) ? trlValue : null,
+      source_count: null as number | null, // preenchido abaixo após agregar fontes
+    };
+    // Busca histórico anterior enquanto o insert acontece; o ponto atual é anexado localmente
+    const [historicoAnterior] = await Promise.all([
+      fetchHistorico(temaNormalizado, 24),
+      (async () => {
+        // source_count depende de uniqueSources (calculado a seguir); usa contagem parcial das camadas
+        snapshotRow.source_count = new Set([
+          ...(knowledge?.sources || []), ...(technology?.sources || []),
+          ...(policy?.sources || []), ...(international?.sources || []),
+        ]).size;
+        await saveSnapshot(snapshotRow);
+      })(),
+    ]);
+    const historico: HistoricoPoint[] = [
+      ...historicoAnterior,
+      { data: new Date().toISOString(), gt: Number(snapshotRow.gt ?? 0), cd: Number(snapshotRow.cd ?? 0), aue: Number(snapshotRow.aue ?? 0), ei: Number(snapshotRow.ei ?? 0) },
+    ].slice(-24);
+
     // Aggregate sources
     const allSources = [
       ...(knowledge?.sources || []),
