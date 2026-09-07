@@ -36,9 +36,20 @@ async function saveSnapshot(row: Record<string, unknown>): Promise<void> {
   } catch (e) { console.warn("snapshot insert erro:", e); }
 }
 
-async function fetchHistorico(temaNormalizado: string, limit = 24): Promise<HistoricoPoint[]> {
+async function fetchHistorico(
+  temaNormalizado: string,
+  uf: string,
+  municipioIbge: string,
+  limit = 24,
+): Promise<HistoricoPoint[]> {
   try {
-    const url = `${SUPABASE_URL}/rest/v1/search_snapshots?tema_normalizado=eq.${encodeURIComponent(temaNormalizado)}&select=created_at,gt,cd,aue,ei&order=created_at.desc&limit=${limit}`;
+    // O histórico é separado por localidade: um tema pesquisado no Paraná não
+    // se mistura com o mesmo tema pesquisado nacionalmente ou em outra UF.
+    const ufFilter = uf ? `&uf=eq.${encodeURIComponent(uf)}` : `&uf=is.null`;
+    const munFilter = municipioIbge
+      ? `&municipio_ibge=eq.${encodeURIComponent(municipioIbge)}`
+      : `&municipio_ibge=is.null`;
+    const url = `${SUPABASE_URL}/rest/v1/search_snapshots?tema_normalizado=eq.${encodeURIComponent(temaNormalizado)}${ufFilter}${munFilter}&select=created_at,gt,cd,aue,ei&order=created_at.desc&limit=${limit}`;
     const res = await fetch(url, { headers: await restHeaders(), signal: AbortSignal.timeout(5000) });
     if (!res.ok) { console.warn("historico fetch falhou:", res.status); return []; }
     const rows = await res.json();
