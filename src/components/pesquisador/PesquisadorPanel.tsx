@@ -1182,6 +1182,9 @@ const PesquisadorPanel = () => {
                 );
               })()}
 
+              {/* 4. Maiores empresas de capital aberto do setor (CVM) */}
+              <PublicCompaniesCvm cnaeCodes={(data.ontology?.cnae_codes || []).map((c) => c.code)} />
+
               {!isLoadingCompetitors && !competitors && (
                 <div className="bg-card border border-border rounded-2xl p-5 text-sm text-muted-foreground">
                   Não foi possível consultar as bases de empresas agora. Tente refazer a busca.
