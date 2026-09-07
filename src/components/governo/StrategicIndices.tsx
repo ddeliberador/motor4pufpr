@@ -1,10 +1,13 @@
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Info } from "lucide-react";
 
 interface IndexData {
   value: number;
   label: string;
   description: string;
   formula: string;
+  basis: string;
+  confidence: "high" | "medium" | "low";
   layers_used?: string[];
   alert_level?: "normal" | "warning" | "critical";
 }
@@ -17,6 +20,12 @@ interface StrategicIndicesProps {
     ei: IndexData;
   };
 }
+
+const confidenceConfig = {
+  high: { label: "alta", className: "text-emerald-500" },
+  medium: { label: "média", className: "text-amber-500" },
+  low: { label: "baixa", className: "text-red-500" },
+} as const;
 
 const indexConfig = [
   {
@@ -82,15 +91,22 @@ export default function StrategicIndices({ indices }: StrategicIndicesProps) {
           const statusColor = isGood ? "text-emerald-500" : isAlert ? "text-red-500" : "text-amber-500";
           const barColor = isGood ? "bg-emerald-500" : isAlert ? "bg-red-500" : "bg-amber-500";
           const borderColor = isAlert ? "border-red-400/30 bg-red-500/5" : "border-border";
+          const confidence = confidenceConfig[idx.confidence] ?? confidenceConfig.low;
 
           return (
-            <Tooltip key={key}>
-              <TooltipTrigger asChild>
-                <div className={`relative bg-card border rounded-2xl p-5 cursor-help transition-all hover:shadow-md ${borderColor}`}>
+            <Popover key={key}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={`relative text-left w-full bg-card border rounded-2xl p-5 cursor-help transition-all hover:shadow-md ${borderColor}`}
+                >
                   {isAlert && (
                     <span className="absolute top-3 right-3 text-[9px] px-2 py-0.5 bg-red-500/10 text-red-500 rounded-full font-semibold uppercase tracking-wider">
                       Atenção
                     </span>
+                  )}
+                  {!isAlert && (
+                    <Info className="absolute top-4 right-4 h-3.5 w-3.5 text-muted-foreground/50" />
                   )}
 
                   <div className="flex items-center gap-2 mb-3">
@@ -115,18 +131,65 @@ export default function StrategicIndices({ indices }: StrategicIndicesProps) {
                       style={{ width: `${Math.min(100, idx.value)}%` }}
                     />
                   </div>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="bottom" className="w-80 text-xs leading-relaxed space-y-3">
+                <div>
+                  <p className="font-semibold text-sm mb-1">{titulo}</p>
+                  <p className="text-muted-foreground">{explica}</p>
                 </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-xs text-xs leading-relaxed">
-                <p className="font-semibold mb-1">{titulo}</p>
-                <p>{explica}</p>
-              </TooltipContent>
-            </Tooltip>
+
+                {idx.formula && (
+                  <div>
+                    <p className="font-semibold mb-1">Fórmula</p>
+                    <code className="block bg-muted rounded-md px-2 py-1.5 font-mono text-[11px] break-all">
+                      {idx.formula}
+                    </code>
+                  </div>
+                )}
+
+                {idx.basis && (
+                  <div>
+                    <p className="font-semibold mb-1">Números desta busca</p>
+                    <p className="text-muted-foreground">{idx.basis}</p>
+                  </div>
+                )}
+
+                <p className={`font-semibold ${confidence.className}`}>
+                  Confiança: {confidence.label}
+                </p>
+
+                {idx.layers_used && idx.layers_used.length > 0 && (
+                  <div>
+                    <p className="font-semibold mb-1">Camadas utilizadas</p>
+                    <div className="flex flex-wrap gap-1">
+                      {idx.layers_used.map((layer) => (
+                        <span
+                          key={layer}
+                          className="px-2 py-0.5 bg-muted text-muted-foreground rounded-full text-[10px] font-medium"
+                        >
+                          {layer}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-2 border-t border-border">
+                  <a
+                    href="/documentacao#metodologia-indices"
+                    className="text-primary font-medium hover:underline"
+                  >
+                    Ver metodologia completa →
+                  </a>
+                </div>
+              </PopoverContent>
+            </Popover>
           );
         })}
       </div>
       <p className="text-[10px] text-muted-foreground">
-        💡 Passe o mouse sobre cada card para entender como o índice é calculado
+        💡 Clique em cada card para ver a fórmula e os números exatos usados neste cálculo
       </p>
     </div>
   );
