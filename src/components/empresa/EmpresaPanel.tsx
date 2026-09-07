@@ -468,6 +468,9 @@ const EmpresaPanel = () => {
                 </div>
               </div>
             )}
+            <div className="mt-4">
+              <PublicCompaniesCvm cnaeCodes={(data.ontology?.cnae_codes || []).map((c) => c.code)} />
+            </div>
           </Section>
 
           {/* ── SEÇÃO 4: Visão Regional ── */}
