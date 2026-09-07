@@ -24,6 +24,7 @@ import OpportunityCard from "@/components/shared/OpportunityCard";
 import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetailSheet";
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
 import { NovaIndustriaTab, PbiaTab, FomentoTab } from "@/components/shared/ProgramsTabs";
+import PublicCompaniesCvm from "@/components/shared/PublicCompaniesCvm";
 import PoliciesTab from "@/components/shared/PoliciesTab";
 import CnaeNcmCard from "@/components/shared/CnaeNcmCard";
 import PerspectiveSwitcher from "@/components/shared/PerspectiveSwitcher";
