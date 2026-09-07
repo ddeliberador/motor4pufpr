@@ -8,7 +8,45 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const RAILWAY_API_URL = Deno.env.get("RAILWAY_API_URL") || "https://motor4pufpr-production.up.railway.app/api/v1";
+
+// ===== Memória temporal: search_snapshots =====
+function normalizeTema(s: string): string {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
+export interface HistoricoPoint { data: string; gt: number; cd: number; aue: number; ei: number }
+
+async function restHeaders(): Promise<Record<string, string>> {
+  const key = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+  return { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
+}
+
+async function saveSnapshot(row: Record<string, unknown>): Promise<void> {
+  if (!SUPABASE_SERVICE_ROLE_KEY) { console.warn("snapshot: sem service role, não gravado"); return; }
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/search_snapshots`, {
+      method: "POST",
+      headers: { ...(await restHeaders()), Prefer: "return=minimal" },
+      body: JSON.stringify(row),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) console.warn("snapshot insert falhou:", res.status, await res.text());
+  } catch (e) { console.warn("snapshot insert erro:", e); }
+}
+
+async function fetchHistorico(temaNormalizado: string, limit = 24): Promise<HistoricoPoint[]> {
+  try {
+    const url = `${SUPABASE_URL}/rest/v1/search_snapshots?tema_normalizado=eq.${encodeURIComponent(temaNormalizado)}&select=created_at,gt,cd,aue,ei&order=created_at.desc&limit=${limit}`;
+    const res = await fetch(url, { headers: await restHeaders(), signal: AbortSignal.timeout(5000) });
+    if (!res.ok) { console.warn("historico fetch falhou:", res.status); return []; }
+    const rows = await res.json();
+    return (rows as any[])
+      .map((r) => ({ data: r.created_at, gt: Number(r.gt ?? 0), cd: Number(r.cd ?? 0), aue: Number(r.aue ?? 0), ei: Number(r.ei ?? 0) }))
+      .reverse(); // asc
+  } catch (e) { console.warn("historico fetch erro:", e); return []; }
+}
 
 interface OntologyMapping {
   query: string;
