@@ -8,7 +8,45 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const RAILWAY_API_URL = Deno.env.get("RAILWAY_API_URL") || "https://motor4pufpr-production.up.railway.app/api/v1";
+
+// ===== Memória temporal: search_snapshots =====
+function normalizeTema(s: string): string {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
+export interface HistoricoPoint { data: string; gt: number; cd: number; aue: number; ei: number }
+
+async function restHeaders(): Promise<Record<string, string>> {
+  const key = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+  return { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
+}
+
+async function saveSnapshot(row: Record<string, unknown>): Promise<void> {
+  if (!SUPABASE_SERVICE_ROLE_KEY) { console.warn("snapshot: sem service role, não gravado"); return; }
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/search_snapshots`, {
+      method: "POST",
+      headers: { ...(await restHeaders()), Prefer: "return=minimal" },
+      body: JSON.stringify(row),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) console.warn("snapshot insert falhou:", res.status, await res.text());
+  } catch (e) { console.warn("snapshot insert erro:", e); }
+}
+
+async function fetchHistorico(temaNormalizado: string, limit = 24): Promise<HistoricoPoint[]> {
+  try {
+    const url = `${SUPABASE_URL}/rest/v1/search_snapshots?tema_normalizado=eq.${encodeURIComponent(temaNormalizado)}&select=created_at,gt,cd,aue,ei&order=created_at.desc&limit=${limit}`;
+    const res = await fetch(url, { headers: await restHeaders(), signal: AbortSignal.timeout(5000) });
+    if (!res.ok) { console.warn("historico fetch falhou:", res.status); return []; }
+    const rows = await res.json();
+    return (rows as any[])
+      .map((r) => ({ data: r.created_at, gt: Number(r.gt ?? 0), cd: Number(r.cd ?? 0), aue: Number(r.aue ?? 0), ei: Number(r.ei ?? 0) }))
+      .reverse(); // asc
+  } catch (e) { console.warn("historico fetch erro:", e); return []; }
+}
 
 interface OntologyMapping {
   query: string;
@@ -649,6 +687,41 @@ Deno.serve(async (req) => {
       ipeadata_series: international?.ipeadata_series?.length || 0,
     };
 
+    // STEP 4b: Memória temporal — grava snapshot e busca histórico do tema (em paralelo)
+    const temaNormalizado = normalizeTema(String(query));
+    const trlValue = Number(
+      (technology as any)?.trl_from_patents?.trl ?? technology?.trl_estimate ?? 0,
+    );
+    const snapshotRow = {
+      tema_normalizado: temaNormalizado,
+      tema_original: String(query).trim(),
+      gt: indices?.gt?.value ?? null,
+      cd: indices?.cd?.value ?? null,
+      aue: indices?.aue?.value ?? null,
+      ei: indices?.ei?.value ?? null,
+      total_papers: stats.papers,
+      total_contracts: stats.contracts,
+      trl: Number.isFinite(trlValue) ? trlValue : null,
+      source_count: null as number | null, // preenchido abaixo após agregar fontes
+    };
+    snapshotRow.source_count = new Set([
+      ...(knowledge?.sources || []), ...(technology?.sources || []),
+      ...(policy?.sources || []), ...(international?.sources || []),
+    ]).size;
+    // Lê o histórico anterior (apenas buscas passadas) e grava o snapshot atual em paralelo;
+    // o ponto atual é anexado localmente. Pontos gravados nos últimos 10s são descartados
+    // para evitar duplicar o snapshot desta mesma requisição.
+    const nowMs = Date.now();
+    const [historicoBruto] = await Promise.all([
+      fetchHistorico(temaNormalizado, 24),
+      saveSnapshot(snapshotRow),
+    ]);
+    const historicoAnterior = historicoBruto.filter((p) => nowMs - new Date(p.data).getTime() > 10_000);
+    const historico: HistoricoPoint[] = [
+      ...historicoAnterior,
+      { data: new Date(nowMs).toISOString(), gt: Number(snapshotRow.gt ?? 0), cd: Number(snapshotRow.cd ?? 0), aue: Number(snapshotRow.aue ?? 0), ei: Number(snapshotRow.ei ?? 0) },
+    ].slice(-24);
+
     // Aggregate sources
     const allSources = [
       ...(knowledge?.sources || []),
@@ -772,6 +845,7 @@ Deno.serve(async (req) => {
       indices,
       persona_insights: personaInsights,
       stats,
+      historico,
       ontology: ontology
         ? {
             ncm_codes: ontology.ncm_codes || [],

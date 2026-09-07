@@ -17,6 +17,7 @@ import { Link, useNavigate, Navigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
+import IndicesHistoryChart from "@/components/shared/IndicesHistoryChart";
 import StrategicIndices from "@/components/governo/StrategicIndices";
 import OpportunityCard from "@/components/shared/OpportunityCard";
 import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetailSheet";
@@ -167,6 +168,7 @@ const PesquisadorPanel = () => {
         <div className="panel-container py-6 space-y-6 animate-in fade-in-0 duration-500">
           <LocalContextBadge persona="pesquisador" />
           {indices && <StrategicIndices indices={indices} />}
+          <IndicesHistoryChart historico={data.historico} />
 
           {(data as any).oportunidades?.length > 0 && (
             <OpportunityCard

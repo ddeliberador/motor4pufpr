@@ -202,6 +202,14 @@ export interface OntologyMeta {
 
 import type { MarketLayerData } from "@/components/shared/MarketAnalysisPanel";
 
+export interface HistoricoPoint {
+  data: string;
+  gt: number;
+  cd: number;
+  aue: number;
+  ei: number;
+}
+
 // ===== Full Result =====
 export interface MotorSearchResult {
   query: string;
@@ -214,6 +222,8 @@ export interface MotorSearchResult {
     market?: MarketLayerData;
   };
   indices: StrategicIndices;
+  /** Memória temporal: índices de buscas anteriores do mesmo tema (asc por data) */
+  historico?: HistoricoPoint[];
   ontology?: OntologyMeta;
   stats: {
     papers: number;

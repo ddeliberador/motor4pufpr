@@ -10,6 +10,7 @@ import LeiBemCalculadora from "@/components/shared/LeiBemCalculadora";
 import ParceriaICTModal from "@/components/shared/ParceriaICTModal";
 import OpportunityCard from "@/components/shared/OpportunityCard";
 import PatentsTab from "@/components/shared/PatentsTab";
+import IndicesHistoryChart from "@/components/shared/IndicesHistoryChart";
 import CagedSaldoChart from "@/components/shared/CagedSaldoChart";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -363,6 +364,8 @@ const EmpresaPanel = () => {
             )}
             </div>
           </Section>
+
+          <IndicesHistoryChart historico={data.historico} />
 
           {/* ── SEÇÃO 2: Quanto custa inovar? ── */}
           <Section id="custo" emoji="💰" title="Quanto custa inovar neste campo?"
