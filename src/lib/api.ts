@@ -369,6 +369,19 @@ class Motor4PApi {
   async getOntology(query: string): Promise<{ success: boolean; data: OntologyMapping }> {
     return this.request(`/incidence/ontology?query=${encodeURIComponent(query)}`);
   }
+
+  /**
+   * Maiores companhias de capital aberto do setor (CVM), por CNAE.
+   * Recorte parcial: apenas empresas de capital aberto.
+   */
+  async getPublicCompaniesByCnae(
+    cnaeCodes: string[],
+    limit = 10
+  ): Promise<{ success: boolean; data?: PublicCompaniesResult; error?: string }> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    cnaeCodes.forEach((code) => params.append("cnae", code));
+    return this.request(`/companies/public-by-cnae?${params}`);
+  }
 }
 
 // Instância singleton
