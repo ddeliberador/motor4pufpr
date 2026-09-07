@@ -340,3 +340,5 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+// deploy: painel estadual
