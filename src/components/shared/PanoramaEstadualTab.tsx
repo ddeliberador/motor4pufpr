@@ -1,7 +1,7 @@
-import { Landmark, TrendingUp, PieChart as PieIcon, Factory, Users, Zap, ExternalLink, AlertTriangle } from "lucide-react";
+import { Landmark, TrendingUp, PieChart as PieIcon, Factory, Users, ExternalLink, AlertTriangle } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell, AreaChart, Area,
+  PieChart, Pie, Cell, AreaChart, Area, BarChart, Bar,
 } from "recharts";
 import type { MotorSearchResult } from "@/hooks/useMotorSearch";
 
@@ -23,17 +23,6 @@ const SECTOR_COLORS: Record<string, string> = {
   servicos: "hsl(35 85% 55%)",
   administracao: "hsl(275 45% 55%)",
 };
-
-function energyColor(fonte: string) {
-  const f = fonte.toLowerCase();
-  if (/hidr|hídr|cgh|uhe|pch/.test(f)) return "hsl(205 80% 48%)";
-  if (/eólic|eolic|eol/.test(f)) return "hsl(160 60% 45%)";
-  if (/solar|fotovolt/.test(f)) return "hsl(45 90% 55%)";
-  if (/biomassa|biogás|biogas|resídu/.test(f)) return "hsl(100 45% 40%)";
-  if (/nuclear/.test(f)) return "hsl(280 50% 55%)";
-  if (/térmi|termi|fóssil|fossil|gás|gas|carvão|carvao|óleo|oleo|diesel/.test(f)) return "hsl(220 8% 50%)";
-  return "hsl(var(--muted-foreground))";
-}
 
 const chartTooltip = {
   contentStyle: { background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 },
@@ -107,8 +96,10 @@ export default function PanoramaEstadualTab({ data }: Props) {
   const indSeries = (estado.industria_nacional?.data?.series || []).filter((s: any) => s.share_pct !== null);
   const indLast = estado.industria_nacional?.data?.last;
   const demo = estado.demografia;
-  const energia = estado.energia;
-  const energyItems: any[] = energia?.available ? (energia.data?.items || []).slice(0, 8) : [];
+  const comp = estado.composicao_industrial;
+  const compItems: any[] = comp?.available
+    ? (comp.data?.items || []).filter((i: any) => i.vti_share_pct !== null && i.vti_share_pct > 0).slice(0, 12)
+    : [];
 
   return (
     <div className="space-y-5">
