@@ -810,6 +810,7 @@ Deno.serve(async (req) => {
       indices,
       persona_insights: personaInsights,
       stats,
+      historico,
       ontology: ontology
         ? {
             ncm_codes: ontology.ncm_codes || [],
