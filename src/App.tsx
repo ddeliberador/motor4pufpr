@@ -12,6 +12,7 @@ import GovernoPanel from "./components/governo/GovernoPanel";
 import Index from "./pages/Index";
 import Conceito from "./pages/Conceito";
 import Documentacao from "./pages/Documentacao";
+import Faq from "./pages/Faq";
 import GestaoPesquisa from "./pages/GestaoPesquisa";
 import AuthPage from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/conceito" element={<Conceito />} />
           <Route path="/documentacao" element={<Documentacao />} />
+          <Route path="/faq" element={<Faq />} />
           <Route path="/pesquisador" element={<PesquisadorPanel />} />
           <Route path="/universidade" element={<UniversidadePanel />} />
           <Route path="/empresa" element={<EmpresaPanel />} />

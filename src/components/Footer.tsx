@@ -19,6 +19,7 @@ const Footer = () => {
       { label: "Embrapii", href: "https://embrapii.org.br/", external: true },
     ],
     contato: [
+      { label: "Sugerir melhoria / FAQ", href: "/faq", external: false, icon: MessageSquarePlus },
       { label: "GitHub", href: "https://github.com/ddeliberador/motor4pufpr.git", external: true, icon: Github },
       { label: "Contato", href: "mailto:contato@motor4p.ufpr.br", external: true, icon: Mail },
     ],
