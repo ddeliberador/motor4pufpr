@@ -17,7 +17,8 @@ import {
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
-import { Plus, Trash2, LogOut, BookOpen, Lightbulb, FileText } from "lucide-react";
+import { Plus, Trash2, LogOut, BookOpen, Lightbulb, FileText, MessageSquare } from "lucide-react";
+import { FeedbackTab } from "@/components/research/FeedbackTab";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import { cn } from "@/lib/utils";
@@ -71,6 +72,7 @@ const ARTICLE_ORDER: Record<string, number> = { published: 0, submitted: 1, in_p
 
 export default function GestaoPesquisa() {
   const { user, loading } = useAuth();
+  const [newFeedbackCount, setNewFeedbackCount] = useState(0);
   const navigate = useNavigate();
   const [authors, setAuthors] = useState<Author[]>([]);
   const [themes, setThemes] = useState<Theme[]>([]);
@@ -223,6 +225,12 @@ export default function GestaoPesquisa() {
             <TabsTrigger value="authors"><BookOpen className="w-4 h-4 mr-1" /> Autores</TabsTrigger>
             <TabsTrigger value="themes"><Lightbulb className="w-4 h-4 mr-1" /> Temas</TabsTrigger>
             <TabsTrigger value="articles"><FileText className="w-4 h-4 mr-1" /> Artigos</TabsTrigger>
+            <TabsTrigger value="feedback">
+              <MessageSquare className="w-4 h-4 mr-1" /> Sugestões
+              {newFeedbackCount > 0 && (
+                <span className="ml-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5 py-0.5 leading-none">{newFeedbackCount}</span>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           {/* AUTHORS */}
@@ -323,6 +331,11 @@ export default function GestaoPesquisa() {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          {/* FEEDBACK */}
+          <TabsContent value="feedback" className="mt-4">
+            <FeedbackTab onNewCountChange={setNewFeedbackCount} />
           </TabsContent>
         </Tabs>
       </main>
