@@ -207,6 +207,51 @@ export type Database = {
         }
         Relationships: []
       }
+      search_snapshots: {
+        Row: {
+          aue: number | null
+          cd: number | null
+          created_at: string
+          ei: number | null
+          gt: number | null
+          id: string
+          source_count: number | null
+          tema_normalizado: string
+          tema_original: string | null
+          total_contracts: number | null
+          total_papers: number | null
+          trl: number | null
+        }
+        Insert: {
+          aue?: number | null
+          cd?: number | null
+          created_at?: string
+          ei?: number | null
+          gt?: number | null
+          id?: string
+          source_count?: number | null
+          tema_normalizado: string
+          tema_original?: string | null
+          total_contracts?: number | null
+          total_papers?: number | null
+          trl?: number | null
+        }
+        Update: {
+          aue?: number | null
+          cd?: number | null
+          created_at?: string
+          ei?: number | null
+          gt?: number | null
+          id?: string
+          source_count?: number | null
+          tema_normalizado?: string
+          tema_original?: string | null
+          total_contracts?: number | null
+          total_papers?: number | null
+          trl?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
