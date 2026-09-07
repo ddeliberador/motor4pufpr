@@ -214,6 +214,8 @@ export interface MotorSearchResult {
     market?: MarketLayerData;
   };
   indices: StrategicIndices;
+  /** Memória temporal: índices de buscas anteriores do mesmo tema (asc por data) */
+  historico?: HistoricoPoint[];
   ontology?: OntologyMeta;
   stats: {
     papers: number;
