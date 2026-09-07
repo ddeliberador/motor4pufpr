@@ -102,6 +102,8 @@ export interface StrategicIndex {
   label: string;
   description: string;
   formula: string;
+  basis: string;
+  confidence: "high" | "medium" | "low";
   layers_used: string[];
   alert_level: "normal" | "warning" | "critical";
 }
