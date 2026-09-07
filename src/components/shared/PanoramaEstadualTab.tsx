@@ -102,7 +102,7 @@ export default function PanoramaEstadualTab({ data }: Props) {
     uf: p.uf ? p.uf / 1e9 : null,
     br: p.br ? p.br / 1e9 : null,
   }));
-  const perCapitaRows = estado.pib?.data?.pib_per_capita || [];
+  const perCapitaRows = (estado.pib?.data?.pib_per_capita || []).filter((p: any) => p.uf !== null || p.br !== null);
   const setores = (estado.setores?.data?.shares || []).filter((s: any) => s.share_pct !== null);
   const indSeries = (estado.industria_nacional?.data?.series || []).filter((s: any) => s.share_pct !== null);
   const indLast = estado.industria_nacional?.data?.last;
