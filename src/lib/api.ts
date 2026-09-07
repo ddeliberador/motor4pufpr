@@ -267,6 +267,37 @@ export interface IncidenceResult {
   data_sources: string[];
 }
 
+export interface PublicCompany {
+  nome: string;
+  cnpj: string;
+  codigo_cvm?: string;
+  setor_cvm?: string;
+  atividade?: string;
+  situacao_emissor?: string;
+  receita: number | null;
+  ano_referencia: number | null;
+  conta?: string | null;
+  descricao_conta?: string | null;
+  consolidado?: boolean | null;
+  url?: string;
+}
+
+export interface PublicCompaniesResult {
+  available: boolean;
+  reason?: string;
+  companies: PublicCompany[];
+  total_matched?: number;
+  with_revenue?: number;
+  cnae_codes?: string[];
+  cvm_sectors?: string[];
+  ano_cadastro?: number | null;
+  ano_dfp?: number | null;
+  conta_receita?: string;
+  partial_scope?: boolean;
+  scope_note?: string;
+  sources?: Array<{ name: string; url: string }>;
+}
+
 export interface SearchResponse {
   success: boolean;
   data?: IncidenceResult;
@@ -337,6 +368,19 @@ class Motor4PApi {
    */
   async getOntology(query: string): Promise<{ success: boolean; data: OntologyMapping }> {
     return this.request(`/incidence/ontology?query=${encodeURIComponent(query)}`);
+  }
+
+  /**
+   * Maiores companhias de capital aberto do setor (CVM), por CNAE.
+   * Recorte parcial: apenas empresas de capital aberto.
+   */
+  async getPublicCompaniesByCnae(
+    cnaeCodes: string[],
+    limit = 10
+  ): Promise<{ success: boolean; data?: PublicCompaniesResult; error?: string }> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    cnaeCodes.forEach((code) => params.append("cnae", code));
+    return this.request(`/companies/public-by-cnae?${params}`);
   }
 }
 

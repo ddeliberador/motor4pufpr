@@ -24,6 +24,7 @@ import OpportunityCard from "@/components/shared/OpportunityCard";
 import DataDetailSheet, { type DetailItem } from "@/components/shared/DataDetailSheet";
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
 import { NovaIndustriaTab, PbiaTab, FomentoTab } from "@/components/shared/ProgramsTabs";
+import PublicCompaniesCvm from "@/components/shared/PublicCompaniesCvm";
 import PoliciesTab from "@/components/shared/PoliciesTab";
 import CnaeNcmCard from "@/components/shared/CnaeNcmCard";
 import PerspectiveSwitcher from "@/components/shared/PerspectiveSwitcher";
@@ -1181,6 +1182,9 @@ const PesquisadorPanel = () => {
                   </div>
                 );
               })()}
+
+              {/* 4. Maiores empresas de capital aberto do setor (CVM) */}
+              <PublicCompaniesCvm cnaeCodes={(data.ontology?.cnae_codes || []).map((c) => c.code)} />
 
               {!isLoadingCompetitors && !competitors && (
                 <div className="bg-card border border-border rounded-2xl p-5 text-sm text-muted-foreground">

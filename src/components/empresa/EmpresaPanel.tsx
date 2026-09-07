@@ -9,6 +9,7 @@ import MuralOportunidades from "@/components/empresa/MuralOportunidades";
 import LeiBemCalculadora from "@/components/shared/LeiBemCalculadora";
 import ParceriaICTModal from "@/components/shared/ParceriaICTModal";
 import OpportunityCard from "@/components/shared/OpportunityCard";
+import PublicCompaniesCvm from "@/components/shared/PublicCompaniesCvm";
 import PatentsTab from "@/components/shared/PatentsTab";
 import IndicesHistoryChart from "@/components/shared/IndicesHistoryChart";
 import CagedSaldoChart from "@/components/shared/CagedSaldoChart";
@@ -467,6 +468,9 @@ const EmpresaPanel = () => {
                 </div>
               </div>
             )}
+            <div className="mt-4">
+              <PublicCompaniesCvm cnaeCodes={(data.ontology?.cnae_codes || []).map((c) => c.code)} />
+            </div>
           </Section>
 
           {/* ── SEÇÃO 4: Visão Regional ── */}
