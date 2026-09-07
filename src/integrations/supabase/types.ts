@@ -257,12 +257,14 @@ export type Database = {
           ei: number | null
           gt: number | null
           id: string
+          municipio_ibge: string | null
           source_count: number | null
           tema_normalizado: string
           tema_original: string | null
           total_contracts: number | null
           total_papers: number | null
           trl: number | null
+          uf: string | null
         }
         Insert: {
           aue?: number | null
@@ -271,12 +273,14 @@ export type Database = {
           ei?: number | null
           gt?: number | null
           id?: string
+          municipio_ibge?: string | null
           source_count?: number | null
           tema_normalizado: string
           tema_original?: string | null
           total_contracts?: number | null
           total_papers?: number | null
           trl?: number | null
+          uf?: string | null
         }
         Update: {
           aue?: number | null
@@ -285,12 +289,14 @@ export type Database = {
           ei?: number | null
           gt?: number | null
           id?: string
+          municipio_ibge?: string | null
           source_count?: number | null
           tema_normalizado?: string
           tema_original?: string | null
           total_contracts?: number | null
           total_papers?: number | null
           trl?: number | null
+          uf?: string | null
         }
         Relationships: []
       }
