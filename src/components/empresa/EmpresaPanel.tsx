@@ -4,7 +4,7 @@ import { Factory, ArrowLeft, AlertTriangle, MapPin, TrendingUp, TrendingDown, Mi
 import { useMotorSearch } from "@/hooks/useMotorSearch";
 import { useMotorLocation } from "@/hooks/useLocation";
 import LocalContextBadge from "@/components/shared/LocalContextBadge";
-import PerspectiveSwitcher from "@/components/shared/PerspectiveSwitcher";
+import DiagnosticHeader from "@/components/shared/DiagnosticHeader";
 import MuralOportunidades from "@/components/empresa/MuralOportunidades";
 import LeiBemCalculadora from "@/components/shared/LeiBemCalculadora";
 import ParceriaICTModal from "@/components/shared/ParceriaICTModal";
@@ -168,20 +168,14 @@ const EmpresaPanel = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="pt-16">
-        {/* Sticky header */}
-        <div className="sticky top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
-          <div className="panel-container py-3 flex items-center gap-3 sm:gap-4">
-            <button onClick={() => navigate("/")} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors flex-shrink-0">
-              <ArrowLeft className="w-4 h-4" />Nova busca
-            </button>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground truncate">Análise de mercado: "{data.query}"</p>
-              <p className="text-[10px] text-muted-foreground">{cnaeLabel}{locationLabel ? ` · 📍 ${locationLabel}` : ""}</p>
-            </div>
-            <PerspectiveSwitcher current="empresa" query={data.query} />
-            <span className="hidden sm:inline text-[9px] px-2 py-1 bg-primary/10 text-primary rounded-full border border-primary/20 flex-shrink-0">{data.meta.source_count} fontes</span>
-          </div>
-        </div>
+        <DiagnosticHeader
+          query={data.query}
+          current="empresa"
+          onNewSearch={() => navigate("/")}
+          sourceCount={data.meta.source_count}
+          processingTimeMs={data.meta.processing_time_ms}
+          context={locationLabel ? `📍 ${locationLabel}` : cnaeLabel || undefined}
+        />
 
         <div className="panel-container py-6 space-y-4">
           <LocalContextBadge persona="empresa" />

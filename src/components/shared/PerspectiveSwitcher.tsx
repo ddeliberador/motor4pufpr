@@ -9,15 +9,17 @@ const ORDER: Persona[] = ["pesquisador", "universidade", "empresa", "governo"];
 interface Props {
   current: Persona;
   query: string;
+  size?: "default" | "lg";
 }
 
 /**
  * Exibe a perspectiva ativa e permite alternar entre as 4 personas
  * reaproveitando os dados já coletados (sem nova consulta às bases).
  */
-const PerspectiveSwitcher = ({ current, query }: Props) => {
+const PerspectiveSwitcher = ({ current, query, size = "default" }: Props) => {
   const navigate = useNavigate();
   const CurrentIcon = personaConfigs[current].icon;
+  const isLarge = size === "lg";
 
   const switchTo = (persona: Persona) => {
     if (persona === current) return;
@@ -31,12 +33,29 @@ const PerspectiveSwitcher = ({ current, query }: Props) => {
   };
 
   return (
-    <div className="flex items-center gap-2 flex-shrink-0" role="group" aria-label="Perspectiva de análise">
-      <span className="hidden md:inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-mono">
-        <CurrentIcon className="w-3.5 h-3.5 text-primary" />
+    <div
+      className={cn(
+        "flex items-center gap-2",
+        isLarge && "gap-3"
+      )}
+      role="group"
+      aria-label="Perspectiva de análise"
+    >
+      <span
+        className={cn(
+          "hidden md:inline-flex items-center gap-1.5 uppercase tracking-wider text-muted-foreground font-mono",
+          isLarge ? "text-[11px] font-semibold" : "text-[10px]"
+        )}
+      >
+        <CurrentIcon className={cn("text-primary", isLarge ? "w-4 h-4" : "w-3.5 h-3.5")} />
         Perspectiva
       </span>
-      <div className="flex items-center rounded-md border border-border bg-muted/40 p-0.5">
+      <div
+        className={cn(
+          "flex items-center rounded-lg border border-border bg-muted/40 p-0.5",
+          isLarge && "p-1 bg-muted/60 border-border/80 shadow-sm"
+        )}
+      >
         {ORDER.map((p) => {
           const cfg = personaConfigs[p];
           const Icon = cfg.icon;
@@ -49,14 +68,15 @@ const PerspectiveSwitcher = ({ current, query }: Props) => {
               aria-pressed={active}
               title={`Ver como ${cfg.label}`}
               className={cn(
-                "flex items-center gap-1.5 px-2 py-1 rounded text-[11px] transition-colors",
+                "flex items-center gap-1.5 rounded-md transition-all duration-200",
+                isLarge ? "px-3 py-2 text-[13px]" : "px-2 py-1 text-[11px]",
                 active
-                  ? "bg-primary text-primary-foreground font-medium shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                  ? "bg-primary text-primary-foreground font-semibold shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
               )}
             >
-              <Icon className="w-3.5 h-3.5" />
-              <span className={active ? "inline" : "hidden lg:inline"}>{cfg.label}</span>
+              <Icon className={cn(isLarge ? "w-4 h-4" : "w-3.5 h-3.5")} />
+              <span className={active || isLarge ? "inline" : "hidden lg:inline"}>{cfg.label}</span>
             </button>
           );
         })}
