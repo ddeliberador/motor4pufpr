@@ -311,12 +311,16 @@ class CVMConnector(BaseConnector):
                         "descricao_conta": (row.get("DS_CONTA") or "").strip(),
                         "consolidado": "_con_" in arquivo,
                     }
-            if revenues:
-                CVMConnector._revenue_cache = (time.time(), ano, revenues)
-                logger.info(f"CVM DFP {ano}: receita de {len(revenues)} companhias")
-                return revenues, ano
+            if len(revenues) > len(melhor[0]):
+                melhor = (revenues, ano)
+            if len(revenues) >= MIN_COBERTURA:
+                break
 
-        return {}, None
+        revenues, ano = melhor
+        if revenues:
+            CVMConnector._revenue_cache = (time.time(), ano, revenues)
+            logger.info(f"CVM DFP {ano}: receita de {len(revenues)} companhias")
+        return revenues, ano
 
     async def get_top_companies_by_cnae(
         self,
