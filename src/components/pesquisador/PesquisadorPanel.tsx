@@ -6,6 +6,7 @@ import { Microscope, Search, ArrowLeft, AlertTriangle, Zap, Globe, BookOpen, Use
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
 import LocalContextBadge from "@/components/shared/LocalContextBadge";
+import DiagnosticHeader from "@/components/shared/DiagnosticHeader";
 import { useMotorLocation } from "@/hooks/useLocation";
 import { TrlScaleChart } from "@/components/shared/TrlScaleChart";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";

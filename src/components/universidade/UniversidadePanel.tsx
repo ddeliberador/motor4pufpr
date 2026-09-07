@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect } from "react";
 import { GraduationCap, Search, ArrowLeft, AlertTriangle, Zap, Globe, BookOpen, Building2, Award, Link2, ExternalLink } from "lucide-react";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
 import LocalContextBadge from "@/components/shared/LocalContextBadge";
-import PerspectiveSwitcher from "@/components/shared/PerspectiveSwitcher";
+import DiagnosticHeader from "@/components/shared/DiagnosticHeader";
 import { useMotorLocation } from "@/hooks/useLocation";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import Header from "@/components/Header";

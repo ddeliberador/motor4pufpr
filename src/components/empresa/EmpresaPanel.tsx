@@ -4,7 +4,7 @@ import { Factory, ArrowLeft, AlertTriangle, MapPin, TrendingUp, TrendingDown, Mi
 import { useMotorSearch } from "@/hooks/useMotorSearch";
 import { useMotorLocation } from "@/hooks/useLocation";
 import LocalContextBadge from "@/components/shared/LocalContextBadge";
-import PerspectiveSwitcher from "@/components/shared/PerspectiveSwitcher";
+import DiagnosticHeader from "@/components/shared/DiagnosticHeader";
 import MuralOportunidades from "@/components/empresa/MuralOportunidades";
 import LeiBemCalculadora from "@/components/shared/LeiBemCalculadora";
 import ParceriaICTModal from "@/components/shared/ParceriaICTModal";
