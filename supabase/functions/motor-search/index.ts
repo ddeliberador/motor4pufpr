@@ -704,21 +704,22 @@ Deno.serve(async (req) => {
       trl: Number.isFinite(trlValue) ? trlValue : null,
       source_count: null as number | null, // preenchido abaixo após agregar fontes
     };
-    // Busca histórico anterior enquanto o insert acontece; o ponto atual é anexado localmente
-    const [historicoAnterior] = await Promise.all([
+    snapshotRow.source_count = new Set([
+      ...(knowledge?.sources || []), ...(technology?.sources || []),
+      ...(policy?.sources || []), ...(international?.sources || []),
+    ]).size;
+    // Lê o histórico anterior (apenas buscas passadas) e grava o snapshot atual em paralelo;
+    // o ponto atual é anexado localmente. Pontos gravados nos últimos 10s são descartados
+    // para evitar duplicar o snapshot desta mesma requisição.
+    const nowMs = Date.now();
+    const [historicoBruto] = await Promise.all([
       fetchHistorico(temaNormalizado, 24),
-      (async () => {
-        // source_count depende de uniqueSources (calculado a seguir); usa contagem parcial das camadas
-        snapshotRow.source_count = new Set([
-          ...(knowledge?.sources || []), ...(technology?.sources || []),
-          ...(policy?.sources || []), ...(international?.sources || []),
-        ]).size;
-        await saveSnapshot(snapshotRow);
-      })(),
+      saveSnapshot(snapshotRow),
     ]);
+    const historicoAnterior = historicoBruto.filter((p) => nowMs - new Date(p.data).getTime() > 10_000);
     const historico: HistoricoPoint[] = [
       ...historicoAnterior,
-      { data: new Date().toISOString(), gt: Number(snapshotRow.gt ?? 0), cd: Number(snapshotRow.cd ?? 0), aue: Number(snapshotRow.aue ?? 0), ei: Number(snapshotRow.ei ?? 0) },
+      { data: new Date(nowMs).toISOString(), gt: Number(snapshotRow.gt ?? 0), cd: Number(snapshotRow.cd ?? 0), aue: Number(snapshotRow.aue ?? 0), ei: Number(snapshotRow.ei ?? 0) },
     ].slice(-24);
 
     // Aggregate sources
