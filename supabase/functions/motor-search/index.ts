@@ -729,7 +729,7 @@ Deno.serve(async (req) => {
     // para evitar duplicar o snapshot desta mesma requisição.
     const nowMs = Date.now();
     const [historicoBruto] = await Promise.all([
-      fetchHistorico(temaNormalizado, 24),
+      fetchHistorico(temaNormalizado, location.uf || "", location.municipio_ibge || "", 24),
       saveSnapshot(snapshotRow),
     ]);
     const historicoAnterior = historicoBruto.filter((p) => nowMs - new Date(p.data).getTime() > 10_000);
