@@ -16,6 +16,15 @@ class CAPESConnector(BaseConnector):
         # Portal de Dados Abertos da CAPES
         self.base_url = "https://dadosabertos.capes.gov.br/api"
         self.timeout = 30.0
+
+    def get_source_name(self) -> str:
+        return "CAPES"
+
+    async def search(self, query: str, **kwargs) -> List[Dict[str, Any]]:
+        result = await self.search_scholarships(query)
+        return result.get("scholarships", []) if isinstance(result, dict) else []
+
+
     
     async def search_scholarships(self, term: str) -> Dict[str, Any]:
         """
