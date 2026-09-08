@@ -478,19 +478,17 @@ const GovernoPanel = () => {
               />
             </TabsContent>
             <TabsContent value="ia" className="space-y-4">
-              {isAnalyzing ? (<div className="flex items-center justify-center py-12"><div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /><span className="ml-3 text-sm text-muted-foreground">Gerando prescrição baseada em 4 camadas...</span></div>
-              ) : analysis && analysis.sections?.length > 0 ? (
-                <div className="space-y-4">
-                  {analysis.questions.map((question, idx) => (
-                    <div key={idx} className="bg-card border border-border rounded-xl p-6">
-                      <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-3"><span className={`w-7 h-7 rounded-full bg-gradient-to-br ${config.color} text-white text-sm font-bold flex items-center justify-center flex-shrink-0`}>{idx + 1}</span>{question}</h3>
-                      <div className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-li:text-muted-foreground prose-a:text-primary"><ReactMarkdown>{analysis.sections[idx] || ""}</ReactMarkdown></div>
-                    </div>
-                  ))}
-                  <p className="text-[10px] text-muted-foreground text-center">Prescrição: {data.meta.sources.join(" · ")} · GT={indices?.gt?.value} CD={indices?.cd?.value} AUE={indices?.aue?.value} EI={indices?.ei?.value}</p>
-                </div>
-              ) : (<div className="text-center py-12 text-muted-foreground"><Zap className="w-8 h-8 mx-auto mb-3 opacity-40" /><p className="text-sm">Prescrição IA não disponível.</p></div>)}
+              <AiAnalysisTab
+                analysis={analysis}
+                isAnalyzing={isAnalyzing}
+                analysisError={analysisError}
+                onGenerate={requestAnalysis}
+                sources={data.meta.sources}
+                colorClass={config.color}
+                intro="Aponta onde investir, o grau de dependência externa e se os instrumentos públicos estão funcionando."
+              />
             </TabsContent>
+
 
             {(data.layers as any).programs?.context?.industrial && (
               <TabsContent value="nova-industria" className="space-y-4">
