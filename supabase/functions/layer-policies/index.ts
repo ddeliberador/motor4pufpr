@@ -393,7 +393,7 @@ Deno.serve(async (req) => {
     const proposicoes = [...camara, ...senado];
 
     return new Response(JSON.stringify({
-      politicas: getPoliticasCuradas(),
+      politicas: politicasCuradas,
       ecossistema: getEcossistemaInovacao(),
       gazettes_mencoes: gazettesMencoes,
       editais_inovacao: editaisPNCP,
