@@ -1,3 +1,4 @@
+import AiAnalysisTab from "@/components/shared/AiAnalysisTab";
 import RegionalTab from "@/components/shared/RegionalTab";
 import { useState, useEffect } from "react";
 import { Factory, ArrowLeft, AlertTriangle, MapPin, TrendingUp, TrendingDown, Minus, ExternalLink, ChevronDown, ChevronUp, Zap, Shield, Package, Users, BookOpen } from "lucide-react";
