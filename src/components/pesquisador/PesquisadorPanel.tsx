@@ -45,12 +45,13 @@ const PesquisadorPanel = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [icts, setIcts] = useState<any>(null);
   const [isLoadingIcts, setIsLoadingIcts] = useState(false);
+  const [ictsError, setIctsError] = useState<string | null>(null);
   const [cnpqData, setCnpqData] = useState<any>(null);
   const [competitors, setCompetitors] = useState<any>(null);
   const [isLoadingCompetitors, setIsLoadingCompetitors] = useState(false);
 
 
-  const { search, data, analysis, isLoading, isAnalyzing, error } = useMotorSearch();
+  const { search, data, analysis, isLoading, isAnalyzing, error, requestAnalysis, analysisError } = useMotorSearch();
   const { uf, ufNome, municipioNome, label: locationLabel, hasLocation } = useMotorLocation();
 
   // Lê query pré-preenchida vinda da busca unificada
@@ -74,18 +75,34 @@ const PesquisadorPanel = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Busca ICTs nacionais quando os dados chegam
-  useEffect(() => {
-    if (!data?.query || icts !== null || isLoadingIcts) return;
+  // ICTs: busca SOB DEMANDA (botão), resumindo as instituições reais já coletadas
+  const loadIcts = () => {
+    if (!data?.query || isLoadingIcts) return;
     setIsLoadingIcts(true);
-    supabase.functions.invoke("ict-search", { body: { query: data.query } })
-      .then(({ data: result }) => {
-        if (result && !result.error) setIcts(result);
+    setIctsError(null);
+    const institutions = Object.entries(((data.layers as any)?.knowledge?.institutions || {}) as Record<string, number>)
+      .slice(0, 25)
+      .map(([name, works]) => ({ name, works, source: "OpenAlex" }));
+    const cnpqIes = (((data.layers as any)?.cnpq?.top_ies || []) as any[])
+      .slice(0, 10)
+      .map((i: any) => ({ name: i.nome || i.name || i.ies, works: i.total || i.count, source: "CNPq" }));
+    supabase.functions
+      .invoke("ict-search", {
+        body: {
+          query: data.query,
+          institutions: [...institutions, ...cnpqIes].filter((i) => i.name),
+          uf: uf || undefined,
+          municipio: municipioNome || undefined,
+        },
       })
-      .catch(console.warn)
+      .then(({ data: result, error: err }) => {
+        if (result && !result.error) setIcts(result);
+        else setIctsError(result?.error || err?.message || "Não foi possível consultar as ICTs agora.");
+      })
+      .catch((e) => setIctsError(e instanceof Error ? e.message : "Falha na consulta."))
       .finally(() => setIsLoadingIcts(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data?.query]);
+  };
+
 
   // Busca empresas nacionais e referências globais quando os dados chegam
   useEffect(() => {
@@ -1207,29 +1224,17 @@ const PesquisadorPanel = () => {
               />
             </TabsContent>
             <TabsContent value="ia" className="space-y-4">
-              {isAnalyzing ? (
-                <div className="flex items-center justify-center py-12"><div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /><span className="ml-3 text-sm text-muted-foreground">Analisando campo científico com {data.meta.source_count} fontes...</span></div>
-              ) : analysis && analysis.sections?.length > 0 ? (
-                <div className="space-y-4">
-                  {analysis.questions.map((question, idx) => (
-                    <div key={idx} className="bg-card border border-border rounded-xl p-6">
-                      <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-3"><span className={`w-7 h-7 rounded-full bg-gradient-to-br ${config.color} text-white text-sm font-bold flex items-center justify-center flex-shrink-0`}>{idx + 1}</span>{question}</h3>
-                      <div className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-li:text-muted-foreground prose-a:text-primary"><ReactMarkdown>{analysis.sections[idx] || ""}</ReactMarkdown></div>
-                    </div>
-                  ))}
-                  <p className="text-[10px] text-muted-foreground text-center">Análise baseada em {data.meta.sources.join(" · ")}</p>
-                </div>
-              ) : (
-                <div className="text-center py-12 space-y-3">
-                  <Zap className="w-8 h-8 mx-auto text-muted-foreground/40" />
-                  <p className="text-sm text-muted-foreground">Prescrição IA não disponível.</p>
-                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                    Configure <code className="bg-muted px-1 rounded">LOVABLE_API_KEY</code> ou{" "}
-                    <code className="bg-muted px-1 rounded">ANTHROPIC_API_KEY</code> nos Secrets do Supabase para ativar análises prescritivas.
-                  </p>
-                </div>
-              )}
+              <AiAnalysisTab
+                analysis={analysis}
+                isAnalyzing={isAnalyzing}
+                analysisError={analysisError}
+                onGenerate={requestAnalysis}
+                sources={data.meta.sources}
+                colorClass={config.color}
+                intro="Interpreta a produção científica, o financiamento e as lacunas deste tema para quem pesquisa."
+              />
             </TabsContent>
+
 
             {(data.layers as any).programs?.context?.industrial && (
               <TabsContent value="nova-industria" className="space-y-4">
