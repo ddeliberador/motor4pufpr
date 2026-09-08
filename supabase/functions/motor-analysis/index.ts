@@ -186,8 +186,12 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { searchData, persona, entityContext } = await req.json();
-    if (!searchData) return new Response(JSON.stringify({ error: "searchData is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const guard = await guardRequest<{ searchData?: any; persona?: string; entityContext?: any }>(
+      req, "motor-analysis", corsHeaders, { limit: 20 },
+    );
+    if (!guard.ok) return guard.response;
+    const { searchData, persona, entityContext } = guard.body;
+    if (!searchData || typeof searchData !== "object") return new Response(JSON.stringify({ error: "searchData is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
@@ -196,15 +200,16 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Configure LOVABLE_API_KEY ou ANTHROPIC_API_KEY nos Secrets do Supabase." }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const personaKey = persona || "pesquisador";
-    const pq = PERSONA_CONFIG[personaKey] || PERSONA_CONFIG.pesquisador;
+    // persona só pode ser uma das chaves conhecidas — nada vindo do cliente entra no system prompt
+    const personaKey = typeof persona === "string" && PERSONA_CONFIG[persona] ? persona : "pesquisador";
+    const pq = PERSONA_CONFIG[personaKey];
     const indices = searchData.indices || {};
     const layers = searchData.layers || {};
 
-    const systemPrompt = buildSystemPrompt(personaKey, pq, indices, layers, entityContext, searchData);
-    const userMessage = buildUserMessage(searchData, layers);
+    const systemPrompt = buildSystemPrompt(personaKey, pq);
+    const userMessage = buildUserMessage(personaKey, searchData, layers, indices, entityContext);
 
-    console.log(`Motor analysis: "${searchData.query}" | persona=${personaKey} | GT=${indices.gt?.value} | CD=${indices.cd?.value}`);
+    console.log(`Motor analysis | persona=${personaKey} | GT=${indices.gt?.value} | CD=${indices.cd?.value}`);
 
     let analysisText = "";
     let providerUsed = "";
