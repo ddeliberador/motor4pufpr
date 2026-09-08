@@ -18,6 +18,26 @@ function normalizeTema(s: string): string {
 
 export interface HistoricoPoint { data: string; gt: number; cd: number; aue: number; ei: number }
 
+// Validação de integridade dos snapshots (espelha as CHECK constraints do banco)
+const UFS_VALIDAS = new Set([
+  "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR",
+  "PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO",
+]);
+
+function sanitizeUf(v: unknown): string | null {
+  const s = typeof v === "string" ? v.trim().toUpperCase() : "";
+  return UFS_VALIDAS.has(s) ? s : null;
+}
+
+function sanitizeMunicipioIbge(v: unknown): string | null {
+  const s = typeof v === "string" ? v.trim() : "";
+  return /^\d{7}$/.test(s) ? s : null;
+}
+
+function sanitizeTema(v: unknown, max = 120): string {
+  return (typeof v === "string" ? v : "").trim().slice(0, max);
+}
+
 async function restHeaders(): Promise<Record<string, string>> {
   const key = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
   return { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
