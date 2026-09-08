@@ -11,7 +11,7 @@ ENV PYTHONPATH=/app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    gcc curl ca-certificates \
+    gcc curl ca-certificates zstd \
     && rm -rf /var/lib/apt/lists/*
 
 # Ollama — servidor local do modelo aberto Tucano 2 (nenhum modelo é baixado aqui:
