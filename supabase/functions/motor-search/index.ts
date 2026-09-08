@@ -95,17 +95,17 @@ async function fetchOntologyMapping(query: string): Promise<OntologyMapping | nu
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10000); // 10s max
   try {
-    const res = await fetch(`${RAILWAY_API_URL}/ontology/translate`, {
-      method: "POST",
-      signal: controller.signal,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query }),
-    });
+    const res = await fetch(
+      `${RAILWAY_API_URL}/incidence/ontology?query=${encodeURIComponent(query)}`,
+      { signal: controller.signal, headers: { "Content-Type": "application/json" } },
+    );
     if (!res.ok) {
       console.warn(`OntologyEngine ${res.status} — usando busca por texto`);
       return null;
     }
-    return await res.json();
+    const json = await res.json();
+    return (json?.data ?? json) as OntologyMapping;
+
   } catch (e) {
     console.warn("OntologyEngine indisponível:", e instanceof Error ? e.message : e);
     return null;
