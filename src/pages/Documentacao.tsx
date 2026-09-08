@@ -378,6 +378,87 @@ const Documentacao = () => {
         </div>
       </section>
 
+      {/* RECURSOS E FONTES UTILIZADAS */}
+      <section id="recursos-fontes" className="py-16 bg-muted/30 border-t border-border">
+        <div className="max-w-6xl mx-auto px-6">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }}>
+            <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold mb-3 text-center">
+              Recursos e Fontes Utilizadas
+            </motion.h2>
+            <motion.p variants={fadeUp} custom={1} className="text-muted-foreground text-center mb-8 max-w-3xl mx-auto">
+              Todas as bases de dados e modelos de inteligência artificial que o Motor da Inovação consulta,
+              classificados pela nacionalidade da instituição que os mantém.
+            </motion.p>
+
+            {/* Resumo */}
+            <motion.div variants={fadeUp} custom={2} className="grid sm:grid-cols-3 gap-4 mb-8">
+              <div className="bg-card border border-border rounded-xl p-5 text-center">
+                <p className="text-3xl font-bold text-foreground">{RECURSOS.length}</p>
+                <p className="text-xs text-muted-foreground mt-1">fontes e modelos catalogados</p>
+              </div>
+              <div className="bg-card border border-emerald-500/30 rounded-xl p-5 text-center">
+                <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                  {RESUMO.nacional} <span className="text-base font-medium">({RESUMO.pctNacional}%)</span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">nacionais (instituições brasileiras)</p>
+              </div>
+              <div className="bg-card border border-amber-500/30 rounded-xl p-5 text-center">
+                <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">
+                  {RESUMO.estrangeiro} <span className="text-base font-medium">({RESUMO.pctEstrangeiro}%)</span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">estrangeiras</p>
+              </div>
+            </motion.div>
+
+            {/* Tabela */}
+            <motion.div variants={fadeUp} custom={3} className="bg-card border border-border rounded-2xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <caption className="sr-only">Fontes de dados e modelos de IA usados pelo Motor da Inovação</caption>
+                  <thead>
+                    <tr className="bg-muted/60 text-left">
+                      <th scope="col" className="px-4 py-3 font-semibold">Fonte</th>
+                      <th scope="col" className="px-4 py-3 font-semibold">Mantenedor</th>
+                      <th scope="col" className="px-4 py-3 font-semibold">Nacionalidade</th>
+                      <th scope="col" className="px-4 py-3 font-semibold">Uso no Motor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {RECURSOS.map((r) => (
+                      <tr key={r.fonte} className="border-t border-border align-top">
+                        <td className="px-4 py-3 font-medium text-foreground whitespace-nowrap">
+                          {r.fonte}
+                          {r.nota && <span className="block text-[10px] font-normal text-muted-foreground">{r.nota}</span>}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">{r.mantenedor}</td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`text-[11px] px-2 py-0.5 rounded-full whitespace-nowrap ${
+                              r.nacionalidade === "Nacional"
+                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                            }`}
+                          >
+                            {r.nacionalidade}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">{r.uso}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+
+            <motion.p variants={fadeUp} custom={4} className="text-xs text-muted-foreground mt-4 leading-relaxed">
+              Classificação por nacionalidade da instituição mantenedora da fonte de dados ou do modelo,
+              não por onde os servidores estão hospedados.
+            </motion.p>
+          </motion.div>
+        </div>
+      </section>
+
+
       {/* PRINCÍPIOS */}
       <section className="py-16 border-t border-border">
         <div className="max-w-4xl mx-auto px-6">
