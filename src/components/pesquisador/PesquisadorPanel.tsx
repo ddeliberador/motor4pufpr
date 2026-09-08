@@ -855,96 +855,83 @@ const PesquisadorPanel = () => {
               {isLoadingIcts ? (
                 <div className="bg-card border border-border rounded-2xl p-12 flex flex-col items-center gap-4">
                   <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                  <p className="text-sm text-muted-foreground">Identificando institutos de pesquisa em <strong>{data.query}</strong>...</p>
+                  <p className="text-sm text-muted-foreground text-center">
+                    Resumindo as instituições encontradas para <strong>{data.query}</strong>… pode levar
+                    de um a alguns minutos.
+                  </p>
                 </div>
               ) : icts ? (
                 <div className="space-y-4">
-                  {icts.overview && (
-                    <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5">
-                      <p className="text-sm font-medium text-foreground mb-1">🗺️ Panorama do ecossistema</p>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{icts.overview}</p>
-                    </div>
-                  )}
-
-                  {icts.icts?.length > 0 ? (
-                    <div className="space-y-3">
-                      <p className="text-sm font-medium text-foreground">{icts.icts.length} instituição{icts.icts.length > 1 ? "s" : ""} identificada{icts.icts.length > 1 ? "s" : ""}:</p>
-                      {icts.icts.map((ict: any, i: number) => (
-                        <div key={i} className="bg-card border border-border/60 rounded-2xl p-5 hover:border-border transition-colors">
-                          <div className="flex items-start justify-between gap-3 mb-3">
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2 flex-wrap mb-1">
-                                <p className="text-sm font-semibold text-foreground">{ict.name}</p>
-                                {ict.acronym && (
-                                  <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium">{ict.acronym}</span>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                                {ict.city && ict.state && <span>📍 {ict.city}/{ict.state}</span>}
-                                {ict.type && <span className="px-2 py-0.5 bg-muted rounded-full">{ict.type}</span>}
-                              </div>
-                            </div>
-                            {ict.url && (
-                              <a href={ict.url} target="_blank" rel="noopener noreferrer"
-                                 className="flex-shrink-0 flex items-center gap-1 text-sm text-primary hover:underline font-medium">
-                                <ExternalLink className="w-3.5 h-3.5" /> Visitar
-                              </a>
-                            )}
-                          </div>
-                          {ict.focus && (
-                            <div className="border-t border-border/30 pt-3">
-                              <p className="text-xs text-muted-foreground font-medium mb-1">Áreas de atuação:</p>
-                              <p className="text-sm text-foreground leading-relaxed">{ict.focus}</p>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="bg-card border border-border rounded-2xl p-8 text-center">
-                      <p className="text-3xl mb-3">🔍</p>
-                      <p className="text-base font-medium text-foreground mb-1">Nenhum instituto identificado para este tema</p>
-                      <p className="text-sm text-muted-foreground">Tente buscar por um termo mais amplo, ou consulte o diretório completo de ICTs no MCTI.</p>
+                  {icts.available === false ? (
+                    <div className="bg-card border border-border rounded-2xl p-8 text-center space-y-2">
+                      <p className="text-3xl">🔍</p>
+                      <p className="text-base font-medium text-foreground">Nenhuma instituição encontrada nas bases públicas</p>
+                      <p className="text-sm text-muted-foreground max-w-md mx-auto">{icts.reason}</p>
                       <a href="https://www.gov.br/mcti/pt-br/acesso-a-informacao/institucional/icts" target="_blank" rel="noopener noreferrer"
-                         className="text-sm text-primary hover:underline mt-3 inline-flex items-center gap-1">
+                         className="text-sm text-primary hover:underline mt-2 inline-flex items-center gap-1">
                         <ExternalLink className="w-3 h-3" /> Diretório de ICTs — MCTI
                       </a>
                     </div>
-                  )}
+                  ) : (
+                    <>
+                      {icts.overview && (
+                        <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5">
+                          <p className="text-sm font-medium text-foreground mb-1">🗺️ Panorama do ecossistema</p>
+                          <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{icts.overview}</p>
+                        </div>
+                      )}
+                      {icts.warning && (
+                        <p className="text-xs text-muted-foreground text-center">
+                          O resumo em texto não pôde ser gerado agora ({icts.warning}), mas a lista de
+                          instituições abaixo vem direto das bases públicas.
+                        </p>
+                      )}
 
-                  {icts.networks?.length > 0 && (
-                    <div className="bg-card border border-border rounded-2xl p-5">
-                      <h3 className="text-base font-semibold text-foreground mb-2">🔗 Redes e programas nacionais</h3>
-                      <p className="text-sm text-muted-foreground mb-4">Iniciativas que conectam institutos, empresas e governo em torno do tema.</p>
                       <div className="space-y-3">
-                        {icts.networks.map((net: any, i: number) => (
-                          <div key={i} className="flex items-start justify-between gap-3 p-3 border border-border/40 rounded-xl hover:border-border transition-colors">
+                        <p className="text-sm font-medium text-foreground">
+                          {icts.total} instituição{icts.total > 1 ? "ões" : ""} com produção registrada neste tema:
+                        </p>
+                        {(icts.institutions || []).map((inst: any, i: number) => (
+                          <div key={i} className="bg-card border border-border/60 rounded-2xl p-4 flex items-start justify-between gap-3">
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-foreground">{net.name}</p>
-                              {net.description && <p className="text-xs text-muted-foreground mt-1">{net.description}</p>}
+                              <p className="text-sm font-semibold text-foreground">{inst.name}</p>
+                              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1">
+                                {inst.works ? <span>{inst.works} registro{inst.works > 1 ? "s" : ""}</span> : null}
+                                {inst.city && inst.state && <span>📍 {inst.city}/{inst.state}</span>}
+                                {inst.source && <span className="px-2 py-0.5 bg-muted rounded-full">fonte: {inst.source}</span>}
+                              </div>
                             </div>
-                            {net.url && (
-                              <a href={net.url} target="_blank" rel="noopener noreferrer"
-                                 className="flex-shrink-0 flex items-center gap-1 text-sm text-primary hover:underline">
-                                <ExternalLink className="w-3 h-3" /> Acessar
+                            {inst.url && (
+                              <a href={inst.url} target="_blank" rel="noopener noreferrer"
+                                 className="flex-shrink-0 flex items-center gap-1 text-sm text-primary hover:underline font-medium">
+                                <ExternalLink className="w-3.5 h-3.5" /> Abrir
                               </a>
                             )}
                           </div>
                         ))}
                       </div>
-                    </div>
-                  )}
 
-                  <p className="text-xs text-muted-foreground text-center pt-2">
-                    ⚠️ Dados gerados por inteligência artificial com base em fontes públicas — verifique os links antes de entrar em contato
-                  </p>
+                      <p className="text-xs text-muted-foreground text-center pt-1">
+                        Lista extraída das bases públicas (OpenAlex e CNPq) — nenhum nome de instituição é
+                        inventado pelo sistema. O texto de panorama apenas resume essa lista.
+                      </p>
+                      <p className="text-[10px] text-muted-foreground text-center italic">{TUCANO_NOTE}</p>
+                    </>
+                  )}
                 </div>
               ) : (
-                <div className="bg-card border border-border rounded-2xl p-12 text-center">
-                  <p className="text-3xl mb-3">🏛️</p>
-                  <p className="text-sm text-muted-foreground">Clique na aba para carregar os institutos de pesquisa.</p>
+                <div className="bg-card border border-border rounded-2xl p-10 text-center space-y-4">
+                  <p className="text-3xl">🏛️</p>
+                  <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                    O Motor lista as instituições que realmente aparecem nas bases públicas para este tema
+                    e escreve um resumo do que essa distribuição mostra. A busca não é automática.
+                  </p>
+                  <Button size="sm" onClick={loadIcts}>Buscar ICTs</Button>
+                  {ictsError && <p className="text-xs text-destructive">{ictsError}</p>}
+                  <p className="text-[10px] text-muted-foreground italic">{TUCANO_NOTE}</p>
                 </div>
               )}
+
 
             </TabsContent>
 
