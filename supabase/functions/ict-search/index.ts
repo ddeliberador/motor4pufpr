@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { guardRequest } from "../_shared/guard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,7 +10,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { query } = await req.json();
+    const guard = await guardRequest<{ query?: string }>(req, "ict-search", corsHeaders, { limit: 30 });
+    if (!guard.ok) return guard.response;
+    const query = typeof guard.body.query === "string" ? guard.body.query.trim().slice(0, 200) : "";
     if (!query) return new Response(JSON.stringify({ error: "query required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");

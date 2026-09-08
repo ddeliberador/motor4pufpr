@@ -94,11 +94,9 @@ const edgeFunctions = [
   { name: "layer-technology", desc: "Consulta INPI, RAIS/CAGED, GitHub — estima TRL e maturidade tecnológica" },
   { name: "layer-policy", desc: "Consulta PNCP, Transparência, SICONFI — avalia intensidade instrumental e capacidade fiscal" },
   { name: "layer-international", desc: "Consulta COMEX, BCB — mede dependência externa e inserção global" },
-  { name: "enrichment-search", desc: "Enriquecimento semântico via IBGE, BrasilAPI e bases complementares" },
-  { name: "smart-insights", desc: "Gera insights prescritivos cruzando índices entre camadas" },
-  { name: "research-agent", desc: "Agente de pesquisa que aprofunda análise sob demanda do usuário" },
-  { name: "research-gaps", desc: "Identifica lacunas de pesquisa e oportunidades de agenda científica" },
-  { name: "policy-simulator", desc: "Simula cenários de política industrial com base nos dados coletados" },
+  { name: "market-analysis", desc: "Análise de mercado e demanda produtiva por setor" },
+  { name: "ict-search", desc: "Identifica ICTs e redes de pesquisa brasileiras atuantes no tema" },
+  { name: "competitor-search", desc: "Empresas e referências nacionais e internacionais do setor" },
 ];
 
 const Documentacao = () => {
@@ -393,7 +391,7 @@ const Documentacao = () => {
                 { title: "Dados Públicos", desc: "100% das fontes são bases abertas mantidas por órgãos do governo brasileiro ou organizações internacionais." },
                 { title: "Reprodutibilidade", desc: "Qualquer resultado pode ser verificado e reproduzido — toda chamada de API é rastreável." },
                 { title: "Sem Vendor Lock-in", desc: "Stack aberta: React, TypeScript, Deno. Deploy possível em qualquer provedor cloud." },
-                { title: "Privacidade por Design", desc: "Nenhum dado pessoal é coletado. Buscas não são armazenadas. Sem cookies de rastreamento." },
+                { title: "Privacidade e Transparência", desc: "Sem cookies de rastreamento e sem login para pesquisar. Os termos de busca são registrados junto dos indicadores do tema, sem qualquer vínculo com quem pesquisou. Ao enviar uma sugestão ou dúvida, a mensagem é armazenada e o e-mail, se informado, também — visível apenas ao mantenedor." },
                 { title: "Extensível", desc: "Novos conectores de dados podem ser adicionados como módulos independentes." },
                 { title: "Acadêmico + Prático", desc: "Fundamentação teórica sólida (SNI, Mazzucato, Nelson & Winter) com entrega computacional real." },
               ].map((p, i) => (
