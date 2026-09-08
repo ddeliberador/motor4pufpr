@@ -44,7 +44,7 @@ const GovernoPanel = () => {
   const [pendingSearchQuery, setPendingSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("pncp");
 
-  const { search, data, analysis, isLoading, isAnalyzing, error } = useMotorSearch();
+  const { search, data, analysis, isLoading, isAnalyzing, error, requestAnalysis, analysisError } = useMotorSearch();
   const { uf, ufNome, municipioNome, label: locationLabel, hasLocation } = useMotorLocation();
 
   // Lê query pré-preenchida vinda da busca unificada

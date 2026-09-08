@@ -69,7 +69,7 @@ const EmpresaPanel = () => {
   const [competitors, setCompetitors] = useState<any>(null);
   const [showAI, setShowAI] = useState(false);
 
-  const { search, data, analysis, isLoading, isAnalyzing, error } = useMotorSearch();
+  const { search, data, analysis, isLoading, isAnalyzing, error, requestAnalysis, analysisError } = useMotorSearch();
   const { uf, ufNome, label: locationLabel, hasLocation } = useMotorLocation();
   const { searchCnaes, isLoading: isLoadingCnaes } = useCnaeSearch();
   const navigate = useNavigate();
