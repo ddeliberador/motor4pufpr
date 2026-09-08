@@ -401,18 +401,23 @@ export function useMotorSearch() {
         },
       };
 
-      const { data: analysisResult, error: analysisError } = await supabase.functions.invoke(
-        "motor-analysis",
-        { body: { searchData: slimSearchData, persona: ctx.persona, entityContext: ctx.entityContext } }
-      );
+      // Chamada DIRETA ao backend Railway (não via edge function): a geração
+      // com o Tucano 2 em CPU pode levar minutos, e edge functions têm limite
+      // de tempo de execução bem menor que o proxy do Railway (~300s).
+      const res = await fetch(`${API_BASE_URL}/analysis/motor-analysis`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ searchData: slimSearchData, persona: ctx.persona, entityContext: ctx.entityContext }),
+      });
+      const analysisResult = await res.json().catch(() => null);
 
-      if (!analysisError && analysisResult && !analysisResult.error) {
+      if (res.ok && analysisResult && !analysisResult.error) {
         setAnalysis(analysisResult as MotorAnalysis);
         if (lastSearch && lastSearch.key === ctx.cacheKey) {
           lastSearch.analyses[ctx.persona] = analysisResult as MotorAnalysis;
         }
       } else {
-        const msg = analysisResult?.error || analysisError?.message || "Não foi possível gerar a análise agora.";
+        const msg = analysisResult?.error || analysisResult?.detail || `Backend de análise retornou ${res.status}`;
         console.warn("AI analysis unavailable:", msg);
         setAnalysisError(msg);
       }

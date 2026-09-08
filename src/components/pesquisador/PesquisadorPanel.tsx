@@ -87,18 +87,22 @@ const PesquisadorPanel = () => {
     const cnpqIes = (((data.layers as any)?.cnpq?.top_ies || []) as any[])
       .slice(0, 10)
       .map((i: any) => ({ name: i.nome || i.name || i.ies, works: i.total || i.count, source: "CNPq" }));
-    supabase.functions
-      .invoke("ict-search", {
-        body: {
-          query: data.query,
-          institutions: [...institutions, ...cnpqIes].filter((i) => i.name),
-          uf: uf || undefined,
-          municipio: municipioNome || undefined,
-        },
-      })
-      .then(({ data: result, error: err }) => {
-        if (result && !result.error) setIcts(result);
-        else setIctsError(result?.error || err?.message || "Não foi possível consultar as ICTs agora.");
+    // Chamada DIRETA ao backend Railway: o resumo com Tucano 2 pode levar
+    // minutos em CPU, acima do limite de tempo das edge functions.
+    fetch(`${API_BASE_URL}/analysis/icts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: data.query,
+        institutions: [...institutions, ...cnpqIes].filter((i) => i.name),
+        uf: uf || undefined,
+        municipio: municipioNome || undefined,
+      }),
+    })
+      .then(async (res) => {
+        const result = await res.json().catch(() => null);
+        if (res.ok && result && !result.error) setIcts(result);
+        else setIctsError(result?.error || result?.detail || `Backend retornou ${res.status}`);
       })
       .catch((e) => setIctsError(e instanceof Error ? e.message : "Falha na consulta."))
       .finally(() => setIsLoadingIcts(false));
