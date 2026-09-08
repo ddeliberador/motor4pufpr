@@ -14,14 +14,14 @@ cat .env
 
 **Deve conter:**
 ```env
-VITE_API_URL=https://motor4pufpr-copy-production.up.railway.app/api/v1
+VITE_API_URL=https://motor4pufpr-copy-production-5681.up.railway.app/api/v1
 ```
 
 ### ✅ 2. Teste a API diretamente
 
 Abra no navegador:
 ```
-https://motor4pufpr-copy-production.up.railway.app/api/v1/health
+https://motor4pufpr-copy-production-5681.up.railway.app/api/v1/health
 ```
 
 **Deve retornar:**
@@ -77,7 +77,7 @@ Abra DevTools → Network → XHR e veja qual URL está sendo chamada.
 
 **Deve ser:**
 ```
-https://motor4pufpr-copy-production.up.railway.app/api/v1/health
+https://motor4pufpr-copy-production-5681.up.railway.app/api/v1/health
 ```
 
 **NÃO deve ser:**
@@ -97,7 +97,7 @@ cat .env
 
 # 2. Se não existir, crie:
 cp .env.example .env
-# Edite e coloque: VITE_API_URL=https://motor4pufpr-copy-production.up.railway.app/api/v1
+# Edite e coloque: VITE_API_URL=https://motor4pufpr-copy-production-5681.up.railway.app/api/v1
 
 # 3. REINICIE o Vite
 # Ctrl+C no terminal
@@ -131,7 +131,7 @@ console.log(import.meta.env.VITE_API_URL)
 
 Deve mostrar:
 ```
-https://motor4pufpr-copy-production.up.railway.app/api/v1
+https://motor4pufpr-copy-production-5681.up.railway.app/api/v1
 ```
 
 Se mostrar `undefined` ou `http://localhost:8000/api/v1`:
@@ -141,12 +141,12 @@ Se mostrar `undefined` ou `http://localhost:8000/api/v1`:
 2. **Teste a API com curl/fetch:**
 
 ```bash
-curl https://motor4pufpr-copy-production.up.railway.app/api/v1/health
+curl https://motor4pufpr-copy-production-5681.up.railway.app/api/v1/health
 ```
 
 Ou no console do navegador:
 ```javascript
-fetch('https://motor4pufpr-copy-production.up.railway.app/api/v1/health')
+fetch('https://motor4pufpr-copy-production-5681.up.railway.app/api/v1/health')
   .then(r => r.json())
   .then(console.log)
   .catch(console.error)
@@ -159,7 +159,7 @@ No Lovable, configure a variável de ambiente:
 1. Settings → Environment Variables
 2. Adicione:
    - **Name:** `VITE_API_URL`
-   - **Value:** `https://motor4pufpr-copy-production.up.railway.app/api/v1`
+   - **Value:** `https://motor4pufpr-copy-production-5681.up.railway.app/api/v1`
 3. Publish/Redeploy
 
 ## Contato
