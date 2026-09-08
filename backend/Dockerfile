@@ -11,8 +11,12 @@ ENV PYTHONPATH=/app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    gcc \
+    gcc curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
+# Ollama — servidor local do modelo aberto Tucano 2 (nenhum modelo é baixado aqui:
+# o pull acontece sob demanda, na primeira chamada de análise)
+RUN curl -fsSL https://ollama.com/install.sh | sh
 
 # Copy requirements first for better caching
 COPY requirements.txt .
@@ -28,4 +32,6 @@ COPY . .
 EXPOSE 8000
 
 # Run the application using PORT environment variable from Railway
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+RUN chmod +x /app/start.sh
+
+CMD ["/app/start.sh"]
