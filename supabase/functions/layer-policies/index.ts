@@ -414,7 +414,8 @@ Deno.serve(async (req) => {
           { fonte: "Senado Federal — Dados Abertos", url: "https://legis.senado.leg.br/dadosabertos/processo", total: senado.length },
         ],
       },
-      sources: ["Políticas públicas curadas", "Lei do Bem/MCTI", "Lei da Informática/SEPIN", "ANPROTEC", "Querido Diário", "PNCP", "Câmara dos Deputados", "Senado Federal"],
+      sources: ["Políticas públicas curadas", "Lei do Bem/MCTI", "Lei da Informática/SEPIN", "ANPROTEC", "Querido Diário", "PNCP", "Câmara dos Deputados", "Senado Federal",
+        ...(temaDataCenter ? ["ReData — MP 1.318/2026 (Planalto)"] : [])],
       processing_time_ms: Date.now() - start,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
