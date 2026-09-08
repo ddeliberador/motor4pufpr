@@ -1,3 +1,4 @@
+import AiAnalysisTab from "@/components/shared/AiAnalysisTab";
 import RegionalTab from "@/components/shared/RegionalTab";
 import { useState, useCallback, useEffect } from "react";
 import { GraduationCap, Search, ArrowLeft, AlertTriangle, Zap, Globe, BookOpen, Building2, Award, Link2, ExternalLink } from "lucide-react";
@@ -42,7 +43,7 @@ const UniversidadePanel = () => {
   const [detailItem, setDetailItem] = useState<DetailItem | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  const { search, data, analysis, isLoading, isAnalyzing, error } = useMotorSearch();
+  const { search, data, analysis, isLoading, isAnalyzing, error, requestAnalysis, analysisError } = useMotorSearch();
   const { uf, ufNome, municipioNome, label: locationLabel, hasLocation } = useMotorLocation();
 
   // Lê query pré-preenchida vinda da busca unificada
@@ -363,18 +364,17 @@ const UniversidadePanel = () => {
               />
             </TabsContent>
             <TabsContent value="ia" className="space-y-4">
-              {isAnalyzing ? (<div className="flex items-center justify-center py-12"><div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /><span className="ml-3 text-sm text-muted-foreground">Analisando posicionamento...</span></div>
-              ) : analysis && analysis.sections?.length > 0 ? (
-                <div className="space-y-4">
-                  {analysis.questions.map((question, idx) => (
-                    <div key={idx} className="bg-card border border-border rounded-xl p-6">
-                      <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-3"><span className={`w-7 h-7 rounded-full bg-gradient-to-br ${config.color} text-white text-sm font-bold flex items-center justify-center flex-shrink-0`}>{idx + 1}</span>{question}</h3>
-                      <div className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-li:text-muted-foreground prose-a:text-primary"><ReactMarkdown>{analysis.sections[idx] || ""}</ReactMarkdown></div>
-                    </div>
-                  ))}
-                </div>
-              ) : (<div className="text-center py-12 text-muted-foreground"><Zap className="w-8 h-8 mx-auto mb-3 opacity-40" /><p className="text-sm">IA não disponível.</p></div>)}
+              <AiAnalysisTab
+                analysis={analysis}
+                isAnalyzing={isAnalyzing}
+                analysisError={analysisError}
+                onGenerate={requestAnalysis}
+                sources={data.meta.sources}
+                colorClass={config.color}
+                intro="Avalia o posicionamento da instituição, a conversão de pesquisa em inovação e as parcerias prioritárias."
+              />
             </TabsContent>
+
 
             {(data.layers as any).programs?.context?.industrial && (
               <TabsContent value="nova-industria" className="space-y-4">

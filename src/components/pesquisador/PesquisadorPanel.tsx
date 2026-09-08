@@ -1,3 +1,4 @@
+import AiAnalysisTab, { TUCANO_NOTE } from "@/components/shared/AiAnalysisTab";
 import RegionalTab from "@/components/shared/RegionalTab";
 import CagedSaldoChart from "@/components/shared/CagedSaldoChart";
 import TrlScaleBar from "@/components/shared/TrlScaleBar";
@@ -45,12 +46,13 @@ const PesquisadorPanel = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [icts, setIcts] = useState<any>(null);
   const [isLoadingIcts, setIsLoadingIcts] = useState(false);
+  const [ictsError, setIctsError] = useState<string | null>(null);
   const [cnpqData, setCnpqData] = useState<any>(null);
   const [competitors, setCompetitors] = useState<any>(null);
   const [isLoadingCompetitors, setIsLoadingCompetitors] = useState(false);
 
 
-  const { search, data, analysis, isLoading, isAnalyzing, error } = useMotorSearch();
+  const { search, data, analysis, isLoading, isAnalyzing, error, requestAnalysis, analysisError } = useMotorSearch();
   const { uf, ufNome, municipioNome, label: locationLabel, hasLocation } = useMotorLocation();
 
   // Lê query pré-preenchida vinda da busca unificada
@@ -74,18 +76,34 @@ const PesquisadorPanel = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Busca ICTs nacionais quando os dados chegam
-  useEffect(() => {
-    if (!data?.query || icts !== null || isLoadingIcts) return;
+  // ICTs: busca SOB DEMANDA (botão), resumindo as instituições reais já coletadas
+  const loadIcts = () => {
+    if (!data?.query || isLoadingIcts) return;
     setIsLoadingIcts(true);
-    supabase.functions.invoke("ict-search", { body: { query: data.query } })
-      .then(({ data: result }) => {
-        if (result && !result.error) setIcts(result);
+    setIctsError(null);
+    const institutions = Object.entries(((data.layers as any)?.knowledge?.institutions || {}) as Record<string, number>)
+      .slice(0, 25)
+      .map(([name, works]) => ({ name, works, source: "OpenAlex" }));
+    const cnpqIes = (((data.layers as any)?.cnpq?.top_ies || []) as any[])
+      .slice(0, 10)
+      .map((i: any) => ({ name: i.nome || i.name || i.ies, works: i.total || i.count, source: "CNPq" }));
+    supabase.functions
+      .invoke("ict-search", {
+        body: {
+          query: data.query,
+          institutions: [...institutions, ...cnpqIes].filter((i) => i.name),
+          uf: uf || undefined,
+          municipio: municipioNome || undefined,
+        },
       })
-      .catch(console.warn)
+      .then(({ data: result, error: err }) => {
+        if (result && !result.error) setIcts(result);
+        else setIctsError(result?.error || err?.message || "Não foi possível consultar as ICTs agora.");
+      })
+      .catch((e) => setIctsError(e instanceof Error ? e.message : "Falha na consulta."))
       .finally(() => setIsLoadingIcts(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data?.query]);
+  };
+
 
   // Busca empresas nacionais e referências globais quando os dados chegam
   useEffect(() => {
@@ -837,96 +855,83 @@ const PesquisadorPanel = () => {
               {isLoadingIcts ? (
                 <div className="bg-card border border-border rounded-2xl p-12 flex flex-col items-center gap-4">
                   <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                  <p className="text-sm text-muted-foreground">Identificando institutos de pesquisa em <strong>{data.query}</strong>...</p>
+                  <p className="text-sm text-muted-foreground text-center">
+                    Resumindo as instituições encontradas para <strong>{data.query}</strong>… pode levar
+                    de um a alguns minutos.
+                  </p>
                 </div>
               ) : icts ? (
                 <div className="space-y-4">
-                  {icts.overview && (
-                    <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5">
-                      <p className="text-sm font-medium text-foreground mb-1">🗺️ Panorama do ecossistema</p>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{icts.overview}</p>
-                    </div>
-                  )}
-
-                  {icts.icts?.length > 0 ? (
-                    <div className="space-y-3">
-                      <p className="text-sm font-medium text-foreground">{icts.icts.length} instituição{icts.icts.length > 1 ? "s" : ""} identificada{icts.icts.length > 1 ? "s" : ""}:</p>
-                      {icts.icts.map((ict: any, i: number) => (
-                        <div key={i} className="bg-card border border-border/60 rounded-2xl p-5 hover:border-border transition-colors">
-                          <div className="flex items-start justify-between gap-3 mb-3">
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2 flex-wrap mb-1">
-                                <p className="text-sm font-semibold text-foreground">{ict.name}</p>
-                                {ict.acronym && (
-                                  <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium">{ict.acronym}</span>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                                {ict.city && ict.state && <span>📍 {ict.city}/{ict.state}</span>}
-                                {ict.type && <span className="px-2 py-0.5 bg-muted rounded-full">{ict.type}</span>}
-                              </div>
-                            </div>
-                            {ict.url && (
-                              <a href={ict.url} target="_blank" rel="noopener noreferrer"
-                                 className="flex-shrink-0 flex items-center gap-1 text-sm text-primary hover:underline font-medium">
-                                <ExternalLink className="w-3.5 h-3.5" /> Visitar
-                              </a>
-                            )}
-                          </div>
-                          {ict.focus && (
-                            <div className="border-t border-border/30 pt-3">
-                              <p className="text-xs text-muted-foreground font-medium mb-1">Áreas de atuação:</p>
-                              <p className="text-sm text-foreground leading-relaxed">{ict.focus}</p>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="bg-card border border-border rounded-2xl p-8 text-center">
-                      <p className="text-3xl mb-3">🔍</p>
-                      <p className="text-base font-medium text-foreground mb-1">Nenhum instituto identificado para este tema</p>
-                      <p className="text-sm text-muted-foreground">Tente buscar por um termo mais amplo, ou consulte o diretório completo de ICTs no MCTI.</p>
+                  {icts.available === false ? (
+                    <div className="bg-card border border-border rounded-2xl p-8 text-center space-y-2">
+                      <p className="text-3xl">🔍</p>
+                      <p className="text-base font-medium text-foreground">Nenhuma instituição encontrada nas bases públicas</p>
+                      <p className="text-sm text-muted-foreground max-w-md mx-auto">{icts.reason}</p>
                       <a href="https://www.gov.br/mcti/pt-br/acesso-a-informacao/institucional/icts" target="_blank" rel="noopener noreferrer"
-                         className="text-sm text-primary hover:underline mt-3 inline-flex items-center gap-1">
+                         className="text-sm text-primary hover:underline mt-2 inline-flex items-center gap-1">
                         <ExternalLink className="w-3 h-3" /> Diretório de ICTs — MCTI
                       </a>
                     </div>
-                  )}
+                  ) : (
+                    <>
+                      {icts.overview && (
+                        <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5">
+                          <p className="text-sm font-medium text-foreground mb-1">🗺️ Panorama do ecossistema</p>
+                          <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{icts.overview}</p>
+                        </div>
+                      )}
+                      {icts.warning && (
+                        <p className="text-xs text-muted-foreground text-center">
+                          O resumo em texto não pôde ser gerado agora ({icts.warning}), mas a lista de
+                          instituições abaixo vem direto das bases públicas.
+                        </p>
+                      )}
 
-                  {icts.networks?.length > 0 && (
-                    <div className="bg-card border border-border rounded-2xl p-5">
-                      <h3 className="text-base font-semibold text-foreground mb-2">🔗 Redes e programas nacionais</h3>
-                      <p className="text-sm text-muted-foreground mb-4">Iniciativas que conectam institutos, empresas e governo em torno do tema.</p>
                       <div className="space-y-3">
-                        {icts.networks.map((net: any, i: number) => (
-                          <div key={i} className="flex items-start justify-between gap-3 p-3 border border-border/40 rounded-xl hover:border-border transition-colors">
+                        <p className="text-sm font-medium text-foreground">
+                          {icts.total} instituição{icts.total > 1 ? "ões" : ""} com produção registrada neste tema:
+                        </p>
+                        {(icts.institutions || []).map((inst: any, i: number) => (
+                          <div key={i} className="bg-card border border-border/60 rounded-2xl p-4 flex items-start justify-between gap-3">
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-foreground">{net.name}</p>
-                              {net.description && <p className="text-xs text-muted-foreground mt-1">{net.description}</p>}
+                              <p className="text-sm font-semibold text-foreground">{inst.name}</p>
+                              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1">
+                                {inst.works ? <span>{inst.works} registro{inst.works > 1 ? "s" : ""}</span> : null}
+                                {inst.city && inst.state && <span>📍 {inst.city}/{inst.state}</span>}
+                                {inst.source && <span className="px-2 py-0.5 bg-muted rounded-full">fonte: {inst.source}</span>}
+                              </div>
                             </div>
-                            {net.url && (
-                              <a href={net.url} target="_blank" rel="noopener noreferrer"
-                                 className="flex-shrink-0 flex items-center gap-1 text-sm text-primary hover:underline">
-                                <ExternalLink className="w-3 h-3" /> Acessar
+                            {inst.url && (
+                              <a href={inst.url} target="_blank" rel="noopener noreferrer"
+                                 className="flex-shrink-0 flex items-center gap-1 text-sm text-primary hover:underline font-medium">
+                                <ExternalLink className="w-3.5 h-3.5" /> Abrir
                               </a>
                             )}
                           </div>
                         ))}
                       </div>
-                    </div>
-                  )}
 
-                  <p className="text-xs text-muted-foreground text-center pt-2">
-                    ⚠️ Dados gerados por inteligência artificial com base em fontes públicas — verifique os links antes de entrar em contato
-                  </p>
+                      <p className="text-xs text-muted-foreground text-center pt-1">
+                        Lista extraída das bases públicas (OpenAlex e CNPq) — nenhum nome de instituição é
+                        inventado pelo sistema. O texto de panorama apenas resume essa lista.
+                      </p>
+                      <p className="text-[10px] text-muted-foreground text-center italic">{TUCANO_NOTE}</p>
+                    </>
+                  )}
                 </div>
               ) : (
-                <div className="bg-card border border-border rounded-2xl p-12 text-center">
-                  <p className="text-3xl mb-3">🏛️</p>
-                  <p className="text-sm text-muted-foreground">Clique na aba para carregar os institutos de pesquisa.</p>
+                <div className="bg-card border border-border rounded-2xl p-10 text-center space-y-4">
+                  <p className="text-3xl">🏛️</p>
+                  <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                    O Motor lista as instituições que realmente aparecem nas bases públicas para este tema
+                    e escreve um resumo do que essa distribuição mostra. A busca não é automática.
+                  </p>
+                  <Button size="sm" onClick={loadIcts}>Buscar ICTs</Button>
+                  {ictsError && <p className="text-xs text-destructive">{ictsError}</p>}
+                  <p className="text-[10px] text-muted-foreground italic">{TUCANO_NOTE}</p>
                 </div>
               )}
+
 
             </TabsContent>
 
@@ -1207,29 +1212,17 @@ const PesquisadorPanel = () => {
               />
             </TabsContent>
             <TabsContent value="ia" className="space-y-4">
-              {isAnalyzing ? (
-                <div className="flex items-center justify-center py-12"><div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /><span className="ml-3 text-sm text-muted-foreground">Analisando campo científico com {data.meta.source_count} fontes...</span></div>
-              ) : analysis && analysis.sections?.length > 0 ? (
-                <div className="space-y-4">
-                  {analysis.questions.map((question, idx) => (
-                    <div key={idx} className="bg-card border border-border rounded-xl p-6">
-                      <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-3"><span className={`w-7 h-7 rounded-full bg-gradient-to-br ${config.color} text-white text-sm font-bold flex items-center justify-center flex-shrink-0`}>{idx + 1}</span>{question}</h3>
-                      <div className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-li:text-muted-foreground prose-a:text-primary"><ReactMarkdown>{analysis.sections[idx] || ""}</ReactMarkdown></div>
-                    </div>
-                  ))}
-                  <p className="text-[10px] text-muted-foreground text-center">Análise baseada em {data.meta.sources.join(" · ")}</p>
-                </div>
-              ) : (
-                <div className="text-center py-12 space-y-3">
-                  <Zap className="w-8 h-8 mx-auto text-muted-foreground/40" />
-                  <p className="text-sm text-muted-foreground">Prescrição IA não disponível.</p>
-                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                    Configure <code className="bg-muted px-1 rounded">LOVABLE_API_KEY</code> ou{" "}
-                    <code className="bg-muted px-1 rounded">ANTHROPIC_API_KEY</code> nos Secrets do Supabase para ativar análises prescritivas.
-                  </p>
-                </div>
-              )}
+              <AiAnalysisTab
+                analysis={analysis}
+                isAnalyzing={isAnalyzing}
+                analysisError={analysisError}
+                onGenerate={requestAnalysis}
+                sources={data.meta.sources}
+                colorClass={config.color}
+                intro="Interpreta a produção científica, o financiamento e as lacunas deste tema para quem pesquisa."
+              />
             </TabsContent>
+
 
             {(data.layers as any).programs?.context?.industrial && (
               <TabsContent value="nova-industria" className="space-y-4">

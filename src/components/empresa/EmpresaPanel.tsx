@@ -1,3 +1,4 @@
+import AiAnalysisTab from "@/components/shared/AiAnalysisTab";
 import RegionalTab from "@/components/shared/RegionalTab";
 import { useState, useEffect } from "react";
 import { Factory, ArrowLeft, AlertTriangle, MapPin, TrendingUp, TrendingDown, Minus, ExternalLink, ChevronDown, ChevronUp, Zap, Shield, Package, Users, BookOpen } from "lucide-react";
@@ -68,7 +69,7 @@ const EmpresaPanel = () => {
   const [competitors, setCompetitors] = useState<any>(null);
   const [showAI, setShowAI] = useState(false);
 
-  const { search, data, analysis, isLoading, isAnalyzing, error } = useMotorSearch();
+  const { search, data, analysis, isLoading, isAnalyzing, error, requestAnalysis, analysisError } = useMotorSearch();
   const { uf, ufNome, label: locationLabel, hasLocation } = useMotorLocation();
   const { searchCnaes, isLoading: isLoadingCnaes } = useCnaeSearch();
   const navigate = useNavigate();
@@ -490,33 +491,23 @@ const EmpresaPanel = () => {
               <span className="text-2xl">🧠</span>
               <div className="flex-1">
                 <h2 className="text-base font-semibold text-foreground">Análise estratégica completa</h2>
-                <p className="text-xs text-muted-foreground">Gerada por IA com base nos dados coletados{isAnalyzing ? " · gerando..." : ""}</p>
+                <p className="text-xs text-muted-foreground">Escrita sob demanda por modelo aberto{isAnalyzing ? " · gerando..." : ""}</p>
               </div>
               {showAI ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
             </button>
             {showAI && (
               <div className="border-t border-border/50 p-5">
-                {isAnalyzing ? (
-                  <div className="flex items-center gap-3 py-4">
-                    <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin flex-shrink-0" />
-                    <p className="text-sm text-muted-foreground">Gerando análise estratégica...</p>
-                  </div>
-                ) : analysis?.sections?.length ? (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {analysis.questions.map((q, i) => (
-                      <div key={i}>
-                        <h3 className="text-sm font-semibold text-foreground mb-3">{q}</h3>
-                        <div className="prose prose-sm max-w-none text-muted-foreground prose-strong:text-foreground prose-a:text-primary">
-                          <ReactMarkdown>{analysis.sections[i] || ""}</ReactMarkdown>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground py-4 text-center">Análise IA não disponível.</p>
-                )}
+                <AiAnalysisTab
+                  analysis={analysis}
+                  isAnalyzing={isAnalyzing}
+                  analysisError={analysisError}
+                  onGenerate={requestAnalysis}
+                  sources={data.meta.sources}
+                  intro="Avalia a maturidade da tecnologia, o apoio público disponível e quem pode ser parceiro."
+                />
               </div>
             )}
+
           </div>
 
         </div>

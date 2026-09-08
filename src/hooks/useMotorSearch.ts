@@ -2,7 +2,7 @@
  * Tipos e hook principal de busca do Motor da Inovação
  * Arquitetura de 4 camadas analíticas com índices cruzados
  */
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
 
 // ===== Layer Types =====
@@ -298,6 +298,10 @@ export function useMotorSearch() {
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+
+  // Contexto da última busca, usado pela análise sob demanda
+  const lastContext = useRef<{ persona: string; entityContext?: EntityContext; cacheKey: string } | null>(null);
 
   const search = useCallback(async (
     query: string,
@@ -348,54 +352,12 @@ export function useMotorSearch() {
 
       setData(applyPersona(searchResult, persona));
       setIsLoading(false);
+      lastContext.current = { persona, entityContext, cacheKey };
 
-      // Step 2: Get AI analysis (non-blocking) — cacheada por persona
+      // A análise por IA NÃO é mais automática: roda só quando o usuário
+      // clicar em "Gerar análise" (modelo aberto local, mais lento).
       const cachedAnalysis = lastSearch?.analyses[persona];
-      if (cachedAnalysis) { setAnalysis(cachedAnalysis); return; }
-
-      setIsAnalyzing(true);
-      try {
-        // Envia apenas o subconjunto usado pela análise (payload limitado a 64 KB na função)
-        const k: any = (searchResult as any).layers?.knowledge || {};
-        const t: any = (searchResult as any).layers?.technology || {};
-        const p: any = (searchResult as any).layers?.policy || {};
-        const slimSearchData = {
-          query: searchResult.query,
-          stats: (searchResult as any).stats,
-          indices: (searchResult as any).indices,
-          persona_insights: (searchResult as any).persona_insights,
-          layers: {
-            knowledge: {
-              papers: (k.papers || []).slice(0, 5),
-              concepts: (k.concepts || []).slice(0, 8),
-              institutions: Object.fromEntries(Object.entries(k.institutions || {}).slice(0, 6)),
-            },
-            technology: {
-              trl_estimate: t.trl_estimate,
-              trl_label: t.trl_label,
-              github_repos: (t.github_repos || []).slice(0, 4),
-            },
-            policy: { contracts: (p.contracts || []).slice(0, 4) },
-          },
-        };
-
-        const { data: analysisResult, error: analysisError } = await supabase.functions.invoke(
-          "motor-analysis",
-          { body: { searchData: slimSearchData, persona, entityContext } }
-        );
-
-
-        if (!analysisError && analysisResult && !analysisResult.error) {
-          setAnalysis(analysisResult as MotorAnalysis);
-          if (lastSearch && lastSearch.key === cacheKey) lastSearch.analyses[persona] = analysisResult as MotorAnalysis;
-        } else {
-          console.warn("AI analysis unavailable:", analysisError || analysisResult?.error);
-        }
-      } catch (aiErr) {
-        console.warn("AI analysis error:", aiErr);
-      } finally {
-        setIsAnalyzing(false);
-      }
+      if (cachedAnalysis) setAnalysis(cachedAnalysis);
     } catch (err) {
       console.error("Motor search error:", err);
       setError(err instanceof Error ? err.message : "Erro ao buscar dados das bases públicas");
@@ -403,5 +365,64 @@ export function useMotorSearch() {
     }
   }, []);
 
-  return { search, data, analysis, isLoading, isAnalyzing, error };
+  /** Gera a análise por IA sob demanda (Tucano 2 local, pode levar alguns minutos). */
+  const requestAnalysis = useCallback(async () => {
+    const ctx = lastContext.current;
+    const searchResult = lastSearch?.result;
+    if (!ctx || !searchResult) return;
+
+    const cached = lastSearch?.analyses[ctx.persona];
+    if (cached) { setAnalysis(cached); return; }
+
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+    try {
+      // Envia apenas o subconjunto usado pela análise (payload limitado a 64 KB na função)
+      const k: any = (searchResult as any).layers?.knowledge || {};
+      const t: any = (searchResult as any).layers?.technology || {};
+      const p: any = (searchResult as any).layers?.policy || {};
+      const slimSearchData = {
+        query: searchResult.query,
+        stats: (searchResult as any).stats,
+        indices: (searchResult as any).indices,
+        persona_insights: (searchResult as any).persona_insights,
+        layers: {
+          knowledge: {
+            papers: (k.papers || []).slice(0, 5),
+            concepts: (k.concepts || []).slice(0, 8),
+            institutions: Object.fromEntries(Object.entries(k.institutions || {}).slice(0, 6)),
+          },
+          technology: {
+            trl_estimate: t.trl_estimate,
+            trl_label: t.trl_label,
+            github_repos: (t.github_repos || []).slice(0, 4),
+          },
+          policy: { contracts: (p.contracts || []).slice(0, 4) },
+        },
+      };
+
+      const { data: analysisResult, error: analysisError } = await supabase.functions.invoke(
+        "motor-analysis",
+        { body: { searchData: slimSearchData, persona: ctx.persona, entityContext: ctx.entityContext } }
+      );
+
+      if (!analysisError && analysisResult && !analysisResult.error) {
+        setAnalysis(analysisResult as MotorAnalysis);
+        if (lastSearch && lastSearch.key === ctx.cacheKey) {
+          lastSearch.analyses[ctx.persona] = analysisResult as MotorAnalysis;
+        }
+      } else {
+        const msg = analysisResult?.error || analysisError?.message || "Não foi possível gerar a análise agora.";
+        console.warn("AI analysis unavailable:", msg);
+        setAnalysisError(msg);
+      }
+    } catch (aiErr) {
+      console.warn("AI analysis error:", aiErr);
+      setAnalysisError(aiErr instanceof Error ? aiErr.message : "Não foi possível gerar a análise agora.");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, []);
+
+  return { search, data, analysis, isLoading, isAnalyzing, error, requestAnalysis, analysisError };
 }
