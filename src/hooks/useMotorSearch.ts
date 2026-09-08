@@ -2,7 +2,7 @@
  * Tipos e hook principal de busca do Motor da Inovação
  * Arquitetura de 4 camadas analíticas com índices cruzados
  */
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
 
 // ===== Layer Types =====
@@ -298,6 +298,7 @@ export function useMotorSearch() {
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   // Contexto da última busca, usado pela análise sob demanda
   const lastContext = useRef<{ persona: string; entityContext?: EntityContext; cacheKey: string } | null>(null);
