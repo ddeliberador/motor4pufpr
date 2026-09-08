@@ -443,13 +443,14 @@ Deno.serve(async (req) => {
     console.log(`Layer Knowledge: ${query}`);
     const start = Date.now();
 
-    const [openalex, capes, inep, cnpq, datasus, basedosdados] = await Promise.all([
+    const [openalex, capes, inep, cnpq, datasus, basedosdados, enap] = await Promise.all([
       searchOpenAlex(query),
       searchCAPES(query),
       searchINEP(query),
       searchCNPq(query),
       searchDATASUS(query),
       searchBaseDosDados(query),
+      searchENAP(query),
     ]);
 
     const totalPapers = openalex.totalPapersBR;
