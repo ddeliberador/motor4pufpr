@@ -328,6 +328,52 @@ async function searchBaseDosDados(query: string) {
   }));
 }
 
+/**
+ * ENAP — Repositório Institucional (repositorio.enap.gov.br).
+ * Plataforma DSpace 7 (confirmado: /server/api responde 200 e /server/api/discover/search/objects
+ * aceita busca full-text por termo, retornando metadados Dublin Core).
+ * OAI-PMH existe em /server/oai/request mas não faz busca por palavra-chave — por isso usamos a API REST.
+ */
+async function searchENAP(query: string) {
+  const data = await safeFetch(
+    `https://repositorio.enap.gov.br/server/api/discover/search/objects?query=${encodeURIComponent(query)}&dsoType=item&size=10`,
+    { headers: { Accept: "application/json" } },
+    15000
+  );
+  const sr = data?._embedded?.searchResult;
+  const objects = sr?._embedded?.objects || [];
+  const first = (md: any, key: string): string =>
+    (md?.[key]?.[0]?.value as string) || "";
+  const all = (md: any, key: string): string[] =>
+    (md?.[key] || []).map((v: any) => v.value).filter(Boolean);
+
+  const documents = objects.map((o: any) => {
+    const io = o?._embedded?.indexableObject || {};
+    const md = io.metadata || {};
+    const issued = first(md, "dc.date.issued");
+    const year = issued ? Number(String(issued).slice(0, 4)) || null : null;
+    const uri = first(md, "dc.identifier.uri");
+    return {
+      title: io.name || first(md, "dc.title"),
+      authors: all(md, "dc.contributor.author").slice(0, 5),
+      type: first(md, "dc.type"),
+      year,
+      publisher: first(md, "dc.publisher"),
+      subjects: all(md, "dc.subject").slice(0, 6),
+      abstract: first(md, "dc.description.abstract").slice(0, 400),
+      url: uri || (io.handle ? `https://repositorio.enap.gov.br/handle/${io.handle}` : "https://repositorio.enap.gov.br"),
+      source: "ENAP — Repositório Institucional",
+    };
+  }).filter((d: any) => d.title);
+
+  return {
+    documents,
+    total: sr?.page?.totalElements ?? documents.length,
+    source: { name: "ENAP — Repositório Institucional", url: "https://repositorio.enap.gov.br" },
+    note: "Repositório institucional da Escola Nacional de Administração Pública (DSpace 7). Acervo focado em administração pública, governo digital e inovação no setor público — buscas de temas puramente industriais podem não retornar resultados.",
+  };
+}
+
 const INSTITUTION_ALIASES: Record<string, string[]> = {
   "UFPR": ["universidade federal do parana", "federal university of parana"],
   "USP": ["universidade de sao paulo", "university of sao paulo"],
@@ -397,13 +443,14 @@ Deno.serve(async (req) => {
     console.log(`Layer Knowledge: ${query}`);
     const start = Date.now();
 
-    const [openalex, capes, inep, cnpq, datasus, basedosdados] = await Promise.all([
+    const [openalex, capes, inep, cnpq, datasus, basedosdados, enap] = await Promise.all([
       searchOpenAlex(query),
       searchCAPES(query),
       searchINEP(query),
       searchCNPq(query),
       searchDATASUS(query),
       searchBaseDosDados(query),
+      searchENAP(query),
     ]);
 
     const totalPapers = openalex.totalPapersBR;
@@ -447,6 +494,7 @@ Deno.serve(async (req) => {
     if (cnpq.length > 0) sources.push("CNPq");
     if (datasus.length > 0) sources.push("DATASUS");
     if (basedosdados.length > 0) sources.push("Base dos Dados");
+    if (enap.documents.length > 0) sources.push("ENAP — Repositório Institucional");
 
     return new Response(JSON.stringify({
       papers: openalex.papers,
@@ -465,6 +513,7 @@ Deno.serve(async (req) => {
       cnpq_datasets: cnpq,
       datasus_datasets: datasus,
       basedosdados_datasets: basedosdados,
+      enap,
       density,
       concentration,
       specialization,

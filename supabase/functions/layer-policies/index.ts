@@ -18,6 +18,50 @@ async function safeFetch(url: string, options?: RequestInit, timeoutMs = 15000):
   } finally { clearTimeout(t); }
 }
 
+/** Detecta se o tema pesquisado tem relação com data center / infraestrutura digital. */
+function isTemaDataCenter(query: string): boolean {
+  const q = (query || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const termos = [
+    "data center", "datacenter", "centro de dados", "nuvem", "cloud", "computacao em nuvem",
+    "infraestrutura digital", "hiperescala", "hyperscale", "colocation", "hospedagem de dados",
+    "supercomputador", "computacao de alto desempenho", "hpc", "gpu", "inteligencia artificial",
+    "soberania digital", "armazenamento de dados", "servidor", "redata",
+  ];
+  return termos.some((t) => q.includes(t));
+}
+
+/** ReData — só entra quando o tema pesquisado é de data center/infraestrutura digital. */
+function getReDataEntry() {
+  return {
+    sigla: "REDATA",
+    nome: "ReData — Regime Especial de Tributação para Serviços de Data Center",
+    tipo: "Incentivo fiscal federal",
+    orgao: "MDIC · MCTI · Ministério da Fazenda · Receita Federal",
+    vigencia: "2026 — Medida Provisória nº 1.318/2026 (em tramitação no Congresso)",
+    descricao:
+      "Regime especial que suspende/desonera tributos federais (PIS/Pasep, Cofins, IPI, Imposto de Importação) na aquisição de bens e serviços destinados à implantação e operação de data centers no Brasil, dentro da Política Nacional de Data Centers. Requisitos declarados: uso exclusivo de energia elétrica de fontes limpas/renováveis; cumprimento de patamar mínimo de eficiência no uso de água; destinação de pelo menos 10% da capacidade computacional ao mercado interno brasileiro (ou investimento equivalente em P&D no país); aplicação de 2% do valor dos bens adquiridos com o benefício em pesquisa, desenvolvimento e inovação no Brasil. Projetos instalados nas regiões Norte, Nordeste e Centro-Oeste têm condições e benefícios adicionais, como instrumento de desconcentração regional da infraestrutura digital.",
+    relevancia: {
+      pesquisador:
+        "Os 2% obrigatórios em P&D e a contrapartida de capacidade computacional criam demanda concreta por parceria com ICTs — inclusive acesso a GPU para pesquisa.",
+      universidade:
+        "ICTs podem ser receptoras dos investimentos obrigatórios em P&D e dos 10% de capacidade destinada ao mercado interno — caminho para computação de alto desempenho sem investimento próprio.",
+      empresa:
+        "Desoneração de tributos federais na compra de equipamentos de data center, condicionada a energia limpa, eficiência hídrica, 10% de capacidade ao mercado interno e 2% em P&D.",
+      governo:
+        "Instrumento de política industrial para atrair infraestrutura digital com contrapartidas ambientais, de soberania de dados e de desconcentração regional (N/NE/CO).",
+    },
+    url: "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/mpv/mpv1318.htm",
+    instrumento: "Medida Provisória nº 1.318/2026 · Política Nacional de Data Centers",
+    condicional: "Exibido porque o tema pesquisado tem relação com data center / infraestrutura digital.",
+    links_diretos: [
+      { label: "Texto oficial da MP 1.318/2026 — Planalto", url: "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/mpv/mpv1318.htm" },
+      { label: "Diário Oficial da União — publicação da MP", url: "https://www.in.gov.br/consulta/-/buscar/dou?q=%22Medida+Provis%C3%B3ria+n%C2%BA+1.318%22" },
+      { label: "Tramitação no Congresso Nacional", url: "https://www.congressonacional.leg.br/materias/medidas-provisorias" },
+      { label: "Política Nacional de Data Centers — MDIC", url: "https://www.gov.br/mdic/pt-br" },
+    ],
+  };
+}
+
 function getPoliticasCuradas() {
   return {
     federal: [
@@ -348,8 +392,14 @@ Deno.serve(async (req) => {
 
     const proposicoes = [...camara, ...senado];
 
+    // ReData entra apenas quando o tema é de data center / infraestrutura digital
+    const politicasCuradas = getPoliticasCuradas();
+    const temaDataCenter = isTemaDataCenter(query);
+    if (temaDataCenter) politicasCuradas.federal.push(getReDataEntry() as any);
+
+
     return new Response(JSON.stringify({
-      politicas: getPoliticasCuradas(),
+      politicas: politicasCuradas,
       ecossistema: getEcossistemaInovacao(),
       gazettes_mencoes: gazettesMencoes,
       editais_inovacao: editaisPNCP,
@@ -364,7 +414,8 @@ Deno.serve(async (req) => {
           { fonte: "Senado Federal — Dados Abertos", url: "https://legis.senado.leg.br/dadosabertos/processo", total: senado.length },
         ],
       },
-      sources: ["Políticas públicas curadas", "Lei do Bem/MCTI", "Lei da Informática/SEPIN", "ANPROTEC", "Querido Diário", "PNCP", "Câmara dos Deputados", "Senado Federal"],
+      sources: ["Políticas públicas curadas", "Lei do Bem/MCTI", "Lei da Informática/SEPIN", "ANPROTEC", "Querido Diário", "PNCP", "Câmara dos Deputados", "Senado Federal",
+        ...(temaDataCenter ? ["ReData — MP 1.318/2026 (Planalto)"] : [])],
       processing_time_ms: Date.now() - start,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
