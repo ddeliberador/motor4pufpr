@@ -19,7 +19,7 @@ Edite o arquivo `.env` e configure:
 VITE_API_URL=http://localhost:8000/api/v1
 
 # Para produção (backend no Railway)
-VITE_API_URL=https://motor4pufpr-copy-production.up.railway.app/api/v1
+VITE_API_URL=https://motor4pufpr-copy-production-5681.up.railway.app/api/v1
 ```
 
 3. **Instale as dependências:**
@@ -75,9 +75,9 @@ Após iniciar o frontend, você deve ver:
 
 - **Frontend (dev):** http://localhost:5173
 - **Backend (local):** http://localhost:8000
-- **Backend (Railway):** https://motor4pufpr-copy-production.up.railway.app
+- **Backend (Railway):** https://motor4pufpr-copy-production-5681.up.railway.app
 - **API Docs (local):** http://localhost:8000/docs
-- **API Docs (Railway):** https://motor4pufpr-copy-production.up.railway.app/docs
+- **API Docs (Railway):** https://motor4pufpr-copy-production-5681.up.railway.app/docs
 
 ## Troubleshooting
 
@@ -103,7 +103,7 @@ O arquivo `backend/app/main.py` já está configurado para aceitar:
 Configure a variável de ambiente no Lovable:
 
 ```
-VITE_API_URL = https://motor4pufpr-copy-production.up.railway.app/api/v1
+VITE_API_URL = https://motor4pufpr-copy-production-5681.up.railway.app/api/v1
 ```
 
 ### Backend (Railway)
