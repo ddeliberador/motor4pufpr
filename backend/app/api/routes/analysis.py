@@ -186,6 +186,22 @@ def _parse_three_sections(text: str) -> List[str]:
     return [re.sub(r"^\d\.\s*[^\n]*\n?", "", c).strip() for c in chunks] or [text.strip()]
 
 
+@router.get("/status")
+async def analysis_status():
+    """Diagnóstico: Ollama vivo? modelo presente em disco? (sem gerar texto)."""
+    import httpx
+
+    async with httpx.AsyncClient() as client:
+        alive = await local_llm._ollama_alive(client)
+        present = await local_llm._model_present(client) if alive else False
+    return {
+        "ollama_alive": alive,
+        "model_present": present,
+        "model": local_llm.MODEL,
+        "model_ready_flag": local_llm._model_ready,
+    }
+
+
 @router.post("/motor-analysis")
 async def motor_analysis(req: MotorAnalysisRequest):
     """Diagnóstico estrutural por persona, gerado pelo Tucano 2 local (sob demanda)."""
@@ -196,7 +212,7 @@ async def motor_analysis(req: MotorAnalysisRequest):
     user_message = _build_user_message(persona_key, req.searchData or {}, req.entityContext)
 
     try:
-        text = await local_llm.chat(system_prompt, user_message, temperature=0.2, max_tokens=900)
+        text = await local_llm.chat(system_prompt, user_message, temperature=0.2, max_tokens=550)
     except local_llm.LocalLLMError as e:
         logger.warning("Tucano 2 indisponível: %s", e)
         return {
@@ -283,7 +299,7 @@ Resuma e contextualize apenas essas instituições."""
     overview = ""
     warning = None
     try:
-        overview = await local_llm.chat(system_prompt, user_message, temperature=0.15, max_tokens=450)
+        overview = await local_llm.chat(system_prompt, user_message, temperature=0.15, max_tokens=280)
     except local_llm.LocalLLMError as e:
         logger.warning("Tucano 2 indisponível (icts): %s", e)
         warning = str(e)

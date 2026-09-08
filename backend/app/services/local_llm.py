@@ -32,8 +32,11 @@ MODEL = os.environ.get(
     "hf.co/tensorblock/Tucano-2b4-Instruct-GGUF:Q3_K_M",
 )
 
+# O proxy do Railway encerra requisições em ~300s. O chat precisa caber nesse
+# teto; o timeout local fica um pouco abaixo para devolver erro limpo em vez
+# de "upstream error".
 PULL_TIMEOUT = float(os.environ.get("OLLAMA_PULL_TIMEOUT", "900"))
-CHAT_TIMEOUT = float(os.environ.get("OLLAMA_CHAT_TIMEOUT", "600"))
+CHAT_TIMEOUT = float(os.environ.get("OLLAMA_CHAT_TIMEOUT", "280"))
 
 _model_ready = False
 _pull_lock = asyncio.Lock()
@@ -124,7 +127,7 @@ async def chat(
                     "options": {
                         "temperature": temperature,
                         "num_predict": max_tokens,
-                        "num_ctx": int(os.environ.get("OLLAMA_NUM_CTX", "4096")),
+                        "num_ctx": int(os.environ.get("OLLAMA_NUM_CTX", "2048")),
                     },
                 },
                 timeout=CHAT_TIMEOUT,

@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # MOTOR DA INOVAÇÃO - inicialização do container
 #
-# Sobe o Ollama em background (sem baixar modelo) e a API em seguida.
-# O download do modelo Tucano 2 acontece SÓ na primeira chamada de análise
-# (lazy load em app/services/local_llm.py), para não atrasar o health check
-# do Railway nem reservar RAM sem necessidade.
+# Sobe o Ollama em background e a API em seguida. O modelo Tucano 2 já veio
+# no build da imagem (ver Dockerfile) — aqui nada é baixado.
 set -e
 
 export OLLAMA_HOST="${OLLAMA_HOST:-127.0.0.1:11434}"

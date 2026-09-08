@@ -5,8 +5,8 @@
 
 // Configuração do ambiente
 // Usa Railway em produção, localhost apenas em desenvolvimento local
-const API_BASE_URL = import.meta.env.VITE_API_URL || 
-  (window.location.hostname === 'localhost' 
+export const API_BASE_URL = import.meta.env.VITE_API_URL ||
+  (window.location.hostname === 'localhost'
     ? 'http://localhost:8000/api/v1'
     : 'https://motor4pufpr-copy-production-5681.up.railway.app/api/v1');
 
