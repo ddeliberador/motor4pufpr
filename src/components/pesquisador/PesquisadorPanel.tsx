@@ -6,6 +6,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Microscope, Search, ArrowLeft, AlertTriangle, Zap, Globe, BookOpen, Users, GitBranch, TrendingUp, ExternalLink, Beaker, Target, Lightbulb, Briefcase, FlaskConical } from "lucide-react";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
+import { API_BASE_URL } from "@/lib/api";
 import LocalContextBadge from "@/components/shared/LocalContextBadge";
 import DiagnosticHeader from "@/components/shared/DiagnosticHeader";
 import { useMotorLocation } from "@/hooks/useLocation";
