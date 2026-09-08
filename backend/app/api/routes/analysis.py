@@ -212,7 +212,7 @@ async def motor_analysis(req: MotorAnalysisRequest):
     user_message = _build_user_message(persona_key, req.searchData or {}, req.entityContext)
 
     try:
-        text = await local_llm.chat(system_prompt, user_message, temperature=0.2, max_tokens=900)
+        text = await local_llm.chat(system_prompt, user_message, temperature=0.2, max_tokens=550)
     except local_llm.LocalLLMError as e:
         logger.warning("Tucano 2 indisponível: %s", e)
         return {
@@ -299,7 +299,7 @@ Resuma e contextualize apenas essas instituições."""
     overview = ""
     warning = None
     try:
-        overview = await local_llm.chat(system_prompt, user_message, temperature=0.15, max_tokens=450)
+        overview = await local_llm.chat(system_prompt, user_message, temperature=0.15, max_tokens=280)
     except local_llm.LocalLLMError as e:
         logger.warning("Tucano 2 indisponível (icts): %s", e)
         warning = str(e)

@@ -127,7 +127,7 @@ async def chat(
                     "options": {
                         "temperature": temperature,
                         "num_predict": max_tokens,
-                        "num_ctx": int(os.environ.get("OLLAMA_NUM_CTX", "4096")),
+                        "num_ctx": int(os.environ.get("OLLAMA_NUM_CTX", "2048")),
                     },
                 },
                 timeout=CHAT_TIMEOUT,
