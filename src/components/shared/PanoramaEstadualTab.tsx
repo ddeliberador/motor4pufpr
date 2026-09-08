@@ -453,6 +453,9 @@ export default function PanoramaEstadualTab({ data }: Props) {
 
       </div>
 
+      <ConcentradoresInovacao uf={uf} ufNome={ufNome} />
+
+
       <div className="bg-card border border-border rounded-2xl p-4 flex items-start gap-2">
         <Landmark className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
         <p className="text-xs text-muted-foreground">
