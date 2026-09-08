@@ -726,11 +726,15 @@ Deno.serve(async (req) => {
     const trlValue = Number(
       (technology as any)?.trl_from_patents?.trl ?? technology?.trl_estimate ?? 0,
     );
+    // Antes de gravar: UF só pode ser uma das 27, município precisa de 7 dígitos
+    // e o tema é limitado a 120 caracteres (mesmas regras das CHECK constraints).
+    const snapshotUf = sanitizeUf(location.uf);
+    const snapshotMunicipio = snapshotUf ? sanitizeMunicipioIbge(location.municipio_ibge) : null;
     const snapshotRow = {
-      tema_normalizado: temaNormalizado,
-      tema_original: String(query).trim(),
-      uf: location.uf || null,
-      municipio_ibge: location.municipio_ibge || null,
+      tema_normalizado: sanitizeTema(temaNormalizado),
+      tema_original: sanitizeTema(query),
+      uf: snapshotUf,
+      municipio_ibge: snapshotMunicipio,
       gt: indices?.gt?.value ?? null,
       cd: indices?.cd?.value ?? null,
       aue: indices?.aue?.value ?? null,
@@ -749,7 +753,7 @@ Deno.serve(async (req) => {
     // para evitar duplicar o snapshot desta mesma requisição.
     const nowMs = Date.now();
     const [historicoBruto] = await Promise.all([
-      fetchHistorico(temaNormalizado, location.uf || "", location.municipio_ibge || "", 24),
+      fetchHistorico(snapshotRow.tema_normalizado, snapshotUf || "", snapshotMunicipio || "", 24),
       saveSnapshot(snapshotRow),
     ]);
     const historicoAnterior = historicoBruto.filter((p) => nowMs - new Date(p.data).getTime() > 10_000);
