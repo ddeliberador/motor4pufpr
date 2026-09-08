@@ -392,6 +392,12 @@ Deno.serve(async (req) => {
 
     const proposicoes = [...camara, ...senado];
 
+    // ReData entra apenas quando o tema é de data center / infraestrutura digital
+    const politicasCuradas = getPoliticasCuradas();
+    const temaDataCenter = isTemaDataCenter(query);
+    if (temaDataCenter) politicasCuradas.federal.push(getReDataEntry() as any);
+
+
     return new Response(JSON.stringify({
       politicas: politicasCuradas,
       ecossistema: getEcossistemaInovacao(),
