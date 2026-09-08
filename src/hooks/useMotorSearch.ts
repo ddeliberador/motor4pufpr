@@ -355,10 +355,35 @@ export function useMotorSearch() {
 
       setIsAnalyzing(true);
       try {
+        // Envia apenas o subconjunto usado pela análise (payload limitado a 64 KB na função)
+        const k: any = (searchResult as any).layers?.knowledge || {};
+        const t: any = (searchResult as any).layers?.technology || {};
+        const p: any = (searchResult as any).layers?.policy || {};
+        const slimSearchData = {
+          query: searchResult.query,
+          stats: (searchResult as any).stats,
+          indices: (searchResult as any).indices,
+          persona_insights: (searchResult as any).persona_insights,
+          layers: {
+            knowledge: {
+              papers: (k.papers || []).slice(0, 5),
+              concepts: (k.concepts || []).slice(0, 8),
+              institutions: Object.fromEntries(Object.entries(k.institutions || {}).slice(0, 6)),
+            },
+            technology: {
+              trl_estimate: t.trl_estimate,
+              trl_label: t.trl_label,
+              github_repos: (t.github_repos || []).slice(0, 4),
+            },
+            policy: { contracts: (p.contracts || []).slice(0, 4) },
+          },
+        };
+
         const { data: analysisResult, error: analysisError } = await supabase.functions.invoke(
           "motor-analysis",
-          { body: { searchData: searchResult, persona, entityContext } }
+          { body: { searchData: slimSearchData, persona, entityContext } }
         );
+
 
         if (!analysisError && analysisResult && !analysisResult.error) {
           setAnalysis(analysisResult as MotorAnalysis);

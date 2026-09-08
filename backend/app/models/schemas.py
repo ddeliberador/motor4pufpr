@@ -30,10 +30,10 @@ class OntologyMapping(BaseModel):
     query: str = Field(..., description="Objeto tecnológico original")
 
     # Códigos de classificação
-    cnpq_areas: List[Dict[str, str]] = Field(default_factory=list, description="Áreas do conhecimento CNPq")
-    ipc_codes: List[Dict[str, str]] = Field(default_factory=list, description="Classificação Internacional de Patentes")
-    ncm_codes: List[Dict[str, str]] = Field(default_factory=list, description="Nomenclatura Comum do Mercosul")
-    cnae_codes: List[Dict[str, str]] = Field(default_factory=list, description="Classificação Nacional de Atividades Econômicas")
+    cnpq_areas: List[Dict[str, Any]] = Field(default_factory=list, description="Áreas do conhecimento CNPq")
+    ipc_codes: List[Dict[str, Any]] = Field(default_factory=list, description="Classificação Internacional de Patentes")
+    ncm_codes: List[Dict[str, Any]] = Field(default_factory=list, description="Nomenclatura Comum do Mercosul")
+    cnae_codes: List[Dict[str, Any]] = Field(default_factory=list, description="Classificação Nacional de Atividades Econômicas")
 
     # Termos expandidos para busca
     search_terms: List[str] = Field(default_factory=list, description="Termos de busca derivados")
