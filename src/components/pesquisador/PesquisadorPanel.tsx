@@ -1,4 +1,4 @@
-import AiAnalysisTab from "@/components/shared/AiAnalysisTab";
+import AiAnalysisTab, { TUCANO_NOTE } from "@/components/shared/AiAnalysisTab";
 import RegionalTab from "@/components/shared/RegionalTab";
 import CagedSaldoChart from "@/components/shared/CagedSaldoChart";
 import TrlScaleBar from "@/components/shared/TrlScaleBar";
