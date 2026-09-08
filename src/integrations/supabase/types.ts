@@ -77,6 +77,42 @@ export type Database = {
         }
         Relationships: []
       }
+      regional_institutes: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          tipo: string
+          uf: string | null
+          ultima_revisao: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          tipo?: string
+          uf?: string | null
+          ultima_revisao?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          tipo?: string
+          uf?: string | null
+          ultima_revisao?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
       research_articles: {
         Row: {
           created_at: string
