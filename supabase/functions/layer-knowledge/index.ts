@@ -494,6 +494,7 @@ Deno.serve(async (req) => {
     if (cnpq.length > 0) sources.push("CNPq");
     if (datasus.length > 0) sources.push("DATASUS");
     if (basedosdados.length > 0) sources.push("Base dos Dados");
+    if (enap.documents.length > 0) sources.push("ENAP — Repositório Institucional");
 
     return new Response(JSON.stringify({
       papers: openalex.papers,
@@ -512,6 +513,7 @@ Deno.serve(async (req) => {
       cnpq_datasets: cnpq,
       datasus_datasets: datasus,
       basedosdados_datasets: basedosdados,
+      enap,
       density,
       concentration,
       specialization,
