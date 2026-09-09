@@ -41,8 +41,7 @@ export const EXPORT_COLUMNS = [
 export async function fetchResearchLocations(
   filtros: { uf?: string | null; fonte?: string | null; tipo?: string | null } = {},
 ): Promise<ResearchLocation[]> {
-  const client = safeSupabase();
-  if (!client) return [];
+  const client = safeSupabase;
   let q = client
     .from("research_locations")
     .select("id,nome,tipo,uf,municipio,latitude,longitude,fonte,fonte_url,cnpj,data_coleta")
