@@ -499,24 +499,16 @@ Deno.serve(async (req) => {
 
       // Universo de instituições brasileiras no OpenAlex é pequeno (~2 mil):
       // percorremos TODAS as páginas e filtramos por geo.region.
-      // Parte dos registros vem com geo.region nulo (ex.: UFRR, UNIFAP), então
-      // usamos a lista oficial de municípios da UF (IBGE) como segundo critério.
-      const [pages, municipiosResp] = await Promise.all([
-        Promise.all(
-          [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((page) =>
-            safeFetch(
-              `https://api.openalex.org/institutions?filter=country_code:br&select=id,display_name,works_count,cited_by_count,ror,geo&sort=works_count:desc&per_page=200&page=${page}`,
-              { headers: { "User-Agent": "Motor4P-UFPR/1.0 (mailto:pesquisa@ufpr.br)" } }
-            )
+      // Parte dos registros vem com geo.region nulo (ex.: UFRR, UNIFAP). Nesses casos
+      // aceitamos apenas quando a cidade é exatamente o município pesquisado — usar a
+      // lista completa de municípios traria homônimos de outros estados (Belém/AL vs Belém/PA).
+      const pages = await Promise.all(
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((page) =>
+          safeFetch(
+            `https://api.openalex.org/institutions?filter=country_code:br&select=id,display_name,works_count,cited_by_count,ror,geo&sort=works_count:desc&per_page=200&page=${page}`,
+            { headers: { "User-Agent": "Motor4P-UFPR/1.0 (mailto:pesquisa@ufpr.br)" } }
           )
-        ),
-        safeFetch(
-          `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${location.uf}/municipios`
-        ),
-      ]);
-
-      const municipiosUf = new Set<string>(
-        (Array.isArray(municipiosResp) ? municipiosResp : []).map((m: any) => norm(m?.nome))
+        )
       );
 
       const all = pages.flatMap((p: any) => p?.results || []);
@@ -524,8 +516,9 @@ Deno.serve(async (req) => {
         const region = norm(i?.geo?.region || "");
         if (region.length > 0) return regionAliases.has(region);
         const city = norm(i?.geo?.city || "");
-        return city.length > 0 && municipiosUf.has(city);
+        return cityTarget.length > 0 && city === cityTarget;
       });
+
 
 
       const ranked = cityTarget
