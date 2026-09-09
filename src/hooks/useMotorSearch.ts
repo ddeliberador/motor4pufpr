@@ -4,7 +4,7 @@
  */
 import { useState, useCallback, useRef } from "react";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
-import { API_BASE_URL } from "@/lib/api";
+
 
 // ===== Layer Types =====
 export interface Paper {
