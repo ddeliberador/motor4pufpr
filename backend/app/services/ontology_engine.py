@@ -356,6 +356,15 @@ IPC_INDEX = {
     "G01N11": {"description": "Investigação de propriedades de escoamento de materiais (viscosidade, plasticidade)"},
     "G01N11/14": {"description": "Medição de viscosidade por elementos rotativos (reômetros rotacionais)"},
     "G01F1": {"description": "Medição de vazão volumétrica ou mássica de fluidos"},
+    # Agricultura, pecuária e agroindústria
+    "A01B": {"description": "Preparo do solo para agricultura ou silvicultura (implementos agrícolas)"},
+    "A01C": {"description": "Plantio, semeadura e adubação"},
+    "A01D": {"description": "Colheita e ceifa"},
+    "A01G": {"description": "Horticultura, silvicultura, cultivo de flores e frutas"},
+    "A01H": {"description": "Novas plantas ou processos para sua obtenção (melhoramento vegetal)"},
+    "A01K": {"description": "Criação animal, avicultura, apicultura, pesca e aquicultura"},
+    "A01N": {"description": "Preservação de organismos; biocidas, defensivos agrícolas e reguladores de crescimento"},
+    "A23K": {"description": "Alimentos para animais (rações)"},
     # Baterias e energia
     "H01M": {"description": "Processos ou meios para conversão direta de energia química em elétrica (baterias)"},
     "H01M10/05": {"description": "Acumuladores com eletrólitos não aquosos"},
@@ -442,6 +451,16 @@ NCM_INDEX = {
     "2836.99.00": {"description": "Outros carbonatos"},
     "3824.99.00": {"description": "Outros produtos químicos e preparações das indústrias químicas"},
 
+    # Cadeia do agronegócio
+    "1201.90.00": {"description": "Soja, mesmo triturada, exceto para semeadura"},
+    "1005.90.10": {"description": "Milho em grão, exceto para semeadura"},
+    "0901.11.00": {"description": "Café não torrado, não descafeinado"},
+    "0201.30.00": {"description": "Carnes de bovino, desossadas, frescas ou refrigeradas"},
+    "0207.14.00": {"description": "Pedaços e miudezas comestíveis de galos e galinhas, congelados"},
+    "1701.14.00": {"description": "Outros açúcares de cana"},
+    "3105.20.00": {"description": "Adubos ou fertilizantes minerais com nitrogênio, fósforo e potássio"},
+    "8433.51.00": {"description": "Ceifeiras-debulhadoras (colheitadeiras)"},
+
     # Equipamentos de energia
     "8501.31.00": {"description": "Motores e geradores de corrente contínua até 750 W"},
     "8501.61.00": {"description": "Geradores de corrente alternada até 75 kVA"},
@@ -476,6 +495,33 @@ CNAE_INDEX = {
     "10.99-6": {"description": "Fabricação de produtos alimentícios não especificados anteriormente"},
     "23.20-6": {"description": "Fabricação de cimento"},
     "22.29-3": {"description": "Fabricação de artefatos de material plástico não especificados anteriormente"},
+    # Seção A da CNAE 2.0 - Agricultura, Pecuária, Produção Florestal, Pesca e Aquicultura
+    # Códigos oficiais confirmados na API de CNAE do IBGE (servicodados.ibge.gov.br/api/v2/cnae/classes)
+    "01.11-3": {"description": "Cultivo de cereais"},
+    "01.13-0": {"description": "Cultivo de cana-de-açúcar"},
+    "01.15-6": {"description": "Cultivo de soja"},
+    "01.16-4": {"description": "Cultivo de oleaginosas de lavoura temporária, exceto soja"},
+    "01.19-9": {"description": "Cultivo de plantas de lavoura temporária não especificadas anteriormente"},
+    "01.21-1": {"description": "Horticultura"},
+    "01.34-2": {"description": "Cultivo de café"},
+    "01.33-4": {"description": "Cultivo de frutas de lavoura permanente, exceto laranja e uva"},
+    "01.41-5": {"description": "Produção de sementes certificadas"},
+    "01.51-2": {"description": "Criação de bovinos"},
+    "01.54-7": {"description": "Criação de suínos"},
+    "01.55-5": {"description": "Criação de aves"},
+    "01.61-0": {"description": "Atividades de apoio à agricultura"},
+    "01.62-8": {"description": "Atividades de apoio à pecuária"},
+    "02.10-1": {"description": "Produção florestal - florestas plantadas"},
+    "03.21-3": {"description": "Aquicultura em água salgada e salobra"},
+    "03.22-1": {"description": "Aquicultura em água doce"},
+    # Agroindústria (processamento) - relevante para cadeia do agronegócio
+    "10.11-2": {"description": "Abate de reses, exceto suínos"},
+    "10.41-4": {"description": "Fabricação de óleos vegetais em bruto, exceto óleo de milho"},
+    "10.71-6": {"description": "Fabricação de açúcar em bruto"},
+    "10.81-3": {"description": "Torrefação e moagem de café"},
+    "20.51-7": {"description": "Fabricação de defensivos agrícolas"},
+    "20.13-4": {"description": "Fabricação de adubos e fertilizantes"},
+    "28.33-0": {"description": "Fabricação de máquinas e equipamentos para a agricultura e pecuária, exceto para irrigação"},
 }
 
 # Áreas do conhecimento CNPq
@@ -494,7 +540,18 @@ CNPQ_INDEX = {
     "40300005": {"name": "Farmácia", "level": 2},
     "50700008": {"name": "Ciência e Tecnologia de Alimentos", "level": 2},
     "60300000": {"name": "Economia", "level": 2},
+    # Grande área e áreas de Ciências Agrárias - códigos oficiais da tabela de áreas
+    # do conhecimento do CNPq (estatico.cnpq.br/.../area_conhecimento.csv)
+    "50000004": {"name": "Ciências Agrárias", "level": 1},
+    "50100009": {"name": "Agronomia", "level": 2},
+    "50200003": {"name": "Recursos Florestais e Engenharia Florestal", "level": 2},
+    "50300008": {"name": "Engenharia Agrícola", "level": 2},
+    "50400002": {"name": "Zootecnia", "level": 2},
+    "50500007": {"name": "Medicina Veterinária", "level": 2},
+    "50600001": {"name": "Recursos Pesqueiros e Engenharia de Pesca", "level": 2},
+    "50700006": {"name": "Ciência e Tecnologia de Alimentos", "level": 2},
 }
+
 
 # Mapeamento de keywords para códigos
 KEYWORD_MAPPINGS = {
@@ -685,6 +742,49 @@ KEYWORD_MAPPINGS = {
         "cnae": ["19.21-7", "20.29-1", "23.20-6", "22.29-3"],
         "cnpq": ["30600006", "10500006", "30500001"],
     },
+    # Agronegócio e cadeias agroalimentares (Seção A da CNAE + agroindústria)
+    "agronegocio": {
+        "ipc": ["A01B", "A01C", "A01D", "A01G", "A01H", "A01N", "A23K", "A01K"],
+        "ncm": ["1201.90.00", "1005.90.10", "0901.11.00", "0201.30.00", "0207.14.00", "1701.14.00", "3105.20.00", "8433.51.00"],
+        "cnae": ["01.11-3", "01.13-0", "01.15-6", "01.16-4", "01.19-9", "01.21-1", "01.34-2", "01.33-4", "01.51-2", "01.54-7", "01.55-5", "01.61-0", "01.62-8", "02.10-1", "03.21-3", "10.11-2", "10.41-4", "10.71-6", "10.81-3", "20.51-7", "20.13-4", "28.33-0", "72.10-0"],
+        "cnpq": ["50000004", "50100009", "50400002", "50300008", "50500007", "50700006", "60300000"],
+    },
+    "agricultura": {
+        "ipc": ["A01B", "A01C", "A01D", "A01G", "A01H", "A01N"],
+        "ncm": ["1201.90.00", "1005.90.10", "0901.11.00", "1701.14.00", "3105.20.00", "8433.51.00"],
+        "cnae": ["01.11-3", "01.13-0", "01.15-6", "01.16-4", "01.19-9", "01.21-1", "01.34-2", "01.33-4", "01.61-0", "01.41-5", "20.51-7", "20.13-4", "28.33-0", "72.10-0"],
+        "cnpq": ["50100009", "50300008", "50000004"],
+    },
+    "agricola": {
+        "ipc": ["A01B", "A01C", "A01D", "A01N"],
+        "ncm": ["1201.90.00", "1005.90.10", "3105.20.00", "8433.51.00"],
+        "cnae": ["01.11-3", "01.15-6", "01.19-9", "01.61-0", "20.51-7", "28.33-0", "72.10-0"],
+        "cnpq": ["50100009", "50300008"],
+    },
+    "agropecuaria": {
+        "ipc": ["A01B", "A01C", "A01D", "A01G", "A01H", "A01N", "A23K", "A01K"],
+        "ncm": ["1201.90.00", "1005.90.10", "0901.11.00", "0201.30.00", "0207.14.00", "1701.14.00", "3105.20.00", "8433.51.00"],
+        "cnae": ["01.11-3", "01.13-0", "01.15-6", "01.16-4", "01.19-9", "01.21-1", "01.34-2", "01.33-4", "01.51-2", "01.54-7", "01.55-5", "01.61-0", "01.62-8", "02.10-1", "03.21-3", "10.11-2", "10.41-4", "10.71-6", "10.81-3", "20.51-7", "20.13-4", "28.33-0", "72.10-0"],
+        "cnpq": ["50000004", "50100009", "50400002", "50500007"],
+    },
+    "agroindustria": {
+        "ipc": ["A23K", "A01H", "A01N"],
+        "ncm": ["0201.30.00", "0207.14.00", "1201.90.00", "1701.14.00", "0901.11.00"],
+        "cnae": ["10.11-2", "10.41-4", "10.71-6", "10.81-3", "10.52-0", "10.99-6", "01.15-6", "01.51-2", "01.55-5", "20.13-4", "72.10-0"],
+        "cnpq": ["50700006", "50400002", "30600006", "60300000"],
+    },
+    "pecuaria": {
+        "ipc": ["A01K", "A23K"],
+        "ncm": ["0201.30.00", "0207.14.00"],
+        "cnae": ["01.51-2", "01.54-7", "01.55-5", "01.62-8", "10.11-2", "72.10-0"],
+        "cnpq": ["50400002", "50500007", "50000004"],
+    },
+    "soja": {
+        "ipc": ["A01B", "A01C", "A01H", "A01N"],
+        "ncm": ["1201.90.00", "3105.20.00"],
+        "cnae": ["01.15-6", "01.16-4", "10.41-4", "01.61-0", "20.13-4", "72.10-0"],
+        "cnpq": ["50100009", "50000004"],
+    },
 }
 
 # Sinônimos para expansão de busca
@@ -705,4 +805,12 @@ SYNONYMS = {
     "reologica": ["rheology", "rheological", "propriedades reológicas"],
     "viscosidade": ["viscosity", "viscosímetro", "reologia"],
     "escoamento": ["flow", "fluid flow", "reologia"],
+    # Agronegócio
+    "agronegocio": ["agribusiness", "agriculture", "agro"],
+    "agricultura": ["agriculture", "agribusiness", "farming", "agro"],
+    "agricola": ["agricultural", "agriculture", "agro"],
+    "agropecuaria": ["agriculture and livestock", "agribusiness", "livestock", "agro"],
+    "agroindustria": ["agroindustry", "agri-food", "food processing", "agro"],
+    "pecuaria": ["livestock", "animal husbandry", "cattle"],
+    "soja": ["soybean", "soja", "glycine max"],
 }

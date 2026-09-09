@@ -21,19 +21,41 @@ async function safeFetch(url: string, options?: RequestInit, timeoutMs = 20000):
   }
 }
 
+function pncpDate(d: Date) {
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+}
+
 async function searchPNCP(query: string, searchTerms: string[], cnaeCodes: string[], uf = "") {
   // Tenta múltiplos termos de busca e agrega resultados únicos
   const allResults: any[] = [];
   const seenIds = new Set<string>();
 
-  // Busca com cada termo expandido (máx 3 para não sobrecarregar)
-  const termsToTry = [query, ...searchTerms.filter((t) => t !== query)].slice(0, 3);
+  // A API do PNCP exige dataInicial e dataFinal (AAAAMMDD). Sem elas retorna HTTP 400.
+  // Janela de 180 dias: o ano inteiro combinado com o parâmetro q derruba a API (504).
+  const hoje = new Date();
+  const dataFinal = pncpDate(hoje);
+  const inicio = new Date(hoje.getTime() - 180 * 24 * 60 * 60 * 1000);
+  const anoAtual = new Date(hoje.getFullYear(), 0, 1);
+  const dataInicial = pncpDate(inicio > anoAtual ? inicio : anoAtual);
+
+  // Busca com cada termo expandido (máx 2 para não estourar o tempo da API do PNCP)
+  const termsToTry = [query, ...searchTerms.filter((t) => t !== query)].slice(0, 2);
+
 
   for (const term of termsToTry) {
+    const params = new URLSearchParams({
+      tamanhoPagina: "10",
+      pagina: "1",
+      q: term,
+      dataInicial,
+      dataFinal,
+    });
+    if (uf) params.set("uf", uf);
     const data = await safeFetch(
-      `https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?tamanhoPagina=10&pagina=1&q=${encodeURIComponent(term)}${uf ? `&ufSigla=${uf}` : ""}${uf ? `&esferaId=E,M` : ""}`
+      `https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?${params.toString()}`
     );
-    const items = Array.isArray(data) ? data : (data?.data || data?.content || []);
+    const items = Array.isArray(data) ? data : (data?.data || data?.content || data?.items || []);
+
     for (const item of items) {
       const id = item.id || item.numeroCompra || JSON.stringify(item).slice(0, 40);
       if (!seenIds.has(id)) {
