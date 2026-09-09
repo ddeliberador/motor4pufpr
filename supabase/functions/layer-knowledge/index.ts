@@ -536,7 +536,11 @@ Deno.serve(async (req) => {
         ror: i.ror,
         city: i.geo?.city || null,
         region: i.geo?.region || null,
+        // Coordenadas já vêm no objeto geo do OpenAlex; nunca substituímos pela capital.
+        latitude: typeof i.geo?.latitude === "number" ? i.geo.latitude : null,
+        longitude: typeof i.geo?.longitude === "number" ? i.geo.longitude : null,
         match: "geo",
+
       }));
     }
 
