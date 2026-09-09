@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 /**
  * Motor da Inovação UFPR - API Client
  * Cliente para comunicação com o backend FastAPI
@@ -378,9 +380,15 @@ class Motor4PApi {
     cnaeCodes: string[],
     limit = 10
   ): Promise<{ success: boolean; data?: PublicCompaniesResult; error?: string }> {
-    const params = new URLSearchParams({ limit: String(limit) });
-    cnaeCodes.forEach((code) => params.append("cnae", code));
-    return this.request(`/companies/public-by-cnae?${params}`);
+    // Via edge function: a chave institucional (X-API-Key) do backend não pode
+    // ficar exposta no navegador.
+    const { data, error } = await supabase.functions.invoke("railway-proxy", {
+      body: { path: "/companies/public-by-cnae", params: { limit: String(limit), cnae: cnaeCodes } },
+    });
+    if (error || !data || (data as any).error) {
+      return { success: false, error: (data as any)?.error || error?.message || "Falha na consulta" };
+    }
+    return data as { success: boolean; data?: PublicCompaniesResult; error?: string };
   }
 }
 

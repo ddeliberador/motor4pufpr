@@ -4,7 +4,7 @@
  */
 import { useState, useCallback, useRef } from "react";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
-import { API_BASE_URL } from "@/lib/api";
+
 
 // ===== Layer Types =====
 export interface Paper {
@@ -402,23 +402,21 @@ export function useMotorSearch() {
         },
       };
 
-      // Chamada DIRETA ao backend Railway (não via edge function): a geração
-      // com o Tucano 2 em CPU pode levar minutos, e edge functions têm limite
-      // de tempo de execução bem menor que o proxy do Railway (~300s).
-      const res = await fetch(`${API_BASE_URL}/analysis/motor-analysis`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ searchData: slimSearchData, persona: ctx.persona, entityContext: ctx.entityContext }),
-      });
-      const analysisResult = await res.json().catch(() => null);
+      // Via edge function: a chave institucional (X-API-Key) do backend fica
+      // apenas no servidor, nunca no navegador.
+      const { data: analysisResult, error: analysisInvokeError } = await supabase.functions.invoke(
+        "motor-analysis",
+        { body: { searchData: slimSearchData, persona: ctx.persona, entityContext: ctx.entityContext } },
+      );
 
-      if (res.ok && analysisResult && !analysisResult.error) {
+
+      if (analysisResult && !analysisResult.error && !analysisInvokeError) {
         setAnalysis(analysisResult as MotorAnalysis);
         if (lastSearch && lastSearch.key === ctx.cacheKey) {
           lastSearch.analyses[ctx.persona] = analysisResult as MotorAnalysis;
         }
       } else {
-        const msg = analysisResult?.error || analysisResult?.detail || `Backend de análise retornou ${res.status}`;
+        const msg = analysisResult?.error || analysisResult?.detail || analysisInvokeError?.message || "Backend de análise indisponível";
         console.warn("AI analysis unavailable:", msg);
         setAnalysisError(msg);
       }
