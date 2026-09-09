@@ -40,10 +40,12 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
 
         expected = settings.MCTI_API_KEY
         if not expected:
-            # Sem chave configurada no ambiente: mantém a API aberta (dev local),
-            # mas registra alerta para não passar despercebido em produção.
-            logger.warning("MCTI_API_KEY não configurada — API sem autenticação")
-            return await call_next(request)
+            # Falha fechada: em dev local basta definir qualquer valor em .env.
+            logger.error("MCTI_API_KEY não configurada — recusando requisição")
+            return JSONResponse(
+                status_code=401,
+                content={"error": "MCTI_API_KEY não configurada no servidor"},
+            )
 
         provided = request.headers.get("x-api-key")
         if not provided or provided != expected:
