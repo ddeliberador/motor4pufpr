@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { safeSupabase as supabase } from "@/lib/supabaseClient";
 
 /**
  * Motor da Inovação UFPR - API Client
