@@ -10,6 +10,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const RAILWAY_API_URL = Deno.env.get("RAILWAY_API_URL") || "https://motor4pufpr-copy-production-5681.up.railway.app/api/v1";
+const MCTI_API_KEY = Deno.env.get("MCTI_API_KEY") || "";
 
 // ===== Memória temporal: search_snapshots =====
 function normalizeTema(s: string): string {
@@ -97,7 +98,7 @@ async function fetchOntologyMapping(query: string): Promise<OntologyMapping | nu
   try {
     const res = await fetch(
       `${RAILWAY_API_URL}/incidence/ontology?query=${encodeURIComponent(query)}`,
-      { signal: controller.signal, headers: { "Content-Type": "application/json" } },
+      { signal: controller.signal, headers: { "Content-Type": "application/json", "X-API-Key": MCTI_API_KEY } },
     );
     if (!res.ok) {
       console.warn(`OntologyEngine ${res.status} — usando busca por texto`);

@@ -11,6 +11,7 @@ const corsHeaders = {
 
 const RAILWAY_API_URL = Deno.env.get("RAILWAY_API_URL") ||
   "https://motor4pufpr-copy-production-5681.up.railway.app/api/v1";
+const MCTI_API_KEY = Deno.env.get("MCTI_API_KEY") || "";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -38,7 +39,7 @@ Deno.serve(async (req) => {
 
     const res = await fetch(`${RAILWAY_API_URL}/analysis/icts`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-API-Key": MCTI_API_KEY },
       body: JSON.stringify({
         query,
         institutions,
