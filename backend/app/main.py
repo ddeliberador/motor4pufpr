@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 from app.core.config import settings
+from app.core.auth import ApiKeyMiddleware
 from app.api.routes import health_router, incidence_router, productive_demand_router, integrated_bases_router, companies_router, analysis_router
 
 # Configura logging
@@ -65,6 +66,10 @@ cors_origins = [
     "https://lovable.dev",        # Lovable editor
     "https://*.lovable.dev",      # Lovable subdomínios
 ]
+
+# Autenticação por chave de API (X-API-Key) — adicionada antes do CORS para que
+# o CORS continue envolvendo também as respostas 401.
+app.add_middleware(ApiKeyMiddleware)
 
 app.add_middleware(
     CORSMiddleware,

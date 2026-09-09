@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     # API
     API_PREFIX: str = "/api/v1"
 
+    # Auth — chave institucional exigida no header X-API-Key
+    MCTI_API_KEY: Optional[str] = None
+
     # Database (para futuro)
     DATABASE_URL: Optional[str] = None
     REDIS_URL: str = "redis://localhost:6379"
