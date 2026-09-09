@@ -1,59 +1,38 @@
-# Aba "Análise de Mercado" (Empresa + Governo)
+# Camada permanente de locais de pesquisa (research_locations)
 
-Uma nova aba nos painéis de Empresa e Governo reunindo quatro blocos: detentores de patente, participação no mercado nacional, concorrentes e oportunidades. Mesmo componente nos dois perfis, com ênfases diferentes.
+Nova camada de dados que existe independente de busca: um cadastro nacional de universidades, ICTs, institutos e unidades EMBRAPII, alimentado por ingestões e sempre carregando a fonte de origem de cada registro.
 
-## Pré-requisito: chave EPO OPS
+## O que eu confirmei nas fontes oficiais antes de escrever isto
 
-O INPI não expõe API pública. A fonte real de titulares de patentes será o **EPO Open Patent Services** (Espacenet), que cobre depósitos brasileiros pela família mundial e permite busca por código IPC e por termo.
+- **INEP (fonte primária confirmada):** `https://download.inep.gov.br/microdados/microdados_censo_da_educacao_superior_2024.zip`, listado na própria página de microdados do INEP (gov.br/inep). O pacote contém o cadastro de IES com UF e código IBGE de município. Não vou usar o espelho da prefeitura do Recife que aparecia nas buscas. **Ressalva:** o download do INEP deu timeout a partir deste ambiente; a ingestão vai rodar pelo backend/função e, se o arquivo não vier, eu aviso em vez de gravar resultado parcial.
+- **MCTI/FORMICT:** existe a base aberta consolidada (`formict_anobase_2024.xlsx`), mas eu abri o arquivo: o CNPJ vem mascarado (`00.XXX.XXX/0001.XX`) e **não há razão social** — é inútil para cadastrar locais. A única lista nominal é a de **ICTs não respondentes** (PDF oficial, ano-base 2024, com CNPJ + razão social). Vou usar essa, marcando em cada registro `{"lista_parcial": true, "motivo": "apenas ICTs não respondentes do FORMICT ano-base 2024"}`, e cruzar o CNPJ com o conector BrasilAPI que já existe para obter município/UF.
+- **EMBRAPII:** a lista de ~91 unidades **não existe** nesta conversa nem no código do projeto (procurei em ambos), e o site da EMBRAPII respondeu 503 agora. Vou tentar novamente no momento da ingestão; se não vier, registro zero e te aviso — não vou inventar unidades nem estados.
+- **OpenAlex:** já temos o padrão pronto em `layer-knowledge` (instituições brasileiras com `geo.region`, `geo.city`, latitude e longitude reais).
 
-O usuário precisa criar uma conta gratuita em `developers.epo.org`, registrar um app e obter **Consumer Key** e **Consumer Secret**. Depois disso, os dois valores serão solicitados em formulário seguro (`EPO_OPS_KEY`, `EPO_OPS_SECRET`). Sem a chave, o bloco de patentes fica vazio com aviso de configuração — nunca com dados simulados.
+## Banco de dados
 
-## Backend
+Tabela `research_locations`: nome, tipo, uf, municipio, latitude, longitude, fonte, fonte_url, cnpj, data_coleta, raw_metadata (jsonb), além de id/created_at/updated_at.
 
-**Nova edge function `market-analysis`** (roda em paralelo, não bloqueia a busca principal):
+- Leitura pública (qualquer visitante).
+- Escrita apenas por serviço interno (ingestões) — usuário final não escreve.
+- Chave única por (fonte, nome, uf) para a ingestão poder rodar de novo sem duplicar.
+- Índices por uf, fonte e tipo.
 
-1. **Detentores de patente — EPO OPS**
-   - Autenticação OAuth2 client_credentials (token em cache na memória da função).
-   - Busca `published-data/search/biblio` combinando os códigos IPC vindos da ontologia com os termos de busca expandidos.
-   - Agrega por *applicant*: número de famílias, países de depósito, anos, se há depósito BR.
-   - Retorna top 20 titulares, com link direto para o Espacenet de cada família.
+## Ingestões
 
-2. **Participação no mercado — compras públicas**
-   - PNCP + Portal da Transparência (já integrados em `layer-policy`) agregados por CNPJ do fornecedor.
-   - Share = valor contratado do fornecedor / valor total do setor no período. Índice HHI de concentração.
-   - Enriquecimento por CNPJ via BrasilAPI (razão social, porte, UF, CNAE, capital social).
+Uma função de backend `locations-ingest`, chamada com o nome da fonte, cobrindo as quatro:
 
-3. **Estrutura de mercado — CEMPRE/IBGE + COMEX**
-   - Reaproveita a divisão CNAE da ontologia: número de empresas, pessoal ocupado e distribuição por UF (tabela 992, já usada em `layer-sidra`).
-   - Balança comercial por NCM (COMEX), indicando dependência de importação.
+1. **openalex** — varre as instituições brasileiras do OpenAlex (mesmo padrão já usado), grava nome, cidade, UF, lat/lon, `fonte_url` = URL do registro OpenAlex da instituição.
+2. **embrapii** — tenta a página oficial de unidades; sem cidade/coordenada confiável, grava só UF e município nulo. `fonte_url` = página de unidades.
+3. **inep_censo_superior** — baixa o ZIP oficial, lê o cadastro de IES, traduz o código IBGE de município para nome, grava cada IES. `fonte_url` = URL do ZIP.
+4. **mcti_formict** — lê o PDF de ICTs não respondentes, extrai CNPJ + razão social, consulta BrasilAPI para município/UF, grava com a marca de lista parcial.
 
-4. **Oportunidades — derivadas, não inventadas**
-   - Lacuna de titularidade: IPC com patentes estrangeiras e nenhum depositante BR.
-   - Lacuna de fornecimento: compras públicas concentradas em poucos fornecedores (HHI alto).
-   - Déficit comercial por NCM: importação alta e produção nacional baixa.
-   - Base científica sem tradução: publicações BR altas com poucos titulares/contratos (usa o índice GT já existente).
-   - Cada oportunidade traz o dado numérico que a sustenta e o link da fonte.
+Cada registro recebe `data_coleta` e o registro original completo em `raw_metadata`.
 
-**Alteração em `motor-search`**: repassar `ipc_codes`, `cnae_codes` e `ncm_codes` para a nova função e agregar o resultado em `layers.market`.
+## Exportação
 
-## Frontend
+Um utilitário único de exportação (CSV e JSON) usado por qualquer tela ou download dessa camada, com `fonte` e `fonte_url` como colunas obrigatórias em toda linha — não há caminho de exportação sem elas.
 
-**Novo componente `src/components/shared/MarketAnalysisPanel.tsx`**, com prop `perfil: "empresa" | "governo"`:
+## Entrega
 
-- Bloco de patentes: tabela de titulares (empresa, país, nº de famílias, tem depósito BR), com destaque para atores nacionais.
-- Bloco de participação: barras de share por fornecedor + card de HHI com leitura de concentração; ao lado, estrutura setorial (empresas, pessoal ocupado, mapa por UF) e saldo comercial NCM.
-- Bloco de concorrentes: reutiliza a `competitor-search` já existente (hoje só no painel Empresa), agora também no Governo.
-- Bloco de oportunidades: cards com o dado que sustenta cada uma.
-
-Ênfases por perfil:
-- **Empresa**: quem detém a patente que eu preciso licenciar, quem são meus concorrentes, onde há espaço comercial.
-- **Governo**: grau de concentração do mercado, dependência tecnológica externa, lacunas de fornecimento nacional a serem induzidas por política.
-
-Nova aba `🏭 Análise de Mercado` em `EmpresaPanel.tsx` e `GovernoPanel.tsx`, no padrão visual sóbrio já usado (sem gradientes, cards institucionais).
-
-## Detalhes técnicos
-
-- Timeout de 20s por fonte, `Promise.allSettled` — uma fonte fora do ar não derruba a aba.
-- Todo bloco sem dados mostra estado vazio explícito com a fonte consultada e o motivo. Zero dados simulados.
-- Rate limit do OPS (free tier): no máximo 3 requisições por busca, com cache do token.
-- Arquivos tocados: `supabase/functions/market-analysis/index.ts` (novo), `supabase/functions/motor-search/index.ts`, `src/components/shared/MarketAnalysisPanel.tsx` (novo), `src/components/empresa/EmpresaPanel.tsx`, `src/components/governo/GovernoPanel.tsx`, `src/hooks/useMotorSearch.ts` (tipos).
+Rodo as quatro ingestões uma vez e te informo a contagem por fonte, e explicitamente qual falhou e por quê (INEP indisponível, PDF do MCTI ilegível, EMBRAPII sem lista), sem preencher lacuna com estimativa.
