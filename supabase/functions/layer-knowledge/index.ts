@@ -470,22 +470,69 @@ Deno.serve(async (req) => {
 
     const resolved_institutions = findCrossBaseMatches(openalex.institutionCounts);
 
-    // Busca instituições locais quando há localização configurada
+    // Busca instituições locais por FILTRO GEOGRÁFICO REAL (campo geo do OpenAlex),
+    // não por casamento textual do nome do estado (que falhava para UFPR, UFBA, UFC, UFSC...).
     let localInstitutions: any[] = [];
     if (location?.uf) {
-      const cityQuery = location.municipio || location.uf_nome || location.uf;
-      const localData = await safeFetch(
-        `https://api.openalex.org/institutions?filter=country_code:br,display_name.search:${encodeURIComponent(cityQuery)}&select=id,display_name,works_count,cited_by_count,ror&per_page=10`,
-        { headers: { "User-Agent": "Motor4P-UFPR/1.0 (mailto:pesquisa@ufpr.br)" } }
+      const norm = (s: string) =>
+        (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+      // O OpenAlex expõe geo.region com o nome do estado em português, exceto o DF ("Federal District")
+      const UF_NOMES: Record<string, string> = {
+        AC: "Acre", AL: "Alagoas", AP: "Amapá", AM: "Amazonas", BA: "Bahia", CE: "Ceará",
+        DF: "Distrito Federal", ES: "Espírito Santo", GO: "Goiás", MA: "Maranhão",
+        MT: "Mato Grosso", MS: "Mato Grosso do Sul", MG: "Minas Gerais", PA: "Pará",
+        PB: "Paraíba", PR: "Paraná", PE: "Pernambuco", PI: "Piauí", RJ: "Rio de Janeiro",
+        RN: "Rio Grande do Norte", RS: "Rio Grande do Sul", RO: "Rondônia", RR: "Roraima",
+        SC: "Santa Catarina", SP: "São Paulo", SE: "Sergipe", TO: "Tocantins",
+      };
+      const regionAliases = new Set<string>();
+      if (location.uf_nome) regionAliases.add(norm(location.uf_nome));
+      if (UF_NOMES[location.uf]) regionAliases.add(norm(UF_NOMES[location.uf]));
+      if (location.uf === "DF") {
+        regionAliases.add("federal district");
+        regionAliases.add("distrito federal");
+      }
+
+
+      const cityTarget = location.municipio ? norm(location.municipio) : "";
+
+      // Universo de instituições brasileiras no OpenAlex é pequeno (~2 mil);
+      // percorremos as mais produtivas e filtramos por geo.region/geo.city.
+      const pages = await Promise.all(
+        [1, 2, 3, 4, 5].map((page) =>
+          safeFetch(
+            `https://api.openalex.org/institutions?filter=country_code:br&select=id,display_name,works_count,cited_by_count,ror,geo&sort=works_count:desc&per_page=200&page=${page}`,
+            { headers: { "User-Agent": "Motor4P-UFPR/1.0 (mailto:pesquisa@ufpr.br)" } }
+          )
+        )
       );
-      localInstitutions = (localData?.results || []).map((i: any) => ({
+
+      const all = pages.flatMap((p: any) => p?.results || []);
+      const inUf = all.filter((i: any) => {
+        const region = norm(i?.geo?.region || "");
+        return region.length > 0 && regionAliases.has(region);
+      });
+
+      const ranked = cityTarget
+        ? [
+            ...inUf.filter((i: any) => norm(i?.geo?.city || "") === cityTarget),
+            ...inUf.filter((i: any) => norm(i?.geo?.city || "") !== cityTarget),
+          ]
+        : inUf;
+
+      localInstitutions = ranked.slice(0, 12).map((i: any) => ({
         id: i.id,
         name: i.display_name,
         works_count: i.works_count,
         cited_by_count: i.cited_by_count,
         ror: i.ror,
+        city: i.geo?.city || null,
+        region: i.geo?.region || null,
+        match: "geo",
       }));
     }
+
 
     const sources: string[] = [];
     if (openalex.papers.length > 0) sources.push("OpenAlex");
