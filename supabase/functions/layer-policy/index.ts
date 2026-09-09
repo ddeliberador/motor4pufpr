@@ -31,12 +31,16 @@ async function searchPNCP(query: string, searchTerms: string[], cnaeCodes: strin
   const seenIds = new Set<string>();
 
   // A API do PNCP exige dataInicial e dataFinal (AAAAMMDD). Sem elas retorna HTTP 400.
+  // Janela de 180 dias: o ano inteiro combinado com o parâmetro q derruba a API (504).
   const hoje = new Date();
   const dataFinal = pncpDate(hoje);
-  const dataInicial = pncpDate(new Date(hoje.getFullYear(), 0, 1));
+  const inicio = new Date(hoje.getTime() - 180 * 24 * 60 * 60 * 1000);
+  const anoAtual = new Date(hoje.getFullYear(), 0, 1);
+  const dataInicial = pncpDate(inicio > anoAtual ? inicio : anoAtual);
 
-  // Busca com cada termo expandido (máx 3 para não sobrecarregar)
-  const termsToTry = [query, ...searchTerms.filter((t) => t !== query)].slice(0, 3);
+  // Busca com cada termo expandido (máx 2 para não estourar o tempo da API do PNCP)
+  const termsToTry = [query, ...searchTerms.filter((t) => t !== query)].slice(0, 2);
+
 
   for (const term of termsToTry) {
     const params = new URLSearchParams({
