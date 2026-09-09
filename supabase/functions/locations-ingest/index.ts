@@ -9,7 +9,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const INGEST_KEY = Deno.env.get("MCTI_API_KEY") || "";
+const INGEST_KEY = Deno.env.get("LOCATIONS_INGEST_KEY") || "";
 
 type Fonte = "openalex" | "embrapii" | "inep_censo_superior" | "mcti_formict";
 
@@ -132,69 +132,72 @@ async function ingestOpenAlex(): Promise<Local[]> {
 }
 
 // ---------------------------------------------------------------- EMBRAPII
-const EMBRAPII_PAGINAS = [
-  "https://embrapii.org.br/unidades-embrapii/",
-  "https://embrapii.org.br/unidades/",
-  "https://embrapii.org.br/rede-de-unidades-embrapii/",
-];
+// Fonte oficial confirmada: API pública do próprio site da EMBRAPII
+// (tipo de conteúdo "units"), com cidade e UF por unidade.
+const EMBRAPII_API = "https://embrapii.org.br/wp-json/wp/v2/units";
+
+function decodeHtml(s: string): string {
+  return (s || "")
+    .replace(/&#8211;|&#8212;/g, "–")
+    .replace(/&#8217;|&#039;|&#39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&quot;/g, '"')
+    .replace(/&#(\d+);/g, (_m, d) => String.fromCharCode(Number(d)))
+    .replace(/<[^>]+>/g, "")
+    .trim();
+}
 
 async function ingestEmbrapii(): Promise<Local[]> {
   const erros: string[] = [];
-  for (const pagina of EMBRAPII_PAGINAS) {
-    try {
-      const res = await fetch(pagina, {
+  const rows: Local[] = [];
+  try {
+    for (let page = 1; page <= 5; page++) {
+      const res = await fetch(`${EMBRAPII_API}?per_page=100&page=${page}`, {
         headers: { "User-Agent": "Mozilla/5.0 Motor4P-UFPR/1.0" },
-        signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(45_000),
       });
-      if (!res.ok) { erros.push(`${pagina} -> HTTP ${res.status}`); continue; }
-      const html = await res.text();
-
-      // Extrai blocos com nome da unidade e sigla de UF na mesma vizinhança do HTML.
-      const texto = html
-        .replace(/<script[\s\S]*?<\/script>/gi, " ")
-        .replace(/<style[\s\S]*?<\/style>/gi, " ")
-        .replace(/<[^>]+>/g, "\n");
-      const linhas = texto.split("\n").map((l) => l.replace(/&amp;/g, "&").trim()).filter(Boolean);
-
-      const rows: Local[] = [];
-      for (let i = 0; i < linhas.length; i++) {
-        const l = linhas[i];
-        if (!/EMBRAPII|Unidade/i.test(l) || l.length < 8 || l.length > 160) continue;
-        // Procura UF explícita nas 3 linhas seguintes (ex: "Curitiba - PR" ou "PR")
-        let uf: string | null = null;
-        let municipio: string | null = null;
-        for (let j = i; j <= Math.min(i + 3, linhas.length - 1); j++) {
-          const m = linhas[j].match(/(?:^|[\s\-–,\/])([A-Z]{2})$/);
-          if (m && UF_NOMES[m[1]]) {
-            uf = m[1];
-            const cid = linhas[j].replace(/[\s\-–,\/]*[A-Z]{2}$/, "").trim();
-            municipio = cid && cid.length <= 60 ? cid : null;
-            break;
-          }
-        }
-        if (!uf) continue;
+      if (res.status === 400) break; // fim da paginação
+      if (!res.ok) { erros.push(`página ${page} -> HTTP ${res.status}`); break; }
+      const items = await res.json();
+      if (!Array.isArray(items) || items.length === 0) break;
+      for (const u of items) {
+        const acf = u?.acf || {};
+        const uf = String(acf.uf_state || "").toUpperCase().trim();
+        const nome = decodeHtml(u?.title?.rendered || "");
+        if (!nome) continue;
         rows.push({
-          nome: l,
+          nome,
           tipo: "Unidade EMBRAPII",
-          uf,
-          municipio,
+          uf: UF_NOMES[uf] ? uf : null,
+          municipio: acf.city ? String(acf.city).trim() : null,
           latitude: null,
           longitude: null,
           fonte: "embrapii",
-          fonte_url: pagina,
+          fonte_url: u?.link || "https://embrapii.org.br/unidades/",
           cnpj: null,
-          raw_metadata: { origem: "página oficial de unidades EMBRAPII", linha: l, uf, municipio },
+          raw_metadata: {
+            origem: "API pública do site oficial da EMBRAPII (post type units)",
+            slug: u?.slug || null,
+            institution_type: acf.institution_type || null,
+            city: acf.city || null,
+            uf_state: acf.uf_state || null,
+            website: acf.website || null,
+            sem_coordenada_exata: true,
+          },
         });
       }
-      if (rows.length > 0) return rows;
-      erros.push(`${pagina} -> página carregou mas nenhuma unidade com UF identificável`);
-    } catch (e) {
-      erros.push(`${pagina} -> ${(e as Error).message}`);
+      if (items.length < 100) break;
     }
+  } catch (e) {
+    erros.push((e as Error).message);
   }
-  throw new Error(
-    `Lista oficial de unidades EMBRAPII indisponível. Nenhum registro gravado (nada foi estimado). Tentativas: ${erros.join(" | ")}`,
-  );
+  if (rows.length === 0) {
+    throw new Error(
+      `Lista oficial de unidades EMBRAPII indisponível. Nenhum registro gravado (nada foi estimado). Tentativas: ${erros.join(" | ") || "API retornou vazio"}`,
+    );
+  }
+  return rows;
 }
 
 // ---------------------------------------------------------------- INEP
@@ -300,19 +303,29 @@ const FORMICT_PDFS = [
   { ano: 2022, url: "https://www.gov.br/mcti/pt-br/acompanhe-o-mcti/propriedade-intelectual-e-transferencia-de-tecnologia/ListadeICTSnaorespondentesAB2022.pdf" },
 ];
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Consulta CNPJ na BrasilAPI com novas tentativas (a API limita requisições por minuto). */
 async function cnpjLookup(cnpj: string): Promise<{ uf: string | null; municipio: string | null; razao: string | null } | null> {
-  try {
-    const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, { signal: AbortSignal.timeout(15_000) });
-    if (!res.ok) return null;
-    const d = await res.json();
-    return {
-      uf: d?.uf || null,
-      municipio: d?.municipio || null,
-      razao: d?.razao_social || null,
-    };
-  } catch {
-    return null;
+  for (let tentativa = 1; tentativa <= 3; tentativa++) {
+    try {
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, { signal: AbortSignal.timeout(20_000) });
+      if (res.status === 429 || res.status >= 500) {
+        await sleep(1500 * tentativa);
+        continue;
+      }
+      if (!res.ok) return null;
+      const d = await res.json();
+      return {
+        uf: d?.uf || null,
+        municipio: d?.municipio || null,
+        razao: d?.razao_social || null,
+      };
+    } catch {
+      await sleep(1000 * tentativa);
+    }
   }
+  return null;
 }
 
 async function ingestFormict(): Promise<Local[]> {
@@ -332,7 +345,7 @@ async function ingestFormict(): Promise<Local[]> {
 
       // Cada registro: 14 dígitos de CNPJ seguidos da razão social até o próximo CNPJ.
       const limpo = String(text).replace(/\s+/g, " ");
-      const re = /(\d{14}|\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})\s+([^0-9]{5,200}?)(?=\s+(?:\d{14}|\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})|$)/g;
+      const re = /(\d{14}|\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})\s+([\s\S]{5,220}?)(?=\s+(?:\d{14}|\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})|$)/g;
       const brutos: Array<{ cnpj: string; razao: string }> = [];
       for (const m of limpo.matchAll(re)) {
         const cnpj = m[1].replace(/\D/g, "");
@@ -346,9 +359,10 @@ async function ingestFormict(): Promise<Local[]> {
 
       // Enriquece com endereço via BrasilAPI (conector já usado no projeto), em lotes.
       const rows: Local[] = [];
-      for (let i = 0; i < brutos.length; i += 8) {
-        const lote = brutos.slice(i, i + 8);
+      for (let i = 0; i < brutos.length; i += 4) {
+        const lote = brutos.slice(i, i + 4);
         const infos = await Promise.all(lote.map((b) => cnpjLookup(b.cnpj)));
+        if (i + 4 < brutos.length) await sleep(700);
         lote.forEach((b, k) => {
           const info = infos[k];
           rows.push({
