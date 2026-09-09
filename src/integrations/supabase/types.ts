@@ -276,6 +276,57 @@ export type Database = {
           },
         ]
       }
+      research_locations: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          data_coleta: string
+          fonte: string
+          fonte_url: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          municipio: string | null
+          nome: string
+          raw_metadata: Json
+          tipo: string
+          uf: string | null
+          updated_at: string
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string
+          data_coleta?: string
+          fonte: string
+          fonte_url: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          municipio?: string | null
+          nome: string
+          raw_metadata?: Json
+          tipo?: string
+          uf?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string
+          data_coleta?: string
+          fonte?: string
+          fonte_url?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          municipio?: string | null
+          nome?: string
+          raw_metadata?: Json
+          tipo?: string
+          uf?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       research_themes: {
         Row: {
           created_at: string
