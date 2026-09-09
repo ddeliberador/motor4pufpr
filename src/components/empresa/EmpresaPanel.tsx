@@ -102,7 +102,7 @@ const EmpresaPanel = () => {
             <div className="absolute inset-0 border-4 border-transparent border-t-primary rounded-full animate-spin" />
             <Factory className="absolute inset-0 m-auto w-6 h-6 text-primary/60" />
           </div>
-          <p className="text-lg font-medium text-foreground">Mapeando oportunidades de mercado...</p>
+          <p className="text-lg font-medium text-foreground">Mapeando oportunidades de mercado...</p><p className="text-xs text-muted-foreground max-w-xs mx-auto">Consultando mais de 40 bases públicas — isso pode levar até 1 minuto. Não feche a página.</p>
           <p className="text-sm text-muted-foreground">{locationLabel ? `Região: ${locationLabel}` : "Análise nacional"}</p>
         </div>
       </main>
