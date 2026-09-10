@@ -35,6 +35,42 @@ export type Database = {
         }
         Relationships: []
       }
+      build_log: {
+        Row: {
+          categoria: string
+          created_at: string
+          data: string
+          descricao: string | null
+          dificuldade: string | null
+          fonte: string | null
+          id: string
+          resolucao: string | null
+          titulo: string
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          data: string
+          descricao?: string | null
+          dificuldade?: string | null
+          fonte?: string | null
+          id?: string
+          resolucao?: string | null
+          titulo: string
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          data?: string
+          descricao?: string | null
+          dificuldade?: string | null
+          fonte?: string | null
+          id?: string
+          resolucao?: string | null
+          titulo?: string
+        }
+        Relationships: []
+      }
       community_feedback: {
         Row: {
           context_persona: string | null
