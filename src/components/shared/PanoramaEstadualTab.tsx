@@ -4,52 +4,61 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, BarChart, Bar,
 } from "recharts";
-import { safeSupabase as supabase } from "@/lib/supabaseClient";
 import type { MotorSearchResult } from "@/hooks/useMotorSearch";
 
 interface Props {
   data: MotorSearchResult;
 }
 
-interface RegionalInstitute {
-  id: string;
-  uf: string | null;
-  nome: string;
-  descricao: string | null;
-  url: string | null;
-  tipo: string;
-  ultima_revisao: string;
-}
+import { fetchResearchLocations, FONTE_LABEL, type ResearchLocation } from "@/lib/researchLocations";
 
 const TIPO_STYLE: Record<string, string> = {
-  "federação industrial": "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  "hub de inovação": "bg-blue-500/10 text-blue-600 dark:text-blue-400",
   "instituto de pesquisa": "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  "observatório": "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  "plano estadual": "bg-violet-500/10 text-violet-600 dark:text-violet-400",
+  "instituto de ciência e tecnologia (ict)": "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+  "unidade embrapii": "bg-teal-500/10 text-teal-600 dark:text-teal-400",
+  "parque tecnológico": "bg-violet-500/10 text-violet-600 dark:text-violet-400",
+  "supercomputação": "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   outro: "bg-muted text-muted-foreground",
 };
+
+function tipoStyle(tipo: string): string {
+  const t = (tipo || "").toLowerCase();
+  return TIPO_STYLE[t] || TIPO_STYLE.outro;
+}
 
 function fmtDate(d: string) {
   const [y, m, day] = (d || "").split("-");
   return y && m && day ? `${day}/${m}/${y}` : d;
 }
 
-/** Diretório curado manualmente de concentradores regionais/setoriais de inovação. */
+const LIMITE_CARDS = 12;
+
+/**
+ * Concentradores de inovação do estado, lidos da base permanente de locais
+ * georreferenciados (research_locations) — o "Mapa da Inovação" que o Motor
+ * consolida a partir de catálogos oficiais revisados (MCTI/OTD-CGEE, OpenAlex,
+ * EMBRAPII, FORMICT, SINAPAD, LISP Brasil).
+ */
 function ConcentradoresInovacao({ uf, ufNome }: { uf: string; ufNome: string }) {
-  const [items, setItems] = useState<RegionalInstitute[] | null>(null);
+  const [items, setItems] = useState<ResearchLocation[] | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     let active = true;
+    if (!uf) { setItems([]); return; }
     (async () => {
-      let q = supabase.from("regional_institutes").select("*").order("uf", { nullsFirst: false }).order("nome");
-      if (uf) q = q.or(`uf.eq.${uf},uf.is.null`);
-      else q = q.is("uf", null);
-      const { data, error } = await q;
-      if (!active) return;
-      setItems(error ? [] : ((data || []) as RegionalInstitute[]));
+      try {
+        const rows = await fetchResearchLocations({ uf });
+        if (active) setItems(rows);
+      } catch {
+        if (active) setItems([]);
+      }
     })();
     return () => { active = false; };
   }, [uf]);
+
+  if (!uf) return null;
 
   if (items === null) {
     return (
@@ -60,26 +69,29 @@ function ConcentradoresInovacao({ uf, ufNome }: { uf: string; ufNome: string }) 
   }
   if (items.length === 0) return null;
 
-  const estaduais = items.filter((i) => i.uf);
-  const nacionais = items.filter((i) => !i.uf);
-  const ultimaRevisao = items.map((i) => i.ultima_revisao).sort().reverse()[0];
+  const georreferenciados = items.filter((i) => i.latitude !== null && i.longitude !== null).length;
+  const ultimaColeta = items.map((i) => i.data_coleta).sort().reverse()[0];
+  const visiveis = showAll ? items : items.slice(0, LIMITE_CARDS);
+  const fontesPresentes = [...new Set(items.map((i) => i.fonte))];
 
-  const Card = ({ i }: { i: RegionalInstitute }) => (
+  const Card = ({ i }: { i: ResearchLocation }) => (
     <div className="border border-border rounded-xl p-4 bg-background/50">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-foreground leading-snug">{i.nome}</p>
-          <span className={`inline-block mt-1.5 text-[10px] px-2 py-0.5 rounded-full ${TIPO_STYLE[i.tipo] || TIPO_STYLE.outro}`}>
-            {i.tipo}{i.uf ? ` · ${i.uf}` : " · nacional"}
+          <span className={`inline-block mt-1.5 text-[10px] px-2 py-0.5 rounded-full ${tipoStyle(i.tipo)}`}>
+            {i.tipo}{i.municipio ? ` · ${i.municipio}` : ""}{i.uf ? ` · ${i.uf}` : ""}
           </span>
         </div>
-        {i.url && (
-          <a href={i.url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline inline-flex items-center gap-0.5 flex-shrink-0">
+        {i.fonte_url && (
+          <a href={i.fonte_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline inline-flex items-center gap-0.5 flex-shrink-0">
             Acessar <ExternalLink className="w-3 h-3" />
           </a>
         )}
       </div>
-      {i.descricao && <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{i.descricao}</p>}
+      <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">
+        Fonte do registro: {FONTE_LABEL[i.fonte] || i.fonte}
+      </p>
     </div>
   );
 
@@ -87,22 +99,21 @@ function ConcentradoresInovacao({ uf, ufNome }: { uf: string; ufNome: string }) 
     <Panel
       icon={<Network className="w-5 h-5 text-primary" />}
       title="Concentradores de Inovação da Região"
-      subtitle="Federações industriais, institutos de pesquisa, observatórios e planos estaduais que reúnem dados e apoio à inovação"
+      subtitle={`ICTs, hubs, parques tecnológicos, unidades EMBRAPII e centros de supercomputação em ${ufNome || uf} — ${items.length} locais catalogados (${georreferenciados} georreferenciados)`}
     >
-      {estaduais.length > 0 && (
-        <>
-          <p className="text-xs font-medium text-foreground mb-2">{ufNome || uf}</p>
-          <div className="grid gap-3 md:grid-cols-2">{estaduais.map((i) => <Card key={i.id} i={i} />)}</div>
-        </>
-      )}
-      {nacionais.length > 0 && (
-        <>
-          <p className="text-xs font-medium text-foreground mt-4 mb-2">Referências nacionais</p>
-          <div className="grid gap-3 md:grid-cols-2">{nacionais.map((i) => <Card key={i.id} i={i} />)}</div>
-        </>
+      <div className="grid gap-3 md:grid-cols-2">{visiveis.map((i) => <Card key={i.id} i={i} />)}</div>
+      {items.length > LIMITE_CARDS && (
+        <button
+          onClick={() => setShowAll((s) => !s)}
+          className="mt-3 text-xs text-primary underline"
+        >
+          {showAll ? "Mostrar menos" : `Ver todos os ${items.length} locais`}
+        </button>
       )}
       <p className="text-[11px] text-muted-foreground mt-4">
-        📌 Conteúdo curado manualmente, revisado em {fmtDate(ultimaRevisao)}. Não vem de API pública — é uma seleção editorial de fontes institucionais, sujeita a lacunas.
+        📌 Fonte: Mapa da Inovação — MCTI, catálogo revisado de locais georreferenciados consolidado pelo Motor da Inovação
+        ({fontesPresentes.map((f) => FONTE_LABEL[f] || f).join("; ")}).
+        Última coleta em {fmtDate((ultimaColeta || "").slice(0, 10))}. Coordenadas de alguns lotes são aproximadas (centro do município), conforme indicado nos metadados de cada registro.
       </p>
     </Panel>
   );
