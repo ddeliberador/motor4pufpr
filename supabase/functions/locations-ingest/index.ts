@@ -407,8 +407,10 @@ Deno.serve(async (req) => {
   const json = (b: unknown, status = 200) =>
     new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-  if (!INGEST_KEY) return json({ error: "Ingestão não configurada no servidor" }, 503);
-  if (req.headers.get("x-ingest-key") !== INGEST_KEY) {
+  const chaves = [INGEST_KEY, INGEST_KEY_ADMIN].filter((k) => k.length > 0);
+  if (chaves.length === 0) return json({ error: "Ingestão não configurada no servidor" }, 503);
+  const enviada = req.headers.get("x-ingest-key") || "";
+  if (!chaves.includes(enviada)) {
     return json({ error: "Header x-ingest-key obrigatório ou inválido" }, 401);
   }
 
