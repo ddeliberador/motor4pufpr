@@ -22,6 +22,9 @@ export const FONTE_LABEL: Record<string, string> = {
   embrapii: "EMBRAPII — rede oficial de unidades",
   inep_censo_superior: "INEP — Censo da Educação Superior",
   mcti_formict: "MCTI — FORMICT (lista de ICTs não respondentes, parcial)",
+  sinapad: "SINAPAD — centros de supercomputação (coleta manual)",
+  lisp_brasil_mapeamento:
+    "LISP Brasil Mapeamento (meuteste.tech) — coleta manual, fonte não institucional",
 };
 
 /** Colunas exportadas. `fonte` e `fonte_url` nunca podem ser omitidas. */

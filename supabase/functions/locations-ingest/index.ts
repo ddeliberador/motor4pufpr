@@ -10,6 +10,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const INGEST_KEY = Deno.env.get("LOCATIONS_INGEST_KEY") || "";
+const INGEST_KEY_ADMIN = Deno.env.get("LOCATIONS_INGEST_KEY_ADMIN") || "";
 
 type Fonte = "openalex" | "embrapii" | "inep_censo_superior" | "mcti_formict";
 
@@ -406,8 +407,10 @@ Deno.serve(async (req) => {
   const json = (b: unknown, status = 200) =>
     new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-  if (!INGEST_KEY) return json({ error: "Ingestão não configurada no servidor" }, 503);
-  if (req.headers.get("x-ingest-key") !== INGEST_KEY) {
+  const chaves = [INGEST_KEY, INGEST_KEY_ADMIN].filter((k) => k.length > 0);
+  if (chaves.length === 0) return json({ error: "Ingestão não configurada no servidor" }, 503);
+  const enviada = req.headers.get("x-ingest-key") || "";
+  if (!chaves.includes(enviada)) {
     return json({ error: "Header x-ingest-key obrigatório ou inválido" }, 401);
   }
 
