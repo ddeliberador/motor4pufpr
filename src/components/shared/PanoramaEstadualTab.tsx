@@ -11,23 +11,22 @@ interface Props {
   data: MotorSearchResult;
 }
 
-interface RegionalInstitute {
-  id: string;
-  uf: string | null;
-  nome: string;
-  descricao: string | null;
-  url: string | null;
-  tipo: string;
-  ultima_revisao: string;
-}
+import { fetchResearchLocations, FONTE_LABEL, type ResearchLocation } from "@/lib/researchLocations";
 
 const TIPO_STYLE: Record<string, string> = {
-  "federação industrial": "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  "hub de inovação": "bg-blue-500/10 text-blue-600 dark:text-blue-400",
   "instituto de pesquisa": "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  "observatório": "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  "plano estadual": "bg-violet-500/10 text-violet-600 dark:text-violet-400",
+  "instituto de ciência e tecnologia (ict)": "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+  "unidade embrapii": "bg-teal-500/10 text-teal-600 dark:text-teal-400",
+  "parque tecnológico": "bg-violet-500/10 text-violet-600 dark:text-violet-400",
+  "supercomputação": "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   outro: "bg-muted text-muted-foreground",
 };
+
+function tipoStyle(tipo: string): string {
+  const t = (tipo || "").toLowerCase();
+  return TIPO_STYLE[t] || TIPO_STYLE.outro;
+}
 
 function fmtDate(d: string) {
   const [y, m, day] = (d || "").split("-");
