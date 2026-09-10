@@ -1,0 +1,1 @@
+ALTER TABLE public.research_locations ALTER COLUMN fonte_url DROP NOT NULL;

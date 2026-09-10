@@ -282,7 +282,7 @@ export type Database = {
           created_at: string
           data_coleta: string
           fonte: string
-          fonte_url: string
+          fonte_url: string | null
           id: string
           latitude: number | null
           longitude: number | null
@@ -298,7 +298,7 @@ export type Database = {
           created_at?: string
           data_coleta?: string
           fonte: string
-          fonte_url: string
+          fonte_url?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
@@ -314,7 +314,7 @@ export type Database = {
           created_at?: string
           data_coleta?: string
           fonte?: string
-          fonte_url?: string
+          fonte_url?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
