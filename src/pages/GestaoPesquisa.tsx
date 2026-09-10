@@ -226,6 +226,7 @@ export default function GestaoPesquisa() {
             <TabsTrigger value="authors"><BookOpen className="w-4 h-4 mr-1" /> Autores</TabsTrigger>
             <TabsTrigger value="themes"><Lightbulb className="w-4 h-4 mr-1" /> Temas</TabsTrigger>
             <TabsTrigger value="articles"><FileText className="w-4 h-4 mr-1" /> Artigos</TabsTrigger>
+            <TabsTrigger value="buildlog"><NotebookPen className="w-4 h-4 mr-1" /> Diário de Construção</TabsTrigger>
             <TabsTrigger value="feedback">
               <MessageSquare className="w-4 h-4 mr-1" /> Sugestões
               {newFeedbackCount > 0 && (
@@ -332,6 +333,11 @@ export default function GestaoPesquisa() {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          {/* BUILD LOG */}
+          <TabsContent value="buildlog" className="mt-4">
+            <BuildLogTab canEdit={!!user} />
           </TabsContent>
 
           {/* FEEDBACK */}
