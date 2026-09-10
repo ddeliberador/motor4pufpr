@@ -561,7 +561,104 @@ function computePersonaInsights(
   return {};
 }
 
+// ===== Especialização científica do Brasil (OCTI/CGEE — Painel WoS) =====
+// Casamento por nome em português (área ou grande área) contra o tema pesquisado,
+// os termos expandidos da ontologia e as áreas CNPq. Sem dado estimado: se nada
+// casar, o bloco simplesmente não é retornado.
+interface EspecializacaoRow {
+  area_pt: string;
+  grande_area_pt: string;
+  area_en: string;
+  quadrante: number | null;
+  ie: number | null;
+  participacao_brasil_pct: number | null;
+  volume_brasil: number | null;
+  crescimento_pct: number | null;
+  fonte: string;
+  fonte_url: string;
+  periodo: string;
+}
 
+const STOPWORDS_ESP = new Set([
+  "de","da","do","das","dos","e","em","a","o","as","os","para","com","the","and","of","outros","topicos",
+]);
+
+function normEsp(s: string): string {
+  return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function tokensEsp(s: string): string[] {
+  return normEsp(s).split(" ").filter((t) => t.length > 3 && !STOPWORDS_ESP.has(t));
+}
+
+async function fetchEspecializacaoCientifica(
+  query: string,
+  searchTerms: string[],
+  cnpqAreas: Array<{ code: string; name: string }>,
+): Promise<Record<string, unknown> | null> {
+  try {
+    const url = `${SUPABASE_URL}/rest/v1/science_specialization_index?select=area_pt,grande_area_pt,area_en,quadrante,ie,participacao_brasil_pct,volume_brasil,crescimento_pct,fonte,fonte_url,periodo&limit=300`;
+    const res = await fetch(url, { headers: await restHeaders(), signal: AbortSignal.timeout(6000) });
+    if (!res.ok) { console.warn("especializacao fetch falhou:", res.status); return null; }
+    const rows = (await res.json()) as EspecializacaoRow[];
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+
+    // O tema digitado pelo usuário tem prioridade sobre as áreas CNPq inferidas.
+    // Os termos expandidos da ontologia NÃO entram no casamento: eles são genéricos
+    // demais e levariam a associar qualquer tema a "Engenharia".
+    const qTexto = normEsp(query);
+    const qTokens = new Set(tokensEsp(query));
+    const cnpqTexto = (cnpqAreas || []).map((a) => normEsp(a.name)).join(" | ");
+    const cnpqTokens = new Set((cnpqAreas || []).flatMap((a) => tokensEsp(a.name)));
+    if (qTokens.size === 0 && cnpqTokens.size === 0) return null;
+
+    let melhor: { row: EspecializacaoRow; score: number; via: "area" | "grande_area" } | null = null;
+    for (const row of rows) {
+      const areaNorm = normEsp(row.area_pt);
+      const areaTokens = tokensEsp(row.area_pt);
+      const grandeTokens = tokensEsp(row.grande_area_pt);
+
+      const areaHitsQ = areaTokens.filter((t) => qTokens.has(t)).length;
+      const areaHitsCnpq = areaTokens.filter((t) => cnpqTokens.has(t)).length;
+      const grandeHitsQ = grandeTokens.filter((t) => qTokens.has(t)).length;
+      const grandeHitsCnpq = grandeTokens.filter((t) => cnpqTokens.has(t)).length;
+
+      let score = 0;
+      let via: "area" | "grande_area" = "area";
+      if (areaNorm.length > 4 && qTexto.includes(areaNorm)) score = 2000;
+      else if (areaNorm.length > 4 && cnpqTexto.includes(areaNorm)) score = 1500;
+      else if (areaHitsQ > 0) score = 300 * areaHitsQ;
+      else if (areaHitsCnpq > 0) score = 120 * areaHitsCnpq;
+      else if (grandeHitsQ >= 2) { score = 30 * grandeHitsQ; via = "grande_area"; }
+      else if (grandeHitsCnpq >= 2) { score = 10 * grandeHitsCnpq; via = "grande_area"; }
+      if (score === 0) continue;
+
+      score += Math.min(9, (row.volume_brasil || 0) / 5000);
+      if (!melhor || score > melhor.score) melhor = { row, score, via };
+    }
+    if (!melhor) return null;
+
+    const r = melhor.row;
+    return {
+      area_pt: r.area_pt,
+      area_en: r.area_en,
+      grande_area_pt: r.grande_area_pt,
+      quadrante: r.quadrante,
+      ie: r.ie === null ? null : Number(r.ie),
+      participacao_brasil_pct: r.participacao_brasil_pct === null ? null : Number(r.participacao_brasil_pct),
+      volume_brasil: r.volume_brasil,
+      crescimento_pct: r.crescimento_pct === null ? null : Number(r.crescimento_pct),
+      casamento: melhor.via === "area" ? "área específica" : "grande área",
+      fonte: r.fonte,
+      fonte_url: r.fonte_url,
+      periodo: r.periodo,
+      fonte_label: "CGEE/MCTI — Painel WoS Brasil (OCTI)",
+    };
+  } catch (e) {
+    console.warn("especializacao erro:", e);
+    return null;
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -868,8 +965,16 @@ Deno.serve(async (req) => {
       return [];
     }
 
+    // Bibliometria nacional por área (CGEE/MCTI — Painel WoS, triênio 2023-2025)
+    const especializacaoCientifica = await fetchEspecializacaoCientifica(
+      query,
+      searchTerms,
+      ontology?.cnpq_areas || [],
+    );
+
     const result = {
       query,
+      especializacao_cientifica_brasil: especializacaoCientifica,
       layers: {
         knowledge: knowledge || { papers: [], total_papers: 0, institutions: {}, international: [], concepts: [], density: 0, concentration: 0, specialization: 0 },
         technology: technology || { github_repos: [], patent_datasets: [], employment_datasets: [], tech_density: 0, trl_estimate: 2, trl_label: "Sem dados" },

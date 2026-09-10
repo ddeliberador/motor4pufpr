@@ -225,6 +225,8 @@ export interface MotorSearchResult {
     market?: MarketLayerData;
   };
   indices: StrategicIndices;
+  /** Bibliometria nacional por área (CGEE/MCTI — Painel WoS, triênio 2023-2025) */
+  especializacao_cientifica_brasil?: import("@/components/shared/EspecializacaoCientificaCard").EspecializacaoCientificaBrasil | null;
   /** Memória temporal: índices de buscas anteriores do mesmo tema (asc por data) */
   historico?: HistoricoPoint[];
   ontology?: OntologyMeta;
