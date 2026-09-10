@@ -357,6 +357,63 @@ export type Database = {
         }
         Relationships: []
       }
+      science_specialization_index: {
+        Row: {
+          area_en: string
+          area_pt: string
+          created_at: string
+          crescimento_pct: number | null
+          data_coleta: string
+          fonte: string
+          fonte_url: string
+          grande_area_en: string
+          grande_area_pt: string
+          id: string
+          ie: number | null
+          participacao_brasil_pct: number | null
+          periodo: string
+          quadrante: number | null
+          updated_at: string
+          volume_brasil: number | null
+        }
+        Insert: {
+          area_en: string
+          area_pt: string
+          created_at?: string
+          crescimento_pct?: number | null
+          data_coleta?: string
+          fonte?: string
+          fonte_url?: string
+          grande_area_en: string
+          grande_area_pt: string
+          id?: string
+          ie?: number | null
+          participacao_brasil_pct?: number | null
+          periodo?: string
+          quadrante?: number | null
+          updated_at?: string
+          volume_brasil?: number | null
+        }
+        Update: {
+          area_en?: string
+          area_pt?: string
+          created_at?: string
+          crescimento_pct?: number | null
+          data_coleta?: string
+          fonte?: string
+          fonte_url?: string
+          grande_area_en?: string
+          grande_area_pt?: string
+          id?: string
+          ie?: number | null
+          participacao_brasil_pct?: number | null
+          periodo?: string
+          quadrante?: number | null
+          updated_at?: string
+          volume_brasil?: number | null
+        }
+        Relationships: []
+      }
       search_snapshots: {
         Row: {
           aue: number | null

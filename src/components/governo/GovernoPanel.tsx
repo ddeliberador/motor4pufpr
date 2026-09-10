@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 import IndicesHistoryChart from "@/components/shared/IndicesHistoryChart";
 import StrategicIndices from "./StrategicIndices";
+import EspecializacaoCientificaCard from "@/components/shared/EspecializacaoCientificaCard";
 import OpportunityCard from "@/components/shared/OpportunityCard";
 import RelationalGraph from "./RelationalGraph";
 import EntityResolutionCard from "@/components/shared/EntityResolutionCard";
@@ -115,6 +116,9 @@ const GovernoPanel = () => {
         <div className="panel-container py-6 space-y-6 animate-in fade-in-0 duration-500">
           <LocalContextBadge persona="governo" />
           {indices && <StrategicIndices indices={indices} />}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <EspecializacaoCientificaCard dados={data.especializacao_cientifica_brasil} />
+          </div>
           <IndicesHistoryChart historico={data.historico} />
 
           {(data as any).oportunidades?.length > 0 && (
