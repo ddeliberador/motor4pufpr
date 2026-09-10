@@ -25,6 +25,8 @@ export const FONTE_LABEL: Record<string, string> = {
   sinapad: "SINAPAD — centros de supercomputação (coleta manual)",
   lisp_brasil_mapeamento:
     "LISP Brasil Mapeamento (meuteste.tech) — coleta manual, fonte não institucional",
+  otd_cgee:
+    "OTD — Observatório de Tecnologias Digitais (CGEE/MCTI), otd.cgee.org.br/laboratorios — coleta manual",
 };
 
 /** Colunas exportadas. `fonte` e `fonte_url` nunca podem ser omitidas. */
