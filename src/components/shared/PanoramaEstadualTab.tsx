@@ -4,7 +4,6 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, BarChart, Bar,
 } from "recharts";
-import { safeSupabase as supabase } from "@/lib/supabaseClient";
 import type { MotorSearchResult } from "@/hooks/useMotorSearch";
 
 interface Props {
