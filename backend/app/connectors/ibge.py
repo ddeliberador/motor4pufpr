@@ -26,14 +26,43 @@ class IBGEConnector(BaseConnector):
 
     SIDRA_BASE = "https://servicodados.ibge.gov.br/api/v3"
 
+    # Siglas usadas no Brasil que não aparecem no campo "nome" da API v3
+    SIDRA_ALIASES = {
+        "pintec": "pesquisa de inovação",
+        "pnad": "pesquisa nacional por amostra de domicílios",
+        "pia": "pesquisa industrial anual",
+        "pof": "pesquisa de orçamentos familiares",
+        "paic": "pesquisa anual da indústria da construção",
+        "pas": "pesquisa anual de serviços",
+    }
+
     async def sidra_buscar_agregados(self, pesquisa: Optional[str] = None) -> List[Dict[str, Any]]:
         """Lista agregados (tabelas) do SIDRA, opcionalmente filtrando pelo nome
-        da pesquisa (ex.: 'PINTEC', 'PNAD Contínua', 'Censo')."""
+        da pesquisa (ex.: 'PINTEC', 'PNAD Contínua', 'Censo').
+
+        Validado contra a API real: o campo "nome" traz o nome extenso da
+        pesquisa (ex.: "Pesquisa de Inovação"), nunca a sigla — por isso a
+        busca também considera siglas conhecidas e os nomes dos agregados.
+        """
         data = await self.get(f"{self.SIDRA_BASE}/agregados", use_cache=True)
         if not pesquisa:
             return data
-        termo = pesquisa.lower()
-        return [g for g in data if termo in g.get("nome", "").lower()]
+        termo = pesquisa.lower().strip()
+        termos = {termo}
+        if termo in self.SIDRA_ALIASES:
+            termos.add(self.SIDRA_ALIASES[termo])
+
+        def match(grupo: Dict[str, Any]) -> bool:
+            nome = (grupo.get("nome") or "").lower()
+            if any(t in nome for t in termos):
+                return True
+            for ag in grupo.get("agregados") or []:
+                ag_nome = (ag.get("nome") or "").lower()
+                if any(t in ag_nome for t in termos):
+                    return True
+            return False
+
+        return [g for g in data if match(g)]
 
     async def sidra_metadados_agregado(self, agregado_id: int) -> Dict[str, Any]:
         """Metadados de um agregado: variáveis, classificações e períodos disponíveis."""

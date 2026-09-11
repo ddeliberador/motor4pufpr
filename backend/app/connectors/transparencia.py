@@ -38,15 +38,37 @@ class TransparenciaConnector(BaseConnector):
         """Busca convênios por tema"""
         return await self.search_agreements(query)
 
-    async def search_agreements(self, query: str, limit: int = 20) -> List[Dict[str, Any]]:
+    async def search_agreements(
+        self,
+        query: str,
+        limit: int = 20,
+        data_inicial: Optional[str] = None,
+        data_final: Optional[str] = None,
+        uf: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
         """
-        Busca convênios federais por objeto
+        Busca convênios federais por objeto.
+
+        Validado contra a API real: /convenios exige um filtro restritivo —
+        período de até 1 mês (dd/mm/aaaa), convenente, órgão, localidade ou
+        número de convênio. Sem isso a API responde 400. Default: último mês.
         """
         logger.info(f"Transparência convênios search: {query}")
+        if not data_final:
+            hoje = datetime.utcnow().date()
+            data_final = hoje.strftime("%d/%m/%Y")
+            if not data_inicial:
+                data_inicial = (hoje - timedelta(days=30)).strftime("%d/%m/%Y")
+        params: Dict[str, str] = {"pagina": "1"}
+        if data_inicial and data_final:
+            params["dataInicial"] = data_inicial
+            params["dataFinal"] = data_final
+        if uf:
+            params["uf"] = uf
         try:
             data = await self.get(
                 f"{self.base_url}/convenios",
-                params={"objeto": query, "pagina": "1", "quantidade": str(limit)},
+                params=params,
                 headers=self._headers(),
                 use_cache=True,
             )
