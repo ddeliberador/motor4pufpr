@@ -305,6 +305,17 @@ export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
       dificuldade: "Tensão identificada entre dois arranjos institucionais possíveis: (1) Motor como componente dentro da governança do MCTI — cede autonomia sobre o artefato de tese; (2) Motor como fonte de dados que o MCTI consome via API — mantém autonomia da pesquisa. A diferença é crítica para uma tese de doutorado de autoria individual. Backend Python (Railway) estava fora do ar no mesmo dia, comprometendo a demonstração técnica para avaliação da Eunice.",
       resolucao: "Responsabilidades definidas na reunião: (1) enviar documentação detalhada de funcionalidades e objetivos do Motor ao MCTI; (2) implementar/documentar a API REST (o backend FastAPI no Railway já é uma API — precisa estar estável e documentada via Swagger/OpenAPI); (3) cadastrar o Motor como ferramenta voluntária no banco do MCTI. Próximo passo técnico imediato: corrigir ibge.py (erro de indentação que impede a inicialização do servidor inteiro), recolocar Railway no ar e revisar endpoints públicos antes de qualquer demonstração institucional.",
     },
+    {
+      data: "2026-09-10",
+      categoria: "integracao_externa",
+      titulo: "Metodologia do \"Mapa Brasileiro de Inovação\" — recebida da Prof. Eunice Liu",
+      descricao: "Documento \"Cartografia da Inovação — Mapa Brasileiro de Inovação\", apresentado pela Prof. Eunice Liu (UTFPR, cedida ao MCTI) como convite de colaboração. Iniciativa do LIIA (Laboratório de Inovação em Inteligência Artificial), em parceria com Solvum, Porto Digital, HUB Goiás e SECTI-GO (piloto em Goiás). Metodologia baseada em Design Science Research, com framework MIT D-Lab, snowball sampling, OSINT, web scraping, scientometria e technometria, cruzando dados de desafios públicos via CPSI. Categoriza atores em 12 perfis de atuação (Agentes Geradores de Inovação, Instituições Financeiras, Organizações Internacionais, Instituições de Pesquisa e Ensino, Redes e Associações, Comunidade e Sociedade, Instituições de Apoio e Fomento, Serviços Especializados, Ambientes de Inovação, Órgãos e Labs de Governo, Infraestrutura de Apoio, Empreendimentos Inovadores). Propõe governança via Comitê Gestor Permanente com representação rotativa (NIA, LIIA, academia, setor privado, sociedade civil). Benchmarking contra Mapa de Startups da ABStartups e Crunchbase.",
+      fonte: "Documento fornecido pela Prof. Eunice Liu (UTFPR/MCTI), em reunião de apresentação do projeto Mapa da Inovação",
+      dificuldade: null,
+      resolucao: "Décio avaliando formato de colaboração — se o Motor entra como componente de dado dentro da governança do Mapa Brasileiro de Inovação, ou como fonte externa consumida via API, mantendo autonomia da tese individual. Decisão ainda em aberto.",
+      eh_achado_pesquisa: true,
+      nota_desenvolvimento: "A proposta de governança do Mapa Brasileiro de Inovação (comitê multissetorial permanente) contrasta com a autoria individual do Motor da Inovação (projeto de tese, MIT license, sem comitê) — desenvolver como reflexão sobre dois modelos distintos de coordenação de infraestrutura de dados públicos: centralizado/institucional vs. individual/aberto. Relevante para o capítulo teórico sobre arranjos de governança em sistemas de inovação.",
+    },
   ];
 
   const load = useCallback(async () => {
