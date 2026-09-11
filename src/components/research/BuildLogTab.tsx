@@ -420,18 +420,27 @@ export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
   };
 
   const sorted = entries;
-  const filtered = filter === "all" ? sorted : sorted.filter((e) => e.categoria === filter);
+  const filtered = sorted
+    .filter((e) => filter === "all" || e.categoria === filter)
+    .filter((e) => !onlyAchados || e.eh_achado_pesquisa);
+  const totalAchados = sorted.filter((e) => e.eh_achado_pesquisa).length;
 
   return (
     <div>
       <div className="flex items-center justify-between gap-2 flex-wrap mb-4">
-        <Select value={filter} onValueChange={setFilter}>
-          <SelectTrigger className="w-[240px]"><SelectValue placeholder="Categoria" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas as categorias</SelectItem>
-            {CATEGORIAS.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-3 flex-wrap">
+          <Select value={filter} onValueChange={setFilter}>
+            <SelectTrigger className="w-[240px]"><SelectValue placeholder="Categoria" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as categorias</SelectItem>
+              {CATEGORIAS.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <Checkbox checked={onlyAchados} onCheckedChange={(v) => setOnlyAchados(v === true)} />
+            Mostrar só achados de pesquisa ({totalAchados})
+          </label>
+        </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={exportPdf} disabled={exporting || sorted.length === 0}>
             <Download className="w-4 h-4" /> {exporting ? "Gerando…" : "Exportar para apêndice"}
@@ -447,14 +456,22 @@ export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
       <div className="relative pl-5 border-l border-border space-y-3">
         {filtered.map((e) => (
           <div key={e.id} className="relative">
-            <span className="absolute -left-[26px] top-4 w-2.5 h-2.5 rounded-full bg-border ring-4 ring-background" />
-            <Card>
+            <span className={cn(
+              "absolute -left-[26px] top-4 w-2.5 h-2.5 rounded-full ring-4 ring-background",
+              e.eh_achado_pesquisa ? "bg-amber-500" : "bg-border",
+            )} />
+            <Card className={cn(e.eh_achado_pesquisa && "border-amber-500/60 shadow-[0_0_0_1px_hsl(38_92%_50%/0.25)]")}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-mono text-muted-foreground">{fmtDate(e.data)}</span>
                       <Badge className={cn("text-[10px]", catStyle[e.categoria])}>{catLabel(e.categoria)}</Badge>
+                      {e.eh_achado_pesquisa && (
+                        <Badge className="text-[10px] gap-1 bg-amber-400 text-amber-950 border-transparent hover:bg-amber-400">
+                          <Search className="w-3 h-3" /> Achado de Pesquisa
+                        </Badge>
+                      )}
                     </div>
                     <div className="font-semibold mt-1.5">{e.titulo}</div>
                   </div>
@@ -470,17 +487,26 @@ export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
                   {e.dificuldade && <Field label="Dificuldade" value={e.dificuldade} />}
                   {e.resolucao && <Field label="Resolução" value={e.resolucao} />}
                 </div>
+                {e.nota_desenvolvimento && (
+                  <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-3">
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+                      Desenvolver na tese
+                    </div>
+                    <p className="text-xs mt-1 text-foreground/80">{e.nota_desenvolvimento}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
         ))}
         {filtered.length === 0 && (
-          <p className="text-sm text-muted-foreground py-6">Nenhuma entrada nesta categoria.</p>
+          <p className="text-sm text-muted-foreground py-6">Nenhuma entrada com esses filtros.</p>
         )}
       </div>
     </div>
   );
 }
+
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
