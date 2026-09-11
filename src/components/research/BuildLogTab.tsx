@@ -32,11 +32,11 @@ export type BuildLogEntry = {
 
 
 const CATEGORIAS = [
-  { value: "fonte_de_dado", label: "NOVA FONTE ADICIONADA" },
-  { value: "decisao_arquitetura", label: "Decisão de arquitetura" },
-  { value: "obstaculo_institucional", label: "Obstáculo institucional" },
-  { value: "correcao_bug", label: "Correção de bug" },
-  { value: "integracao_externa", label: "Integração externa" },
+  { value: "fonte_de_dado", label: "FONTE ADICIONADA" },
+  { value: "decisao_arquitetura", label: "DECISÃO TOMADA" },
+  { value: "obstaculo_institucional", label: "OBSTÁCULO IDENTIFICADO" },
+  { value: "correcao_bug", label: "BUG CORRIGIDO" },
+  { value: "integracao_externa", label: "PARCERIA REGISTRADA" },
 ];
 
 const catLabel = (c: string) => CATEGORIAS.find((x) => x.value === c)?.label ?? c;
