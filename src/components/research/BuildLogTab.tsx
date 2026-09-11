@@ -12,7 +12,8 @@ import {
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
-import { Plus, Download, Trash2 } from "lucide-react";
+import { Plus, Download, Trash2, Search } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +26,10 @@ export type BuildLogEntry = {
   fonte: string | null;
   dificuldade: string | null;
   resolucao: string | null;
+  eh_achado_pesquisa?: boolean;
+  nota_desenvolvimento?: string | null;
 };
+
 
 const CATEGORIAS = [
   { value: "fonte_de_dado", label: "Fonte de dado" },
