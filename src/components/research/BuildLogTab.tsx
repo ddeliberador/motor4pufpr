@@ -326,6 +326,22 @@ export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
       resolucao: "Marco de referência para contagem do tempo total de desenvolvimento do artefato, relevante para a seção metodológica da tese (Design Science Research).",
       eh_achado_pesquisa: false,
     },
+    {
+      data: "2026-09-11",
+      categoria: "correcao_bug",
+      titulo: "Validação com chamadas reais das bases públicas do BBSIA (PNCP, Transparência, IBGE/SIDRA, Transferegov)",
+      descricao:
+        'A partir do documento "BBSIA — Mapa de IA" (4 pilares), foram priorizadas as fontes públicas com API REST pronta e auditadas as quatro integrações recém-escritas com chamadas reais (não apenas revisão de código). Bugs corrigidos: (1) PNCP usava parâmetros de busca livre inexistentes na API oficial — corrigido para dataInicial/dataFinal/codigoModalidadeContratacao, com filtro textual do lado do cliente; (2) Portal da Transparência nunca recebia a API key das settings — corrigido, e descobriu-se que /convenios exige filtro restritivo (período de até 1 mês, órgão, convenente ou localidade), além de expor objeto/número dentro de dimConvenio, o que exigiu remapear os campos; (3) IBGE tinha apenas CNAE/localidades, sem cliente SIDRA — adicionado cliente da API v3 de agregados, cuja listagem traz o nome extenso da pesquisa ("Pesquisa de Inovação") e nunca a sigla, o que exigiu dicionário de siglas (PINTEC, PNAD, PIA, POF...) e busca também nos nomes dos agregados; (4) Transferegov não existia como conector — criado sobre a API PostgREST de dados abertos.',
+      fonte:
+        "Testes reais executados em 11/09/2026: PNCP (pncp.gov.br/api/consulta/v1), Portal da Transparência (api.portaldatransparencia.gov.br/api-de-dados, chave real), IBGE SIDRA v3 (servicodados.ibge.gov.br/api/v3/agregados), Transferegov (api-publica.transferegov.gestao.gov.br)",
+      dificuldade:
+        "Transferegov: a API pública de dados abertos respondeu HTTP 403 com desafio Cloudflare (\"Just a moment...\") em todas as tentativas, tanto na raiz quanto em plano_trabalho_resumo e variações, com e sem User-Agent de navegador. Assim, o nome exato da tabela plano_trabalho_resumo permanece NÃO confirmado contra o schema oficial — a barreira é anterior ao schema (bloqueio de bot), não um erro de relação inexistente.",
+      resolucao:
+        "Resultado dos testes: PNCP.contracts_by_publication() retornou 10 contratações reais (ex.: Pregão Eletrônico, Município de Capão Alto/SC), com falhas intermitentes de timeout/limite de requisição em chamadas repetidas; IBGE.sidra_buscar_agregados('PINTEC') passou a retornar a Pesquisa de Inovação com seus agregados (1614, 5018, 5453 e outros) após a correção; Portal da Transparência retornou 15 convênios reais com a chave configurada (não 403/401) após adicionar janela de datas padrão e remapear campos; Transferegov segue bloqueado por Cloudflare (403) e permanece com TODO no código sobre o nome da tabela, sem dado estimado ou simulado.",
+      eh_achado_pesquisa: true,
+      nota_desenvolvimento:
+        "Padrão recorrente nas bases federais: documentação e Swagger publicados não garantem acesso programático. Três formas distintas de fricção observadas no mesmo ciclo — parâmetros obrigatórios não documentados de forma acessível (PNCP), exigência de filtro restritivo e credencial gov.br com 2FA (Transparência) e bloqueio antibot em API declarada aberta (Transferegov). Desenvolver na tese como evidência de que \"dado aberto publicado\" ≠ \"dado aberto acessível\", e como justificativa metodológica para validação empírica de cada conector.",
+    },
   ];
 
   const load = useCallback(async () => {
