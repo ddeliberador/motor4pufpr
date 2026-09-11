@@ -57,6 +57,8 @@ const fmtDate = (d: string) => {
 export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
   const [entries, setEntries] = useState<BuildLogEntry[]>([]);
   const [filter, setFilter] = useState("all");
+  const [onlyAchados, setOnlyAchados] = useState(false);
+
   const [exporting, setExporting] = useState(false);
 
   const SEED_ENTRIES: Omit<BuildLogEntry, "id">[] = [
