@@ -75,24 +75,28 @@ class TransparenciaConnector(BaseConnector):
             )
             results = []
             items = data if isinstance(data, list) else data.get("data", [])
-            # A API não faz busca livre confiável por objeto: filtro client-side
+            # A API não faz busca livre por objeto: filtro client-side
+            # (campos reais validados: dimConvenio.objeto, convenente.nome, orgao.nome)
             termo = (query or "").lower().strip()
             if termo:
                 filtrados = [
                     i for i in items
-                    if termo in str(i.get("objeto", "")).lower()
+                    if termo in str((i.get("dimConvenio") or {}).get("objeto", "")).lower()
                 ]
                 items = filtrados or items
             for item in items[:limit]:
+                dim = item.get("dimConvenio") or {}
+                convenente = item.get("convenente") or {}
+                orgao = item.get("orgao") or {}
                 results.append({
-                    "number": item.get("numero", ""),
-                    "object": item.get("objeto", ""),
-                    "organ": item.get("orgaoSuperior", ""),
-                    "value": item.get("valor", 0),
+                    "number": dim.get("numero", ""),
+                    "object": dim.get("objeto", ""),
+                    "organ": orgao.get("nome", ""),
+                    "value": item.get("valorLiberado", 0) or item.get("valor", 0),
                     "status": item.get("situacao", ""),
-                    "start_date": item.get("dataInicio", ""),
-                    "end_date": item.get("dataFim", ""),
-                    "proponent": item.get("proponente", ""),
+                    "start_date": item.get("dataInicioVigencia", ""),
+                    "end_date": item.get("dataFinalVigencia", ""),
+                    "proponent": convenente.get("nome", ""),
                 })
             return results
         except Exception as e:
