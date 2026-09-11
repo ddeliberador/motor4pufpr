@@ -290,6 +290,15 @@ export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
       dificuldade: "FAQ precisa equilibrar resposta técnica correta com linguagem acessível — mesmo desafio da interface principal.",
       resolucao: "32 entradas iniciais com linguagem simples. Fluxo: usuário sugere via formulário → pesquisador curada e publica via GestaoPesquisa → aparece na /faq pública.",
     },
+    {
+      data: "2026-09-10",
+      categoria: "decisao_arquitetura",
+      titulo: "Primeira reunião com Prof. Eunice Liu (UTFPR/MCTI) — co-orientação e parceria institucional",
+      descricao: "Primeira reunião com Prof. Eunice Liu, docente da UTFPR cedida ao Ministério de Ciência, Tecnologia e Inovação (MCTI), abrindo caminho para co-orientação do doutorado (PPGPP/UFPR, orientador principal: Prof. Shima). A professora avaliou o Motor da Inovação como ferramenta complementar ao Mapa Brasileiro de Inovação do MCTI, e propôs levar o projeto à Diretora de Inovação e Tecnologia do ministério. Carla (revisora técnica indicada pela Eunice) já havia revisado o repositório público e fará checagem inicial de segurança.",
+      fonte: "Reunião presencial/remota — 10/09/2026 · UTFPR · MCTI · PPGPP/UFPR",
+      dificuldade: "Tensão identificada entre dois arranjos institucionais possíveis: (1) Motor como componente dentro da governança do MCTI — cede autonomia sobre o artefato de tese; (2) Motor como fonte de dados que o MCTI consome via API — mantém autonomia da pesquisa. A diferença é crítica para uma tese de doutorado de autoria individual. Backend Python (Railway) estava fora do ar no mesmo dia, comprometendo a demonstração técnica para avaliação da Eunice.",
+      resolucao: "Responsabilidades definidas na reunião: (1) enviar documentação detalhada de funcionalidades e objetivos do Motor ao MCTI; (2) implementar/documentar a API REST (o backend FastAPI no Railway já é uma API — precisa estar estável e documentada via Swagger/OpenAPI); (3) cadastrar o Motor como ferramenta voluntária no banco do MCTI. Próximo passo técnico imediato: corrigir ibge.py (erro de indentação que impede a inicialização do servidor inteiro), recolocar Railway no ar e revisar endpoints públicos antes de qualquer demonstração institucional.",
+    },
   ];
 
   const load = useCallback(async () => {
