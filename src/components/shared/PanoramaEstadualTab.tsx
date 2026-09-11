@@ -43,6 +43,7 @@ const LIMITE_CARDS = 12;
 function ConcentradoresInovacao({ uf, ufNome }: { uf: string; ufNome: string }) {
   const [items, setItems] = useState<ResearchLocation[] | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [tipoFiltro, setTipoFiltro] = useState<string>("todos");
 
   useEffect(() => {
     let active = true;
@@ -71,7 +72,16 @@ function ConcentradoresInovacao({ uf, ufNome }: { uf: string; ufNome: string }) 
 
   const georreferenciados = items.filter((i) => i.latitude !== null && i.longitude !== null).length;
   const ultimaColeta = items.map((i) => i.data_coleta).sort().reverse()[0];
-  const visiveis = showAll ? items : items.slice(0, LIMITE_CARDS);
+  const tipos = [...new Map(items.map((i) => [i.tipo.toLowerCase(), i.tipo])).values()]
+    .sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const contagemPorTipo = items.reduce<Record<string, number>>((acc, i) => {
+    acc[i.tipo.toLowerCase()] = (acc[i.tipo.toLowerCase()] || 0) + 1;
+    return acc;
+  }, {});
+  const filtrados = tipoFiltro === "todos"
+    ? items
+    : items.filter((i) => i.tipo.toLowerCase() === tipoFiltro);
+  const visiveis = showAll ? filtrados : filtrados.slice(0, LIMITE_CARDS);
   const fontesPresentes = [...new Set(items.map((i) => i.fonte))];
 
   const Card = ({ i }: { i: ResearchLocation }) => (
@@ -101,13 +111,46 @@ function ConcentradoresInovacao({ uf, ufNome }: { uf: string; ufNome: string }) 
       title="Concentradores de Inovação da Região"
       subtitle={`ICTs, hubs, parques tecnológicos, unidades EMBRAPII e centros de supercomputação em ${ufNome || uf} — ${items.length} locais catalogados (${georreferenciados} georreferenciados)`}
     >
-      <div className="grid gap-3 md:grid-cols-2">{visiveis.map((i) => <Card key={i.id} i={i} />)}</div>
-      {items.length > LIMITE_CARDS && (
+      <div className="flex flex-wrap gap-1.5 mb-4">
+        <button
+          onClick={() => { setTipoFiltro("todos"); setShowAll(false); }}
+          className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+            tipoFiltro === "todos"
+              ? "bg-primary/10 text-primary border-primary/40 font-medium"
+              : "bg-muted/40 text-muted-foreground border-border hover:text-foreground"
+          }`}
+        >
+          Todos ({items.length})
+        </button>
+        {tipos.map((t) => {
+          const key = t.toLowerCase();
+          const active = tipoFiltro === key;
+          return (
+            <button
+              key={t}
+              onClick={() => { setTipoFiltro(active ? "todos" : key); setShowAll(false); }}
+              className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                active
+                  ? "bg-primary/10 text-primary border-primary/40 font-medium"
+                  : "bg-muted/40 text-muted-foreground border-border hover:text-foreground"
+              }`}
+            >
+              {t} ({contagemPorTipo[key]})
+            </button>
+          );
+        })}
+      </div>
+      {filtrados.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhum local deste tipo em {ufNome || uf}.</p>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2">{visiveis.map((i) => <Card key={i.id} i={i} />)}</div>
+      )}
+      {filtrados.length > LIMITE_CARDS && (
         <button
           onClick={() => setShowAll((s) => !s)}
           className="mt-3 text-xs text-primary underline"
         >
-          {showAll ? "Mostrar menos" : `Ver todos os ${items.length} locais`}
+          {showAll ? "Mostrar menos" : `Ver todos os ${filtrados.length} locais${tipoFiltro !== "todos" ? " deste tipo" : ""}`}
         </button>
       )}
       <p className="text-[11px] text-muted-foreground mt-4">
