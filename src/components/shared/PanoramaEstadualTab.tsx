@@ -43,6 +43,7 @@ const LIMITE_CARDS = 12;
 function ConcentradoresInovacao({ uf, ufNome }: { uf: string; ufNome: string }) {
   const [items, setItems] = useState<ResearchLocation[] | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [tipoFiltro, setTipoFiltro] = useState<string>("todos");
 
   useEffect(() => {
     let active = true;
