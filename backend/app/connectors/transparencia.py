@@ -5,6 +5,7 @@ Conector para API do Portal da Transparência (CGU)
 Documentação: https://api.portaldatransparencia.gov.br/swagger-ui/index.html
 """
 import logging
+from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 
 from .base import BaseConnector
@@ -74,6 +75,14 @@ class TransparenciaConnector(BaseConnector):
             )
             results = []
             items = data if isinstance(data, list) else data.get("data", [])
+            # A API não faz busca livre confiável por objeto: filtro client-side
+            termo = (query or "").lower().strip()
+            if termo:
+                filtrados = [
+                    i for i in items
+                    if termo in str(i.get("objeto", "")).lower()
+                ]
+                items = filtrados or items
             for item in items[:limit]:
                 results.append({
                     "number": item.get("numero", ""),
