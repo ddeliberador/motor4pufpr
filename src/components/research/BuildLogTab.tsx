@@ -401,7 +401,11 @@ export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
         doc.line(M, y - 6, M + W, y - 6);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(8.5);
-        doc.text(`${fmtDate(e.data)} · ${catLabel(e.categoria).toUpperCase()}`, M, y);
+        doc.text(
+          `${fmtDate(e.data)} · ${catLabel(e.categoria).toUpperCase()}${e.eh_achado_pesquisa ? " · ACHADO DE PESQUISA" : ""}`,
+          M,
+          y,
+        );
         y += 13;
         line("", `${i + 1}. ${e.titulo}`, true);
         y += 2;
@@ -409,6 +413,8 @@ export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
         line("Fonte", e.fonte);
         line("Dificuldade", e.dificuldade);
         line("Resolução", e.resolucao);
+        line("Desenvolver na tese", e.nota_desenvolvimento ?? null);
+
         y += 6;
       });
 
