@@ -11,6 +11,7 @@ interface Props {
 }
 
 import { fetchResearchLocations, FONTE_LABEL, type ResearchLocation } from "@/lib/researchLocations";
+import StartupsTemaCard from "@/components/shared/StartupsTemaCard";
 
 const TIPO_STYLE: Record<string, string> = {
   "hub de inovação": "bg-blue-500/10 text-blue-600 dark:text-blue-400",
@@ -506,6 +507,8 @@ export default function PanoramaEstadualTab({ data }: Props) {
         </Panel>
 
       </div>
+
+      <StartupsTemaCard tema={data.query} uf={uf} ufNome={ufNome} />
 
       <ConcentradoresInovacao uf={uf} ufNome={ufNome} />
 

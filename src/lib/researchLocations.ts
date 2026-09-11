@@ -62,6 +62,62 @@ export async function fetchResearchLocations(
   return (data || []) as ResearchLocation[];
 }
 
+export interface StartupRelacionada {
+  id: string;
+  nome: string;
+  uf: string | null;
+  municipio: string | null;
+  fonte_url: string | null;
+  segmento: string | null;
+}
+
+const STOPWORDS = new Set([
+  "de", "da", "do", "das", "dos", "e", "em", "no", "na", "nos", "nas", "para",
+  "com", "por", "uma", "um", "o", "a", "os", "as", "ao", "à", "às", "aos",
+  "the", "of", "and", "in", "for", "on", "with",
+]);
+
+/** Palavras-chave do tema: minúsculas, sem acento, ≥4 letras, até 6 termos. */
+export function extrairPalavrasChave(tema: string): string[] {
+  return tema
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length >= 4 && !STOPWORDS.has(w))
+    .slice(0, 6);
+}
+
+/**
+ * Busca startups do Mapeamento ABStartups 2025 relacionadas ao tema pesquisado.
+ * Casamento textual por palavras-chave no nome da startup ou no segmento
+ * (raw_metadata->>segmento). Não faz inferência semântica — é um casamento
+ * literal e transparente, com as palavras usadas expostas na interface.
+ */
+export async function fetchStartupsRelacionadas(tema: string): Promise<{
+  startups: StartupRelacionada[];
+  palavras: string[];
+}> {
+  const palavras = extrairPalavrasChave(tema);
+  if (palavras.length === 0) return { startups: [], palavras };
+  const or = palavras
+    .flatMap((w) => [`nome.ilike.*${w}*`, `raw_metadata->>segmento.ilike.*${w}*`])
+    .join(",");
+  // Alias de coluna JSON (segmento:raw_metadata->>segmento) não consta dos tipos
+  // gerados, então o builder é tratado como não-tipado e o resultado validado abaixo.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const builder: any = safeSupabase.from("research_locations");
+  const { data, error } = await builder
+    .select("id,nome,uf,municipio,fonte_url,segmento:raw_metadata->>segmento")
+    .eq("fonte", "abstartups_2025")
+    .or(or)
+    .order("nome", { ascending: true })
+    .limit(120);
+  if (error) throw error;
+  return { startups: (data || []) as StartupRelacionada[], palavras };
+}
+
 function csvCell(v: unknown): string {
   const s = v === null || v === undefined ? "" : String(v);
   return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
