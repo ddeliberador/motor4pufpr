@@ -24,6 +24,38 @@ class IBGEConnector(BaseConnector):
     Implementa consulta de classificações econômicas e localidades
     """
 
+    SIDRA_BASE = "https://servicodados.ibge.gov.br/api/v3"
+
+    async def sidra_buscar_agregados(self, pesquisa: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Lista agregados (tabelas) do SIDRA, opcionalmente filtrando pelo nome
+        da pesquisa (ex.: 'PINTEC', 'PNAD Contínua', 'Censo')."""
+        data = await self.get(f"{self.SIDRA_BASE}/agregados", use_cache=True)
+        if not pesquisa:
+            return data
+        termo = pesquisa.lower()
+        return [g for g in data if termo in g.get("nome", "").lower()]
+
+    async def sidra_metadados_agregado(self, agregado_id: int) -> Dict[str, Any]:
+        """Metadados de um agregado: variáveis, classificações e períodos disponíveis."""
+        return await self.get(f"{self.SIDRA_BASE}/agregados/{agregado_id}/metadados", use_cache=True)
+
+    async def sidra_consultar(
+        self,
+        agregado_id: int,
+        variaveis: str = "all",
+        periodo: str = "last",
+        nivel_territorial: str = "N1",
+        localidades: str = "all",
+        classificacao: Optional[Dict[int, str]] = None,
+    ) -> Any:
+        """Consulta valores de um agregado SIDRA."""
+        path = f"{self.SIDRA_BASE}/agregados/{agregado_id}/periodos/{periodo}/variaveis/{variaveis}"
+        params = {"localidades": f"{nivel_territorial}[{localidades}]"}
+        if classificacao:
+            params["classificacao"] = "|".join(f"{cod}[{cat}]" for cod, cat in classificacao.items())
+        return await self.get(path, params=params, use_cache=True)
+
+
     async def get_sidra_table(self, table_id: str, params: Optional[dict] = None) -> Any:
         """
         Busca dados de uma tabela do SIDRA (IBGE)

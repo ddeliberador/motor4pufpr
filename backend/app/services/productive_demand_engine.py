@@ -16,6 +16,7 @@ from ..connectors.anp import ANPConnector
 from ..connectors.dados_gov import DadosGovConnector
 from ..connectors.querido_diario import QueridoDiarioConnector
 from ..connectors.transparencia import TransparenciaConnector
+from ..core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ class ProductiveDemandEngine:
         self.anp = ANPConnector()
         self.dados_gov = DadosGovConnector()
         self.querido_diario = QueridoDiarioConnector()
-        self.transparencia = TransparenciaConnector()
+        self.transparencia = TransparenciaConnector(api_key=settings.TRANSPARENCIA_API_KEY)
 
     async def get_productive_demand(self, query: str, state: Optional[str] = None) -> Dict[str, Any]:
         """

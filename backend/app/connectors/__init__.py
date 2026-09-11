@@ -17,6 +17,7 @@ from .anp import ANPConnector
 from .dados_gov import DadosGovConnector
 from .dou import DOUConnector
 from .transparencia import TransparenciaConnector
+from .transferegov import TransferegovConnector
 from .siconfi import SICONFIConnector
 from .bcb import BCBConnector
 from .anvisa import ANVISAConnector
