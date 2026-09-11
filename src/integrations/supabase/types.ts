@@ -77,6 +77,42 @@ export type Database = {
         }
         Relationships: []
       }
+      city_geocode: {
+        Row: {
+          cidade: string
+          created_at: string
+          fonte_geocode: string
+          id: string
+          lat: number | null
+          lon: number | null
+          nota: string | null
+          uf: string
+          updated_at: string
+        }
+        Insert: {
+          cidade: string
+          created_at?: string
+          fonte_geocode?: string
+          id?: string
+          lat?: number | null
+          lon?: number | null
+          nota?: string | null
+          uf: string
+          updated_at?: string
+        }
+        Update: {
+          cidade?: string
+          created_at?: string
+          fonte_geocode?: string
+          id?: string
+          lat?: number | null
+          lon?: number | null
+          nota?: string | null
+          uf?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       community_feedback: {
         Row: {
           context_persona: string | null
