@@ -104,15 +104,18 @@ export async function fetchStartupsRelacionadas(tema: string): Promise<{
   const or = palavras
     .flatMap((w) => [`nome.ilike.*${w}*`, `raw_metadata->>segmento.ilike.*${w}*`])
     .join(",");
-  const { data, error } = await safeSupabase
-    .from("research_locations")
+  // Alias de coluna JSON (segmento:raw_metadata->>segmento) não consta dos tipos
+  // gerados, então o builder é tratado como não-tipado e o resultado validado abaixo.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const builder: any = safeSupabase.from("research_locations");
+  const { data, error } = await builder
     .select("id,nome,uf,municipio,fonte_url,segmento:raw_metadata->>segmento")
     .eq("fonte", "abstartups_2025")
     .or(or)
     .order("nome", { ascending: true })
     .limit(120);
   if (error) throw error;
-  return { startups: (data || []) as unknown as StartupRelacionada[], palavras };
+  return { startups: (data || []) as StartupRelacionada[], palavras };
 }
 
 function csvCell(v: unknown): string {
