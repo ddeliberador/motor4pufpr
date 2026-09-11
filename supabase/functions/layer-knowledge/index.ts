@@ -6,22 +6,34 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-async function safeFetch(url: string, options?: RequestInit, timeoutMs = 20000): Promise<any> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, { signal: controller.signal, ...options });
-    if (!res.ok) {
-      console.warn(`safeFetch ${res.status} for ${url}`);
+async function safeFetch(url: string, options?: RequestInit, timeoutMs = 20000, retries = 2): Promise<any> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { signal: controller.signal, ...options });
+      if (!res.ok) {
+        console.warn(`safeFetch ${res.status} for ${url}`);
+        // 429/5xx: rate limit ou instabilidade — tenta novamente com backoff
+        if ((res.status === 429 || res.status >= 500) && attempt < retries) {
+          await new Promise((r) => setTimeout(r, 1200 * (attempt + 1)));
+          continue;
+        }
+        return null;
+      }
+      return await res.json();
+    } catch (e) {
+      console.warn(`safeFetch failed for ${url}:`, e instanceof Error ? e.message : e);
+      if (attempt < retries) {
+        await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+        continue;
+      }
       return null;
+    } finally {
+      clearTimeout(timer);
     }
-    return await res.json();
-  } catch (e) {
-    console.warn(`safeFetch failed for ${url}:`, e instanceof Error ? e.message : e);
-    return null;
-  } finally {
-    clearTimeout(timer);
   }
+  return null;
 }
 
 function normalizeText(s: string): string {
