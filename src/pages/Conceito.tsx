@@ -501,6 +501,33 @@ const Conceito = () => {
         </div>
       </section>
 
+      {/* DIÁRIO DE PESQUISA */}
+      <section className="py-20 border-t border-border">
+        <div className="max-w-4xl mx-auto px-6">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}>
+            <motion.div variants={fadeUp} custom={0} className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <MessageSquare className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold">Diário de Pesquisa</h2>
+                <p className="text-sm text-muted-foreground">Registro do processo de construção — julho/agosto 2026</p>
+              </div>
+            </motion.div>
+
+            <motion.p variants={fadeUp} custom={1} className="text-muted-foreground mb-2 leading-relaxed">
+              O Motor da Inovação foi construído em sessões iterativas de desenvolvimento, com cada decisão técnica registrada. 
+              Este diário documenta os marcos, problemas encontrados e soluções implementadas — parte integrante da metodologia de pesquisa sobre infraestruturas computacionais públicas.
+            </motion.p>
+            <motion.p variants={fadeUp} custom={2} className="text-xs text-muted-foreground mb-10">
+              Desenvolvido com Claude (Anthropic) como parceiro de programação · Projeto Lovable · Stack: React + TypeScript + Supabase Edge Functions + Deno
+            </motion.p>
+
+            <DiarioEntradas />
+          </motion.div>
+        </div>
+      </section>
+
       <Footer />
     </div>
   );
