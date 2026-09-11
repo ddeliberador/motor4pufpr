@@ -501,6 +501,8 @@ function EntryDialog({ onSubmit }: { onSubmit: (e: Omit<BuildLogEntry, "id">) =>
     fonte: "",
     dificuldade: "",
     resolucao: "",
+    eh_achado_pesquisa: false,
+    nota_desenvolvimento: "",
   };
   const [form, setForm] = useState(empty);
 
@@ -525,6 +527,24 @@ function EntryDialog({ onSubmit }: { onSubmit: (e: Omit<BuildLogEntry, "id">) =>
           <div><Label>Fonte</Label><Input value={form.fonte} onChange={(e) => setForm({ ...form, fonte: e.target.value })} /></div>
           <div><Label>Dificuldade</Label><Textarea value={form.dificuldade} onChange={(e) => setForm({ ...form, dificuldade: e.target.value })} /></div>
           <div><Label>Resolução</Label><Textarea value={form.resolucao} onChange={(e) => setForm({ ...form, resolucao: e.target.value })} /></div>
+          <div className="flex items-center gap-2 pt-1">
+            <Checkbox
+              id="achado"
+              checked={form.eh_achado_pesquisa}
+              onCheckedChange={(v) => setForm({ ...form, eh_achado_pesquisa: v === true })}
+            />
+            <Label htmlFor="achado" className="cursor-pointer">Marcar como achado de pesquisa</Label>
+          </div>
+          {form.eh_achado_pesquisa && (
+            <div>
+              <Label>Desenvolver na tese</Label>
+              <Textarea
+                value={form.nota_desenvolvimento}
+                placeholder="O que precisa ser desenvolvido/explorado na tese a partir desse achado."
+                onChange={(e) => setForm({ ...form, nota_desenvolvimento: e.target.value })}
+              />
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button
@@ -538,6 +558,8 @@ function EntryDialog({ onSubmit }: { onSubmit: (e: Omit<BuildLogEntry, "id">) =>
                 fonte: form.fonte || null,
                 dificuldade: form.dificuldade || null,
                 resolucao: form.resolucao || null,
+                eh_achado_pesquisa: form.eh_achado_pesquisa,
+                nota_desenvolvimento: form.eh_achado_pesquisa ? (form.nota_desenvolvimento || null) : null,
               });
               setOpen(false);
               setForm(empty);
@@ -550,3 +572,4 @@ function EntryDialog({ onSubmit }: { onSubmit: (e: Omit<BuildLogEntry, "id">) =>
     </Dialog>
   );
 }
+
