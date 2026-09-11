@@ -194,8 +194,22 @@ async function searchOpenAlex(query: string) {
     origin,
   });
 
-  const citedPapers = (papersData?.results || []).map((w: any) => mapWork(w, "cited"));
+  let citedPapers = (papersData?.results || []).map((w: any) => mapWork(w, "cited"));
   const recentPapers = (recentData?.results || []).map((w: any) => mapWork(w, "recent"));
+
+  // A lista dos mais citados pode falhar isoladamente (429 do OpenAlex) enquanto a dos
+  // recentes funciona — isso distorce a série histórica (só o ano corrente). Retenta.
+  if (citedPapers.length === 0 && recentPapers.length > 0) {
+    console.warn("OpenAlex: lista de mais citados vazia — retentando isoladamente");
+    const retry = await safeFetch(
+      `${base}${brFilter}&per_page=15&sort=cited_by_count:desc&select=${SELECT}`,
+      { headers },
+      20000,
+      3,
+    );
+    citedPapers = (retry?.results || []).map((w: any) => mapWork(w, "cited"));
+    if (retry?.meta?.count && !papersData) papersData = retry;
+  }
 
   // Lista combinada sem duplicatas (por id), mais recentes primeiro
   const seen = new Set<string>();
