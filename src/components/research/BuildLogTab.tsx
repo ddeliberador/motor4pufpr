@@ -316,6 +316,16 @@ export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
       eh_achado_pesquisa: true,
       nota_desenvolvimento: "A proposta de governança do Mapa Brasileiro de Inovação (comitê multissetorial permanente) contrasta com a autoria individual do Motor da Inovação (projeto de tese, MIT license, sem comitê) — desenvolver como reflexão sobre dois modelos distintos de coordenação de infraestrutura de dados públicos: centralizado/institucional vs. individual/aberto. Relevante para o capítulo teórico sobre arranjos de governança em sistemas de inovação.",
     },
+    {
+      data: "2026-01-27",
+      categoria: "decisao_arquitetura",
+      titulo: "MARCO — Início do desenvolvimento do Motor da Inovação",
+      descricao: 'Primeiro commit do repositório no Lovable ("Add header and footer components", commit 6061c5813b6dd650c383793b9a1674be425edba6, 27/01/2026 00:45 UTC). Marca o início efetivo do desenvolvimento do artefato de pesquisa, ainda sob o nome provisório "Motor 4P UFPR" antes de evoluir para "Motor da Inovação".',
+      fonte: "Histórico de commits do projeto Lovable (980435df-379c-4f49-964c-17fd72b669fc)",
+      dificuldade: null,
+      resolucao: "Marco de referência para contagem do tempo total de desenvolvimento do artefato, relevante para a seção metodológica da tese (Design Science Research).",
+      eh_achado_pesquisa: false,
+    },
   ];
 
   const load = useCallback(async () => {
