@@ -72,7 +72,16 @@ function ConcentradoresInovacao({ uf, ufNome }: { uf: string; ufNome: string }) 
 
   const georreferenciados = items.filter((i) => i.latitude !== null && i.longitude !== null).length;
   const ultimaColeta = items.map((i) => i.data_coleta).sort().reverse()[0];
-  const visiveis = showAll ? items : items.slice(0, LIMITE_CARDS);
+  const tipos = [...new Map(items.map((i) => [i.tipo.toLowerCase(), i.tipo])).values()]
+    .sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const contagemPorTipo = items.reduce<Record<string, number>>((acc, i) => {
+    acc[i.tipo.toLowerCase()] = (acc[i.tipo.toLowerCase()] || 0) + 1;
+    return acc;
+  }, {});
+  const filtrados = tipoFiltro === "todos"
+    ? items
+    : items.filter((i) => i.tipo.toLowerCase() === tipoFiltro);
+  const visiveis = showAll ? filtrados : filtrados.slice(0, LIMITE_CARDS);
   const fontesPresentes = [...new Set(items.map((i) => i.fonte))];
 
   const Card = ({ i }: { i: ResearchLocation }) => (
