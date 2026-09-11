@@ -32,7 +32,7 @@ export type BuildLogEntry = {
 
 
 const CATEGORIAS = [
-  { value: "fonte_de_dado", label: "Fonte de dado" },
+  { value: "fonte_de_dado", label: "NOVA FONTE ADICIONADA" },
   { value: "decisao_arquitetura", label: "Decisão de arquitetura" },
   { value: "obstaculo_institucional", label: "Obstáculo institucional" },
   { value: "correcao_bug", label: "Correção de bug" },
