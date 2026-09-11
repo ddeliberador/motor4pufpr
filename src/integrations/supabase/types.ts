@@ -42,8 +42,10 @@ export type Database = {
           data: string
           descricao: string | null
           dificuldade: string | null
+          eh_achado_pesquisa: boolean
           fonte: string | null
           id: string
+          nota_desenvolvimento: string | null
           resolucao: string | null
           titulo: string
         }
@@ -53,8 +55,10 @@ export type Database = {
           data: string
           descricao?: string | null
           dificuldade?: string | null
+          eh_achado_pesquisa?: boolean
           fonte?: string | null
           id?: string
+          nota_desenvolvimento?: string | null
           resolucao?: string | null
           titulo: string
         }
@@ -64,8 +68,10 @@ export type Database = {
           data?: string
           descricao?: string | null
           dificuldade?: string | null
+          eh_achado_pesquisa?: boolean
           fonte?: string | null
           id?: string
+          nota_desenvolvimento?: string | null
           resolucao?: string | null
           titulo?: string
         }
