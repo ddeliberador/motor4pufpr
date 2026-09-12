@@ -40,3 +40,4 @@ from .siop import SIOPConnector
 from .previdencia import PrevidenciaConnector
 from .b3 import B3Connector
 from .ans import ANSConnector
+from .dados_gov_br import DadosGovBrConnector
