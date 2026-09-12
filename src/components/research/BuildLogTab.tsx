@@ -12,7 +12,7 @@ import {
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
-import { Plus, Download, Trash2, Search } from "lucide-react";
+import { Plus, Download, Trash2, Search, Map } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -28,6 +28,7 @@ export type BuildLogEntry = {
   resolucao: string | null;
   eh_achado_pesquisa?: boolean;
   nota_desenvolvimento?: string | null;
+  eh_mapa_inovacao?: boolean;
 };
 
 
@@ -58,6 +59,9 @@ const normalizeText = (s: string) =>
   s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 const isMapaInovacao = (e: BuildLogEntry) => {
+  // Marcação oficial persistida na base (eh_mapa_inovacao) tem prioridade;
+  // a heurística textual serve como fallback para entradas antigas.
+  if (e.eh_mapa_inovacao) return true;
   const haystack = normalizeText(
     [e.titulo, e.descricao, e.fonte, e.dificuldade, e.resolucao, e.nota_desenvolvimento]
       .filter(Boolean)
@@ -470,7 +474,7 @@ export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(8.5);
         doc.text(
-          `${fmtDate(e.data)} · ${catLabel(e.categoria).toUpperCase()}${e.eh_achado_pesquisa ? " · ACHADO DE PESQUISA" : ""}`,
+          `${fmtDate(e.data)} · ${catLabel(e.categoria).toUpperCase()}${e.eh_achado_pesquisa ? " · ACHADO DE PESQUISA" : ""}${e.eh_mapa_inovacao ? " · MAPA DA INOVAÇÃO" : ""}`,
           M,
           y,
         );
@@ -554,6 +558,11 @@ export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
                           <Search className="w-3 h-3" /> Achado de Pesquisa
                         </Badge>
                       )}
+                      {e.eh_mapa_inovacao && (
+                        <Badge className="text-[10px] gap-1 bg-emerald-600 text-white border-transparent hover:bg-emerald-600">
+                          <Map className="w-3 h-3" /> Mapa da Inovação
+                        </Badge>
+                      )}
                     </div>
                     <div className="font-semibold mt-1.5">{e.titulo}</div>
                   </div>
@@ -611,6 +620,7 @@ function EntryDialog({ onSubmit }: { onSubmit: (e: Omit<BuildLogEntry, "id">) =>
     resolucao: "",
     eh_achado_pesquisa: false,
     nota_desenvolvimento: "",
+    eh_mapa_inovacao: false,
   };
   const [form, setForm] = useState(empty);
 
@@ -643,6 +653,14 @@ function EntryDialog({ onSubmit }: { onSubmit: (e: Omit<BuildLogEntry, "id">) =>
             />
             <Label htmlFor="achado" className="cursor-pointer">Marcar como achado de pesquisa</Label>
           </div>
+          <div className="flex items-center gap-2 pt-1">
+            <Checkbox
+              id="mapa"
+              checked={form.eh_mapa_inovacao}
+              onCheckedChange={(v) => setForm({ ...form, eh_mapa_inovacao: v === true })}
+            />
+            <Label htmlFor="mapa" className="cursor-pointer">Pertence à Pesquisa Colaborativa do Mapa da Inovação</Label>
+          </div>
           {form.eh_achado_pesquisa && (
             <div>
               <Label>Desenvolver na tese</Label>
@@ -668,6 +686,7 @@ function EntryDialog({ onSubmit }: { onSubmit: (e: Omit<BuildLogEntry, "id">) =>
                 resolucao: form.resolucao || null,
                 eh_achado_pesquisa: form.eh_achado_pesquisa,
                 nota_desenvolvimento: form.eh_achado_pesquisa ? (form.nota_desenvolvimento || null) : null,
+                eh_mapa_inovacao: form.eh_mapa_inovacao,
               });
               setOpen(false);
               setForm(empty);
