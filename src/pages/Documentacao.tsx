@@ -156,7 +156,7 @@ const RECURSOS: Recurso[] = [
 
   // --- Tecnologia, patentes e código ---
   { fonte: "EPO OPS", mantenedor: "European Patent Office (Europa)", nacionalidade: "Estrangeiro", uso: "Patentes internacionais, classificação IPC e soberania tecnológica brasileira." },
-  { fonte: "INPI", mantenedor: "Instituto Nacional da Propriedade Industrial", nacionalidade: "Nacional", uso: "Referência de depósitos e proteção de propriedade industrial no Brasil." },
+  { fonte: "INPI — Revista da Propriedade Industrial (RPI)", mantenedor: "Instituto Nacional da Propriedade Industrial", nacionalidade: "Nacional", uso: "Despachos oficiais de patentes e de programas de computador, lidos direto dos arquivos XML semanais da RPI, com contagem por classificação IPC (inclusive as classes de inteligência artificial)." },
   { fonte: "GitHub API", mantenedor: "GitHub / Microsoft (Estados Unidos)", nacionalidade: "Estrangeiro", uso: "Repositórios e atividade de desenvolvimento como sinal de maturidade tecnológica (TRL)." },
   { fonte: "Santos Dumont (LNCC)", mantenedor: "Laboratório Nacional de Computação Científica", nacionalidade: "Nacional", uso: "Referência nacional de infraestrutura de computação de alto desempenho." },
 
