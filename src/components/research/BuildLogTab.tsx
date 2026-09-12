@@ -369,7 +369,7 @@ export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
       ));
       toast.success(`${inserted?.length ?? 0} entradas carregadas no Diário de Construção.`);
     }
-  }, []);
+  }, [canEdit]);
 
   useEffect(() => { load(); }, [load]);
 
