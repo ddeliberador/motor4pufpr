@@ -158,6 +158,54 @@ export type Database = {
         }
         Relationships: []
       }
+      mapa_inovacao_fontes: {
+        Row: {
+          autenticacao: string | null
+          created_at: string
+          dados_chave: string | null
+          endpoint_url: string | null
+          fonte: string
+          id: string
+          ordem: number
+          pilar: string
+          proximo_passo: string | null
+          status_pesquisa: string | null
+          subpilar: string | null
+          tipo_acesso: string | null
+          updated_at: string
+        }
+        Insert: {
+          autenticacao?: string | null
+          created_at?: string
+          dados_chave?: string | null
+          endpoint_url?: string | null
+          fonte: string
+          id?: string
+          ordem?: number
+          pilar: string
+          proximo_passo?: string | null
+          status_pesquisa?: string | null
+          subpilar?: string | null
+          tipo_acesso?: string | null
+          updated_at?: string
+        }
+        Update: {
+          autenticacao?: string | null
+          created_at?: string
+          dados_chave?: string | null
+          endpoint_url?: string | null
+          fonte?: string
+          id?: string
+          ordem?: number
+          pilar?: string
+          proximo_passo?: string | null
+          status_pesquisa?: string | null
+          subpilar?: string | null
+          tipo_acesso?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       regional_institutes: {
         Row: {
           created_at: string
