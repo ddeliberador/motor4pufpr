@@ -235,6 +235,27 @@ const Documentacao = () => {
         </div>
       </section>
 
+      {/* PESQUISA COLABORATIVA DO MAPA DE INOVAÇÃO */}
+      <section className="py-12 border-t border-border">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="bg-card border border-border rounded-2xl p-8 md:p-10">
+            <h2 className="text-2xl font-bold mb-3">Pesquisa Colaborativa do Mapa de Inovação</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              O levantamento e o teste de cada fonte oficial fazem parte da Pesquisa Colaborativa do Mapa de Inovação,
+              desenvolvida no doutorado em Políticas Públicas da UFPR. Cada fonte é registrada com pilar, dados-chave,
+              forma de acesso, situação do teste e próximo passo — e todo teste real, obstáculo e solução fica registrado
+              no <Link to="/conceito" className="text-primary hover:underline">Diário de Pesquisa</Link>.
+            </p>
+            <p className="text-muted-foreground leading-relaxed">
+              Base territorial construída nessa pesquisa: quase 6 mil registros de instituições, laboratórios,
+              parques, unidades de pesquisa e startups brasileiras, reunidos a partir de fontes oficiais
+              (Mapa da Inovação/MCTI, EMBRAPII, FORMICT, SINAPAD, LISP, OTD/CGEE) e do Mapeamento Nacional de
+              Startups da ABStartups, com localização geográfica conferida cidade por cidade.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* OPEN SOURCE COMMITMENT */}
       <section className="py-12 border-t border-border">
         <div className="max-w-4xl mx-auto px-6">
