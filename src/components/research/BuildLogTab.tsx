@@ -12,7 +12,7 @@ import {
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
-import { Plus, Download, Trash2, Search } from "lucide-react";
+import { Plus, Download, Trash2, Search, Map } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -556,6 +556,11 @@ export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
                       {e.eh_achado_pesquisa && (
                         <Badge className="text-[10px] gap-1 bg-amber-400 text-amber-950 border-transparent hover:bg-amber-400">
                           <Search className="w-3 h-3" /> Achado de Pesquisa
+                        </Badge>
+                      )}
+                      {e.eh_mapa_inovacao && (
+                        <Badge className="text-[10px] gap-1 bg-emerald-600 text-white border-transparent hover:bg-emerald-600">
+                          <Map className="w-3 h-3" /> Mapa da Inovação
                         </Badge>
                       )}
                     </div>
