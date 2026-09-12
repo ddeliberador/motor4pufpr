@@ -54,10 +54,23 @@ const fmtDate = (d: string) => {
   return `${day}/${m}/${y}`;
 };
 
+const normalizeText = (s: string) =>
+  s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+const isMapaInovacao = (e: BuildLogEntry) => {
+  const haystack = normalizeText(
+    [e.titulo, e.descricao, e.fonte, e.dificuldade, e.resolucao, e.nota_desenvolvimento]
+      .filter(Boolean)
+      .join(" "),
+  );
+  return haystack.includes("mapa da inovacao") || haystack.includes("mapa brasileiro de inovacao");
+};
+
 export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
   const [entries, setEntries] = useState<BuildLogEntry[]>([]);
   const [filter, setFilter] = useState("all");
   const [onlyAchados, setOnlyAchados] = useState(false);
+  const [onlyMapa, setOnlyMapa] = useState(false);
 
   const [exporting, setExporting] = useState(false);
 
@@ -485,8 +498,10 @@ export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
   const sorted = entries;
   const filtered = sorted
     .filter((e) => filter === "all" || e.categoria === filter)
-    .filter((e) => !onlyAchados || e.eh_achado_pesquisa);
+    .filter((e) => !onlyAchados || e.eh_achado_pesquisa)
+    .filter((e) => !onlyMapa || isMapaInovacao(e));
   const totalAchados = sorted.filter((e) => e.eh_achado_pesquisa).length;
+  const totalMapa = sorted.filter(isMapaInovacao).length;
 
   return (
     <div>
@@ -502,6 +517,10 @@ export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <Checkbox checked={onlyAchados} onCheckedChange={(v) => setOnlyAchados(v === true)} />
             Mostrar só achados de pesquisa ({totalAchados})
+          </label>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <Checkbox checked={onlyMapa} onCheckedChange={(v) => setOnlyMapa(v === true)} />
+            Só Mapa da Inovação ({totalMapa})
           </label>
         </div>
         <div className="flex items-center gap-2">
