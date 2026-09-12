@@ -474,7 +474,7 @@ export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(8.5);
         doc.text(
-          `${fmtDate(e.data)} · ${catLabel(e.categoria).toUpperCase()}${e.eh_achado_pesquisa ? " · ACHADO DE PESQUISA" : ""}`,
+          `${fmtDate(e.data)} · ${catLabel(e.categoria).toUpperCase()}${e.eh_achado_pesquisa ? " · ACHADO DE PESQUISA" : ""}${e.eh_mapa_inovacao ? " · MAPA DA INOVAÇÃO" : ""}`,
           M,
           y,
         );
@@ -686,6 +686,7 @@ function EntryDialog({ onSubmit }: { onSubmit: (e: Omit<BuildLogEntry, "id">) =>
                 resolucao: form.resolucao || null,
                 eh_achado_pesquisa: form.eh_achado_pesquisa,
                 nota_desenvolvimento: form.eh_achado_pesquisa ? (form.nota_desenvolvimento || null) : null,
+                eh_mapa_inovacao: form.eh_mapa_inovacao,
               });
               setOpen(false);
               setForm(empty);
