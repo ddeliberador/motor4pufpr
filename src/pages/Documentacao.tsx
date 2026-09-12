@@ -174,6 +174,7 @@ const RECURSOS: Recurso[] = [
 
   // --- Saúde, justiça e eleições ---
   { fonte: "DATASUS", mantenedor: "Ministério da Saúde", nacionalidade: "Nacional", uso: "Indicadores de saúde e demanda pública por soluções tecnológicas." },
+  { fonte: "SISAB — Atenção Primária", mantenedor: "Ministério da Saúde", nacionalidade: "Nacional", uso: "Cobertura da atenção primária, saúde bucal e agentes comunitários por país, região, estado e município, mês a mês." },
   { fonte: "DataJud", mantenedor: "Conselho Nacional de Justiça (CNJ)", nacionalidade: "Nacional", uso: "Processos judiciais como sinal de litígio e risco regulatório." },
   { fonte: "TSE — Dados Abertos", mantenedor: "Tribunal Superior Eleitoral", nacionalidade: "Nacional", uso: "Dados eleitorais usados como contexto político-territorial." },
 
