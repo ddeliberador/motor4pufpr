@@ -46,17 +46,23 @@ class BrasilAPIConnector(BaseConnector):
                 "cnpj": data.get("cnpj", ""),
                 "razao_social": data.get("razao_social", ""),
                 "nome_fantasia": data.get("nome_fantasia", ""),
+                "situacao_cadastral": data.get("situacao_cadastral", ""),
                 "cnae_fiscal": data.get("cnae_fiscal", ""),
                 "cnae_fiscal_descricao": data.get("cnae_fiscal_descricao", ""),
                 "cnaes_secundarios": data.get("cnaes_secundarios", []),
-                "porte": data.get("porte", ""),
-                "natureza_juridica": data.get("natureza_juridica", ""),
-                "situacao_cadastral": data.get("situacao_cadastral", ""),
+                "logradouro": data.get("logradouro", ""),
+                "numero": data.get("numero", ""),
+                "bairro": data.get("bairro", ""),
+                "cep": data.get("cep", ""),
                 "uf": data.get("uf", ""),
                 "municipio": data.get("municipio", ""),
+                "ddd_telefone_1": data.get("ddd_telefone_1", ""),
                 "capital_social": data.get("capital_social", 0),
+                "porte": data.get("porte", ""),
+                "natureza_juridica": data.get("natureza_juridica", ""),
                 "qsa": data.get("qsa", []),
             }
+
         except Exception as e:
             logger.warning(f"BrasilAPI CNPJ error: {e}")
             return {}
