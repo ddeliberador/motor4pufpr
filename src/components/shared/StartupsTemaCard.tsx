@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Rocket, ExternalLink, MapPin, AlertTriangle } from "lucide-react";
-import {
 import { safeHttpUrl } from "@/lib/utils";
+import {
   fetchStartupsRelacionadas,
   FONTE_LABEL,
   type StartupRelacionada,
