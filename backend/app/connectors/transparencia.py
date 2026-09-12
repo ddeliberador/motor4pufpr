@@ -52,56 +52,128 @@ class TransparenciaConnector(BaseConnector):
 
         Validado contra a API real: /convenios exige um filtro restritivo —
         período de até 1 mês (dd/mm/aaaa), convenente, órgão, localidade ou
-        número de convênio. Sem isso a API responde 400. Default: último mês.
+        número de convênio. Sem isso a API responde 400. Quando o período
+        pedido for maior que ~1 mês, a busca é fatiada automaticamente em
+        janelas mensais e os resultados são concatenados.
         """
         logger.info(f"Transparência convênios search: {query}")
-        if not data_final:
-            hoje = datetime.utcnow().date()
-            data_final = hoje.strftime("%d/%m/%Y")
-            if not data_inicial:
-                data_inicial = (hoje - timedelta(days=30)).strftime("%d/%m/%Y")
-        params: Dict[str, str] = {"pagina": "1"}
-        if data_inicial and data_final:
-            params["dataInicial"] = data_inicial
-            params["dataFinal"] = data_final
-        if uf:
-            params["uf"] = uf
-        try:
-            data = await self.get(
-                f"{self.base_url}/convenios",
-                params=params,
-                headers=self._headers(),
-                use_cache=True,
+        hoje = datetime.utcnow().date()
+        fim = self._parse_date(data_final) or hoje
+        inicio = self._parse_date(data_inicial) or (fim - timedelta(days=30))
+        if inicio > fim:
+            inicio, fim = fim, inicio
+
+        results: List[Dict[str, Any]] = []
+        for janela_ini, janela_fim in self._month_windows(inicio, fim):
+            if len(results) >= limit:
+                break
+            results.extend(
+                await self._fetch_agreements_window(
+                    query=query,
+                    data_inicial=janela_ini.strftime("%d/%m/%Y"),
+                    data_final=janela_fim.strftime("%d/%m/%Y"),
+                    uf=uf,
+                    limit=limit - len(results),
+                )
             )
-            results = []
+        return results[:limit]
+
+    @staticmethod
+    def _parse_date(value: Optional[str]):
+        """Aceita dd/mm/aaaa ou aaaa-mm-dd"""
+        if not value:
+            return None
+        for fmt in ("%d/%m/%Y", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(value, fmt).date()
+            except ValueError:
+                continue
+        logger.warning(f"Transparência: data em formato não reconhecido: {value}")
+        return None
+
+    @staticmethod
+    def _month_windows(inicio, fim, dias: int = 30):
+        """Fatiamento do período em janelas de até `dias` (limite da API)"""
+        janelas = []
+        cursor = inicio
+        while cursor <= fim:
+            proximo = min(cursor + timedelta(days=dias - 1), fim)
+            janelas.append((cursor, proximo))
+            cursor = proximo + timedelta(days=1)
+        return janelas
+
+    async def _fetch_agreements_window(
+        self,
+        query: str,
+        data_inicial: str,
+        data_final: str,
+        uf: Optional[str],
+        limit: int,
+        max_paginas: int = 3,
+    ) -> List[Dict[str, Any]]:
+        """Consulta uma janela de até 1 mês, paginando até `max_paginas`"""
+        results: List[Dict[str, Any]] = []
+        termo = (query or "").lower().strip()
+        for pagina in range(1, max_paginas + 1):
+            if len(results) >= limit:
+                break
+            params: Dict[str, str] = {
+                "pagina": str(pagina),
+                "dataInicial": data_inicial,
+                "dataFinal": data_final,
+            }
+            if uf:
+                params["uf"] = uf
+            try:
+                data = await self.get(
+                    f"{self.base_url}/convenios",
+                    params=params,
+                    headers=self._headers(),
+                    use_cache=True,
+                )
+            except Exception as e:
+                logger.warning(f"Transparência API error ({data_inicial}-{data_final} p{pagina}): {e}")
+                break
+
             items = data if isinstance(data, list) else data.get("data", [])
+            if not items:
+                break
+
             # A API não faz busca livre por objeto: filtro client-side
             # (campos reais validados: dimConvenio.objeto, convenente.nome, orgao.nome)
-            termo = (query or "").lower().strip()
             if termo:
                 filtrados = [
                     i for i in items
                     if termo in str((i.get("dimConvenio") or {}).get("objeto", "")).lower()
                 ]
                 items = filtrados or items
-            for item in items[:limit]:
-                dim = item.get("dimConvenio") or {}
-                convenente = item.get("convenente") or {}
-                orgao = item.get("orgao") or {}
-                results.append({
-                    "number": dim.get("numero", ""),
-                    "object": dim.get("objeto", ""),
-                    "organ": orgao.get("nome", ""),
-                    "value": item.get("valorLiberado", 0) or item.get("valor", 0),
-                    "status": item.get("situacao", ""),
-                    "start_date": item.get("dataInicioVigencia", ""),
-                    "end_date": item.get("dataFinalVigencia", ""),
-                    "proponent": convenente.get("nome", ""),
-                })
-            return results
-        except Exception as e:
-            logger.warning(f"Transparência API error: {e}")
-            return []
+
+            for item in items:
+                if len(results) >= limit:
+                    break
+                results.append(self._parse_agreement(item))
+        return results
+
+    @staticmethod
+    def _parse_agreement(item: Dict[str, Any]) -> Dict[str, Any]:
+        """Parsing do wrapper dimConvenio/convenente/orgao da resposta real"""
+        dim = item.get("dimConvenio") or {}
+        convenente = item.get("convenente") or {}
+        orgao = item.get("orgao") or {}
+        municipio = convenente.get("municipio") or {}
+        return {
+            "number": dim.get("numero", "") or item.get("numero", ""),
+            "object": dim.get("objeto", ""),
+            "organ": orgao.get("nome", ""),
+            "value": item.get("valorLiberado", 0) or item.get("valor", 0),
+            "status": item.get("situacao", "") or dim.get("situacao", ""),
+            "start_date": item.get("dataInicioVigencia", ""),
+            "end_date": item.get("dataFinalVigencia", ""),
+            "proponent": convenente.get("nome", ""),
+            "uf": (municipio.get("uf") or {}).get("sigla", "") if isinstance(municipio.get("uf"), dict) else "",
+            "municipio": municipio.get("nomeIBGE", "") if isinstance(municipio, dict) else "",
+        }
+
 
     async def search_sanctions(self, query: str, limit: int = 20) -> List[Dict[str, Any]]:
         """
