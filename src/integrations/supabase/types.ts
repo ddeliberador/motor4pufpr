@@ -37,6 +37,7 @@ export type Database = {
       }
       build_log: {
         Row: {
+          anexo_texto: string | null
           categoria: string
           created_at: string
           data: string
@@ -50,6 +51,7 @@ export type Database = {
           titulo: string
         }
         Insert: {
+          anexo_texto?: string | null
           categoria: string
           created_at?: string
           data: string
@@ -63,6 +65,7 @@ export type Database = {
           titulo: string
         }
         Update: {
+          anexo_texto?: string | null
           categoria?: string
           created_at?: string
           data?: string
