@@ -354,8 +354,8 @@ export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
     const loaded = (data ?? []) as BuildLogEntry[];
     setEntries(loaded);
 
-    // Seed automático se o diário estiver vazio
-    if (loaded.length === 0) {
+    // Seed automático se o diário estiver vazio (apenas administradores podem escrever)
+    if (loaded.length === 0 && canEdit) {
       const { data: inserted, error: seedErr } = await supabase
         .from("build_log")
         .insert(SEED_ENTRIES)
