@@ -28,6 +28,7 @@ export type BuildLogEntry = {
   resolucao: string | null;
   eh_achado_pesquisa?: boolean;
   nota_desenvolvimento?: string | null;
+  eh_mapa_inovacao?: boolean;
 };
 
 
@@ -58,6 +59,9 @@ const normalizeText = (s: string) =>
   s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 const isMapaInovacao = (e: BuildLogEntry) => {
+  // Marcação oficial persistida na base (eh_mapa_inovacao) tem prioridade;
+  // a heurística textual serve como fallback para entradas antigas.
+  if (e.eh_mapa_inovacao) return true;
   const haystack = normalizeText(
     [e.titulo, e.descricao, e.fonte, e.dificuldade, e.resolucao, e.nota_desenvolvimento]
       .filter(Boolean)
