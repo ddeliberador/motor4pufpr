@@ -371,7 +371,7 @@ const Conceito = () => {
               Desenvolvido com Claude (Anthropic) como parceiro de programação · Projeto Lovable · Stack: React + TypeScript + Supabase Edge Functions + Deno
             </motion.p>
 
-            <DiarioEntradas />
+            <DiarioPesquisaLive />
           </motion.div>
         </div>
       </section>
