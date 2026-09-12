@@ -103,6 +103,69 @@ class BaseConnector(ABC):
         """Requisição POST"""
         return await self._request("POST", url, json_data=json_data, **kwargs)
 
+    async def _raw_request(
+        self,
+        url: str,
+        params: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
+        timeout: Optional[float] = None,
+    ) -> httpx.Response:
+        """GET cru (sem parse JSON) — para HTML e downloads binários (ZIP/PDF)."""
+        async with self._semaphore:
+            logger.info(f"Request(raw): GET {url}")
+            if self.client:
+                response = await self.client.get(
+                    url, params=params, headers=headers, timeout=timeout
+                )
+            else:
+                async with httpx.AsyncClient(
+                    timeout=httpx.Timeout(timeout or settings.REQUEST_TIMEOUT),
+                    follow_redirects=True,
+                ) as client:
+                    response = await client.get(url, params=params, headers=headers)
+            response.raise_for_status()
+            return response
+
+    async def get_text(
+        self,
+        url: str,
+        params: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
+        use_cache: bool = True,
+        timeout: Optional[float] = None,
+    ) -> str:
+        """GET que devolve texto (HTML, CSV, TXT)."""
+        cache_key = self._get_cache_key("GET:text", url, params)
+        if use_cache:
+            cached = self._get_cached(cache_key)
+            if cached is not None:
+                return cached
+        response = await self._raw_request(url, params=params, headers=headers, timeout=timeout)
+        text = response.text
+        if use_cache:
+            self._set_cached(cache_key, text)
+        return text
+
+    async def get_bytes(
+        self,
+        url: str,
+        params: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
+        use_cache: bool = False,
+        timeout: Optional[float] = 300.0,
+    ) -> bytes:
+        """GET binário (ZIP, PDF, XLSX). Cache desligado por padrão: payloads grandes."""
+        cache_key = self._get_cache_key("GET:bytes", url, params)
+        if use_cache:
+            cached = self._get_cached(cache_key)
+            if cached is not None:
+                return cached
+        response = await self._raw_request(url, params=params, headers=headers, timeout=timeout)
+        content = response.content
+        if use_cache:
+            self._set_cached(cache_key, content)
+        return content
+
     @abstractmethod
     async def search(self, query: str, **kwargs) -> List[Any]:
         """Método de busca a ser implementado por cada conector"""
