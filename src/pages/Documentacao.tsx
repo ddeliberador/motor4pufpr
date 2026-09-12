@@ -130,7 +130,8 @@ const RECURSOS: Recurso[] = [
   { fonte: "Bolsas e programas internacionais", mantenedor: "DAAD, Chevening, Fulbright, Erasmus+, UNESCO e outros", nacionalidade: "Estrangeiro", uso: "Oportunidades de formação e cooperação no exterior na camada de inserção internacional.", nota: "conjunto de programas estrangeiros" },
 
   // --- Compras públicas, orçamento e controle ---
-  { fonte: "PNCP — Portal Nacional de Contratações Públicas", mantenedor: "Governo Federal do Brasil", nacionalidade: "Nacional", uso: "Contratos e editais públicos ligados ao tema, filtrados por estado." },
+  { fonte: "PNCP — Portal Nacional de Contratações Públicas", mantenedor: "Governo Federal do Brasil", nacionalidade: "Nacional", uso: "Contratos e editais públicos ligados ao tema, consultados por período oficial de publicação, modalidade, estado e órgão, com filtragem do assunto feita depois no próprio sistema." },
+  { fonte: "Transferegov", mantenedor: "Ministério da Gestão e da Inovação em Serviços Públicos", nacionalidade: "Nacional", uso: "Planos de trabalho, convênios e transferências voluntárias da União para estados e municípios.", nota: "acesso público sujeito a bloqueio automático de tráfego" },
   { fonte: "Portal da Transparência", mantenedor: "Controladoria-Geral da União (CGU)", nacionalidade: "Nacional", uso: "Emendas parlamentares, contratos federais, convênios e execução orçamentária." },
   { fonte: "SICONFI", mantenedor: "Secretaria do Tesouro Nacional", nacionalidade: "Nacional", uso: "Receitas e despesas municipais e estaduais na Visão Regional." },
   { fonte: "SIOP", mantenedor: "Ministério do Planejamento e Orçamento", nacionalidade: "Nacional", uso: "Orçamento federal por programa e ação." },
