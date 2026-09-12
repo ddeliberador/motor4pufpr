@@ -54,10 +54,23 @@ const fmtDate = (d: string) => {
   return `${day}/${m}/${y}`;
 };
 
+const normalizeText = (s: string) =>
+  s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+const isMapaInovacao = (e: BuildLogEntry) => {
+  const haystack = normalizeText(
+    [e.titulo, e.descricao, e.fonte, e.dificuldade, e.resolucao, e.nota_desenvolvimento]
+      .filter(Boolean)
+      .join(" "),
+  );
+  return haystack.includes("mapa da inovacao") || haystack.includes("mapa brasileiro de inovacao");
+};
+
 export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
   const [entries, setEntries] = useState<BuildLogEntry[]>([]);
   const [filter, setFilter] = useState("all");
   const [onlyAchados, setOnlyAchados] = useState(false);
+  const [onlyMapa, setOnlyMapa] = useState(false);
 
   const [exporting, setExporting] = useState(false);
 
