@@ -3,12 +3,12 @@ import { motion } from "framer-motion";
 import { 
   Zap, BookOpen, Microscope, Factory, Building2, Globe, 
   ArrowRight, Database, BarChart3, Network, Target,
-  AlertTriangle, TrendingUp, Layers, GitBranch,
-  Calendar, ChevronDown, ChevronUp, Code2, Wrench, Brain, MessageSquare
+  AlertTriangle, TrendingUp, Layers, GitBranch, MessageSquare
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import UfprLogo from "@/components/UfprLogo";
+import DiarioPesquisaLive from "@/components/DiarioPesquisaLive";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
