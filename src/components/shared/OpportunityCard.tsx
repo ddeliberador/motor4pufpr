@@ -1,4 +1,5 @@
 import { Zap, ExternalLink } from "lucide-react";
+import { safeHttpUrl } from "@/lib/utils";
 
 interface Opportunity {
   emoji: string;
@@ -95,7 +96,7 @@ export default function OpportunityCard({ oportunidades, persona, query, cnaeLab
                 </div>
               </div>
               {op.url && (
-                <a href={op.url} target="_blank" rel="noopener noreferrer"
+                <a href={safeHttpUrl(op.url)} target="_blank" rel="noopener noreferrer"
                    className="flex-shrink-0 flex items-center gap-1 text-xs text-primary hover:underline mt-1">
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>

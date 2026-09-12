@@ -12,6 +12,7 @@ interface Props {
 
 import { fetchResearchLocations, FONTE_LABEL, type ResearchLocation } from "@/lib/researchLocations";
 import StartupsTemaCard from "@/components/shared/StartupsTemaCard";
+import { safeHttpUrl } from "@/lib/utils";
 
 const TIPO_STYLE: Record<string, string> = {
   "hub de inovação": "bg-blue-500/10 text-blue-600 dark:text-blue-400",
@@ -95,7 +96,7 @@ function ConcentradoresInovacao({ uf, ufNome }: { uf: string; ufNome: string }) 
           </span>
         </div>
         {i.fonte_url && (
-          <a href={i.fonte_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline inline-flex items-center gap-0.5 flex-shrink-0">
+          <a href={safeHttpUrl(i.fonte_url)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline inline-flex items-center gap-0.5 flex-shrink-0">
             Acessar <ExternalLink className="w-3 h-3" />
           </a>
         )}
@@ -187,7 +188,7 @@ function SourceLine({ source, extra }: { source?: { name: string; url: string };
   return (
     <p className="text-[11px] text-muted-foreground mt-3 flex flex-wrap items-center gap-1">
       📌 Fonte:{" "}
-      <a href={source.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground inline-flex items-center gap-0.5">
+      <a href={safeHttpUrl(source.url)} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground inline-flex items-center gap-0.5">
         {source.name}<ExternalLink className="w-3 h-3" />
       </a>
       {extra && <span>· {extra}</span>}
@@ -202,7 +203,7 @@ function Note({ reason, source }: { reason?: string; source?: { name: string; ur
       <div>
         <p>{reason || "Dado não divulgado pela fonte oficial."}</p>
         {source && (
-          <a href={source.url} target="_blank" rel="noopener noreferrer" className="text-xs underline hover:text-foreground inline-flex items-center gap-0.5 mt-1">
+          <a href={safeHttpUrl(source.url)} target="_blank" rel="noopener noreferrer" className="text-xs underline hover:text-foreground inline-flex items-center gap-0.5 mt-1">
             Consultar {source.name} diretamente <ExternalLink className="w-3 h-3" />
           </a>
         )}

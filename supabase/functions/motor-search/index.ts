@@ -650,7 +650,9 @@ async function fetchEspecializacaoCientifica(
       crescimento_pct: r.crescimento_pct === null ? null : Number(r.crescimento_pct),
       casamento: melhor.via === "area" ? "área específica" : "grande área",
       fonte: r.fonte,
-      fonte_url: r.fonte_url,
+      fonte_url: /^https?:\/\/\S+$/i.test(String(r.fonte_url ?? "").trim())
+        ? String(r.fonte_url).trim()
+        : "https://octi.cgee.org.br/panoramas/brasil/outros/painel-wos",
       periodo: r.periodo,
       fonte_label: "CGEE/MCTI — Painel WoS Brasil (OCTI)",
     };

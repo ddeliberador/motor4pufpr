@@ -79,6 +79,19 @@ export default function GestaoPesquisa() {
   const [themes, setThemes] = useState<Theme[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
   const [areaFilter, setAreaFilter] = useState<string>("all");
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    if (!user) { setIsAdmin(false); return; }
+    (async () => {
+      const { data, error } = await supabase.rpc("is_admin");
+      if (!active) return;
+      if (error) { console.warn("is_admin:", error.message); setIsAdmin(false); return; }
+      setIsAdmin(data === true);
+    })();
+    return () => { active = false; };
+  }, [user]);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth", { replace: true });
@@ -337,7 +350,7 @@ export default function GestaoPesquisa() {
 
           {/* BUILD LOG */}
           <TabsContent value="buildlog" className="mt-4">
-            <BuildLogTab canEdit={!!user} />
+            <BuildLogTab canEdit={isAdmin} />
           </TabsContent>
 
           {/* FEEDBACK */}

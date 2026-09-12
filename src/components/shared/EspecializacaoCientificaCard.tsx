@@ -1,5 +1,6 @@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Info } from "lucide-react";
+import { safeHttpUrl } from "@/lib/utils";
 
 export interface EspecializacaoCientificaBrasil {
   area_pt: string;
@@ -119,7 +120,7 @@ export default function EspecializacaoCientificaCard({
 
         <div className="pt-2 border-t border-border">
           <a
-            href={dados.fonte_url || "https://octi.cgee.org.br/panoramas/brasil/outros/painel-wos"}
+            href={safeHttpUrl(dados.fonte_url, "https://octi.cgee.org.br/panoramas/brasil/outros/painel-wos")}
             target="_blank"
             rel="noreferrer"
             className="text-primary font-medium hover:underline"

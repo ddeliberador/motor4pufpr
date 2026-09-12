@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Rocket, ExternalLink, MapPin, AlertTriangle } from "lucide-react";
+import { safeHttpUrl } from "@/lib/utils";
 import {
   fetchStartupsRelacionadas,
   FONTE_LABEL,
@@ -123,7 +124,7 @@ export default function StartupsTemaCard({ tema, uf, ufNome }: Props) {
                 )}
               </div>
               {s.fonte_url && (
-                <a href={s.fonte_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline inline-flex items-center gap-0.5 flex-shrink-0">
+                <a href={safeHttpUrl(s.fonte_url)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline inline-flex items-center gap-0.5 flex-shrink-0">
                   Site <ExternalLink className="w-3 h-3" />
                 </a>
               )}
