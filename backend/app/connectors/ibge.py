@@ -26,15 +26,30 @@ class IBGEConnector(BaseConnector):
 
     SIDRA_BASE = "https://servicodados.ibge.gov.br/api/v3"
 
-    # Siglas usadas no Brasil que não aparecem no campo "nome" da API v3
+    # Siglas usadas no Brasil que não aparecem no campo "nome" da API v3.
+    # Nomes confirmados empiricamente contra /api/v3/agregados (2026-09-12):
+    #   IT Pesquisa de Inovação
+    #   PD Pesquisa Nacional por Amostra de Domicílios  (ENCERRADA em 2016)
+    #   B5/BB/DD Pesquisa Nacional por Amostra de Domicílios Contínua (anual/mensal/trimestral)
+    #   CD Censo Demográfico
+    #   SU/ST Contas Nacionais Anuais / Trimestrais (PIB)
+    #   IO Produto Interno Bruto dos Municípios
     SIDRA_ALIASES = {
         "pintec": "pesquisa de inovação",
-        "pnad": "pesquisa nacional por amostra de domicílios",
+        # PNAD antiga foi encerrada em 2016: siglas apontam para a Contínua
+        "pnad": "pesquisa nacional por amostra de domicílios contínua",
+        "pnad continua": "pesquisa nacional por amostra de domicílios contínua",
+        "pnad contínua": "pesquisa nacional por amostra de domicílios contínua",
+        "censo": "censo demográfico",
+        "pib": "contas nacionais",
+        "pib municipios": "produto interno bruto dos municípios",
+        "pib municípios": "produto interno bruto dos municípios",
         "pia": "pesquisa industrial anual",
         "pof": "pesquisa de orçamentos familiares",
         "paic": "pesquisa anual da indústria da construção",
         "pas": "pesquisa anual de serviços",
     }
+
 
     async def sidra_buscar_agregados(self, pesquisa: Optional[str] = None) -> List[Dict[str, Any]]:
         """Lista agregados (tabelas) do SIDRA, opcionalmente filtrando pelo nome
