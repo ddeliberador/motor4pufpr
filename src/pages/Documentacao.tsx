@@ -244,8 +244,7 @@ const Documentacao = () => {
             <p className="text-muted-foreground leading-relaxed mb-4">
               O levantamento e o teste de cada fonte oficial fazem parte da Pesquisa Colaborativa do Mapa de Inovação,
               desenvolvida no doutorado em Políticas Públicas da UFPR. Cada fonte é registrada com pilar, dados-chave,
-              forma de acesso, situação do teste e próximo passo — e todo teste real, obstáculo e solução fica registrado
-              no <Link to="/conceito" className="text-primary hover:underline">Diário de Pesquisa</Link>.
+              forma de acesso, situação do teste e próximo passo — e esta documentação é atualizada a cada nova base integrada.
             </p>
             <p className="text-muted-foreground leading-relaxed">
               Base territorial construída nessa pesquisa: quase 6 mil registros de instituições, laboratórios,
