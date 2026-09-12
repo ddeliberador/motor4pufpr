@@ -620,6 +620,7 @@ function EntryDialog({ onSubmit }: { onSubmit: (e: Omit<BuildLogEntry, "id">) =>
     resolucao: "",
     eh_achado_pesquisa: false,
     nota_desenvolvimento: "",
+    eh_mapa_inovacao: false,
   };
   const [form, setForm] = useState(empty);
 
@@ -651,6 +652,14 @@ function EntryDialog({ onSubmit }: { onSubmit: (e: Omit<BuildLogEntry, "id">) =>
               onCheckedChange={(v) => setForm({ ...form, eh_achado_pesquisa: v === true })}
             />
             <Label htmlFor="achado" className="cursor-pointer">Marcar como achado de pesquisa</Label>
+          </div>
+          <div className="flex items-center gap-2 pt-1">
+            <Checkbox
+              id="mapa"
+              checked={form.eh_mapa_inovacao}
+              onCheckedChange={(v) => setForm({ ...form, eh_mapa_inovacao: v === true })}
+            />
+            <Label htmlFor="mapa" className="cursor-pointer">Pertence à Pesquisa Colaborativa do Mapa da Inovação</Label>
           </div>
           {form.eh_achado_pesquisa && (
             <div>
