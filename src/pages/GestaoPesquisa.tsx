@@ -350,7 +350,7 @@ export default function GestaoPesquisa() {
 
           {/* BUILD LOG */}
           <TabsContent value="buildlog" className="mt-4">
-            <BuildLogTab canEdit={!!user} />
+            <BuildLogTab canEdit={isAdmin} />
           </TabsContent>
 
           {/* FEEDBACK */}
