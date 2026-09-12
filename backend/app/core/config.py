@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     # https://portaldatransparencia.gov.br/api-de-dados (conta gov.br com 2FA)
     TRANSPARENCIA_API_KEY: Optional[str] = None
 
+    # Portal Brasileiro de Dados Abertos (CKAN) — chave gratuita gov.br
+    # exigida pelo endpoint /api/3/action (responde 401 Bearer sem ela)
+    DADOS_GOV_API_KEY: Optional[str] = None
+
+
     # Database (para futuro)
     DATABASE_URL: Optional[str] = None
     REDIS_URL: str = "redis://localhost:6379"
