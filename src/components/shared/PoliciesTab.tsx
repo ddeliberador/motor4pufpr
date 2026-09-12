@@ -1,5 +1,6 @@
 import { ExternalLink, FileText, Building2, ChevronDown, ChevronUp, Rocket, TrendingUp, Link as LinkIcon, ScrollText } from "lucide-react";
 import { useState } from "react";
+import { safeHttpUrl } from "@/lib/utils";
 
 interface PoliciesTabProps {
   policies: any;
@@ -59,7 +60,7 @@ function PoliticaCard({ politica, persona, nivel }: { politica: any; persona: st
           )}
         </div>
         <div className="flex-shrink-0 flex items-center gap-2 mt-0.5">
-          <a href={politica.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+          <a href={safeHttpUrl(politica.url)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
              className="text-[10px] text-primary hover:underline">
             <ExternalLink className="w-3 h-3" />
           </a>
@@ -78,7 +79,7 @@ function PoliticaCard({ politica, persona, nivel }: { politica: any; persona: st
             <div className="space-y-1.5 pt-1">
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Links diretos</p>
               {politica.links_diretos.map((l: any, i: number) => (
-                <a key={i} href={l.url} target="_blank" rel="noopener noreferrer"
+                <a key={i} href={safeHttpUrl(l.url)} target="_blank" rel="noopener noreferrer"
                    className="flex items-center gap-2 text-[10px] text-primary hover:underline">
                   <LinkIcon className="w-3 h-3 flex-shrink-0" />
                   {l.label}
@@ -111,7 +112,7 @@ function EcossistemaCard({ item, persona }: { item: any; persona: string }) {
           {relevancia && <p className="text-[10px] text-primary mt-1.5 font-medium">→ {relevancia}</p>}
         </div>
         <div className="flex-shrink-0 flex items-center gap-2 mt-0.5">
-          <a href={item.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+          <a href={safeHttpUrl(item.url)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
              className="text-primary hover:underline">
             <ExternalLink className="w-3 h-3" />
           </a>
@@ -125,7 +126,7 @@ function EcossistemaCard({ item, persona }: { item: any; persona: string }) {
           {item.links_diretos?.length > 0 && (
             <div className="space-y-1.5 pt-1">
               {item.links_diretos.map((l: any, i: number) => (
-                <a key={i} href={l.url} target="_blank" rel="noopener noreferrer"
+                <a key={i} href={safeHttpUrl(l.url)} target="_blank" rel="noopener noreferrer"
                    className="flex items-center gap-2 text-[10px] text-primary hover:underline">
                   <LinkIcon className="w-3 h-3 flex-shrink-0" />
                   {l.label}
@@ -205,7 +206,7 @@ export default function PoliciesTab({ policies, persona, query }: PoliciesTabPro
               </div>
               <div className="space-y-2">
                 {gazettes_mencoes.slice(0, 4).map((g: any, i: number) => (
-                  <a key={i} href={g.url || "#"} target="_blank" rel="noopener noreferrer"
+                  <a key={i} href={safeHttpUrl(g.url)} target="_blank" rel="noopener noreferrer"
                      className="flex items-start gap-3 p-3 border border-border/50 rounded-lg hover:border-border transition-colors">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
@@ -231,7 +232,7 @@ export default function PoliciesTab({ policies, persona, query }: PoliciesTabPro
               </h3>
               <div className="flex items-center gap-3">
                 {(tramitacao_legislativa?.fontes || []).map((f: any, i: number) => (
-                  <a key={i} href={f.url} target="_blank" rel="noopener noreferrer"
+                  <a key={i} href={safeHttpUrl(f.url)} target="_blank" rel="noopener noreferrer"
                      className="text-[10px] text-primary hover:underline flex items-center gap-1">
                     <ExternalLink className="w-3 h-3" /> {i === 0 ? "Câmara" : "Senado"} ({f.total})
                   </a>
@@ -245,7 +246,7 @@ export default function PoliciesTab({ policies, persona, query }: PoliciesTabPro
             ) : (
               <div className="space-y-2">
                 {tramitacao_legislativa.proposicoes.slice(0, 5).map((p: any, i: number) => (
-                  <a key={`${p.casa}-${p.id || i}`} href={p.url || "#"} target="_blank" rel="noopener noreferrer"
+                  <a key={`${p.casa}-${p.id || i}`} href={safeHttpUrl(p.url)} target="_blank" rel="noopener noreferrer"
                      className="flex items-start gap-3 p-3 border border-border/50 rounded-lg hover:border-border transition-colors">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -280,7 +281,7 @@ export default function PoliciesTab({ policies, persona, query }: PoliciesTabPro
               </div>
               <div className="space-y-2">
                 {editais_inovacao.slice(0, 5).map((e: any, i: number) => (
-                  <a key={i} href={e.url || "#"} target="_blank" rel="noopener noreferrer"
+                  <a key={i} href={safeHttpUrl(e.url)} target="_blank" rel="noopener noreferrer"
                      className="flex items-start gap-3 p-3 border border-border/50 rounded-lg hover:border-border transition-colors">
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-foreground line-clamp-2">{e.objeto || "Sem descrição"}</p>
@@ -382,7 +383,7 @@ export default function PoliciesTab({ policies, persona, query }: PoliciesTabPro
               <h3 className="text-sm font-semibold text-foreground mb-3">Onde buscar startups e investidores</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {ecossistema.links_busca.map((l: any, i: number) => (
-                  <a key={i} href={l.url} target="_blank" rel="noopener noreferrer"
+                  <a key={i} href={safeHttpUrl(l.url)} target="_blank" rel="noopener noreferrer"
                      className="flex items-center gap-2 px-3 py-2.5 border border-border/50 rounded-lg hover:border-primary/30 hover:bg-primary/5 transition-colors">
                     <ExternalLink className="w-3 h-3 text-primary flex-shrink-0" />
                     <span className="text-xs text-foreground">{l.label}</span>
