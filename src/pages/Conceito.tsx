@@ -359,7 +359,7 @@ const Conceito = () => {
               </div>
               <div>
                 <h2 className="text-3xl font-bold">Diário de Pesquisa</h2>
-                <p className="text-sm text-muted-foreground">Registro do processo de construção — julho/agosto 2026</p>
+                <p className="text-sm text-muted-foreground">Registro ao vivo — atualizado a cada avanço da pesquisa</p>
               </div>
             </motion.div>
 
