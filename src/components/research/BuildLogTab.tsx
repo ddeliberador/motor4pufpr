@@ -342,7 +342,25 @@ export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
       nota_desenvolvimento:
         "Padrão recorrente nas bases federais: documentação e Swagger publicados não garantem acesso programático. Três formas distintas de fricção observadas no mesmo ciclo — parâmetros obrigatórios não documentados de forma acessível (PNCP), exigência de filtro restritivo e credencial gov.br com 2FA (Transparência) e bloqueio antibot em API declarada aberta (Transferegov). Desenvolver na tese como evidência de que \"dado aberto publicado\" ≠ \"dado aberto acessível\", e como justificativa metodológica para validação empírica de cada conector.",
     },
+    {
+      data: "2026-09-12",
+      categoria: "fonte_de_dado",
+      titulo:
+        "Segundo ciclo BBSIA — SIDRA por sigla, paginação do Portal da Transparência, BrasilAPI e descoberta via dados.gov.br",
+      descricao:
+        'Continuação da integração das bases do catálogo BBSIA, com quatro ajustes validados por chamada real: (1) SIDRA — o campo "nome" da API v3 de agregados só traz o nome extenso da pesquisa, então o dicionário de siglas foi revisado contra o endpoint real; confirmou-se que a PNAD antiga (agregado PD) foi encerrada em 2016 e que a pesquisa ativa é a "Pesquisa Nacional por Amostra de Domicílios Contínua" (anual B5, mensal BB, trimestral DD), para onde as siglas PNAD e PNAD Contínua passaram a apontar; CENSO e PIB também foram confirmados no endpoint antes de fixados. (2) Portal da Transparência — a consulta de convênios passou a fatiar automaticamente qualquer período maior que ~30 dias em janelas mensais (limite da API) e a paginar dentro de cada janela, com parsing explícito do wrapper dimConvenio/convenente/orgao. (3) BrasilAPI — verificou-se que o Motor já usava BrasilAPI/CNPJ na camada Deno (market-analysis, competitor-search, locations-ingest) e no backend Python; em vez de duplicar, o conector Python foi completado com o schema oficial (endereço, ddd_telefone_1, porte, situação cadastral, QSA). (4) dados.gov.br — criado conector CKAN como camada de descoberta de datasets para as fontes "a validar" do catálogo (Finep, ABVCAP, FAPs), sem integração fonte a fonte.',
+      fonte:
+        "Chamadas reais em 12/09/2026: IBGE SIDRA v3 (servicodados.ibge.gov.br/api/v3/agregados), Portal da Transparência (api.portaldatransparencia.gov.br/api-de-dados/convenios, chave real), BrasilAPI (brasilapi.com.br/api/cnpj/v1), dados.gov.br (dados.gov.br/api/3/action/package_search e /dados/api/3/action/package_search)",
+      dificuldade:
+        "dados.gov.br: os dois prefixos CKAN testados responderam HTTP 401 com cabeçalho www-authenticate: Bearer e corpo vazio — o portal federal exige chave gratuita gov.br, ao contrário dos portais CKAN estaduais que respondem sem autenticação. Sem a chave o conector falha explicitamente, sem dado estimado.",
+      resolucao:
+        'Resultados observados: SIDRA — "PINTEC" retornou Pesquisa de Inovação (58 agregados); "PNAD" e "PNAD Contínua" retornaram as três PNAD Contínuas (1075/25/66 agregados), sem cair na pesquisa encerrada; "Censo" retornou Censo Demográfico e Agropecuário; "PIB" retornou Contas Nacionais Anuais e Trimestrais. Portal da Transparência — janela de 01/01/2026 a 31/03/2026 fatiada em três janelas mensais retornou 10 convênios reais com órgão, valor liberado, vigência e convenente. BrasilAPI — CNPJ 75.095.679/0001-49 retornou UNIVERSIDADE FEDERAL DO PARANA, Curitiba/PR, CNAE "Educação superior - graduação". dados.gov.br — 401 nos dois prefixos, integração pendente de chave.',
+      eh_achado_pesquisa: true,
+      nota_desenvolvimento:
+        "A PNAD ilustra um risco metodológico específico de bases estatísticas de longa duração: a sigla continua em uso corrente enquanto a pesquisa por trás dela foi substituída (encerrada em 2016 e sucedida pela Contínua). Um mapeamento sigla→pesquisa feito por memória ou por LLM tende a apontar para o instrumento morto, produzindo séries que parecem válidas mas param no passado. Desenvolver na tese como argumento de que a tradução ontológica precisa ser verificada contra o catálogo vivo da fonte, e não contra convenção de nomenclatura — e como contraste com o dados.gov.br, em que a fricção é de acesso (credencial) e não de identidade do dado.",
+    },
   ];
+
 
   const load = useCallback(async () => {
     const { data, error } = await supabase
