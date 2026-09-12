@@ -44,6 +44,7 @@ export type Database = {
           descricao: string | null
           dificuldade: string | null
           eh_achado_pesquisa: boolean
+          eh_mapa_inovacao: boolean
           fonte: string | null
           id: string
           nota_desenvolvimento: string | null
@@ -58,6 +59,7 @@ export type Database = {
           descricao?: string | null
           dificuldade?: string | null
           eh_achado_pesquisa?: boolean
+          eh_mapa_inovacao?: boolean
           fonte?: string | null
           id?: string
           nota_desenvolvimento?: string | null
@@ -72,6 +74,7 @@ export type Database = {
           descricao?: string | null
           dificuldade?: string | null
           eh_achado_pesquisa?: boolean
+          eh_mapa_inovacao?: boolean
           fonte?: string | null
           id?: string
           nota_desenvolvimento?: string | null
