@@ -1,15 +1,14 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   Zap, BookOpen, Microscope, Factory, Building2, Globe, 
   ArrowRight, Database, BarChart3, Network, Target,
-  AlertTriangle, TrendingUp, Layers, GitBranch,
-  Calendar, ChevronDown, ChevronUp, Code2, Wrench, Brain, MessageSquare
+  AlertTriangle, TrendingUp, Layers, GitBranch, MessageSquare
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import UfprLogo from "@/components/UfprLogo";
+import DiarioPesquisaLive from "@/components/DiarioPesquisaLive";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -65,158 +64,6 @@ const personas = [
   { key: "governo", icon: Building2, label: "Governo", deliverables: ["Investir / Reestruturar / Criar / Reduzir", "Setores críticos", "Alavancas prioritárias"] },
 ];
 
-const ENTRADAS_DIARIO = [
-  {
-    data: "31 jul 2026",
-    tag: "Infraestrutura",
-    tagColor: "bg-blue-500/10 text-blue-400",
-    titulo: "Arquitetura inicial — 8 edge functions em paralelo",
-    resumo: "Deploy das primeiras camadas analíticas do Motor: layer-knowledge (OpenAlex), layer-technology (GitHub + CAGED + CNAE + NCM), layer-policy (PNCP + Transparência), layer-international (BCB + COMEX), layer-sidra (PINTEC + CEMPRE + PIB), layer-patents (EPO OPS), layer-cnpq (bolsas + convênios MCTI) e motor-search como orquestrador com Promise.all.",
-    detalhe: "Problema crítico identificado: fetchCaged chamava PNADC/IBGE (20s+) + loadCnaeCache (20s) em sequência — estourava o limite de 60s das edge functions do Supabase. Solução: CNAE offline por dicionário semântico estático, CAGED simplificado via IPEAData (3 séries nacionais, ~3s), NCM com Promise.race de 8s. Tempo total da layer-technology: de 80s para 8–12s.",
-    icone: Code2,
-  },
-  {
-    data: "31 jul 2026",
-    tag: "Epistemologia",
-    tagColor: "bg-violet-500/10 text-violet-400",
-    titulo: "Problema de matching semântico CNAE: terminologia técnica vs. linguagem jurídica",
-    resumo: "Descoberta estrutural: a CNAE usa linguagem jurídica oficial ('horticultura', 'cultivo') enquanto usuários usam termos técnicos/comerciais ('hidropônico', 'aquaponia', 'fotovoltaico'). Nenhum algoritmo de busca textual resolve isso.",
-    detalhe: "Exemplo concreto: 0121-1/01 se chama 'Horticultura, exceto morango' — a palavra 'hidropônico' não existe nas descrições CNAE. Solução: dicionário semântico curado com ~120 termos técnicos mapeados diretamente às subclasses CNAE corretas (fonte: CONCLA 2.3). Mesma limitação identificada para 'fotovoltaico' → 'captação de energia solar', 'bateria de lítio' → 'acumuladores elétricos', 'drone' → 'construção de aeronaves'. O dicionário semântico resolve o gap entre a linguagem do mercado e a linguagem do Estado.",
-    icone: Brain,
-  },
-  {
-    data: "31 jul 2026",
-    tag: "Decisão técnica",
-    tagColor: "bg-amber-500/10 text-amber-400",
-    titulo: "CAGED por CNAE: limitação estrutural dos dados públicos brasileiros",
-    resumo: "Dado por CNAE específico (ex: empregos em 'horticultura hidropônica') não está disponível em API pública aberta. Os microdados CAGED por CNAE exigem acesso especial aos arquivos RAIS/MTE — sigilosos para pessoa física.",
-    detalhe: "O IPEAData tem séries por seção CNAE (letra A, B, C...) mas não por divisão/subclasse. Para granularidade estadual, as séries ADMISNC e DESLIGNC permitem filtrar por TERCODIGO (código IBGE da UF). Decisão: exibir dado estadual quando há localização configurada + nota honesta de limitação ('Dado por setor específico não disponível em API pública — requer acesso aos microdados RAIS/MTE'). Transparência epistemológica como princípio metodológico.",
-    icone: Wrench,
-  },
-  {
-    data: "31 jul 2026",
-    tag: "UX/Acessibilidade",
-    tagColor: "bg-emerald-500/10 text-emerald-400",
-    titulo: "Redesenho completo para linguagem acessível a leigos",
-    resumo: "Análise: o Motor usava jargão técnico em toda a interface ('saldo líquido', 'seção CNAE B', 'série nacional agregada', 'CBO', 'ICT', 'TRL'). Reestruturação completa para perguntas diretas em linguagem humana.",
-    detalhe: "Princípio implementado: cada aba abre com um card de contexto — título em pergunta direta + parágrafo explicando o que é a fonte, de onde vem o dado e por que importa para aquele perfil. Exemplos: 'Gap de Tradução' → '🔬 Ciência vira produto?', 'Dependência Científica' → '🌍 Pesquisa própria ou importada?', 'Articulação U-E' → '🤝 Universidade e empresa conversam?'. Países exibidos com nome completo + bandeira (MX → 🇲🇽 México). Números CAGED com labels descritivos ('pessoas contratadas com carteira', 'empregos criados no saldo final'). Objetivo: qualquer cidadão sem formação técnica deve entender os dados.",
-    icone: MessageSquare,
-  },
-  {
-    data: "31 jul 2026",
-    tag: "Políticas públicas",
-    tagColor: "bg-orange-500/10 text-orange-400",
-    titulo: "Camada de políticas: Decreto 70.683/SP e mapeamento do ecossistema de inovação",
-    resumo: "Incorporação do Decreto 70.683 de 16/06/2026 (Política Estadual de Distritos de Inovação de SP), lei nova não indexada em treinamentos de IA. Mapeamento de 7 instrumentos de política de inovação com relevância diferenciada por perfil.",
-    detalhe: "Fontes integradas: NIB (R$300bi), PBIA (R$23bi), Marco Legal CT&I, Nova Lei Geral da Gestão Pública, Decreto 70.683/SP, LC-1049/SP, Lei de Inovação Município SP. Ecossistema: ANPROTEC (363 incubadoras, 57 aceleradoras, 3.694 empresas incubadas), InovAtiva Brasil, PIPE-FAPESP, Startup Brasil. Lei do Bem com dados reais ano-base 2024: 4.252 empresas, R$51,59bi P&D, R$11,98bi renúncia — dados publicados pelo MCTI em 16/07/2026.",
-    icone: Brain,
-  },
-  {
-    data: "01 ago 2026",
-    tag: "Perfil Empresa",
-    tagColor: "bg-rose-500/10 text-rose-400",
-    titulo: "Redesenho conceitual do painel da empresa — do dado para a decisão",
-    resumo: "Diagnóstico: o painel da empresa tinha 8+ abas fragmentadas com indicadores nacionais vazios. Elementos valiosos (calculadora Lei do Bem, parceria ICT) estavam escondidos. Reestruturação para 3 perguntas de negócio em scroll linear.",
-    detalhe: "Nova estrutura: (1) 'Vale entrar nesse mercado?' — TRL como decisor make-or-buy com linguagem direta ('✅ Tecnologia madura — comprar ou licenciar' / '🤝 Co-desenvolver com ICT' / '🔬 Investir em P&D próprio'), métricas de mercado, contratos públicos locais, mão de obra; (2) 'Quanto custa inovar?' — Calculadora Lei do Bem embutida + 3 outros incentivos (BNDES, Finep, EMBRAPII); (3) 'Quem pode ajudar?' — ICTs com pesquisadores nominados, modal passo a passo Marco Legal CT&I. Análise IA colapsada por padrão. Princípio: o empresário não sabe o que é CNAE, TRL ou ICT — e não precisa saber.",
-    icone: Wrench,
-  },
-  {
-    data: "01 ago 2026",
-    tag: "Localização geográfica",
-    tagColor: "bg-teal-500/10 text-teal-400",
-    titulo: "Localização do usuário como variável de contexto transversal",
-    resumo: "Implementação de Estado + Município na tela de busca, propagado como filtro geográfico para todas as 4 layers e os 4 painéis. Municípios via API IBGE em tempo real (lista de ~5.570 municípios).",
-    detalhe: "Impacto por layer: layer-policy filtra PNCP por ufSigla + esfera E/M (estadual/municipal); layer-sidra usa nível N3 (UF) no SIDRA para empresas do setor no estado; layer-knowledge faz busca paralela no OpenAlex por instituições na cidade/estado; layer-technology usa séries regionais ADMISNC/DESLIGNC do IPEAData com TERCODIGO (código IBGE da UF). Badge '📍 Curitiba · PR' no topo de cada painel com contextualização por perfil: 'Filtrando mercado, concorrentes e contratos públicos locais' (empresa) vs. 'Priorizando grupos de pesquisa e editais da sua região' (pesquisador). Botão ✕ para remover filtro.",
-    icone: Code2,
-  },
-  {
-    data: "01 ago 2026",
-    tag: "Mural de Oportunidades",
-    tagColor: "bg-primary/10 text-primary",
-    titulo: "Mural de Oportunidades: R$3,6bi+ em subvenção visível ao empresário",
-    resumo: "Criação da layer-oportunidades e componente MuralOportunidades. Premissa: a maioria dos empresários não sabe que R$3,6bi em subvenção Finep estão disponíveis em 2026 — e o governo não comunica isso de forma acessível.",
-    detalhe: "Fontes: PNCP (pregões abertos com prazo real, classificados por urgência: 🔴 ≤15 dias, 🟡 ≤60 dias, 🟢 aberto), curadoria de 10 instrumentos federais com verbas concretas (Finep Tecnologias Digitais R$300M prazo 30/09/2026, Finep NIB R$3,3bi em 10 editais, BNDES+Finep Centros P&D, Finep Startups IA, BNDES Inovação 6%a.a., EMBRAPII 1/3 sem devolução, Lei do Bem R$11,98bi deduzidos em 2024, Encomenda Tecnológica), 12 FAPs estaduais mapeadas com chamadas próprias. Cada card mostra verba disponível em destaque, critérios de elegibilidade e CTA direto. Decisão de design: verba é a primeira informação visível ao expandir — não o nome do programa.",
-    icone: Brain,
-  },
-  {
-    data: "Set 2026",
-    tag: "Próximos passos",
-    tagColor: "bg-muted text-muted-foreground",
-    titulo: "Agenda de desenvolvimento — versão beta pública",
-    resumo: "Itens identificados para a próxima fase: microdados RAIS via acesso especial MTE, mapa de coautoria interativo (pesquisador), calculadora de incentivos empilhados (empresa), benchmarking internacional por tema (governo), posicionamento relativo de ICTs por campo (universidade).",
-    detalhe: "Pendências técnicas: correlação NCM→CNAE curada (não existe como dataset público — requer construção própria); série CAGED por CNAE em nível de subclasse (exige microdados RAIS); API Querido Diário com filtro por tema + município em escala; índice de concentração geográfica de pesquisa por tema. Tese: documentar como cada limitação técnica revela uma limitação estrutural do sistema de dados públicos brasileiro — a opacidade dos dados é, ela mesma, um dado sobre o sistema de inovação.",
-    icone: MessageSquare,
-  },
-];
-
-function DiarioEntrada({ entrada, index }: { entrada: typeof ENTRADAS_DIARIO[0]; index: number }) {
-  const [aberto, setAberto] = useState(index === 0);
-  const Icon = entrada.icone;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -10 }}
-      whileInView={{ opacity: 1, x: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: index * 0.05 }}
-      className="flex gap-4"
-    >
-      {/* Linha do tempo */}
-      <div className="flex flex-col items-center flex-shrink-0">
-        <div className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center">
-          <Icon className="w-4 h-4 text-primary" />
-        </div>
-        {index < ENTRADAS_DIARIO.length - 1 && (
-          <div className="w-px flex-1 bg-border/50 my-2" />
-        )}
-      </div>
-
-      {/* Conteúdo */}
-      <div className="flex-1 pb-6 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap mb-2">
-          <span className="text-xs text-muted-foreground flex items-center gap-1">
-            <Calendar className="w-3 h-3" />{entrada.data}
-          </span>
-          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${entrada.tagColor}`}>
-            {entrada.tag}
-          </span>
-        </div>
-
-        <button
-          onClick={() => setAberto(a => !a)}
-          className="w-full text-left group"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors leading-snug">
-              {entrada.titulo}
-            </h3>
-            {aberto
-              ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-              : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-            }
-          </div>
-          <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{entrada.resumo}</p>
-        </button>
-
-        {aberto && (
-          <div className="mt-3 pl-3 border-l-2 border-primary/20">
-            <p className="text-xs text-muted-foreground leading-relaxed">{entrada.detalhe}</p>
-          </div>
-        )}
-      </div>
-    </motion.div>
-  );
-}
-
-function DiarioEntradas() {
-  return (
-    <div className="space-y-0">
-      {ENTRADAS_DIARIO.map((entrada, i) => (
-        <DiarioEntrada key={i} entrada={entrada} index={i} />
-      ))}
-    </div>
-  );
-}
 
 const Conceito = () => {
   return (
@@ -511,7 +358,7 @@ const Conceito = () => {
               </div>
               <div>
                 <h2 className="text-3xl font-bold">Diário de Pesquisa</h2>
-                <p className="text-sm text-muted-foreground">Registro do processo de construção — julho/agosto 2026</p>
+                <p className="text-sm text-muted-foreground">Registro ao vivo — atualizado a cada avanço da pesquisa</p>
               </div>
             </motion.div>
 
@@ -523,7 +370,7 @@ const Conceito = () => {
               Desenvolvido com Claude (Anthropic) como parceiro de programação · Projeto Lovable · Stack: React + TypeScript + Supabase Edge Functions + Deno
             </motion.p>
 
-            <DiarioEntradas />
+            <DiarioPesquisaLive />
           </motion.div>
         </div>
       </section>

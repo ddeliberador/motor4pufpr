@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   Code2, Database, Globe, Server, Shield, GitBranch, 
@@ -130,7 +131,8 @@ const RECURSOS: Recurso[] = [
   { fonte: "Bolsas e programas internacionais", mantenedor: "DAAD, Chevening, Fulbright, Erasmus+, UNESCO e outros", nacionalidade: "Estrangeiro", uso: "Oportunidades de formação e cooperação no exterior na camada de inserção internacional.", nota: "conjunto de programas estrangeiros" },
 
   // --- Compras públicas, orçamento e controle ---
-  { fonte: "PNCP — Portal Nacional de Contratações Públicas", mantenedor: "Governo Federal do Brasil", nacionalidade: "Nacional", uso: "Contratos e editais públicos ligados ao tema, filtrados por estado." },
+  { fonte: "PNCP — Portal Nacional de Contratações Públicas", mantenedor: "Governo Federal do Brasil", nacionalidade: "Nacional", uso: "Contratos e editais públicos ligados ao tema, consultados por período oficial de publicação, modalidade, estado e órgão, com filtragem do assunto feita depois no próprio sistema." },
+  { fonte: "Transferegov", mantenedor: "Ministério da Gestão e da Inovação em Serviços Públicos", nacionalidade: "Nacional", uso: "Planos de trabalho, convênios e transferências voluntárias da União para estados e municípios.", nota: "acesso público sujeito a bloqueio automático de tráfego" },
   { fonte: "Portal da Transparência", mantenedor: "Controladoria-Geral da União (CGU)", nacionalidade: "Nacional", uso: "Emendas parlamentares, contratos federais, convênios e execução orçamentária." },
   { fonte: "SICONFI", mantenedor: "Secretaria do Tesouro Nacional", nacionalidade: "Nacional", uso: "Receitas e despesas municipais e estaduais na Visão Regional." },
   { fonte: "SIOP", mantenedor: "Ministério do Planejamento e Orçamento", nacionalidade: "Nacional", uso: "Orçamento federal por programa e ação." },
@@ -156,7 +158,7 @@ const RECURSOS: Recurso[] = [
 
   // --- Tecnologia, patentes e código ---
   { fonte: "EPO OPS", mantenedor: "European Patent Office (Europa)", nacionalidade: "Estrangeiro", uso: "Patentes internacionais, classificação IPC e soberania tecnológica brasileira." },
-  { fonte: "INPI", mantenedor: "Instituto Nacional da Propriedade Industrial", nacionalidade: "Nacional", uso: "Referência de depósitos e proteção de propriedade industrial no Brasil." },
+  { fonte: "INPI — Revista da Propriedade Industrial (RPI)", mantenedor: "Instituto Nacional da Propriedade Industrial", nacionalidade: "Nacional", uso: "Despachos oficiais de patentes e de programas de computador, lidos direto dos arquivos XML semanais da RPI, com contagem por classificação IPC (inclusive as classes de inteligência artificial)." },
   { fonte: "GitHub API", mantenedor: "GitHub / Microsoft (Estados Unidos)", nacionalidade: "Estrangeiro", uso: "Repositórios e atividade de desenvolvimento como sinal de maturidade tecnológica (TRL)." },
   { fonte: "Santos Dumont (LNCC)", mantenedor: "Laboratório Nacional de Computação Científica", nacionalidade: "Nacional", uso: "Referência nacional de infraestrutura de computação de alto desempenho." },
 
@@ -173,6 +175,7 @@ const RECURSOS: Recurso[] = [
 
   // --- Saúde, justiça e eleições ---
   { fonte: "DATASUS", mantenedor: "Ministério da Saúde", nacionalidade: "Nacional", uso: "Indicadores de saúde e demanda pública por soluções tecnológicas." },
+  { fonte: "SISAB — Atenção Primária", mantenedor: "Ministério da Saúde", nacionalidade: "Nacional", uso: "Cobertura da atenção primária, saúde bucal e agentes comunitários por país, região, estado e município, mês a mês." },
   { fonte: "DataJud", mantenedor: "Conselho Nacional de Justiça (CNJ)", nacionalidade: "Nacional", uso: "Processos judiciais como sinal de litígio e risco regulatório." },
   { fonte: "TSE — Dados Abertos", mantenedor: "Tribunal Superior Eleitoral", nacionalidade: "Nacional", uso: "Dados eleitorais usados como contexto político-territorial." },
 
@@ -230,6 +233,27 @@ const Documentacao = () => {
               do Sistema Nacional de Inovação — 40+ bases públicas, 11 edge functions, 4 camadas analíticas, entity resolution.
             </p>
           </motion.div>
+        </div>
+      </section>
+
+      {/* PESQUISA COLABORATIVA DO MAPA DE INOVAÇÃO */}
+      <section className="py-12 border-t border-border">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="bg-card border border-border rounded-2xl p-8 md:p-10">
+            <h2 className="text-2xl font-bold mb-3">Pesquisa Colaborativa do Mapa de Inovação</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              O levantamento e o teste de cada fonte oficial fazem parte da Pesquisa Colaborativa do Mapa de Inovação,
+              desenvolvida no doutorado em Políticas Públicas da UFPR. Cada fonte é registrada com pilar, dados-chave,
+              forma de acesso, situação do teste e próximo passo — e todo teste real, obstáculo e solução fica registrado
+              no <Link to="/conceito" className="text-primary hover:underline">Diário de Pesquisa</Link>.
+            </p>
+            <p className="text-muted-foreground leading-relaxed">
+              Base territorial construída nessa pesquisa: quase 6 mil registros de instituições, laboratórios,
+              parques, unidades de pesquisa e startups brasileiras, reunidos a partir de fontes oficiais
+              (Mapa da Inovação/MCTI, EMBRAPII, FORMICT, SINAPAD, LISP, OTD/CGEE) e do Mapeamento Nacional de
+              Startups da ABStartups, com localização geográfica conferida cidade por cidade.
+            </p>
+          </div>
         </div>
       </section>
 
