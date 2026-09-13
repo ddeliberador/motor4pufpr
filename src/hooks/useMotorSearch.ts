@@ -4,6 +4,7 @@
  */
 import { useState, useCallback, useRef } from "react";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
+import { track } from "@/lib/telemetry";
 
 
 // ===== Layer Types =====
@@ -356,6 +357,16 @@ export function useMotorSearch() {
       setData(applyPersona(searchResult, persona));
       setIsLoading(false);
       lastContext.current = { persona, entityContext, cacheKey };
+
+      // Telemetria: nunca envia o termo pesquisado, apenas contagens estruturais.
+      track("result_opened", {
+        result_type: "busca_concluida",
+        depth: "summary",
+        persona,
+        papers: searchResult.stats?.papers ?? 0,
+        contracts: searchResult.stats?.contracts ?? 0,
+        source_count: searchResult.meta?.source_count ?? 0,
+      });
 
       // A análise por IA NÃO é mais automática: roda só quando o usuário
       // clicar em "Gerar análise" (modelo aberto local, mais lento).

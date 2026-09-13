@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { HelpCircle, AlertTriangle, Lightbulb, Search, Send, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { trackMicrofeedback } from "@/lib/telemetry";
 
 type FaqType = "duvida" | "correcao" | "sugestao";
 interface FaqEntry { id: string; type: FaqType; faq_question: string; faq_answer: string; created_at: string }
@@ -70,6 +71,8 @@ export default function Faq() {
     });
     setSending(false);
     if (error) { toast.error("Não foi possível enviar. Tente novamente."); return; }
+    // Telemetria: só o tamanho da mensagem, nunca o texto enviado.
+    trackMicrofeedback(true, message);
     setSent(true);
     setMessage(""); setEmail("");
   };

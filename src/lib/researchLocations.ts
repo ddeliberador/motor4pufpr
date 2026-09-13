@@ -2,6 +2,7 @@
 // Regra: TODA exportação carrega obrigatoriamente `fonte` e `fonte_url` em cada linha.
 
 import { safeSupabase } from "@/lib/supabaseClient";
+import { track } from "@/lib/telemetry";
 
 export interface ResearchLocation {
   id: string;
@@ -156,4 +157,5 @@ export function downloadLocations(rows: ResearchLocation[], formato: "csv" | "js
   a.download = `locais-pesquisa-${new Date().toISOString().slice(0, 10)}.${formato}`;
   a.click();
   URL.revokeObjectURL(url);
+  track("export_action", { format: formato, scope: "locais_pesquisa", rows: rows.length });
 }

@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ExternalLink, BookOpen, Users, FileText, Globe, GitBranch, Building2, Landmark } from "lucide-react";
+import { track } from "@/lib/telemetry";
 
 export interface DetailItem {
   title?: string;
@@ -368,6 +370,13 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const DataDetailSheet = ({ open, onClose, item }: DataDetailSheetProps) => {
+  // Telemetria: apenas o TIPO do resultado aberto, nunca o conteúdo.
+  useEffect(() => {
+    if (open && item?.type) {
+      track("result_opened", { result_type: item.type, depth: "detail" });
+    }
+  }, [open, item?.type]);
+
   if (!item) return null;
 
   const title = item.title || item.data?.title || item.data?.name || item.data?.code || TYPE_LABELS[item.type] || item.type;

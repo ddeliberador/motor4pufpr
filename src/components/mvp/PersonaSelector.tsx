@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import type { CnaeCode } from "@/components/mvp/CnaeSelectionModal";
 import type { Persona } from "@/types/persona";
+import { track } from "@/lib/telemetry";
 
 const GearIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 64 64" className={className} xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -117,6 +118,12 @@ export default function PersonaSelector() {
     const ufObj = UFS.find(u => u.sigla === uf);
     if (ufObj) sessionStorage.setItem("motor4p_uf_nome", ufObj.nome);
     else sessionStorage.removeItem("motor4p_uf_nome");
+    // Telemetria: persona e contexto estrutural, nunca o termo pesquisado.
+    track("persona_selected", {
+      persona: selectedPersona!,
+      has_uf: Boolean(uf),
+      cnae_count: selectedCnaes.length,
+    });
     navigate(`/${selectedPersona}`);
   };
 

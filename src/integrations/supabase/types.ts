@@ -597,6 +597,36 @@ export type Database = {
         }
         Relationships: []
       }
+      telemetry_events: {
+        Row: {
+          client_ts: string | null
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+          received_at: string
+          session_id: string
+        }
+        Insert: {
+          client_ts?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          received_at?: string
+          session_id: string
+        }
+        Update: {
+          client_ts?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          received_at?: string
+          session_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
