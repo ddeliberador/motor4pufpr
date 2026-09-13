@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ExternalLink, Clock, Zap, TrendingUp, Handshake, Receipt, ChevronDown, ChevronUp, MapPin, RefreshCw } from "lucide-react";
+import { safeHttpUrl } from "@/lib/utils";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
 
 interface MuralOportunidadesProps {

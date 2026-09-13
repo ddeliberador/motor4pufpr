@@ -8,6 +8,7 @@ import DiagnosticHeader from "@/components/shared/DiagnosticHeader";
 import { useMotorLocation } from "@/hooks/useLocation";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import { track } from "@/lib/telemetry";
+import { safeHttpUrl } from "@/lib/utils";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CnaeSelectionModal, type CnaeCode } from "@/components/mvp";

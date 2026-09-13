@@ -10,6 +10,7 @@ import DiagnosticHeader from "@/components/shared/DiagnosticHeader";
 import { useMotorLocation } from "@/hooks/useLocation";
 import { TrlScaleChart } from "@/components/shared/TrlScaleChart";
 import { track } from "@/lib/telemetry";
+import { safeHttpUrl } from "@/lib/utils";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
