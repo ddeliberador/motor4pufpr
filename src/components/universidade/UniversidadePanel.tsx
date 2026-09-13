@@ -7,6 +7,7 @@ import LocalContextBadge from "@/components/shared/LocalContextBadge";
 import DiagnosticHeader from "@/components/shared/DiagnosticHeader";
 import { useMotorLocation } from "@/hooks/useLocation";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
+import { track } from "@/lib/telemetry";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CnaeSelectionModal, type CnaeCode } from "@/components/mvp";
@@ -147,7 +148,7 @@ const UniversidadePanel = () => {
             <div className="bg-card border border-border rounded-xl p-4 text-center"><p className="text-2xl font-bold text-foreground">{data.stats.countries}</p><p className="text-[10px] text-muted-foreground">Países cooperantes</p></div>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); track("pillar_view", { tab: v, persona: "universidade" }); }} className="space-y-4">
             <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted/30 rounded-xl mb-4">
               <TabsTrigger value="openalex" className="text-xs rounded-lg">📄 Produção Científica</TabsTrigger>
               <TabsTrigger value="sidra" className="text-xs rounded-lg">🎓 Formação Acadêmica</TabsTrigger>

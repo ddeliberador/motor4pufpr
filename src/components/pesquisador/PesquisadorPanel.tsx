@@ -10,6 +10,7 @@ import LocalContextBadge from "@/components/shared/LocalContextBadge";
 import DiagnosticHeader from "@/components/shared/DiagnosticHeader";
 import { useMotorLocation } from "@/hooks/useLocation";
 import { TrlScaleChart } from "@/components/shared/TrlScaleChart";
+import { track } from "@/lib/telemetry";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -206,7 +207,7 @@ const PesquisadorPanel = () => {
           )}
 
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); track("pillar_view", { tab: v, persona: "pesquisador" }); }} className="space-y-4">
             <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted/30 rounded-xl mb-4">
               <TabsTrigger value="openalex" className="text-xs rounded-lg">📄 OpenAlex</TabsTrigger>
               <TabsTrigger value="embrapii" className="text-xs rounded-lg">🔬 P&D Industrial</TabsTrigger>
