@@ -215,7 +215,7 @@ const UniversidadePanel = () => {
                   <h3 className="text-sm font-semibold text-foreground mb-3">Papers recentes</h3>
                   <div className="space-y-2">
                     {knowledge.papers.slice(0, 6).map((p: any, i: number) => (
-                      <a key={i} href={p.doi ? `https://doi.org/${p.doi}` : "#"} target="_blank" rel="noopener noreferrer"
+                      <a key={i} href={p.doi ? (safeHttpUrl(`https://doi.org/${p.doi}`) || "#") : "#"} target="_blank" rel="noopener noreferrer"
                          className="flex items-start gap-2 p-3 border border-border/50 rounded-lg hover:border-border transition-colors">
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-foreground line-clamp-2">{p.title}</p>
@@ -244,7 +244,7 @@ const UniversidadePanel = () => {
                 <div className="bg-card border border-border rounded-xl p-5">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-semibold text-foreground">Docentes e pós-graduação — INEP/IBGE</h3>
-                    <a href={(data.layers as any).sidra.pos_graduacao.url} target="_blank" rel="noopener noreferrer"
+                    <a href={safeHttpUrl((data.layers as any).sidra.pos_graduacao.url) || "#"} target="_blank" rel="noopener noreferrer"
                        className="text-[10px] text-primary hover:underline flex items-center gap-1">
                       <ExternalLink className="w-3 h-3" /> SIDRA
                     </a>
@@ -341,7 +341,7 @@ const UniversidadePanel = () => {
                   <h3 className="text-sm font-semibold text-foreground mb-3">Contratos federais de P&D — PNCP</h3>
                   <div className="space-y-2">
                     {policy.contracts.slice(0, 6).map((c: any, i: number) => (
-                      <a key={i} href={c.url || "#"} target="_blank" rel="noopener noreferrer"
+                      <a key={i} href={safeHttpUrl(c.url) || "#"} target="_blank" rel="noopener noreferrer"
                          className="flex items-start gap-3 p-3 border border-border/50 rounded-lg hover:border-border transition-colors">
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-foreground line-clamp-2">{c.object}</p>
