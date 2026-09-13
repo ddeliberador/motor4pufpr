@@ -4,6 +4,7 @@
  */
 import { useState, useCallback, useRef } from "react";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
+import { track } from "@/lib/telemetry";
 
 
 // ===== Layer Types =====

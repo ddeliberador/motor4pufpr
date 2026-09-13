@@ -2,6 +2,7 @@
 // Regra: TODA exportação carrega obrigatoriamente `fonte` e `fonte_url` em cada linha.
 
 import { safeSupabase } from "@/lib/supabaseClient";
+import { track } from "@/lib/telemetry";
 
 export interface ResearchLocation {
   id: string;
