@@ -16,6 +16,7 @@ import { Plus, Download, Trash2, Search, Map } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { track } from "@/lib/telemetry";
 
 export type BuildLogEntry = {
   id: string;
@@ -491,6 +492,7 @@ export function BuildLogTab({ canEdit }: { canEdit: boolean }) {
       });
 
       doc.save("diario-de-construcao-motor-da-inovacao.pdf");
+      track("export_action", { format: "pdf", scope: "diario_construcao" });
     } catch (err) {
       toast.error("Falha ao gerar o PDF.");
       console.error(err);
