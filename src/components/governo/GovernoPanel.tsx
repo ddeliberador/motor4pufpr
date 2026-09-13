@@ -10,6 +10,7 @@ import DiagnosticHeader from "@/components/shared/DiagnosticHeader";
 import { useMotorLocation } from "@/hooks/useLocation";
 import { TrlScaleChart } from "@/components/shared/TrlScaleChart";
 import { track } from "@/lib/telemetry";
+import { safeHttpUrl } from "@/lib/utils";
 import { useCnaeSearch } from "@/hooks/useCnaeSearch";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -203,7 +204,7 @@ const GovernoPanel = () => {
                       </div>
                     </div>
                     {policy.contracts.slice(0, 8).map((c: any, i: number) => (
-                      <a key={i} href={c.url || "#"} target="_blank" rel="noopener noreferrer"
+                      <a key={i} href={safeHttpUrl(c.url) || "#"} target="_blank" rel="noopener noreferrer"
                          className="flex items-start gap-3 p-3 border border-border/50 rounded-lg hover:border-border transition-colors">
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-foreground line-clamp-2">{c.object}</p>
@@ -409,7 +410,7 @@ const GovernoPanel = () => {
                 <div className="bg-card border border-border rounded-xl p-5">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-semibold text-foreground">Inovação setorial — PINTEC/IBGE</h3>
-                    <a href={(data.layers as any).sidra.pintec.url} target="_blank" rel="noopener noreferrer"
+                    <a href={safeHttpUrl((data.layers as any).sidra.pintec.url) || "#"} target="_blank" rel="noopener noreferrer"
                        className="text-[10px] text-primary hover:underline flex items-center gap-1">
                       <ExternalLink className="w-3 h-3" /> SIDRA
                     </a>
@@ -429,7 +430,7 @@ const GovernoPanel = () => {
                 <div className="bg-card border border-border rounded-xl p-5">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-semibold text-foreground">PIB por atividade — SCN/IBGE</h3>
-                    <a href={(data.layers as any).sidra.pib_setorial.url} target="_blank" rel="noopener noreferrer"
+                    <a href={safeHttpUrl((data.layers as any).sidra.pib_setorial.url) || "#"} target="_blank" rel="noopener noreferrer"
                        className="text-[10px] text-primary hover:underline flex items-center gap-1">
                       <ExternalLink className="w-3 h-3" /> SIDRA
                     </a>

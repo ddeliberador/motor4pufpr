@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ExternalLink, Clock, Zap, TrendingUp, Handshake, Receipt, ChevronDown, ChevronUp, MapPin, RefreshCw } from "lucide-react";
+import { safeHttpUrl } from "@/lib/utils";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
 
 interface MuralOportunidadesProps {
@@ -120,11 +121,13 @@ function OportunidadeCard({ op, index }: { op: any; index: number }) {
             </div>
           )}
 
-          <a href={op.url} target="_blank" rel="noopener noreferrer"
+          {safeHttpUrl(op.url) && (
+          <a href={safeHttpUrl(op.url)} target="_blank" rel="noopener noreferrer"
              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors">
             <ExternalLink className="w-4 h-4" />
             {op.tipo === "pregao" ? "Ver edital completo" : op.tipo === "financiamento" ? "Acessar linha de crédito" : "Saiba mais"}
           </a>
+          )}
         </div>
       )}
     </div>
