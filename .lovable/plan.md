@@ -1,38 +1,38 @@
-# Camada permanente de locais de pesquisa (research_locations)
+# Telemetria de pesquisa do Motor da Inovação (estrutura, ainda desligada)
 
-Nova camada de dados que existe independente de busca: um cadastro nacional de universidades, ICTs, institutos e unidades EMBRAPII, alimentado por ingestões e sempre carregando a fonte de origem de cada registro.
+Objetivo: preparar toda a coleta anônima de uso descrita nos rascunhos anexados, guardando os dados no banco do próprio Motor (Lovable Cloud), sem coletar nada até você liberar.
 
-## O que eu confirmei nas fontes oficiais antes de escrever isto
+## Princípio central: interruptor desligado
 
-- **INEP (fonte primária confirmada):** `https://download.inep.gov.br/microdados/microdados_censo_da_educacao_superior_2024.zip`, listado na própria página de microdados do INEP (gov.br/inep). O pacote contém o cadastro de IES com UF e código IBGE de município. Não vou usar o espelho da prefeitura do Recife que aparecia nas buscas. **Ressalva:** o download do INEP deu timeout a partir deste ambiente; a ingestão vai rodar pelo backend/função e, se o arquivo não vier, eu aviso em vez de gravar resultado parcial.
-- **MCTI/FORMICT:** existe a base aberta consolidada (`formict_anobase_2024.xlsx`), mas eu abri o arquivo: o CNPJ vem mascarado (`00.XXX.XXX/0001.XX`) e **não há razão social** — é inútil para cadastrar locais. A única lista nominal é a de **ICTs não respondentes** (PDF oficial, ano-base 2024, com CNPJ + razão social). Vou usar essa, marcando em cada registro `{"lista_parcial": true, "motivo": "apenas ICTs não respondentes do FORMICT ano-base 2024"}`, e cruzar o CNPJ com o conector BrasilAPI que já existe para obter município/UF.
-- **EMBRAPII:** a lista de ~91 unidades **não existe** nesta conversa nem no código do projeto (procurei em ambos), e o site da EMBRAPII respondeu 503 agora. Vou tentar novamente no momento da ingestão; se não vier, registro zero e te aviso — não vou inventar unidades nem estados.
-- **OpenAlex:** já temos o padrão pronto em `layer-knowledge` (instituições brasileiras com `geo.region`, `geo.city`, latitude e longitude reais).
+- Existe um único interruptor de coleta. Enquanto ele estiver desligado, nenhum evento sai do navegador — as chamadas simplesmente não fazem nada.
+- Nenhum aviso de consentimento é exibido agora. Quando o texto for aprovado pelo CEP, basta adicionar o banner e ligar o interruptor; nada mais precisa mudar.
+- Nunca é enviado texto livre: nem o termo pesquisado, nem comentários. Só categorias, números e verdadeiro/falso.
 
-## Banco de dados
+## O que passa a ser medido (quando ligado)
 
-Tabela `research_locations`: nome, tipo, uf, municipio, latitude, longitude, fonte, fonte_url, cnpj, data_coleta, raw_metadata (jsonb), além de id/created_at/updated_at.
+1. Escolha de persona e realização de busca (sem o texto da busca; apenas se houve busca e quantos resultados voltaram).
+2. Abertura de resultados e troca de abas nos painéis (qual aba, qual tipo de resultado).
+3. Exportações: PDF e CSV.
+4. Microfeedback "foi útil?": útil/não útil e o tamanho do comentário — nunca o comentário.
 
-- Leitura pública (qualquer visitante).
-- Escrita apenas por serviço interno (ingestões) — usuário final não escreve.
-- Chave única por (fonte, nome, uf) para a ingestão poder rodar de novo sem duplicar.
-- Índices por uf, fonte e tipo.
+## Onde os dados ficam
 
-## Ingestões
+Nova tabela `telemetry_events` no banco do Motor:
 
-Uma função de backend `locations-ingest`, chamada com o nome da fonte, cobrindo as quatro:
+- `session_id` (aleatório, gerado no navegador, sem vínculo com identidade)
+- `event_type`, `payload` (JSON curto), `client_ts`, `received_at`
 
-1. **openalex** — varre as instituições brasileiras do OpenAlex (mesmo padrão já usado), grava nome, cidade, UF, lat/lon, `fonte_url` = URL do registro OpenAlex da instituição.
-2. **embrapii** — tenta a página oficial de unidades; sem cidade/coordenada confiável, grava só UF e município nulo. `fonte_url` = página de unidades.
-3. **inep_censo_superior** — baixa o ZIP oficial, lê o cadastro de IES, traduz o código IBGE de município para nome, grava cada IES. `fonte_url` = URL do ZIP.
-4. **mcti_formict** — lê o PDF de ICTs não respondentes, extrai CNPJ + razão social, consulta BrasilAPI para município/UF, grava com a marca de lista parcial.
+Regras de acesso: qualquer visitante pode registrar evento, mas ninguém pode ler, alterar ou apagar pela aplicação; só a leitura administrativa (admin) é liberada, para você analisar depois na Gestão da Pesquisa.
 
-Cada registro recebe `data_coleta` e o registro original completo em `raw_metadata`.
+## Detalhes técnicos
 
-## Exportação
+- Migração: `public.telemetry_events` com GRANT para `anon`/`authenticated` (apenas inserção), `service_role` completo, RLS ativa; política de inserção restrita aos cinco tipos de evento permitidos e a payload sem strings longas (validação por trigger `BEFORE INSERT`, que descarta chaves com texto acima de 40 caracteres). `SELECT` só via `public.is_admin()`.
+- `src/lib/telemetry.ts` (adaptado do rascunho): fila em memória, flush por `setInterval` de 5s e em `beforeunload`, `session_id` em `sessionStorage`, gravação em lote via `supabase.from("telemetry_events").insert(...)` em vez do endpoint Railway. Guard duplo: `TELEMETRY_ENABLED = false` e `hasConsent()`.
+- `src/lib/consent.ts`: apenas `hasConsent()`/`setConsent()` lendo `motor_inovacao_consent_v1` no `localStorage`. O componente de banner não entra nesta etapa.
+- Chamadas `track(...)` inseridas em: `PersonaSelector`/`Index` (persona), `useMotorSearch` (busca concluída, contagem de fontes), `DataDetailSheet` e as `Tabs` dos painéis de persona (`PesquisadorPanel`, `EmpresaPanel`, `GovernoPanel`, `UniversidadePanel`), exportações jsPDF/CSV existentes, e `FeedbackTab` (`trackMicrofeedback`).
+- O rascunho `telemetry_endpoint_example.py` fica fora do escopo: não haverá endpoint no Railway.
+- Nenhuma alteração visual na interface.
 
-Um utilitário único de exportação (CSV e JSON) usado por qualquer tela ou download dessa camada, com `fonte` e `fonte_url` como colunas obrigatórias em toda linha — não há caminho de exportação sem elas.
+## Fora do escopo agora
 
-## Entrega
-
-Rodo as quatro ingestões uma vez e te informo a contagem por fonte, e explicitamente qual falhou e por quê (INEP indisponível, PDF do MCTI ilegível, EMBRAPII sem lista), sem preencher lacuna com estimativa.
+Banner de consentimento, TCLE da camada 3, painel de análise dos eventos e ativação da coleta.
