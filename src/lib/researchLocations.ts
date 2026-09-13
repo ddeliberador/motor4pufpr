@@ -156,4 +156,5 @@ export function downloadLocations(rows: ResearchLocation[], formato: "csv" | "js
   a.download = `locais-pesquisa-${new Date().toISOString().slice(0, 10)}.${formato}`;
   a.click();
   URL.revokeObjectURL(url);
+  track("export_action", { format: formato, scope: "locais_pesquisa", rows: rows.length });
 }
