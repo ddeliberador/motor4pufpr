@@ -15,7 +15,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import "react-pdf/dist/Page/TextLayer.css";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// Worker servido do bundle local — elimina dependência de CDN externo em runtime (1.5 — relatório 2026-09-14)
+import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
 type Doc = {
   id: string;

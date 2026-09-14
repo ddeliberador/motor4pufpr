@@ -5,7 +5,7 @@ Ponto de entrada da API FastAPI
 Execução:
     uvicorn app.main:app --reload --port 8000
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 
@@ -55,16 +55,14 @@ API para análise de incidência de objetos tecnológicos no sistema de inovaç�
     redoc_url="/redoc",
 )
 
-# Configuração CORS - permite origens do Lovable e desenvolvimento
+# CORS restrito — origens exatas (2.3 — regex anterior autorizava qualquer *.lovable.app com credenciais)
 cors_origins = [
-    "http://localhost:5173",      # Vite dev
-    "http://localhost:3000",      # React dev
+    "http://localhost:5173",
+    "http://localhost:3000",
     "http://127.0.0.1:5173",
     "http://127.0.0.1:3000",
-    "https://motor4pufpr.lovable.app",  # Produção Lovable
-    "https://*.lovable.app",      # Outros subdomínios Lovable
-    "https://lovable.dev",        # Lovable editor
-    "https://*.lovable.dev",      # Lovable subdomínios
+    "https://motor4pufpr.lovable.app",
+    "https://lovable.dev",
 ]
 
 # Autenticação por chave de API (X-API-Key) — adicionada antes do CORS para que
@@ -74,12 +72,23 @@ app.add_middleware(ApiKeyMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_origin_regex=r"https://.*\.lovable\.(app|dev)",  # Regex para Lovable
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["X-API-Key", "Content-Type", "Authorization"],
 )
+
+
+# Cabeçalhos de segurança HTTP — 2.2 do relatório de segurança 2026-09-14
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next) -> Response:
+    response = await call_next(request)
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    if request.url.path.startswith("/api/v1/") and request.url.path != "/api/v1/health":
+        response.headers["Cache-Control"] = "no-store"
+    return response
 
 # Registra rotas
 app.include_router(health_router, prefix=settings.API_PREFIX)
