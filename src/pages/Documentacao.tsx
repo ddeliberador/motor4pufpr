@@ -17,6 +17,9 @@ const fadeUp = {
   }),
 };
 
+// Conteúdo temporariamente oculto durante o defeso eleitoral.
+const EXIBIR_PESQUISA_COLABORATIVA = false;
+
 const techStack = [
   { name: "React 18 + TypeScript", desc: "SPA com tipagem estática e componentes reutilizáveis", icon: Code2 },
   { name: "Vite", desc: "Build tool ultrarrápido com HMR e tree-shaking", icon: Zap },
@@ -237,24 +240,26 @@ const Documentacao = () => {
       </section>
 
       {/* PESQUISA COLABORATIVA DO MAPA DE INOVAÇÃO */}
-      <section className="py-12 border-t border-border">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="bg-card border border-border rounded-2xl p-8 md:p-10">
-            <h2 className="text-2xl font-bold mb-3">Pesquisa Colaborativa do Mapa de Inovação</h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              O levantamento e o teste de cada fonte oficial fazem parte da Pesquisa Colaborativa do Mapa de Inovação,
-              desenvolvida no doutorado em Políticas Públicas da UFPR. Cada fonte é registrada com pilar, dados-chave,
-              forma de acesso, situação do teste e próximo passo — e esta documentação é atualizada a cada nova base integrada.
-            </p>
-            <p className="text-muted-foreground leading-relaxed">
-              Base territorial construída nessa pesquisa: quase 6 mil registros de instituições, laboratórios,
-              parques, unidades de pesquisa e startups brasileiras, reunidos a partir de fontes oficiais
-              (Mapa da Inovação/MCTI, EMBRAPII, FORMICT, SINAPAD, LISP, OTD/CGEE) e do Mapeamento Nacional de
-              Startups da ABStartups, com localização geográfica conferida cidade por cidade.
-            </p>
+      {EXIBIR_PESQUISA_COLABORATIVA && (
+        <section className="py-12 border-t border-border">
+          <div className="max-w-4xl mx-auto px-6">
+            <div className="bg-card border border-border rounded-2xl p-8 md:p-10">
+              <h2 className="text-2xl font-bold mb-3">Pesquisa Colaborativa do Mapa de Inovação</h2>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                O levantamento e o teste de cada fonte oficial fazem parte da Pesquisa Colaborativa do Mapa de Inovação,
+                desenvolvida no doutorado em Políticas Públicas da UFPR. Cada fonte é registrada com pilar, dados-chave,
+                forma de acesso, situação do teste e próximo passo — e esta documentação é atualizada a cada nova base integrada.
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                Base territorial construída nessa pesquisa: quase 6 mil registros de instituições, laboratórios,
+                parques, unidades de pesquisa e startups brasileiras, reunidos a partir de fontes oficiais
+                (Mapa da Inovação/MCTI, EMBRAPII, FORMICT, SINAPAD, LISP, OTD/CGEE) e do Mapeamento Nacional de
+                Startups da ABStartups, com localização geográfica conferida cidade por cidade.
+              </p>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* OPEN SOURCE COMMITMENT */}
       <section className="py-12 border-t border-border">
