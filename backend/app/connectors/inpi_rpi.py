@@ -138,7 +138,17 @@ class INPIRPIConnector(BaseConnector):
         url = f"{INPI_TXT_BASE}/{prefix}{edition}.zip"
         logger.info(f"INPI RPI: baixando {url}")
         raw = await self.get_bytes(url, use_cache=False)
-        with zipfile.ZipFile(io.BytesIO(raw)) as zf:
+        MAX_ZIP_BYTES = 200 * 1024 * 1024  # 200 MB
+        if len(raw) > MAX_ZIP_BYTES:
+            logger.warning(f"ZIP INPI muito grande ({len(raw) / 1e6:.1f} MB) — ignorado")
+            return []
+        z = zipfile.ZipFile(io.BytesIO(raw))
+        # Verificar tamanho descomprimido antes de extrair
+        total_uncompressed = sum(info.file_size for info in z.infolist())
+        if total_uncompressed > MAX_ZIP_BYTES * 5:
+            logger.warning(f"ZIP INPI descomprimido muito grande ({total_uncompressed / 1e6:.1f} MB) — ignorado")
+            return []
+        with z as zf:
             xmls = [n for n in zf.namelist() if n.lower().endswith(".xml")]
             if not xmls:
                 raise ValueError(
