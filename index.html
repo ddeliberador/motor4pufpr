@@ -16,6 +16,11 @@
 
     <!-- Favicon inline SVG -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2307101c'/%3E%3Cg transform='translate(32,32)'%3E%3Cg fill='%233b82f6'%3E%3Crect x='-4.5' y='-26' width='9' height='10' rx='2' transform='rotate(0)'/%3E%3Crect x='-4.5' y='-26' width='9' height='10' rx='2' transform='rotate(45)'/%3E%3Crect x='-4.5' y='-26' width='9' height='10' rx='2' transform='rotate(90)'/%3E%3Crect x='-4.5' y='-26' width='9' height='10' rx='2' transform='rotate(135)'/%3E%3Crect x='-4.5' y='-26' width='9' height='10' rx='2' transform='rotate(180)'/%3E%3Crect x='-4.5' y='-26' width='9' height='10' rx='2' transform='rotate(225)'/%3E%3Crect x='-4.5' y='-26' width='9' height='10' rx='2' transform='rotate(270)'/%3E%3Crect x='-4.5' y='-26' width='9' height='10' rx='2' transform='rotate(315)'/%3E%3Ccircle cx='0' cy='0' r='18' fill='%233b82f6'/%3E%3C/g%3E%3Ccircle cx='0' cy='0' r='10' fill='%2307101c'/%3E%3Ccircle cx='0' cy='-3.5' r='2' fill='%233b82f6'/%3E%3Crect x='-1.5' y='0.5' width='3' height='7' rx='1.2' fill='%233b82f6'/%3E%3C/g%3E%3C/svg%3E" />
+    <!-- Content-Security-Policy — 2.1 do relatório de segurança 2026-09-14 -->
+    <!-- frame-ancestors não funciona via meta tag — configurar no servidor quando possível -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://*.railway.app https://api.openalex.org https://api-comexstat.mdic.gov.br https://pncp.gov.br https://queridodiario.ok.org.br https://servicodados.ibge.gov.br https://www.ipeadata.gov.br https://ops.epo.org; img-src 'self' data: https: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; worker-src 'self' blob:; font-src 'self' data:;">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
   </head>
   <body>
     <div id="root"></div>
