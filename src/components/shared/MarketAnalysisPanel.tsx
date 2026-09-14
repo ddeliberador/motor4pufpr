@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { safeHttpUrl } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -174,7 +175,7 @@ const MarketAnalysisPanel = ({ data, cempre, perfil }: Props) => {
                     <td className="py-2">
                       {h.espacenet_url ? (
                         <a
-                          href={h.espacenet_url}
+                          href={safeHttpUrl(h.espacenet_url) || "#"}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-primary hover:underline inline-flex items-center gap-1"
@@ -374,7 +375,7 @@ const MarketAnalysisPanel = ({ data, cempre, perfil }: Props) => {
                   <span className="font-medium text-foreground tabular-nums">{o.metric}</span>
                   {o.url ? (
                     <a
-                      href={o.url}
+                      href={safeHttpUrl(o.url) || "#"}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline inline-flex items-center gap-1"

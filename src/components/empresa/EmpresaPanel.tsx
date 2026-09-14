@@ -2,6 +2,7 @@ import AiAnalysisTab from "@/components/shared/AiAnalysisTab";
 import RegionalTab from "@/components/shared/RegionalTab";
 import { useState, useEffect } from "react";
 import { Factory, ArrowLeft, AlertTriangle, MapPin, TrendingUp, TrendingDown, Minus, ExternalLink, ChevronDown, ChevronUp, Zap, Shield, Package, Users, BookOpen } from "lucide-react";
+import { safeHttpUrl } from "@/lib/utils";
 import { useMotorSearch } from "@/hooks/useMotorSearch";
 import { useMotorLocation } from "@/hooks/useLocation";
 import LocalContextBadge from "@/components/shared/LocalContextBadge";
@@ -236,7 +237,7 @@ const EmpresaPanel = () => {
                 </a>
               </div>
               {(hasLocation ? localContracts : policy.contracts || []).slice(0, 5).map((c: any, i: number) => (
-                <a key={i} href={c.url || "#"} target="_blank" rel="noopener noreferrer"
+                <a key={i} href={safeHttpUrl(c.url) || "#"} target="_blank" rel="noopener noreferrer"
                    className="flex items-start gap-3 p-3 border border-border/50 rounded-xl hover:border-primary/30 transition-colors">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-foreground line-clamp-2">{c.object}</p>
@@ -382,7 +383,7 @@ const EmpresaPanel = () => {
                 { sigla: "Finep Subvenção", desc: "Recursos a fundo perdido para inovação empresarial", url: "https://www.finep.gov.br" },
                 { sigla: "EMBRAPII", desc: "Cofinancia projetos de P&D entre empresa e ICT (até 1/3 do valor)", url: "https://embrapii.org.br" },
               ].map((item, i) => (
-                <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
+                <a key={i} href={safeHttpUrl(item.url) || "#"} target="_blank" rel="noopener noreferrer"
                    className="flex items-center justify-between p-3 border border-border/50 rounded-xl hover:border-primary/30 hover:bg-primary/5 transition-colors">
                   <div>
                     <p className="text-sm font-semibold text-foreground">{item.sigla}</p>

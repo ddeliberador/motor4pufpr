@@ -1,5 +1,6 @@
 import { ExternalLink } from "lucide-react";
 
+import { safeHttpUrl } from "@/lib/utils";
 const money = (v: any, div = 1e9, suf = "bi") => `R$ ${(Number(v || 0) / div).toFixed(1)}${suf}`;
 
 export function NovaIndustriaTab({ ni, emphasizeExecution = false }: { ni: any; emphasizeExecution?: boolean }) {
@@ -50,7 +51,7 @@ export function NovaIndustriaTab({ ni, emphasizeExecution = false }: { ni: any; 
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">🏭 Nova Indústria Brasil</h3>
             <p className="text-xs text-muted-foreground mt-1">Política industrial 2024–2026 — MDIC</p>
           </div>
-          <a href={ni.fonte_oficial} target="_blank" rel="noopener noreferrer"
+          <a href={safeHttpUrl(ni.fonte_oficial) || "#"} target="_blank" rel="noopener noreferrer"
              className="text-[10px] text-primary hover:underline flex items-center gap-1 flex-shrink-0">
             <ExternalLink className="w-3 h-3" /> Site oficial
           </a>
@@ -109,7 +110,7 @@ export function NovaIndustriaTab({ ni, emphasizeExecution = false }: { ni: any; 
           <h3 className="text-sm font-semibold text-foreground mb-2">Dados BNDES — Nova Indústria</h3>
           <div className="space-y-1.5">
             {ni.bndes_datasets.slice(0, 4).map((d: any, i: number) => (
-              <a key={i} href={d.url} target="_blank" rel="noopener noreferrer"
+              <a key={i} href={safeHttpUrl(d.url) || "#"} target="_blank" rel="noopener noreferrer"
                  className="flex items-center justify-between px-3 py-2 border border-border/50 rounded-lg hover:border-border transition-colors">
                 <span className="text-xs text-foreground truncate flex-1">{d.titulo}</span>
                 <ExternalLink className="w-3 h-3 text-muted-foreground flex-shrink-0 ml-2" />
@@ -133,7 +134,7 @@ export function PbiaTab({ pbia, emphasizeExecution = false }: { pbia: any; empha
             <h3 className="text-sm font-semibold text-foreground">🤖 Plano Brasileiro de Inteligência Artificial</h3>
             <p className="text-xs text-muted-foreground mt-1">PBIA 2024–2028 — MCTI</p>
           </div>
-          <a href={pbia.fonte_oficial} target="_blank" rel="noopener noreferrer"
+          <a href={safeHttpUrl(pbia.fonte_oficial) || "#"} target="_blank" rel="noopener noreferrer"
              className="text-[10px] text-primary hover:underline flex items-center gap-1 flex-shrink-0">
             <ExternalLink className="w-3 h-3" /> Site oficial
           </a>
@@ -197,7 +198,7 @@ export function PbiaTab({ pbia, emphasizeExecution = false }: { pbia: any; empha
       {pbia.infraestrutura && (
         <div className="bg-card border border-border rounded-xl p-5">
           <h3 className="text-sm font-semibold text-foreground mb-3">Infraestrutura nacional de computação</h3>
-          <a href={pbia.infraestrutura.url} target="_blank" rel="noopener noreferrer"
+          <a href={safeHttpUrl(pbia.infraestrutura.url) || "#"} target="_blank" rel="noopener noreferrer"
              className="flex items-start gap-3 p-3 border border-primary/30 bg-primary/5 rounded-lg hover:border-primary/50 transition-colors">
             <span className="text-lg">🖥️</span>
             <div>
@@ -212,7 +213,7 @@ export function PbiaTab({ pbia, emphasizeExecution = false }: { pbia: any; empha
       {pbia.regulacao && (
         <div className="bg-card border border-border rounded-xl p-5">
           <h3 className="text-sm font-semibold text-foreground mb-2">Marco regulatório</h3>
-          <a href={pbia.regulacao.url} target="_blank" rel="noopener noreferrer"
+          <a href={safeHttpUrl(pbia.regulacao.url) || "#"} target="_blank" rel="noopener noreferrer"
              className="flex items-center justify-between px-3 py-3 bg-amber-500/5 border border-amber-500/20 rounded-lg hover:border-amber-500/40 transition-colors">
             <div>
               <p className="text-xs font-semibold text-foreground">{pbia.regulacao.pl}</p>
@@ -255,7 +256,7 @@ export function FomentoTab({ fom }: { fom: any }) {
           {(fom.instituicoes || []).map((inst: any) => {
             const exec = fom.execucao_2024?.find((e: any) => e.sigla === inst.sigla);
             return (
-              <a key={inst.sigla} href={inst.url} target="_blank" rel="noopener noreferrer"
+              <a key={inst.sigla} href={safeHttpUrl(inst.url) || "#"} target="_blank" rel="noopener noreferrer"
                  className="flex items-center justify-between px-3 py-3 border border-border/50 rounded-lg hover:border-border transition-colors">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -298,7 +299,7 @@ export function FomentoTab({ fom }: { fom: any }) {
         <h3 className="text-sm font-semibold text-foreground mb-3">Links úteis — Editais e chamadas abertas</h3>
         <div className="space-y-1.5">
           {(fom.links_uteis || []).map((l: any, i: number) => (
-            <a key={i} href={l.url} target="_blank" rel="noopener noreferrer"
+            <a key={i} href={safeHttpUrl(l.url) || "#"} target="_blank" rel="noopener noreferrer"
                className="flex items-center justify-between px-3 py-2 border border-border/50 rounded-lg hover:border-border transition-colors">
               <span className="text-xs text-foreground">{l.nome}</span>
               <ExternalLink className="w-3 h-3 text-muted-foreground flex-shrink-0" />
