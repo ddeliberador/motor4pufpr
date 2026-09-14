@@ -5,7 +5,7 @@
 // Regra dura: NUNCA inventar dado. Se a fonte falhar, a resposta retorna
 // { failed: true, error } e nada é gravado para aquela fonte.
 
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { corsHeaders } from "npm:@supabase/supabase-js@2.116.0/cors";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
