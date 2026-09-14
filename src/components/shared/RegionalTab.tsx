@@ -6,6 +6,7 @@ import type { Persona } from "@/types/persona";
 import type { MotorSearchResult } from "@/hooks/useMotorSearch";
 import PanoramaEstadualTab from "./PanoramaEstadualTab";
 
+import { safeHttpUrl } from "@/lib/utils";
 interface RegionalTabProps {
   persona: Persona;
   data: MotorSearchResult;
@@ -43,7 +44,7 @@ function SourceLine({ source, extra }: { source?: { name: string; url: string };
   if (!source) return null;
   return (
     <p className="text-[11px] text-muted-foreground mt-3 flex flex-wrap items-center gap-1">
-      📌 Fonte: <a href={source.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground inline-flex items-center gap-0.5">{source.name}<ExternalLink className="w-3 h-3" /></a>
+      📌 Fonte: <a href={safeHttpUrl(source.url) || "#"} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground inline-flex items-center gap-0.5">{source.name}<ExternalLink className="w-3 h-3" /></a>
       {extra && <span>· {extra}</span>}
     </p>
   );
@@ -56,7 +57,7 @@ function Unavailable({ reason, source }: { reason?: string; source?: { name: str
       <div>
         <p>Dado indisponível: {reason || "motivo não informado pela fonte"}.</p>
         {source && (
-          <a href={source.url} target="_blank" rel="noopener noreferrer" className="text-xs underline hover:text-foreground inline-flex items-center gap-0.5">
+          <a href={safeHttpUrl(source.url) || "#"} target="_blank" rel="noopener noreferrer" className="text-xs underline hover:text-foreground inline-flex items-center gap-0.5">
             Consultar {source.name} diretamente <ExternalLink className="w-3 h-3" />
           </a>
         )}
@@ -176,7 +177,7 @@ function GazettesBlock({ block, query }: { block: any; query: string }) {
       <p className="text-xs text-muted-foreground mb-3">{d.total.toLocaleString("pt-BR")} diário(s) mencionam "{query}" neste município. Os mais relevantes:</p>
       <div className="space-y-2">
         {d.items.slice(0, 6).map((g: any, i: number) => (
-          <a key={i} href={g.url} target="_blank" rel="noopener noreferrer" className="block bg-muted/30 hover:bg-muted/50 rounded-lg p-3 transition-colors">
+          <a key={i} href={safeHttpUrl(g.url) || "#"} target="_blank" rel="noopener noreferrer" className="block bg-muted/30 hover:bg-muted/50 rounded-lg p-3 transition-colors">
             <div className="flex items-center justify-between gap-2 mb-1">
               <p className="text-xs font-medium text-foreground">Diário Oficial de {g.territory} · {g.date ? new Date(g.date).toLocaleDateString("pt-BR") : ""}</p>
               <span className="text-[10px] text-muted-foreground">{g.edition ? `ed. ${g.edition}` : ""}{g.is_extra ? " (extra)" : ""}</span>

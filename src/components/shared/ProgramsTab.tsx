@@ -1,5 +1,6 @@
 import { ExternalLink } from "lucide-react";
 
+import { safeHttpUrl } from "@/lib/utils";
 interface ProgramsTabProps {
   programs: any;
   which: "nova-industria" | "pbia" | "fomento";
@@ -26,7 +27,7 @@ export default function ProgramsTab({ programs, which }: ProgramsTabProps) {
               <h3 className="text-sm font-semibold text-foreground">🏭 Nova Indústria Brasil</h3>
               <p className="text-xs text-muted-foreground mt-0.5">Política industrial 2024–2026 — MDIC</p>
             </div>
-            <a href={ni.fonte_oficial} target="_blank" rel="noopener noreferrer"
+            <a href={safeHttpUrl(ni.fonte_oficial) || "#"} target="_blank" rel="noopener noreferrer"
                className="text-[10px] text-primary hover:underline flex items-center gap-1 flex-shrink-0">
               <ExternalLink className="w-3 h-3" /> Site oficial
             </a>
@@ -95,7 +96,7 @@ export default function ProgramsTab({ programs, which }: ProgramsTabProps) {
             <h3 className="text-sm font-semibold text-foreground mb-2">Dados BNDES — Nova Indústria</h3>
             <div className="space-y-1.5">
               {ni.bndes_datasets.slice(0, 4).map((d: any, i: number) => (
-                <a key={i} href={d.url} target="_blank" rel="noopener noreferrer"
+                <a key={i} href={safeHttpUrl(d.url) || "#"} target="_blank" rel="noopener noreferrer"
                    className="flex items-center justify-between px-3 py-2 border border-border/50 rounded-lg hover:border-border transition-colors">
                   <span className="text-xs text-foreground truncate flex-1">{d.titulo}</span>
                   <ExternalLink className="w-3 h-3 text-muted-foreground flex-shrink-0 ml-2" />
@@ -128,7 +129,7 @@ export default function ProgramsTab({ programs, which }: ProgramsTabProps) {
               <h3 className="text-sm font-semibold text-foreground">🤖 Plano Brasileiro de Inteligência Artificial</h3>
               <p className="text-xs text-muted-foreground mt-0.5">PBIA 2024–2028 — MCTI</p>
             </div>
-            <a href={pbia.fonte_oficial} target="_blank" rel="noopener noreferrer"
+            <a href={safeHttpUrl(pbia.fonte_oficial) || "#"} target="_blank" rel="noopener noreferrer"
                className="text-[10px] text-primary hover:underline flex items-center gap-1 flex-shrink-0">
               <ExternalLink className="w-3 h-3" /> Site oficial
             </a>
@@ -160,7 +161,7 @@ export default function ProgramsTab({ programs, which }: ProgramsTabProps) {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <a href={pbia.infraestrutura?.url} target="_blank" rel="noopener noreferrer"
+          <a href={safeHttpUrl(pbia.infraestrutura?.url) || "#"} target="_blank" rel="noopener noreferrer"
              className="flex items-start gap-3 p-4 bg-card border border-primary/20 bg-primary/5 rounded-xl hover:border-primary/40 transition-colors">
             <span className="text-xl">🖥️</span>
             <div>
@@ -169,7 +170,7 @@ export default function ProgramsTab({ programs, which }: ProgramsTabProps) {
             </div>
             <ExternalLink className="w-3 h-3 text-muted-foreground ml-auto flex-shrink-0 mt-0.5" />
           </a>
-          <a href={pbia.regulacao?.url} target="_blank" rel="noopener noreferrer"
+          <a href={safeHttpUrl(pbia.regulacao?.url) || "#"} target="_blank" rel="noopener noreferrer"
              className="flex items-start gap-3 p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl hover:border-amber-500/40 transition-colors">
             <span className="text-xl">⚖️</span>
             <div>
@@ -226,7 +227,7 @@ export default function ProgramsTab({ programs, which }: ProgramsTabProps) {
           {fom.instituicoes?.map((inst: any) => {
             const exec = fom.execucao_2024?.find((e: any) => e.sigla === inst.sigla);
             return (
-              <a key={inst.sigla} href={inst.url} target="_blank" rel="noopener noreferrer"
+              <a key={inst.sigla} href={safeHttpUrl(inst.url) || "#"} target="_blank" rel="noopener noreferrer"
                  className="flex items-center justify-between px-3 py-3 border border-border/50 rounded-lg hover:border-border transition-colors">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -267,7 +268,7 @@ export default function ProgramsTab({ programs, which }: ProgramsTabProps) {
         <h3 className="text-sm font-semibold text-foreground mb-3">Links úteis — Editais e chamadas</h3>
         <div className="space-y-1.5">
           {fom.links_uteis?.map((l: any, i: number) => (
-            <a key={i} href={l.url} target="_blank" rel="noopener noreferrer"
+            <a key={i} href={safeHttpUrl(l.url) || "#"} target="_blank" rel="noopener noreferrer"
                className="flex items-center justify-between px-3 py-2 border border-border/50 rounded-lg hover:border-border transition-colors">
               <span className="text-xs text-foreground">{l.nome}</span>
               <ExternalLink className="w-3 h-3 text-muted-foreground flex-shrink-0" />

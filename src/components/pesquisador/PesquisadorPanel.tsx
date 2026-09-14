@@ -32,6 +32,7 @@ import PoliciesTab from "@/components/shared/PoliciesTab";
 import CnaeNcmCard from "@/components/shared/CnaeNcmCard";
 import PerspectiveSwitcher from "@/components/shared/PerspectiveSwitcher";
 
+import { safeHttpUrl } from "@/lib/utils";
 const PesquisadorPanel = () => {
   const config = personaConfigs.pesquisador;
   const [searchQuery, setSearchQuery] = useState("");
@@ -472,7 +473,7 @@ const PesquisadorPanel = () => {
                     {knowledge.papers.slice(0, 8).map((p: any, i: number) => (
                       <div key={i} className="p-4 border border-border/50 rounded-xl hover:border-border transition-colors">
                         <div className="flex items-start justify-between gap-3 mb-2">
-                          <a href={p.doi ? `https://doi.org/${p.doi}` : p.url || "#"}
+                          <a href={p.doi ? `https://doi.org/${p.doi}` : safeHttpUrl(p.url) || "#"}
                              target="_blank" rel="noopener noreferrer"
                              className="text-sm font-medium text-primary hover:underline flex-1 leading-snug">
                             {p.title || "Sem título"}
@@ -516,7 +517,7 @@ const PesquisadorPanel = () => {
                     <h3 className="text-base font-semibold text-foreground">
                       🎓 Cursos de pós-graduação na área
                     </h3>
-                    <a href={(data.layers as any).sidra.pos_graduacao.url} target="_blank" rel="noopener noreferrer"
+                    <a href={safeHttpUrl((data.layers as any).sidra.pos_graduacao.url) || "#"} target="_blank" rel="noopener noreferrer"
                        className="text-xs text-primary hover:underline flex items-center gap-1">
                       <ExternalLink className="w-3 h-3" /> SIDRA/IBGE
                     </a>
@@ -628,7 +629,7 @@ const PesquisadorPanel = () => {
                   </p>
                   <div className="space-y-2">
                     {(technology as any).innovation_datasets.slice(0, 6).map((d: any, i: number) => (
-                      <a key={i} href={d.url} target="_blank" rel="noopener noreferrer"
+                      <a key={i} href={safeHttpUrl(d.url) || "#"} target="_blank" rel="noopener noreferrer"
                          className="flex items-start gap-3 p-4 border border-border/50 rounded-xl hover:border-border transition-colors">
                         <span className="text-xl">📄</span>
                         <div className="flex-1 min-w-0">
@@ -816,7 +817,7 @@ const PesquisadorPanel = () => {
                         )}
                         <div className="space-y-1.5">
                           {technology.github_repos.slice(0, 5).map((r: any, i: number) => (
-                            <a key={i} href={r.url} target="_blank" rel="noopener noreferrer"
+                            <a key={i} href={safeHttpUrl(r.url) || "#"} target="_blank" rel="noopener noreferrer"
                                className="flex items-center justify-between px-3 py-2.5 hover:bg-muted/50 rounded-lg transition-colors border border-transparent hover:border-border">
                               <div className="min-w-0 flex-1">
                                 <p className="text-sm text-foreground truncate font-medium">{r.name}</p>
@@ -908,7 +909,7 @@ const PesquisadorPanel = () => {
                               </div>
                             </div>
                             {inst.url && (
-                              <a href={inst.url} target="_blank" rel="noopener noreferrer"
+                              <a href={safeHttpUrl(inst.url) || "#"} target="_blank" rel="noopener noreferrer"
                                  className="flex-shrink-0 flex items-center gap-1 text-sm text-primary hover:underline font-medium">
                                 <ExternalLink className="w-3.5 h-3.5" /> Abrir
                               </a>
@@ -966,7 +967,7 @@ const PesquisadorPanel = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {cnpq.modalidades?.map((m: any, i: number) => (
-                        <a key={i} href={m.url} target="_blank" rel="noopener noreferrer"
+                        <a key={i} href={safeHttpUrl(m.url) || "#"} target="_blank" rel="noopener noreferrer"
                            className="flex items-start gap-4 p-4 bg-card border border-border/60 rounded-2xl hover:border-primary/30 hover:bg-primary/5 transition-colors">
                           <span className="text-2xl font-bold text-primary bg-primary/10 px-3 py-2 rounded-xl flex-shrink-0">{m.sigla}</span>
                           <div className="min-w-0 flex-1">
@@ -1064,7 +1065,7 @@ const PesquisadorPanel = () => {
                       <p className="text-sm text-muted-foreground mb-4">Links para os principais portais de bolsas e financiamento à pesquisa no Brasil.</p>
                       <div className="space-y-2">
                         {cnpq.links_uteis?.map((l: any, i: number) => (
-                          <a key={i} href={l.url} target="_blank" rel="noopener noreferrer"
+                          <a key={i} href={safeHttpUrl(l.url) || "#"} target="_blank" rel="noopener noreferrer"
                              className="flex items-center justify-between px-4 py-3 border border-border/50 rounded-xl hover:border-primary/30 hover:bg-primary/5 transition-colors">
                             <span className="text-sm text-foreground font-medium">{l.label}</span>
                             <ExternalLink className="w-4 h-4 text-primary flex-shrink-0" />
@@ -1178,7 +1179,7 @@ const PesquisadorPanel = () => {
                                 {typeof c.publications === "number" && <span>{c.publications} publicação(ões)</span>}
                                 {typeof c.github_stars === "number" && <span>⭐ {c.github_stars}</span>}
                                 {c.github_url && (
-                                  <a href={c.github_url} target="_blank" rel="noreferrer" className="text-primary inline-flex items-center gap-1 hover:underline">
+                                  <a href={safeHttpUrl(c.github_url) || "#"} target="_blank" rel="noreferrer" className="text-primary inline-flex items-center gap-1 hover:underline">
                                     GitHub <ExternalLink className="w-3 h-3" />
                                   </a>
                                 )}

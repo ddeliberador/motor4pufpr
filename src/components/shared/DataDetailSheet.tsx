@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ExternalLink, BookOpen, Users, FileText, Globe, GitBranch, Building2, Landmark } from "lucide-react";
+import { safeHttpUrl } from "@/lib/utils";
 import { track } from "@/lib/telemetry";
 
 export interface DetailItem {
@@ -23,7 +24,7 @@ interface DataDetailSheetProps {
 function PaperMini({ paper }: { paper: any }) {
   return (
     <a
-      href={paper.oa_url || paper.url || (paper.doi ? `https://doi.org/${paper.doi}` : "#")}
+      href={safeHttpUrl(paper.oa_url, paper.url) || (paper.doi ? `https://doi.org/${paper.doi}` : "#")}
       target="_blank"
       rel="noopener noreferrer"
       className="block p-3 bg-muted/30 rounded-lg hover:bg-muted/60 transition-colors border border-border/30"
@@ -43,7 +44,7 @@ function PaperMini({ paper }: { paper: any }) {
 
 // Detail de PAPER — exibe tudo
 function PaperDetail({ data }: { data: any }) {
-  const accessUrl = data.oa_url || data.url || (data.doi ? `https://doi.org/${data.doi}` : null);
+  const accessUrl = safeHttpUrl(data.oa_url, data.url) || (data.doi ? `https://doi.org/${data.doi}` : null);
 
   return (
     <div className="space-y-5">
@@ -224,7 +225,7 @@ function InstitutionDetail({ data }: { data: any }) {
                   )}
                   {c.uf && <span className="text-[9px] text-muted-foreground">{c.uf}</span>}
                   {c.url && (
-                    <a href={c.url} target="_blank" rel="noopener noreferrer"
+                    <a href={safeHttpUrl(c.url) || "#"} target="_blank" rel="noopener noreferrer"
                        className="text-[9px] text-primary hover:underline ml-auto">
                       Ver →
                     </a>
@@ -290,7 +291,7 @@ function RepoDetail({ data }: { data: any }) {
         <p className="text-[10px] text-muted-foreground">Atualizado: {data.updated}</p>
       )}
       {data.url && (
-        <a href={data.url} target="_blank" rel="noopener noreferrer"
+        <a href={safeHttpUrl(data.url) || "#"} target="_blank" rel="noopener noreferrer"
            className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-sm font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors">
           <GitBranch className="w-4 h-4" />
           Ver no GitHub
@@ -330,7 +331,7 @@ function ContractDetail({ data, type }: { data: any; type: string }) {
         </div>
       ))}
       {data.url && (
-        <a href={data.url} target="_blank" rel="noopener noreferrer"
+        <a href={safeHttpUrl(data.url) || "#"} target="_blank" rel="noopener noreferrer"
            className="flex items-center justify-center gap-2 w-full py-2 px-4 rounded-xl text-sm font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors">
           <ExternalLink className="w-4 h-4" />
           Ver no portal original

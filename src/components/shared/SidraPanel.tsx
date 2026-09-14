@@ -1,4 +1,5 @@
 import { ExternalLink, Building2, Factory, GraduationCap, BarChart3, MapPin } from "lucide-react";
+import { safeHttpUrl } from "@/lib/utils";
 
 interface SidraData {
   pintec?: any;
@@ -26,8 +27,8 @@ const CardShell = ({
   <div className="bg-card border border-border rounded-xl p-5">
     <div className="flex items-center justify-between mb-2">
       <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">{icon} {title}</h3>
-      {url && (
-        <a href={url} target="_blank" rel="noopener noreferrer"
+      {safeHttpUrl(url) && (
+        <a href={safeHttpUrl(url)} target="_blank" rel="noopener noreferrer"
            className="text-[10px] text-primary hover:underline flex items-center gap-1">
           <ExternalLink className="w-3 h-3" /> SIDRA/IBGE
         </a>
