@@ -204,7 +204,17 @@ class CVMConnector(BaseConnector):
                 if resp.status_code != 200:
                     logger.warning(f"CVM download {url} -> HTTP {resp.status_code}")
                     return None
-                return zipfile.ZipFile(io.BytesIO(resp.content))
+                MAX_ZIP_BYTES = 200 * 1024 * 1024  # 200 MB
+                raw = resp.content
+                if len(raw) > MAX_ZIP_BYTES:
+                    logger.warning(f"ZIP CVM muito grande ({len(raw) / 1e6:.1f} MB) — ignorado")
+                    return None
+                z = zipfile.ZipFile(io.BytesIO(raw))
+                total_uncompressed = sum(info.file_size for info in z.infolist())
+                if total_uncompressed > MAX_ZIP_BYTES * 5:
+                    logger.warning(f"ZIP CVM descomprimido muito grande ({total_uncompressed / 1e6:.1f} MB) — ignorado")
+                    return None
+                return z
         except Exception as e:
             logger.warning(f"CVM download error {url}: {e}")
             return None
