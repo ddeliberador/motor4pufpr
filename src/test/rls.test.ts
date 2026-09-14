@@ -48,7 +48,7 @@ describe("RLS — escrita negada a usuário sem papel admin", () => {
 
   it.each(PROTECTED_TABLES)("UPDATE em %s deve retornar erro de permissão", async (table) => {
     if (!client) return;
-    const { error } = await client.from(table).update({ _dummy: true } as any).eq("id", "00000000-0000-0000-0000-000000000000");
+    const { error } = await (client.from(table) as any).update({ _dummy: true }).eq("id", "00000000-0000-0000-0000-000000000000");
     expect(error).not.toBeNull();
     expect(error?.code).toMatch(/42501|insufficient_privilege|permission denied/i);
   });
