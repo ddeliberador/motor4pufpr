@@ -569,21 +569,6 @@ export default function Mapa() {
           total={locais.length}
         />
 
-        {/* Comprovação de extração (recolhida) */}
-        <div className="border-t border-border">
-          <div className="container-wide px-6 py-4">
-            <button
-              onClick={() => setVerComprovacao((v) => !v)}
-              className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ChevronDown
-                className={`h-4 w-4 transition-transform ${verComprovacao ? "rotate-180" : ""}`}
-              />
-              Comprovação de extração — 21/24 bases
-            </button>
-          </div>
-          {verComprovacao && <MapaExtracaoSection />}
-        </div>
       </main>
 
       <Footer />
