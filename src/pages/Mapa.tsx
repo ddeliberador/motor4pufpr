@@ -15,7 +15,24 @@ import { downloadLocations, type ResearchLocation } from "@/lib/researchLocation
 import { safeHttpUrl } from "@/lib/utils";
 
 const COLUNAS =
-  "id,nome,tipo,uf,municipio,latitude,longitude,fonte,fonte_url,cnpj,data_coleta";
+  "id,nome,tipo,uf,municipio,latitude,longitude,fonte,fonte_url,cnpj,data_coleta,raw_metadata";
+
+const REGIAO_POR_UF: Record<string, string> = {
+  AC: "Norte", AM: "Norte", AP: "Norte", PA: "Norte", RO: "Norte", RR: "Norte", TO: "Norte",
+  AL: "Nordeste", BA: "Nordeste", CE: "Nordeste", MA: "Nordeste", PB: "Nordeste",
+  PE: "Nordeste", PI: "Nordeste", RN: "Nordeste", SE: "Nordeste",
+  DF: "Centro-Oeste", GO: "Centro-Oeste", MT: "Centro-Oeste", MS: "Centro-Oeste",
+  ES: "Sudeste", MG: "Sudeste", RJ: "Sudeste", SP: "Sudeste",
+  PR: "Sul", RS: "Sul", SC: "Sul",
+};
+const REGIOES = ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"];
+
+/** Facetas de tipo: "ICT; Unidade Embrapii" vira ["ICT", "Unidade Embrapii"]. */
+const facetasTipo = (tipo: string) =>
+  tipo.split(";").map((t) => t.trim()).filter(Boolean);
+
+const segmentoDe = (l: ResearchLocation) =>
+  typeof l.raw_metadata?.segmento === "string" ? (l.raw_metadata.segmento as string) : null;
 
 /** Busca paginada — a base tem mais linhas do que o limite por requisição. */
 async function carregarLocais(): Promise<ResearchLocation[]> {
@@ -50,6 +67,10 @@ export default function Mapa() {
   const [fontesSel, setFontesSel] = useState<Set<string>>(new Set());
   const [catsSel, setCatsSel] = useState<Set<CategoriaKey>>(new Set());
   const [ufsSel, setUfsSel] = useState<Set<string>>(new Set());
+  const [regioesSel, setRegioesSel] = useState<Set<string>>(new Set());
+  const [tiposSel, setTiposSel] = useState<Set<string>>(new Set());
+  const [segmentosSel, setSegmentosSel] = useState<Set<string>>(new Set());
+  const [soEmbrapii, setSoEmbrapii] = useState(false);
   const [selecao, setSelecao] = useState<{ pontos: Ponto[]; total: number } | null>(null);
   const [verComprovacao, setVerComprovacao] = useState(false);
 
@@ -66,10 +87,16 @@ export default function Mapa() {
       if (fontesSel.size && !fontesSel.has(l.fonte)) return false;
       if (catsSel.size && !catsSel.has(l.categoria)) return false;
       if (ufsSel.size && (!l.uf || !ufsSel.has(l.uf))) return false;
+      if (regioesSel.size && (!l.uf || !regioesSel.has(REGIAO_POR_UF[l.uf] || "")))
+        return false;
+      if (tiposSel.size && !facetasTipo(l.tipo).some((t) => tiposSel.has(t)))
+        return false;
+      if (segmentosSel.size && !segmentosSel.has(segmentoDe(l) || "")) return false;
+      if (soEmbrapii && !/embrapii/i.test(l.tipo)) return false;
       if (q && !norm(`${l.nome} ${l.municipio || ""}`).includes(q)) return false;
       return true;
     });
-  }, [comCategoria, busca, fontesSel, catsSel, ufsSel]);
+  }, [comCategoria, busca, fontesSel, catsSel, ufsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii]);
 
   const pontos: Ponto[] = useMemo(
     () =>
@@ -108,6 +135,36 @@ export default function Mapa() {
     [locais],
   );
 
+  const contagemRegiao = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const l of comCategoria) {
+      const r = l.uf ? REGIAO_POR_UF[l.uf] : null;
+      if (r) c[r] = (c[r] || 0) + 1;
+    }
+    return c;
+  }, [comCategoria]);
+
+  const contagemTipo = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const l of comCategoria)
+      for (const t of facetasTipo(l.tipo)) c[t] = (c[t] || 0) + 1;
+    return c;
+  }, [comCategoria]);
+
+  const contagemSegmento = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const l of comCategoria) {
+      const s = segmentoDe(l);
+      if (s) c[s] = (c[s] || 0) + 1;
+    }
+    return c;
+  }, [comCategoria]);
+
+  const totalEmbrapii = useMemo(
+    () => comCategoria.filter((l) => /embrapii/i.test(l.tipo)).length,
+    [comCategoria],
+  );
+
   const ultimaColeta = useMemo(() => {
     const d = locais.map((l) => l.data_coleta).filter(Boolean).sort();
     return d.length ? new Date(d[d.length - 1]).toLocaleDateString("pt-BR") : null;
@@ -118,14 +175,20 @@ export default function Mapa() {
     setFontesSel(new Set());
     setCatsSel(new Set());
     setUfsSel(new Set());
+    setRegioesSel(new Set());
+    setTiposSel(new Set());
+    setSegmentosSel(new Set());
+    setSoEmbrapii(false);
     setSelecao(null);
   };
 
-  const temFiltro = busca || fontesSel.size || catsSel.size || ufsSel.size;
+  const temFiltro =
+    busca || fontesSel.size || catsSel.size || ufsSel.size ||
+    regioesSel.size || tiposSel.size || segmentosSel.size || soEmbrapii;
 
   useEffect(() => {
     setSelecao(null);
-  }, [busca, ufsSel, fontesSel, catsSel]);
+  }, [busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii]);
 
   const alternar = <T,>(set: Set<T>, v: T, apply: (s: Set<T>) => void) => {
     const novo = new Set(set);
@@ -192,6 +255,32 @@ export default function Mapa() {
                 />
               </div>
 
+              {/* Região */}
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Região
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {REGIOES.map((r) => {
+                    const ativo = regioesSel.has(r);
+                    const esmaecido = regioesSel.size > 0 && !ativo;
+                    return (
+                      <button
+                        key={r}
+                        onClick={() => alternar(regioesSel, r, setRegioesSel)}
+                        className={`rounded-md border px-2 py-1 text-[11px] font-medium transition-colors ${
+                          ativo
+                            ? "border-primary bg-primary/15 text-foreground"
+                            : "border-border bg-card hover:bg-muted"
+                        } ${esmaecido ? "opacity-40" : ""}`}
+                      >
+                        {r} ({(contagemRegiao[r] || 0).toLocaleString("pt-BR")})
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Estado */}
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -248,6 +337,85 @@ export default function Mapa() {
                   })}
                 </div>
               </div>
+
+              {/* Tipo de instituição (detalhado) */}
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Tipo de instituição (detalhado)
+                </p>
+                <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
+                  {Object.entries(contagemTipo)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([t, n]) => {
+                      const ativo = tiposSel.has(t);
+                      const esmaecido = tiposSel.size > 0 && !ativo;
+                      return (
+                        <button
+                          key={t}
+                          onClick={() => alternar(tiposSel, t, setTiposSel)}
+                          className={`flex w-full items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted ${
+                            ativo
+                              ? "border-primary bg-primary/15"
+                              : "border-transparent bg-card"
+                          } ${esmaecido ? "opacity-40" : ""}`}
+                        >
+                          <span className="flex-1 truncate">{t}</span>
+                          <span className="font-mono text-muted-foreground">
+                            {n.toLocaleString("pt-BR")}
+                          </span>
+                        </button>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* Unidades EMBRAPII (atalho) */}
+              <button
+                onClick={() => setSoEmbrapii((v) => !v)}
+                className={`flex w-full items-center gap-2 rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-colors ${
+                  soEmbrapii
+                    ? "border-primary bg-primary/15"
+                    : "border-border bg-card hover:bg-muted"
+                }`}
+              >
+                <span className="flex-1">Somente unidades EMBRAPII</span>
+                <span className="font-mono text-muted-foreground">
+                  {totalEmbrapii.toLocaleString("pt-BR")}
+                </span>
+              </button>
+
+              {/* Segmento da empresa (startups) */}
+              {Object.keys(contagemSegmento).length > 0 && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Segmento da empresa (startups)
+                  </p>
+                  <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
+                    {Object.entries(contagemSegmento)
+                      .sort((a, b) => b[1] - a[1])
+                      .map(([s, n]) => {
+                        const ativo = segmentosSel.has(s);
+                        const esmaecido = segmentosSel.size > 0 && !ativo;
+                        return (
+                          <button
+                            key={s}
+                            onClick={() => alternar(segmentosSel, s, setSegmentosSel)}
+                            className={`flex w-full items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted ${
+                              ativo
+                                ? "border-primary bg-primary/15"
+                                : "border-transparent bg-card"
+                            } ${esmaecido ? "opacity-40" : ""}`}
+                          >
+                            <span className="flex-1 truncate">{s}</span>
+                            <span className="font-mono text-muted-foreground">
+                              {n.toLocaleString("pt-BR")}
+                            </span>
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
 
               {/* Bases de origem */}
               <div>
