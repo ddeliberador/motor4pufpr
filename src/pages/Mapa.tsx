@@ -87,10 +87,16 @@ export default function Mapa() {
       if (fontesSel.size && !fontesSel.has(l.fonte)) return false;
       if (catsSel.size && !catsSel.has(l.categoria)) return false;
       if (ufsSel.size && (!l.uf || !ufsSel.has(l.uf))) return false;
+      if (regioesSel.size && (!l.uf || !regioesSel.has(REGIAO_POR_UF[l.uf] || "")))
+        return false;
+      if (tiposSel.size && !facetasTipo(l.tipo).some((t) => tiposSel.has(t)))
+        return false;
+      if (segmentosSel.size && !segmentosSel.has(segmentoDe(l) || "")) return false;
+      if (soEmbrapii && !/embrapii/i.test(l.tipo)) return false;
       if (q && !norm(`${l.nome} ${l.municipio || ""}`).includes(q)) return false;
       return true;
     });
-  }, [comCategoria, busca, fontesSel, catsSel, ufsSel]);
+  }, [comCategoria, busca, fontesSel, catsSel, ufsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii]);
 
   const pontos: Ponto[] = useMemo(
     () =>
