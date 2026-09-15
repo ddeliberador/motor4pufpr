@@ -124,7 +124,7 @@ export default function ListaFiltrados({ itens, filtrosAtivos, total }: Props) {
         { t: "Região", w: 62 },
         { t: "CNPJ", w: 92 },
         { t: "Coordenadas", w: 92 },
-        { t: "Base de origem", w: 048 + 100 },
+        { t: "Base de origem", w: 148 },
       ];
       const larguraTotal = cols.reduce((s, c) => s + c.w, 0);
       const escala = W / larguraTotal;
