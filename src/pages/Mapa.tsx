@@ -282,6 +282,10 @@ export default function Mapa() {
               </div>
 
               {/* Estado */}
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Estado
+                </p>
                 <div className="flex flex-wrap gap-1.5">
                   {ufs.map((u) => {
                     const ativo = ufsSel.has(u);
