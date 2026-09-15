@@ -46,9 +46,10 @@ export default function Mapa() {
   });
 
   const [busca, setBusca] = useState("");
-  const [fontesOff, setFontesOff] = useState<Set<string>>(new Set());
-  const [catsOff, setCatsOff] = useState<Set<CategoriaKey>>(new Set());
-  const [uf, setUf] = useState<string | null>(null);
+  // Conjuntos de SELEÇÃO: vazio = tudo visível; com itens = só os selecionados.
+  const [fontesSel, setFontesSel] = useState<Set<string>>(new Set());
+  const [catsSel, setCatsSel] = useState<Set<CategoriaKey>>(new Set());
+  const [ufsSel, setUfsSel] = useState<Set<string>>(new Set());
   const [selecao, setSelecao] = useState<{ pontos: Ponto[]; total: number } | null>(null);
   const [verComprovacao, setVerComprovacao] = useState(false);
 
@@ -62,13 +63,13 @@ export default function Mapa() {
   const filtrados = useMemo(() => {
     const q = norm(busca.trim());
     return comCategoria.filter((l) => {
-      if (fontesOff.has(l.fonte)) return false;
-      if (catsOff.has(l.categoria)) return false;
-      if (uf && l.uf !== uf) return false;
+      if (fontesSel.size && !fontesSel.has(l.fonte)) return false;
+      if (catsSel.size && !catsSel.has(l.categoria)) return false;
+      if (ufsSel.size && (!l.uf || !ufsSel.has(l.uf))) return false;
       if (q && !norm(`${l.nome} ${l.municipio || ""}`).includes(q)) return false;
       return true;
     });
-  }, [comCategoria, busca, fontesOff, catsOff, uf]);
+  }, [comCategoria, busca, fontesSel, catsSel, ufsSel]);
 
   const pontos: Ponto[] = useMemo(
     () =>
@@ -114,17 +115,17 @@ export default function Mapa() {
 
   const limpar = () => {
     setBusca("");
-    setFontesOff(new Set());
-    setCatsOff(new Set());
-    setUf(null);
+    setFontesSel(new Set());
+    setCatsSel(new Set());
+    setUfsSel(new Set());
     setSelecao(null);
   };
 
-  const temFiltro = busca || fontesOff.size || catsOff.size || uf;
+  const temFiltro = busca || fontesSel.size || catsSel.size || ufsSel.size;
 
   useEffect(() => {
     setSelecao(null);
-  }, [busca, uf, fontesOff, catsOff]);
+  }, [busca, ufsSel, fontesSel, catsSel]);
 
   const alternar = <T,>(set: Set<T>, v: T, apply: (s: Set<T>) => void) => {
     const novo = new Set(set);
@@ -196,18 +197,25 @@ export default function Mapa() {
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Estado
                 </p>
-                <select
-                  value={uf || ""}
-                  onChange={(e) => setUf(e.target.value || null)}
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-                >
-                  <option value="">Todos os estados</option>
-                  {ufs.map((u) => (
-                    <option key={u} value={u}>
-                      {u} ({(contagemPorUf[u] || 0).toLocaleString("pt-BR")})
-                    </option>
-                  ))}
-                </select>
+                <div className="flex flex-wrap gap-1.5">
+                  {ufs.map((u) => {
+                    const ativo = ufsSel.has(u);
+                    const esmaecido = ufsSel.size > 0 && !ativo;
+                    return (
+                      <button
+                        key={u}
+                        onClick={() => alternar(ufsSel, u, setUfsSel)}
+                        className={`rounded-md border px-2 py-1 text-[11px] font-medium transition-colors ${
+                          ativo
+                            ? "border-primary bg-primary/15 text-foreground"
+                            : "border-border bg-card hover:bg-muted"
+                        } ${esmaecido ? "opacity-40" : ""}`}
+                      >
+                        {u}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Tipos (com ícone = legenda do mapa) */}
@@ -218,14 +226,17 @@ export default function Mapa() {
                 <div className="space-y-1">
                   {CATEGORIAS.map((c) => {
                     const Icone = c.icon;
-                    const ativo = !catsOff.has(c.key);
+                    const ativo = catsSel.has(c.key);
+                    const esmaecido = catsSel.size > 0 && !ativo;
                     return (
                       <button
                         key={c.key}
-                        onClick={() => alternar(catsOff, c.key, setCatsOff)}
-                        className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-xs transition-colors ${
-                          ativo ? "bg-card" : "opacity-40"
-                        } hover:bg-muted`}
+                        onClick={() => alternar(catsSel, c.key, setCatsSel)}
+                        className={`flex w-full items-center gap-2.5 rounded-lg border px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted ${
+                          ativo
+                            ? "border-primary bg-primary/15"
+                            : "border-transparent bg-card"
+                        } ${esmaecido ? "opacity-40" : ""}`}
                       >
                         <Icone className={`h-4 w-4 shrink-0 ${c.cor}`} strokeWidth={1.9} />
                         <span className="flex-1 truncate">{c.label}</span>
@@ -247,14 +258,17 @@ export default function Mapa() {
                   {Object.entries(contagemFonte)
                     .sort((a, b) => b[1] - a[1])
                     .map(([f, n]) => {
-                      const ativo = !fontesOff.has(f);
+                      const ativo = fontesSel.has(f);
+                      const esmaecido = fontesSel.size > 0 && !ativo;
                       return (
                         <button
                           key={f}
-                          onClick={() => alternar(fontesOff, f, setFontesOff)}
-                          className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition-colors ${
-                            ativo ? "bg-card" : "opacity-40"
-                          } hover:bg-muted`}
+                          onClick={() => alternar(fontesSel, f, setFontesSel)}
+                          className={`flex w-full items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted ${
+                            ativo
+                              ? "border-primary bg-primary/15"
+                              : "border-transparent bg-card"
+                          } ${esmaecido ? "opacity-40" : ""}`}
                         >
                           <span className="flex-1 truncate">{fonteLabel(f)}</span>
                           <span className="font-mono text-muted-foreground">
@@ -344,9 +358,10 @@ export default function Mapa() {
               <>
                 <MapaBrasil
                   pontos={pontos}
-                  ufSelecionada={uf}
+                  ufSelecionada={ufsSel.size === 1 ? [...ufsSel][0] : null}
+                  ufsSelecionadas={ufsSel}
                   contagemPorUf={contagemPorUf}
-                  onSelecionarUf={setUf}
+                  onSelecionarUf={(u) => u && alternar(ufsSel, u, setUfsSel)}
                   onSelecionarCluster={(pontos, total) => setSelecao({ pontos, total })}
                 />
                 <p className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 text-center text-[11px] text-muted-foreground">
