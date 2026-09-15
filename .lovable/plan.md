@@ -14,11 +14,14 @@ Coluna lateral fixa à esquerda, com filtros que funcionam de verdade (todos com
 
 - Busca por nome ou cidade
 - Base de origem, com a contagem ao lado de cada uma (StartupBase, OpenAlex, Observatório CGEE/MCTI, LISP, SINAPAD…)
-- Tipo de instituição
+- Tipo de instituição, cada um com seu ícone ao lado (a mesma legenda que aparece no mapa)
 - Estado (lista, e também clicando no estado no mapa)
 - Botão "limpar filtros" e o total de pontos visíveis sempre à vista
 
-Clicar num ponto abre a ficha: nome, tipo, cidade/UF, base de origem, link da fonte. Abaixo da lateral, exportar o recorte filtrado em CSV (com fonte e fonte_url em cada linha, como já é a regra).
+Cada tipo tem seu próprio ícone no mapa — nada de bolinhas iguais: universidade/instituição de ensino, instituto de pesquisa, laboratório, startup/empresa, centro de supercomputação, unidade EMBRAPII/NIT e um ícone neutro para tipos não classificados. Todos no mesmo tamanho e mesma família de traço, com cor sóbria por tipo, e uma legenda fixa na lateral.
+
+Clicar num ícone abre a ficha: nome, tipo, cidade/UF, base de origem, link da fonte. Abaixo da lateral, exportar o recorte filtrado em CSV (com fonte e fonte_url em cada linha, como já é a regra).
+
 
 Cabeçalho institucional igual ao resto do site (UFPR/PPGPP, Pesquisa Colaborativa do Mapa da Inovação) e a data da última coleta.
 
