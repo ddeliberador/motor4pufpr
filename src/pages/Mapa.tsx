@@ -9,6 +9,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MapaBrasil, { type Ponto } from "@/components/mapa/MapaBrasil";
 import MapaExtracaoSection from "@/components/mapa/ComprovacaoExtracao";
+import ListaFiltrados from "@/components/mapa/ListaFiltrados";
 import { CATEGORIAS, categorizar, fonteLabel, type CategoriaKey } from "@/components/mapa/tipos";
 import { safeSupabase } from "@/lib/supabaseClient";
 import { downloadLocations, type ResearchLocation } from "@/lib/researchLocations";
@@ -541,6 +542,13 @@ export default function Mapa() {
             )}
           </section>
         </div>
+
+        {/* Lista dos registros filtrados (recolhida) + PDF */}
+        <ListaFiltrados
+          itens={filtrados}
+          filtrosAtivos={filtrosAtivos}
+          total={locais.length}
+        />
 
         {/* Comprovação de extração (recolhida) */}
         <div className="border-t border-border">
