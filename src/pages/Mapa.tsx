@@ -135,6 +135,36 @@ export default function Mapa() {
     [locais],
   );
 
+  const contagemRegiao = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const l of comCategoria) {
+      const r = l.uf ? REGIAO_POR_UF[l.uf] : null;
+      if (r) c[r] = (c[r] || 0) + 1;
+    }
+    return c;
+  }, [comCategoria]);
+
+  const contagemTipo = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const l of comCategoria)
+      for (const t of facetasTipo(l.tipo)) c[t] = (c[t] || 0) + 1;
+    return c;
+  }, [comCategoria]);
+
+  const contagemSegmento = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const l of comCategoria) {
+      const s = segmentoDe(l);
+      if (s) c[s] = (c[s] || 0) + 1;
+    }
+    return c;
+  }, [comCategoria]);
+
+  const totalEmbrapii = useMemo(
+    () => comCategoria.filter((l) => /embrapii/i.test(l.tipo)).length,
+    [comCategoria],
+  );
+
   const ultimaColeta = useMemo(() => {
     const d = locais.map((l) => l.data_coleta).filter(Boolean).sort();
     return d.length ? new Date(d[d.length - 1]).toLocaleDateString("pt-BR") : null;
