@@ -16,6 +16,7 @@ export interface ResearchLocation {
   fonte_url: string;
   cnpj: string | null;
   data_coleta: string;
+  raw_metadata?: Record<string, unknown>;
 }
 
 export const FONTE_LABEL: Record<string, string> = {

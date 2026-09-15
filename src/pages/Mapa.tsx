@@ -15,7 +15,24 @@ import { downloadLocations, type ResearchLocation } from "@/lib/researchLocation
 import { safeHttpUrl } from "@/lib/utils";
 
 const COLUNAS =
-  "id,nome,tipo,uf,municipio,latitude,longitude,fonte,fonte_url,cnpj,data_coleta";
+  "id,nome,tipo,uf,municipio,latitude,longitude,fonte,fonte_url,cnpj,data_coleta,raw_metadata";
+
+const REGIAO_POR_UF: Record<string, string> = {
+  AC: "Norte", AM: "Norte", AP: "Norte", PA: "Norte", RO: "Norte", RR: "Norte", TO: "Norte",
+  AL: "Nordeste", BA: "Nordeste", CE: "Nordeste", MA: "Nordeste", PB: "Nordeste",
+  PE: "Nordeste", PI: "Nordeste", RN: "Nordeste", SE: "Nordeste",
+  DF: "Centro-Oeste", GO: "Centro-Oeste", MT: "Centro-Oeste", MS: "Centro-Oeste",
+  ES: "Sudeste", MG: "Sudeste", RJ: "Sudeste", SP: "Sudeste",
+  PR: "Sul", RS: "Sul", SC: "Sul",
+};
+const REGIOES = ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"];
+
+/** Facetas de tipo: "ICT; Unidade Embrapii" vira ["ICT", "Unidade Embrapii"]. */
+const facetasTipo = (tipo: string) =>
+  tipo.split(";").map((t) => t.trim()).filter(Boolean);
+
+const segmentoDe = (l: ResearchLocation) =>
+  typeof l.raw_metadata?.segmento === "string" ? (l.raw_metadata.segmento as string) : null;
 
 /** Busca paginada — a base tem mais linhas do que o limite por requisição. */
 async function carregarLocais(): Promise<ResearchLocation[]> {
@@ -50,6 +67,10 @@ export default function Mapa() {
   const [fontesSel, setFontesSel] = useState<Set<string>>(new Set());
   const [catsSel, setCatsSel] = useState<Set<CategoriaKey>>(new Set());
   const [ufsSel, setUfsSel] = useState<Set<string>>(new Set());
+  const [regioesSel, setRegioesSel] = useState<Set<string>>(new Set());
+  const [tiposSel, setTiposSel] = useState<Set<string>>(new Set());
+  const [segmentosSel, setSegmentosSel] = useState<Set<string>>(new Set());
+  const [soEmbrapii, setSoEmbrapii] = useState(false);
   const [selecao, setSelecao] = useState<{ pontos: Ponto[]; total: number } | null>(null);
   const [verComprovacao, setVerComprovacao] = useState(false);
 
