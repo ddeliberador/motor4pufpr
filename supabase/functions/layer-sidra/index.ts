@@ -275,41 +275,45 @@ Deno.serve(async (req) => {
     if (pib) sources.push("Contas Nacionais/IBGE");
     if (graduacao) sources.push("PNAD Contínua UF/IBGE");
 
-    // CAPES/Sucupira — metadados dos programas de PG (chamada ao backend Railway)
-    let capesData: any = null;
-    try {
-      const backendUrl = Deno.env.get("RAILWAY_BACKEND_URL") || "https://motor4pufpr-copy-production-5681.up.railway.app";
-      const apiKey = Deno.env.get("MCTI_API_KEY") || "";
-      const capesResp = await Promise.race([
-        fetch(`${backendUrl}/api/v1/capes/programas?uf=${location?.uf || ""}&area=${encodeURIComponent(query)}`, {
-          headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
-        }),
-        new Promise<null>(resolve => setTimeout(() => resolve(null), 10000)),
-      ]);
-      if (capesResp && capesResp instanceof Response && capesResp.ok) {
-        capesData = await capesResp.json();
+    // ── Conectores do backend (Railway) — falha nunca bloqueia ────────────────
+    const backendUrl = Deno.env.get("RAILWAY_BACKEND_URL") || "https://motor4pufpr-copy-production-5681.up.railway.app";
+    const apiKey = Deno.env.get("MCTI_API_KEY") || "";
+
+    async function fetchBackend(label: string, path: string): Promise<any | null> {
+      try {
+        const resp = await Promise.race([
+          fetch(`${backendUrl}${path}`, {
+            headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
+          }),
+          new Promise<null>(resolve => setTimeout(() => resolve(null), 12000)),
+        ]);
+        if (resp && resp instanceof Response && resp.ok) return await resp.json();
+        console.warn(`${label}: resposta inválida`, resp instanceof Response ? resp.status : "timeout");
+      } catch (e) {
+        console.warn(`${label} fetch error:`, e instanceof Error ? e.message : e);
       }
-    } catch (e) {
-      console.warn("CAPES fetch error:", e instanceof Error ? e.message : e);
+      return null;
     }
 
-    // Anatel — cobertura de telecomunicações por município
-    let anatelData: any = null;
-    try {
-      const backendUrl = Deno.env.get("RAILWAY_BACKEND_URL") || "https://motor4pufpr-copy-production-5681.up.railway.app";
-      const apiKey = Deno.env.get("MCTI_API_KEY") || "";
-      const anatelResp = await Promise.race([
-        fetch(`${backendUrl}/api/v1/anatel/cobertura?uf=${location?.uf || ""}&municipio=${encodeURIComponent(location?.municipio || "")}&municipio_ibge=${location?.municipio_ibge || ""}`, {
-          headers: { "X-API-Key": apiKey },
-        }),
-        new Promise<null>(resolve => setTimeout(() => resolve(null), 10000)),
-      ]);
-      if (anatelResp && anatelResp instanceof Response && anatelResp.ok) {
-        anatelData = await anatelResp.json();
-      }
-    } catch (e) {
-      console.warn("Anatel fetch error:", e instanceof Error ? e.message : e);
-    }
+    const ufParam = location?.uf || "";
+    const municipioParam = encodeURIComponent(location?.municipio || "");
+    const queryParam = encodeURIComponent(query);
+
+    const [capesData, anatelData, startupsData, editaisData, formictData, fapespData] = await Promise.all([
+      fetchBackend("CAPES", `/api/v1/capes/programas?uf=${ufParam}&area=${queryParam}`),
+      fetchBackend("Anatel", `/api/v1/anatel/cobertura?uf=${ufParam}&municipio=${municipioParam}&municipio_ibge=${location?.municipio_ibge || ""}`),
+      fetchBackend("StartupBase", `/api/v1/startups/ecossistema?q=${queryParam}&uf=${ufParam}`),
+      fetchBackend("Editais", `/api/v1/fomento/editais?q=${queryParam}&uf=${ufParam}`),
+      fetchBackend("FORMICT", `/api/v1/formict/nits?uf=${ufParam}`),
+      fetchBackend("FAPESP", `/api/v1/fapesp/projetos?q=${queryParam}&uf=${ufParam}`),
+    ]);
+
+    if (capesData) sources.push("CAPES/Sucupira");
+    if (anatelData) sources.push("Anatel");
+    if (startupsData) sources.push("StartupBase/ABStartups");
+    if (editaisData) sources.push("Editais Finep/CNPq");
+    if (formictData) sources.push("FORMICT/DATANIT — MCTI");
+    if (fapespData) sources.push("BV-FAPESP");
 
     return new Response(JSON.stringify({
       pintec,
@@ -319,6 +323,11 @@ Deno.serve(async (req) => {
       graduacao,
       capes: capesData,
       anatel: anatelData,
+      startups_ecossistema: startupsData,
+      editais_fomento: editaisData,
+      formict_nits: formictData,
+      fapesp_projetos: fapespData,
+
       cnae_divisions: cnaeDivisions.map(d => ({
         code: d,
         label: CNAE_TO_SIDRA_DIVISION[d] || `Divisão ${d}`,
