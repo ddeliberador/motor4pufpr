@@ -1,0 +1,21 @@
+# MOTOR 4P UFPR - Backend: dependências diretas
+# Gere requirements.txt com:  pip-compile --generate-hashes requirements.in
+# (issue #1 — versões pinadas com hash para build reprodutível e auditável)
+
+# Core
+fastapi
+starlette
+uvicorn[standard]
+pydantic
+pydantic-settings
+
+# HTTP & Async
+httpx
+tenacity
+
+# NLP & Text Processing
+rapidfuzz
+unidecode
+
+# Caching
+cachetools
