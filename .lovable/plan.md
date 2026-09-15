@@ -38,3 +38,12 @@ Estes campos foram pedidos mas nenhuma fonte oficial os publica de forma aberta 
 - `src/pages/Mapa.tsx`: novo componente `src/components/mapa/FiltrosPorBase.tsx` com os grupos por base, todos multisseleção, entrando no resumo de "filtros aplicados", no CSV e no PDF.
 - Facetas derivadas dos registros carregados (contagem ao lado de cada opção), no mesmo padrão dos filtros atuais.
 - Entrada no Diário de Construção (Mapa da Inovação) com as coletas feitas e as lacunas.
+
+## Tipo de controle por filtro
+
+Cada filtro usa o controle adequado ao tipo de informação:
+
+- **Caixas de seleção (múltipla escolha, listas curtas)** — tipo de instituição, poder/esfera, nível federativo, região, natureza administrativa, tipo de unidade, competência EMBRAPII.
+- **Lista suspensa com busca (listas longas)** — segmento das startups, estado, município, domínio/campo/subcampo/tópico do OpenAlex.
+- **Opção única (escolhas mutuamente exclusivas)** — situação do centro SINAPAD (ativo/inativo) e faixa de ano de criação do LISP.
+- **Botão de alternância** — atalhos do tipo "somente unidades EMBRAPII".
