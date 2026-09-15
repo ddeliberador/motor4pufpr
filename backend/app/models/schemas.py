@@ -314,6 +314,11 @@ class IncidenceResult(BaseModel):
     # Estatísticas gerais
     stats: Dict[str, int] = Field(default_factory=dict)
 
+    # Dados extras agregados (bolsas, educação, projetos GitHub)
+    scholarships: Dict[str, Any] = Field(default_factory=dict)
+    education: Dict[str, Any] = Field(default_factory=dict)
+    github_projects: Dict[str, Any] = Field(default_factory=dict)
+
     # Metadados
     generated_at: datetime = Field(default_factory=datetime.now)
     processing_time_ms: Optional[int] = None
