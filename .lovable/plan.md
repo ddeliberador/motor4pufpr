@@ -14,11 +14,14 @@ Coluna lateral fixa à esquerda, com filtros que funcionam de verdade (todos com
 
 - Busca por nome ou cidade
 - Base de origem, com a contagem ao lado de cada uma (StartupBase, OpenAlex, Observatório CGEE/MCTI, LISP, SINAPAD…)
-- Tipo de instituição
+- Tipo de instituição, cada um com seu ícone ao lado (a mesma legenda que aparece no mapa)
 - Estado (lista, e também clicando no estado no mapa)
 - Botão "limpar filtros" e o total de pontos visíveis sempre à vista
 
-Clicar num ponto abre a ficha: nome, tipo, cidade/UF, base de origem, link da fonte. Abaixo da lateral, exportar o recorte filtrado em CSV (com fonte e fonte_url em cada linha, como já é a regra).
+Cada tipo tem seu próprio ícone no mapa — nada de bolinhas iguais: universidade/instituição de ensino, instituto de pesquisa, laboratório, startup/empresa, centro de supercomputação, unidade EMBRAPII/NIT e um ícone neutro para tipos não classificados. Todos no mesmo tamanho e mesma família de traço, com cor sóbria por tipo, e uma legenda fixa na lateral.
+
+Clicar num ícone abre a ficha: nome, tipo, cidade/UF, base de origem, link da fonte. Abaixo da lateral, exportar o recorte filtrado em CSV (com fonte e fonte_url em cada linha, como já é a regra).
+
 
 Cabeçalho institucional igual ao resto do site (UFPR/PPGPP, Pesquisa Colaborativa do Mapa da Inovação) e a data da última coleta.
 
@@ -33,7 +36,9 @@ Link "Mapa" no menu do site.
 - `src/pages/Mapa.tsx` + rota `/mapa` em `src/App.tsx`; link no `Header.tsx`.
 - Mapa em SVG com `react-simple-maps` (ou projeção d3-geo direta) usando a malha de UFs do IBGE (`servicodados.ibge.gov.br/api/v3/malhas/paises/BR?formato=application/vnd.geo+json&qualidade=intermediaria`), cacheada em `public/` como GeoJSON estático para não depender da API em runtime. Sem tiles.
 - Dados via `fetchResearchLocations` de `src/lib/researchLocations.ts` (mantém a regra de `fonte`/`fonte_url`), com `select` reduzido e filtro client-side; React Query com `staleTime` alto.
-- Pontos como `<circle>` projetados, raio fixo pequeno; renderização em canvas se o SVG passar de ~4k nós.
+- Pontos desenhados como marcadores por tipo (glifos `lucide-react` — GraduationCap, FlaskConical, Microscope, Rocket, Cpu, Factory, MapPin — convertidos em `<path>`/`<use>` no SVG projetado), tamanho fixo ~14px, cor por tipo via tokens; agrupamento por proximidade quando o zoom está afastado para não empilhar, e canvas se passar de ~4k nós.
+- Mapa `tipo` → ícone/cor num único módulo (`src/components/mapa/tipos.ts`), compartilhado por mapa, legenda e filtro.
+
 - Reuso de `toCsv`/`downloadLocations` para exportação; `safeHttpUrl` em todo link externo.
 - `BASES_MAPA`, `PILAR_COR` e `MapaExtracaoSection` saem de `src/pages/Conceito.tsx` para `src/components/mapa/ComprovacaoExtracao.tsx`, sem alterar conteúdo.
 - Publicação em `motorinovacao.com.br/mapa` pelo publish normal do projeto.
