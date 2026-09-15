@@ -29,32 +29,23 @@ export type Fonte = {
   ordem: number;
 };
 
-type StatusClasse = "testado" | "integrado" | "confirmado" | "bloqueado" | "a_validar";
+type StatusClasse = "integrada" | "pendente";
 
 export function classificarStatus(status: string | null): StatusClasse {
   const s = (status || "").toLowerCase();
-  if (s.includes("não funcional") || s.includes("bloquead")) return "bloqueado";
-  if (s.includes("já integrado") || s.includes("já usado")) return "integrado";
-  if (s.includes("testado em produção")) return "testado";
-  if (s.includes("confirmado") || s.includes("investigado") || s.includes("conhecido")) return "confirmado";
-  return "a_validar";
+  if (s.includes("integrad") || s.includes("já usado") || s.includes("testado em produção")) return "integrada";
+  return "pendente";
 }
 
 const STATUS_META: Record<StatusClasse, { label: string; cls: string }> = {
-  testado: { label: "Testado em produção", cls: "bg-green-600 text-white" },
-  integrado: { label: "Já integrado", cls: "bg-blue-600 text-white" },
-  confirmado: { label: "Confirmado/Conhecido", cls: "bg-teal-600 text-white" },
-  bloqueado: { label: "Bloqueado/Com falha", cls: "bg-destructive text-destructive-foreground" },
-  a_validar: { label: "A validar", cls: "bg-amber-500 text-white" },
+  integrada: { label: "Integrada ao Motor (funcional)", cls: "bg-green-600 text-white" },
+  pendente: { label: "Pendente", cls: "bg-amber-500 text-white" },
 };
 
 const FILTROS: { value: StatusClasse | "all"; label: string }[] = [
   { value: "all", label: "Todos os status" },
-  { value: "testado", label: "Testado em produção" },
-  { value: "integrado", label: "Já integrado" },
-  { value: "confirmado", label: "Confirmado/Conhecido" },
-  { value: "bloqueado", label: "Bloqueado/Com falha" },
-  { value: "a_validar", label: "A validar" },
+  { value: "integrada", label: "Integrada ao Motor (funcional)" },
+  { value: "pendente", label: "Pendente" },
 ];
 
 export function CatalogoFontesTab({ canEdit }: { canEdit: boolean }) {
@@ -90,7 +81,7 @@ export function CatalogoFontesTab({ canEdit }: { canEdit: boolean }) {
   }), [fontes, pilarFilter, statusFilter]);
 
   const contagem = useMemo(() => {
-    const c: Record<StatusClasse, number> = { testado: 0, integrado: 0, confirmado: 0, bloqueado: 0, a_validar: 0 };
+    const c: Record<StatusClasse, number> = { integrada: 0, pendente: 0 };
     fontes.forEach((f) => { c[classificarStatus(f.status_pesquisa)] += 1; });
     return c;
   }, [fontes]);
