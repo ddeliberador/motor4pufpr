@@ -22,6 +22,9 @@ from app.connectors.sisab import SISABConnector
 from app.connectors.mcti_indicadores import buscar_indicadores_mcti
 from app.connectors.inep import buscar_censo_educacao
 from app.connectors.antt_anac import buscar_infraestrutura_transporte
+from app.connectors.cvm_dados import buscar_empresas_cvm
+from app.connectors.lei_do_bem import buscar_lei_do_bem
+from app.connectors.abvcap import buscar_dados_abvcap
 
 # Configura logging
 logging.basicConfig(
@@ -200,6 +203,28 @@ async def inep_censo(uf: str = "", area: str = ""):
 @app.get("/api/v1/antt/transporte")
 async def antt_transporte(uf: str = "", tipo: str = "todos"):
     return await buscar_infraestrutura_transporte(uf=uf or None, tipo=tipo or "todos")
+
+@app.get("/api/v1/cvm/empresas")
+async def cvm_empresas(q: str = "", uf: str = "", cnae: str = ""):
+    return await buscar_empresas_cvm(
+        query=q or None,
+        uf=uf or None,
+        cnae=cnae or None,
+    )
+
+@app.get("/api/v1/mcti/lei-do-bem")
+async def lei_do_bem_endpoint(faturamento: float = 0, percentual_pd: float = 3.0):
+    return await buscar_lei_do_bem(
+        faturamento=faturamento if faturamento > 0 else None,
+        percentual_pd=percentual_pd,
+    )
+
+@app.get("/api/v1/abvcap/mercado")
+async def abvcap_mercado(setor: str = "", uf: str = ""):
+    return await buscar_dados_abvcap(
+        setor=setor or None,
+        uf=uf or None,
+    )
 
 @app.get("/")
 async def root():
