@@ -1,14 +1,14 @@
 // /mapa — Mapa da Inovação: leitura direta da base de locais de pesquisa,
-// sem lista congelada em arquivo. Mapa sóbrio (contorno + UFs) e coluna lateral
-// com filtros funcionais.
+// sem lista congelada em arquivo. Mapa sóbrio (contorno + UFs), coluna lateral
+// com filtros funcionais e lista exportável dos registros filtrados.
 
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, X, Download, ChevronDown, ExternalLink, MapPin, Loader2 } from "lucide-react";
+import { Search, X, Download, ExternalLink, MapPin, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MapaBrasil, { type Ponto } from "@/components/mapa/MapaBrasil";
-import MapaExtracaoSection from "@/components/mapa/ComprovacaoExtracao";
+
 import ListaFiltrados from "@/components/mapa/ListaFiltrados";
 import { CATEGORIAS, categorizar, fonteLabel, type CategoriaKey } from "@/components/mapa/tipos";
 import { safeSupabase } from "@/lib/supabaseClient";
@@ -73,7 +73,7 @@ export default function Mapa() {
   const [segmentosSel, setSegmentosSel] = useState<Set<string>>(new Set());
   const [soEmbrapii, setSoEmbrapii] = useState(false);
   const [selecao, setSelecao] = useState<{ pontos: Ponto[]; total: number } | null>(null);
-  const [verComprovacao, setVerComprovacao] = useState(false);
+  
 
   const locais = data || [];
 
@@ -569,21 +569,6 @@ export default function Mapa() {
           total={locais.length}
         />
 
-        {/* Comprovação de extração (recolhida) */}
-        <div className="border-t border-border">
-          <div className="container-wide px-6 py-4">
-            <button
-              onClick={() => setVerComprovacao((v) => !v)}
-              className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ChevronDown
-                className={`h-4 w-4 transition-transform ${verComprovacao ? "rotate-180" : ""}`}
-              />
-              Comprovação de extração — 21/24 bases
-            </button>
-          </div>
-          {verComprovacao && <MapaExtracaoSection />}
-        </div>
       </main>
 
       <Footer />
