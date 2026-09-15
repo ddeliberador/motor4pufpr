@@ -46,9 +46,10 @@ export default function Mapa() {
   });
 
   const [busca, setBusca] = useState("");
-  const [fontesOff, setFontesOff] = useState<Set<string>>(new Set());
-  const [catsOff, setCatsOff] = useState<Set<CategoriaKey>>(new Set());
-  const [uf, setUf] = useState<string | null>(null);
+  // Conjuntos de SELEÇÃO: vazio = tudo visível; com itens = só os selecionados.
+  const [fontesSel, setFontesSel] = useState<Set<string>>(new Set());
+  const [catsSel, setCatsSel] = useState<Set<CategoriaKey>>(new Set());
+  const [ufsSel, setUfsSel] = useState<Set<string>>(new Set());
   const [selecao, setSelecao] = useState<{ pontos: Ponto[]; total: number } | null>(null);
   const [verComprovacao, setVerComprovacao] = useState(false);
 
@@ -62,13 +63,13 @@ export default function Mapa() {
   const filtrados = useMemo(() => {
     const q = norm(busca.trim());
     return comCategoria.filter((l) => {
-      if (fontesOff.has(l.fonte)) return false;
-      if (catsOff.has(l.categoria)) return false;
-      if (uf && l.uf !== uf) return false;
+      if (fontesSel.size && !fontesSel.has(l.fonte)) return false;
+      if (catsSel.size && !catsSel.has(l.categoria)) return false;
+      if (ufsSel.size && (!l.uf || !ufsSel.has(l.uf))) return false;
       if (q && !norm(`${l.nome} ${l.municipio || ""}`).includes(q)) return false;
       return true;
     });
-  }, [comCategoria, busca, fontesOff, catsOff, uf]);
+  }, [comCategoria, busca, fontesSel, catsSel, ufsSel]);
 
   const pontos: Ponto[] = useMemo(
     () =>
