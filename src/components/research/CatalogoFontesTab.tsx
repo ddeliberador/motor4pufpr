@@ -33,6 +33,7 @@ type StatusClasse = "integrada" | "pendente";
 
 export function classificarStatus(status: string | null): StatusClasse {
   const s = (status || "").toLowerCase();
+  if (s.includes("não funcional") || s.includes("bloquead")) return "pendente";
   if (s.includes("integrad") || s.includes("já usado") || s.includes("testado em produção")) return "integrada";
   return "pendente";
 }
