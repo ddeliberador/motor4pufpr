@@ -46,3 +46,5 @@ from .inpi_rpi import INPIRPIConnector
 from .cvm_dados import buscar_empresas_cvm
 from .lei_do_bem import buscar_lei_do_bem
 from .abvcap import buscar_dados_abvcap
+from .lattes import buscar_lattesdata, buscar_grupos_pesquisa
+from .pnad_sidra import buscar_pnad

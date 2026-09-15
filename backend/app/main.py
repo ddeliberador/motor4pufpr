@@ -25,6 +25,8 @@ from app.connectors.antt_anac import buscar_infraestrutura_transporte
 from app.connectors.cvm_dados import buscar_empresas_cvm
 from app.connectors.lei_do_bem import buscar_lei_do_bem
 from app.connectors.abvcap import buscar_dados_abvcap
+from app.connectors.lattes import buscar_lattesdata, buscar_grupos_pesquisa
+from app.connectors.pnad_sidra import buscar_pnad
 
 # Configura logging
 logging.basicConfig(
@@ -225,6 +227,23 @@ async def abvcap_mercado(setor: str = "", uf: str = ""):
         setor=setor or None,
         uf=uf or None,
     )
+
+@app.get("/api/v1/lattes/datasets")
+async def lattes_datasets(q: str = ""):
+    return await buscar_lattesdata(query=q or None)
+
+@app.get("/api/v1/lattes/grupos")
+async def lattes_grupos(q: str = "", uf: str = "", area: str = ""):
+    return await buscar_grupos_pesquisa(
+        query=q or None,
+        uf=uf or None,
+        area=area or None,
+    )
+
+@app.get("/api/v1/ibge/pnad")
+async def ibge_pnad(uf: str = "", tabelas: str = ""):
+    tabelas_list = [t.strip() for t in tabelas.split(",") if t.strip()] if tabelas else None
+    return await buscar_pnad(uf=uf or None, tabelas=tabelas_list)
 
 @app.get("/")
 async def root():
