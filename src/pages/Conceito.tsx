@@ -670,6 +670,8 @@ const Conceito = () => {
         </div>
       </section>
 
+      <MapaExtracaoSection />
+
       <Footer />
     </div>
   );
