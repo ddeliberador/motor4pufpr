@@ -21,7 +21,7 @@ from .transferegov import TransferegovConnector
 from .siconfi import SICONFIConnector
 from .bcb import BCBConnector
 from .anvisa import ANVISAConnector
-from .anatel import ANATELConnector
+
 from .cvm import CVMConnector
 from .ibama import IBAMAConnector
 from .inpe import INPEConnector
