@@ -275,6 +275,41 @@ Deno.serve(async (req) => {
     if (pib) sources.push("Contas Nacionais/IBGE");
     if (graduacao) sources.push("PNAD Contínua UF/IBGE");
 
+    // CAPES/Sucupira — metadados dos programas de PG (chamada ao backend Railway)
+    let capesData: any = null;
+    try {
+      const backendUrl = Deno.env.get("RAILWAY_BACKEND_URL") || "https://motor4pufpr-copy-production-5681.up.railway.app";
+      const apiKey = Deno.env.get("MCTI_API_KEY") || "";
+      const capesResp = await Promise.race([
+        fetch(`${backendUrl}/api/v1/capes/programas?uf=${location?.uf || ""}&area=${encodeURIComponent(query)}`, {
+          headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
+        }),
+        new Promise<null>(resolve => setTimeout(() => resolve(null), 10000)),
+      ]);
+      if (capesResp && capesResp instanceof Response && capesResp.ok) {
+        capesData = await capesResp.json();
+      }
+    } catch (e) {
+      console.warn("CAPES fetch error:", e instanceof Error ? e.message : e);
+    }
+
+    // Anatel — cobertura de telecomunicações por município
+    let anatelData: any = null;
+    try {
+      const backendUrl = Deno.env.get("RAILWAY_BACKEND_URL") || "https://motor4pufpr-copy-production-5681.up.railway.app";
+      const apiKey = Deno.env.get("MCTI_API_KEY") || "";
+      const anatelResp = await Promise.race([
+        fetch(`${backendUrl}/api/v1/anatel/cobertura?uf=${location?.uf || ""}&municipio=${encodeURIComponent(location?.municipio || "")}&municipio_ibge=${location?.municipio_ibge || ""}`, {
+          headers: { "X-API-Key": apiKey },
+        }),
+        new Promise<null>(resolve => setTimeout(() => resolve(null), 10000)),
+      ]);
+      if (anatelResp && anatelResp instanceof Response && anatelResp.ok) {
+        anatelData = await anatelResp.json();
+      }
+    } catch (e) {
+      console.warn("Anatel fetch error:", e instanceof Error ? e.message : e);
+    }
 
     return new Response(JSON.stringify({
       pintec,
@@ -282,6 +317,8 @@ Deno.serve(async (req) => {
       pos_graduacao: posgrad,
       pib_setorial: pib,
       graduacao,
+      capes: capesData,
+      anatel: anatelData,
       cnae_divisions: cnaeDivisions.map(d => ({
         code: d,
         label: CNAE_TO_SIDRA_DIVISION[d] || `Divisão ${d}`,

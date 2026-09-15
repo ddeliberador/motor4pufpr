@@ -12,6 +12,8 @@ import logging
 from app.core.config import settings
 from app.core.auth import ApiKeyMiddleware
 from app.api.routes import health_router, incidence_router, productive_demand_router, integrated_bases_router, companies_router, analysis_router
+from app.connectors.capes_sucupira import buscar_programas_pg, buscar_bolsistas
+from app.connectors.anatel import buscar_cobertura_municipio
 
 # Configura logging
 logging.basicConfig(
@@ -98,6 +100,30 @@ app.include_router(integrated_bases_router, prefix=settings.API_PREFIX)
 app.include_router(companies_router, prefix=settings.API_PREFIX)
 app.include_router(analysis_router, prefix=settings.API_PREFIX)
 
+
+@app.get("/api/v1/capes/programas")
+async def capes_programas(uf: str = "", area: str = "", ies: str = ""):
+    return await buscar_programas_pg(
+        area_conhecimento=area or None,
+        uf=uf or None,
+        ies=ies or None,
+    )
+
+@app.get("/api/v1/capes/bolsistas")
+async def capes_bolsistas(uf: str = ""):
+    return await buscar_bolsistas(uf=uf or None)
+
+@app.get("/api/v1/anatel/cobertura")
+async def anatel_cobertura(
+    municipio: str = "",
+    uf: str = "",
+    municipio_ibge: str = "",
+):
+    return await buscar_cobertura_municipio(
+        municipio=municipio or None,
+        uf=uf or None,
+        municipio_ibge=municipio_ibge or None,
+    )
 
 @app.get("/")
 async def root():
