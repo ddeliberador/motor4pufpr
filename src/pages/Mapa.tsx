@@ -1,6 +1,6 @@
 // /mapa — Mapa da Inovação: leitura direta da base de locais de pesquisa,
-// sem lista congelada em arquivo. Mapa sóbrio (contorno + UFs) e coluna lateral
-// com filtros funcionais.
+// sem lista congelada em arquivo. Mapa sóbrio (contorno + UFs), coluna lateral
+// com filtros funcionais e lista exportável dos registros filtrados.
 
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
