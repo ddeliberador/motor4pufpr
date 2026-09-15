@@ -18,6 +18,10 @@ from app.connectors.formict import buscar_formict
 from app.connectors.fapesp_bv import buscar_projetos_fapesp
 from app.connectors.startupbase import buscar_startups
 from app.connectors.editais_fomento import buscar_editais_fomento
+from app.connectors.sisab import SISABConnector
+from app.connectors.mcti_indicadores import buscar_indicadores_mcti
+from app.connectors.inep import buscar_censo_educacao
+from app.connectors.antt_anac import buscar_infraestrutura_transporte
 
 # Configura logging
 logging.basicConfig(
@@ -156,6 +160,46 @@ async def fomento_editais(q: str = "", uf: str = "", tipo: str = "todos"):
         uf=uf or None,
         tipo=tipo or "todos",
     )
+
+@app.get("/api/v1/sisab/cobertura")
+async def sisab_cobertura(
+    uf: str = "",
+    report: str = "aps",
+    competencia: str = "202601",
+):
+    """Cobertura SISAB real (relatorioaps-prd.saude.gov.br).
+    Com UF: municípios da UF; sem UF: as 27 UFs. Falha explícita, nunca silenciosa."""
+    try:
+        connector = SISABConnector()
+        if uf:
+            rows = await connector.get_coverage_by_municipality(
+                uf=uf.upper(), comp_start=competencia, report=report
+            )
+        else:
+            rows = await connector.get_coverage_by_uf(
+                comp_start=competencia, report=report
+            )
+        return {
+            "disponivel": True,
+            "fonte": connector.get_source_name(),
+            "total": len(rows),
+            "resultados": rows,
+        }
+    except Exception as e:
+        logger.warning(f"SISAB cobertura falhou: {e}")
+        return {"disponivel": False, "fonte": "SISAB", "erro": str(e)[:200]}
+
+@app.get("/api/v1/mcti/indicadores")
+async def mcti_indicadores(q: str = ""):
+    return await buscar_indicadores_mcti(query=q or None)
+
+@app.get("/api/v1/inep/censo")
+async def inep_censo(uf: str = "", area: str = ""):
+    return await buscar_censo_educacao(uf=uf or None, area=area or None)
+
+@app.get("/api/v1/antt/transporte")
+async def antt_transporte(uf: str = "", tipo: str = "todos"):
+    return await buscar_infraestrutura_transporte(uf=uf or None, tipo=tipo or "todos")
 
 @app.get("/")
 async def root():
