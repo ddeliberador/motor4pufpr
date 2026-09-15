@@ -175,14 +175,20 @@ export default function Mapa() {
     setFontesSel(new Set());
     setCatsSel(new Set());
     setUfsSel(new Set());
+    setRegioesSel(new Set());
+    setTiposSel(new Set());
+    setSegmentosSel(new Set());
+    setSoEmbrapii(false);
     setSelecao(null);
   };
 
-  const temFiltro = busca || fontesSel.size || catsSel.size || ufsSel.size;
+  const temFiltro =
+    busca || fontesSel.size || catsSel.size || ufsSel.size ||
+    regioesSel.size || tiposSel.size || segmentosSel.size || soEmbrapii;
 
   useEffect(() => {
     setSelecao(null);
-  }, [busca, ufsSel, fontesSel, catsSel]);
+  }, [busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii]);
 
   const alternar = <T,>(set: Set<T>, v: T, apply: (s: Set<T>) => void) => {
     const novo = new Set(set);
