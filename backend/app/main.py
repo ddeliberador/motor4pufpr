@@ -127,6 +127,18 @@ async def anatel_cobertura(
         municipio_ibge=municipio_ibge or None,
     )
 
+@app.get("/api/v1/formict/nits")
+async def formict_nits(uf: str = ""):
+    return await buscar_formict(uf=uf or None)
+
+@app.get("/api/v1/fapesp/projetos")
+async def fapesp_projetos(q: str = "", uf: str = "", area: str = ""):
+    return await buscar_projetos_fapesp(
+        query=q or "inovação",
+        uf=uf or None,
+        area=area or None,
+    )
+
 @app.get("/")
 async def root():
     """Endpoint raiz"""
