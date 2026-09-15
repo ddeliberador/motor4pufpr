@@ -7,9 +7,104 @@ Estratégia: metadados + links de download + curadoria de indicadores-chave
 import logging
 import httpx
 import os
-from typing import Any
+from typing import Any, Dict, List
+
+from .base import BaseConnector
 
 logger = logging.getLogger(__name__)
+
+
+class INEPConnector(BaseConnector):
+    """Connector legado para dados do INEP sobre instituições de ensino.
+
+    Mantido para compatibilidade com incidence_engine (search_institutions).
+    Para o Censo da Educação Superior use buscar_censo_educacao().
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.base_url = "https://dadosabertos.inep.gov.br/api"
+        self.timeout = 30.0
+
+    async def search_institutions(self, term: str, state: str = None) -> Dict[str, Any]:
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                institutions = await self._search_higher_education(client, term, state)
+                courses = await self._search_courses(client, term, state)
+
+                return {
+                    "source": "INEP",
+                    "institutions": institutions,
+                    "courses": courses,
+                    "total_institutions": len(institutions),
+                    "total_courses": len(courses)
+                }
+        except Exception as e:
+            return self._handle_error(e, "INEP")
+
+    async def _search_higher_education(self, client: httpx.AsyncClient, term: str, state: str) -> List[Dict]:
+        institutions_mock = [
+            {
+                "name": "Universidade Federal do Paraná",
+                "acronym": "UFPR",
+                "state": "PR",
+                "city": "Curitiba",
+                "type": "Pública Federal",
+                "has_graduate": True,
+                "areas": ["Tecnologia", "Ciências Exatas", "Engenharias"],
+                "grade_enade": 4.2
+            },
+            {
+                "name": "Universidade de São Paulo",
+                "acronym": "USP",
+                "state": "SP",
+                "city": "São Paulo",
+                "type": "Pública Estadual",
+                "has_graduate": True,
+                "areas": ["Todas as áreas"],
+                "grade_enade": 4.8
+            }
+        ]
+
+        filtered = [
+            inst for inst in institutions_mock
+            if term.lower() in str(inst.get("areas", "")).lower()
+            and (not state or inst.get("state") == state)
+        ]
+
+        return filtered
+
+    async def _search_courses(self, client: httpx.AsyncClient, term: str, state: str) -> List[Dict]:
+        courses_mock = [
+            {
+                "name": "Engenharia de Computação",
+                "institution": "UFPR",
+                "level": "Graduação",
+                "modality": "Presencial",
+                "city": "Curitiba",
+                "state": "PR",
+                "grade_enade": 4,
+                "duration_semesters": 10
+            },
+            {
+                "name": "Ciência da Computação",
+                "institution": "USP",
+                "level": "Graduação",
+                "modality": "Presencial",
+                "city": "São Paulo",
+                "state": "SP",
+                "grade_enade": 5,
+                "duration_semesters": 8
+            }
+        ]
+
+        filtered = [
+            course for course in courses_mock
+            if term.lower() in course.get("name", "").lower()
+            and (not state or course.get("state") == state)
+        ]
+
+        return filtered
 
 # Indicadores curados do Censo da Educação Superior 2023 (INEP)
 CENSO_2023 = {
