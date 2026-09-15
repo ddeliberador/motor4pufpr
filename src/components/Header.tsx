@@ -57,6 +57,12 @@ const Header = () => {
               Conceito
             </Link>
             <Link
+              to="/mapa"
+              className={`text-sm font-medium transition-colors ${isActive('/mapa') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Mapa
+            </Link>
+            <Link
               to="/documentacao"
               className={`text-sm font-medium transition-colors ${isActive('/documentacao') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
             >
@@ -94,6 +100,13 @@ const Header = () => {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/conceito') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
               >
                 Conceito
+              </Link>
+              <Link
+                to="/mapa"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/mapa') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+              >
+                Mapa
               </Link>
               <Link
                 to="/documentacao"
