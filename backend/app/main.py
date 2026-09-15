@@ -14,6 +14,8 @@ from app.core.auth import ApiKeyMiddleware
 from app.api.routes import health_router, incidence_router, productive_demand_router, integrated_bases_router, companies_router, analysis_router
 from app.connectors.capes_sucupira import buscar_programas_pg, buscar_bolsistas
 from app.connectors.anatel import buscar_cobertura_municipio
+from app.connectors.formict import buscar_formict
+from app.connectors.fapesp_bv import buscar_projetos_fapesp
 
 # Configura logging
 logging.basicConfig(
@@ -123,6 +125,18 @@ async def anatel_cobertura(
         municipio=municipio or None,
         uf=uf or None,
         municipio_ibge=municipio_ibge or None,
+    )
+
+@app.get("/api/v1/formict/nits")
+async def formict_nits(uf: str = ""):
+    return await buscar_formict(uf=uf or None)
+
+@app.get("/api/v1/fapesp/projetos")
+async def fapesp_projetos(q: str = "", uf: str = "", area: str = ""):
+    return await buscar_projetos_fapesp(
+        query=q or "inovação",
+        uf=uf or None,
+        area=area or None,
     )
 
 @app.get("/")
