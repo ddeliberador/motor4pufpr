@@ -1,13 +1,14 @@
 # MOTOR 4P UFPR - Backend Dockerfile
-# Atualizado 2026-09-14 — Relatório de Acompanhamento 2 (item 1.6)
-# Correções: imagem base com digest, Ollama com versão pinada, usuário não-root
+#
+# Procedência fixada (issue #3):
+#   - imagem base por digest (não por tag)
+#   - Ollama em versão exata
+#   - modelo Tucano 2 verificado pelo SHA-256 publicado no Hugging Face
+#   - processo roda como usuário sem privilégio
 
-FROM python:3.11-slim@sha256:6a37ad75af2f5c1f4b69b0c6a2d7e5f2c8a3b1d9e4f7c2a5b8d1e3f6a9c2b5e8 AS base
-# ↑ digest sha256 — fixar após primeiro build bem-sucedido:
-#   docker inspect python:3.11-slim --format='{{index .RepoDigests 0}}'
-# Por ora usar sem digest até confirmar o hash exato no ambiente Railway
-
-FROM python:3.11-slim
+# python:3.11-slim em 2026-09-14. Para atualizar:
+#   docker pull python:3.11-slim && docker inspect python:3.11-slim --format='{{index .RepoDigests 0}}'
+FROM python:3.11-slim@sha256:9534e5a8e315485d4061ed659af0fd78a284c015f9b73661b41d6bab25604534
 
 WORKDIR /app
 
@@ -20,17 +21,21 @@ RUN apt-get update && apt-get install -y \
     gcc curl ca-certificates zstd \
     && rm -rf /var/lib/apt/lists/*
 
-# Ollama — versão pinada (antes: curl | sh sem versão)
-# Verificar versão atual em: https://github.com/ollama/ollama/releases
-ENV OLLAMA_VERSION=0.3.12
-RUN curl -fsSL "https://ollama.com/install.sh" | OLLAMA_VERSION=${OLLAMA_VERSION} sh
+# Ollama — versão exata (o instalador aceita OLLAMA_VERSION). Releases:
+#   https://github.com/ollama/ollama/releases
+ARG OLLAMA_VERSION=0.34.0
+RUN curl -fsSL "https://ollama.com/install.sh" | OLLAMA_VERSION=${OLLAMA_VERSION} sh \
+    && ollama --version
 
-# Baixa o modelo Tucano 2 no build da imagem (Railway encerra requisições longas em runtime)
-# SHA-256 do GGUF deve ser verificado após o pull e documentado aqui
-# Fonte: https://huggingface.co/tensorblock/Tucano-2b4-Instruct-GGUF
-# Quantização Q3_K_M por tensorblock — verificar integridade:
-#   ollama show hf.co/tensorblock/Tucano-2b4-Instruct-GGUF:Q3_K_M --modelfile
+# Modelo Tucano 2 (2b4-Instruct, quantização Q3_K_M por tensorblock), baixado no
+# build da imagem porque o Railway encerra requisições longas em runtime.
+#   Fonte: https://huggingface.co/tensorblock/Tucano-2b4-Instruct-GGUF
+#   SHA-256 do GGUF, conforme publicado pelo Hugging Face (LFS oid):
+#     https://huggingface.co/api/models/tensorblock/Tucano-2b4-Instruct-GGUF/tree/main
+# O Ollama guarda cada blob como sha256-<hash>; se o arquivo baixado não tiver
+# exatamente o hash esperado, o blob não existe e o build falha aqui.
 ARG TUCANO_MODEL=hf.co/tensorblock/Tucano-2b4-Instruct-GGUF:Q3_K_M
+ARG TUCANO_GGUF_SHA256=ee4d1d3c2eaf7845c4a057fe3594bf3058029e73a836c799503d69f987322415
 ENV TUCANO_MODEL=${TUCANO_MODEL}
 ENV OLLAMA_MODELS=/app/.ollama/models
 RUN mkdir -p "$OLLAMA_MODELS" \
@@ -38,6 +43,8 @@ RUN mkdir -p "$OLLAMA_MODELS" \
     && for i in $(seq 1 30); do curl -sf http://127.0.0.1:11434/api/version && break; sleep 1; done \
     && ollama pull "$TUCANO_MODEL" \
     && (pkill -f "ollama serve" || true)
+RUN test -f "$OLLAMA_MODELS/blobs/sha256-$TUCANO_GGUF_SHA256" \
+    || { echo "ERRO: GGUF baixado não confere com o SHA-256 esperado ($TUCANO_GGUF_SHA256)"; ls -la "$OLLAMA_MODELS/blobs"; exit 1; }
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
@@ -45,13 +52,12 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 COPY . .
 
-# Usuário sem privilégio — antes: processo rodava como root (item 1.6)
+# Usuário sem privilégio
 RUN useradd -m -u 1000 appuser \
+    && chmod +x /app/start.sh \
     && chown -R appuser:appuser /app
 USER appuser
 
 EXPOSE 8000
-
-RUN chmod +x /app/start.sh
 
 CMD ["/app/start.sh"]
