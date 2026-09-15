@@ -115,17 +115,17 @@ export default function Mapa() {
 
   const limpar = () => {
     setBusca("");
-    setFontesOff(new Set());
-    setCatsOff(new Set());
-    setUf(null);
+    setFontesSel(new Set());
+    setCatsSel(new Set());
+    setUfsSel(new Set());
     setSelecao(null);
   };
 
-  const temFiltro = busca || fontesOff.size || catsOff.size || uf;
+  const temFiltro = busca || fontesSel.size || catsSel.size || ufsSel.size;
 
   useEffect(() => {
     setSelecao(null);
-  }, [busca, uf, fontesOff, catsOff]);
+  }, [busca, ufsSel, fontesSel, catsSel]);
 
   const alternar = <T,>(set: Set<T>, v: T, apply: (s: Set<T>) => void) => {
     const novo = new Set(set);
