@@ -73,7 +73,7 @@ export default function Mapa() {
   const [segmentosSel, setSegmentosSel] = useState<Set<string>>(new Set());
   const [soEmbrapii, setSoEmbrapii] = useState(false);
   const [selecao, setSelecao] = useState<{ pontos: Ponto[]; total: number } | null>(null);
-  const [verComprovacao, setVerComprovacao] = useState(false);
+  
 
   const locais = data || [];
 
