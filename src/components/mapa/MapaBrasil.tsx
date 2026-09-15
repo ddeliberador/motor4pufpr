@@ -85,14 +85,16 @@ function agrupar(pontos: Ponto[], celula: number): Cluster[] {
 interface Props {
   pontos: Ponto[];
   ufSelecionada: string | null;
+  ufsSelecionadas: Set<string>;
   contagemPorUf: Record<string, number>;
-  onSelecionarUf: (uf: string | null) => void;
+  onSelecionarUf: (uf: string) => void;
   onSelecionarCluster: (pontos: Ponto[], total: number) => void;
 }
 
 export default function MapaBrasil({
   pontos,
   ufSelecionada,
+  ufsSelecionadas,
   contagemPorUf,
   onSelecionarUf,
   onSelecionarCluster,
@@ -173,7 +175,7 @@ export default function MapaBrasil({
         {paths.map((p) => {
           const n = contagemPorUf[p.sigla] || 0;
           const intensidade = 0.04 + (n / maxUf) * 0.16;
-          const ativa = ufSelecionada === p.sigla;
+          const ativa = ufsSelecionadas.has(p.sigla);
           return (
             <path
               key={p.sigla}
@@ -182,7 +184,7 @@ export default function MapaBrasil({
               stroke="hsl(var(--border))"
               strokeWidth={0.8 * escala}
               className="cursor-pointer transition-[fill] duration-200 hover:brightness-125"
-              onClick={() => onSelecionarUf(ativa ? null : p.sigla)}
+              onClick={() => onSelecionarUf(p.sigla)}
             >
               <title>{`${p.sigla} — ${n.toLocaleString("pt-BR")} registros`}</title>
             </path>
