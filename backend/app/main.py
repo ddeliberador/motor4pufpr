@@ -16,6 +16,8 @@ from app.connectors.capes_sucupira import buscar_programas_pg, buscar_bolsistas
 from app.connectors.anatel import buscar_cobertura_municipio
 from app.connectors.formict import buscar_formict
 from app.connectors.fapesp_bv import buscar_projetos_fapesp
+from app.connectors.startupbase import buscar_startups
+from app.connectors.editais_fomento import buscar_editais_fomento
 
 # Configura logging
 logging.basicConfig(
@@ -137,6 +139,22 @@ async def fapesp_projetos(q: str = "", uf: str = "", area: str = ""):
         query=q or "inovação",
         uf=uf or None,
         area=area or None,
+    )
+
+@app.get("/api/v1/startups/ecossistema")
+async def startups_ecossistema(q: str = "", uf: str = "", setor: str = ""):
+    return await buscar_startups(
+        query=q or None,
+        uf=uf or None,
+        setor=setor or None,
+    )
+
+@app.get("/api/v1/fomento/editais")
+async def fomento_editais(q: str = "", uf: str = "", tipo: str = "todos"):
+    return await buscar_editais_fomento(
+        query=q or None,
+        uf=uf or None,
+        tipo=tipo or "todos",
     )
 
 @app.get("/")
