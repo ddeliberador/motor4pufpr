@@ -1,0 +1,53 @@
+# CI mínima — issue #7
+# Roda em todo push na main e em todo pull request:
+#   web: instala do lockfile, checa tipos, build, testes, auditoria de dependências
+#   api: instala do requirements.txt (com hashes), importa a app, auditoria de dependências
+# Actions pinadas por SHA (não por tag) para a cadeia de suprimentos ser reprodutível.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit -p tsconfig.app.json
+      - run: npm run build
+      - run: npx vitest run
+        env:
+          # Sem estes secrets, os blocos de escrita do teste de RLS aparecem como skipped.
+          VITE_TEST_USER_EMAIL: ${{ secrets.VITE_TEST_USER_EMAIL }}
+          VITE_TEST_USER_PASSWORD: ${{ secrets.VITE_TEST_USER_PASSWORD }}
+          VITE_TEST_ADMIN_EMAIL: ${{ secrets.VITE_TEST_ADMIN_EMAIL }}
+          VITE_TEST_ADMIN_PASSWORD: ${{ secrets.VITE_TEST_ADMIN_PASSWORD }}
+      - run: npm audit --omit=dev --audit-level=high
+
+  api:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python -m pip install --upgrade pip pip-audit
+      - run: pip install -r requirements.txt
+      - run: python -c "from app.main import app; print(app.title)"
+        env:
+          MCTI_API_KEY: ci-placeholder
+      - run: pip-audit -r requirements.txt
