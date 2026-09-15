@@ -129,14 +129,12 @@ class IncidenceEngine:
             indicators=indicators,
             stats=stats,
             processing_time_ms=processing_time,
-            data_sources=["CNPq", "OpenAlex", "INPI", "COMEX Stat", "BNDES", "Finep", "CAPES", "INEP", "GitHub"]
+            data_sources=["CNPq", "OpenAlex", "INPI", "COMEX Stat", "BNDES", "Finep", "CAPES", "INEP", "GitHub"],
+            scholarships=scholarships,
+            education=education,
+            github_projects=github,
         )
-        
-        # Adiciona dados extras
-        result.scholarships = scholarships
-        result.education = education
-        result.github_projects = github
-        
+
         return result
 
     async def _get_scientific_incidence(
