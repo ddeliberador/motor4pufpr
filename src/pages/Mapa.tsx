@@ -8,7 +8,7 @@ import { Search, X, Download, ChevronDown, ExternalLink, MapPin, Loader2 } from 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MapaBrasil, { type Ponto } from "@/components/mapa/MapaBrasil";
-import MapaExtracaoSection from "@/components/mapa/ComprovacaoExtracao";
+
 import ListaFiltrados from "@/components/mapa/ListaFiltrados";
 import { CATEGORIAS, categorizar, fonteLabel, type CategoriaKey } from "@/components/mapa/tipos";
 import { safeSupabase } from "@/lib/supabaseClient";
