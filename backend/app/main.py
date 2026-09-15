@@ -14,6 +14,8 @@ from app.core.auth import ApiKeyMiddleware
 from app.api.routes import health_router, incidence_router, productive_demand_router, integrated_bases_router, companies_router, analysis_router
 from app.connectors.capes_sucupira import buscar_programas_pg, buscar_bolsistas
 from app.connectors.anatel import buscar_cobertura_municipio
+from app.connectors.formict import buscar_formict
+from app.connectors.fapesp_bv import buscar_projetos_fapesp
 
 # Configura logging
 logging.basicConfig(
