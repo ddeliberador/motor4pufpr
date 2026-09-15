@@ -1,0 +1,81 @@
+// Categorização dos tipos brutos de research_locations em categorias exibíveis
+// no mapa, cada uma com seu próprio ícone. Módulo único: mapa, legenda e filtro
+// consomem daqui.
+
+import {
+  GraduationCap,
+  Building2,
+  FlaskConical,
+  Rocket,
+  Cpu,
+  Factory,
+  Network,
+  MapPin,
+  type LucideIcon,
+} from "lucide-react";
+
+export type CategoriaKey =
+  | "universidade"
+  | "instituto"
+  | "laboratorio"
+  | "startup"
+  | "supercomputacao"
+  | "embrapii"
+  | "habitat"
+  | "outro";
+
+export interface Categoria {
+  key: CategoriaKey;
+  label: string;
+  icon: LucideIcon;
+  /** classe de cor (token semântico) para traço do ícone e legenda */
+  cor: string;
+}
+
+export const CATEGORIAS: Categoria[] = [
+  { key: "universidade", label: "Universidade / IES", icon: GraduationCap, cor: "text-primary" },
+  { key: "instituto", label: "Instituto de pesquisa / ICT", icon: Building2, cor: "text-sky-500" },
+  { key: "laboratorio", label: "Laboratório", icon: FlaskConical, cor: "text-violet-500" },
+  { key: "startup", label: "Startup / empresa", icon: Rocket, cor: "text-amber-500" },
+  { key: "supercomputacao", label: "Centro de supercomputação", icon: Cpu, cor: "text-cyan-500" },
+  { key: "embrapii", label: "Unidade EMBRAPII / NIT", icon: Factory, cor: "text-emerald-500" },
+  { key: "habitat", label: "Incubadora / parque / hub", icon: Network, cor: "text-rose-500" },
+  { key: "outro", label: "Não classificado", icon: MapPin, cor: "text-muted-foreground" },
+];
+
+export const CATEGORIA_MAP: Record<CategoriaKey, Categoria> = CATEGORIAS.reduce(
+  (acc, c) => ({ ...acc, [c.key]: c }),
+  {} as Record<CategoriaKey, Categoria>,
+);
+
+const norm = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+/** Converte o texto livre da coluna `tipo` numa das categorias do mapa. */
+export function categorizar(tipo: string | null | undefined): CategoriaKey {
+  const t = norm(tipo || "");
+  if (!t) return "outro";
+  if (t.includes("startup") || t.includes("empresa")) return "startup";
+  if (t.includes("supercomput")) return "supercomputacao";
+  if (t.includes("embrapii") || t.includes("nit")) return "embrapii";
+  if (t.includes("universidade") || t.includes("ies") || t.includes("ensino")) return "universidade";
+  if (t.includes("incubadora") || t.includes("parque") || t.includes("hub")) return "habitat";
+  if (t.includes("laborator")) return "laboratorio";
+  if (t.includes("instituto") || t.includes("ict") || t.includes("inct") || t.includes("centro"))
+    return "instituto";
+  return "outro";
+}
+
+/** Rótulo legível para cada base de origem (`fonte`). */
+export const FONTE_CURTA: Record<string, string> = {
+  openalex: "OpenAlex",
+  embrapii: "EMBRAPII",
+  inep_censo_superior: "INEP — Censo Superior",
+  mcti_formict: "MCTI / FORMICT",
+  sinapad: "SINAPAD",
+  lisp_brasil_mapeamento: "LISP Brasil",
+  abstartups_2025: "StartupBase / ABStartups",
+  otd_cgee: "Observatório CGEE/MCTI",
+};
+
+export const fonteLabel = (f: string) => FONTE_CURTA[f] || f;
