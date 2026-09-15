@@ -9,6 +9,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MapaBrasil, { type Ponto } from "@/components/mapa/MapaBrasil";
 import MapaExtracaoSection from "@/components/mapa/ComprovacaoExtracao";
+import ListaFiltrados from "@/components/mapa/ListaFiltrados";
 import { CATEGORIAS, categorizar, fonteLabel, type CategoriaKey } from "@/components/mapa/tipos";
 import { safeSupabase } from "@/lib/supabaseClient";
 import { downloadLocations, type ResearchLocation } from "@/lib/researchLocations";
@@ -185,6 +186,25 @@ export default function Mapa() {
   const temFiltro =
     busca || fontesSel.size || catsSel.size || ufsSel.size ||
     regioesSel.size || tiposSel.size || segmentosSel.size || soEmbrapii;
+
+  const filtrosAtivos = useMemo(() => {
+    const f: string[] = [];
+    if (busca.trim()) f.push(`busca "${busca.trim()}"`);
+    if (regioesSel.size) f.push(`região: ${[...regioesSel].join(", ")}`);
+    if (ufsSel.size) f.push(`estado: ${[...ufsSel].sort().join(", ")}`);
+    if (catsSel.size)
+      f.push(
+        `tipo: ${[...catsSel]
+          .map((k) => CATEGORIAS.find((c) => c.key === k)?.label || k)
+          .join(", ")}`,
+      );
+    if (tiposSel.size) f.push(`tipo detalhado: ${[...tiposSel].join(", ")}`);
+    if (segmentosSel.size) f.push(`segmento: ${[...segmentosSel].join(", ")}`);
+    if (soEmbrapii) f.push("somente unidades EMBRAPII");
+    if (fontesSel.size)
+      f.push(`base de origem: ${[...fontesSel].map(fonteLabel).join(", ")}`);
+    return f;
+  }, [busca, regioesSel, ufsSel, catsSel, tiposSel, segmentosSel, soEmbrapii, fontesSel]);
 
   useEffect(() => {
     setSelecao(null);
@@ -541,6 +561,13 @@ export default function Mapa() {
             )}
           </section>
         </div>
+
+        {/* Lista dos registros filtrados (recolhida) + PDF */}
+        <ListaFiltrados
+          itens={filtrados}
+          filtrosAtivos={filtrosAtivos}
+          total={locais.length}
+        />
 
         {/* Comprovação de extração (recolhida) */}
         <div className="border-t border-border">
