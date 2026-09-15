@@ -338,6 +338,85 @@ export default function Mapa() {
                 </div>
               </div>
 
+              {/* Tipo de instituição (detalhado) */}
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Tipo de instituição (detalhado)
+                </p>
+                <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
+                  {Object.entries(contagemTipo)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([t, n]) => {
+                      const ativo = tiposSel.has(t);
+                      const esmaecido = tiposSel.size > 0 && !ativo;
+                      return (
+                        <button
+                          key={t}
+                          onClick={() => alternar(tiposSel, t, setTiposSel)}
+                          className={`flex w-full items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted ${
+                            ativo
+                              ? "border-primary bg-primary/15"
+                              : "border-transparent bg-card"
+                          } ${esmaecido ? "opacity-40" : ""}`}
+                        >
+                          <span className="flex-1 truncate">{t}</span>
+                          <span className="font-mono text-muted-foreground">
+                            {n.toLocaleString("pt-BR")}
+                          </span>
+                        </button>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* Unidades EMBRAPII (atalho) */}
+              <button
+                onClick={() => setSoEmbrapii((v) => !v)}
+                className={`flex w-full items-center gap-2 rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-colors ${
+                  soEmbrapii
+                    ? "border-primary bg-primary/15"
+                    : "border-border bg-card hover:bg-muted"
+                }`}
+              >
+                <span className="flex-1">Somente unidades EMBRAPII</span>
+                <span className="font-mono text-muted-foreground">
+                  {totalEmbrapii.toLocaleString("pt-BR")}
+                </span>
+              </button>
+
+              {/* Segmento da empresa (startups) */}
+              {Object.keys(contagemSegmento).length > 0 && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Segmento da empresa (startups)
+                  </p>
+                  <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
+                    {Object.entries(contagemSegmento)
+                      .sort((a, b) => b[1] - a[1])
+                      .map(([s, n]) => {
+                        const ativo = segmentosSel.has(s);
+                        const esmaecido = segmentosSel.size > 0 && !ativo;
+                        return (
+                          <button
+                            key={s}
+                            onClick={() => alternar(segmentosSel, s, setSegmentosSel)}
+                            className={`flex w-full items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted ${
+                              ativo
+                                ? "border-primary bg-primary/15"
+                                : "border-transparent bg-card"
+                            } ${esmaecido ? "opacity-40" : ""}`}
+                          >
+                            <span className="flex-1 truncate">{s}</span>
+                            <span className="font-mono text-muted-foreground">
+                              {n.toLocaleString("pt-BR")}
+                            </span>
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
               {/* Bases de origem */}
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
