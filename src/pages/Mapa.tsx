@@ -255,11 +255,33 @@ export default function Mapa() {
                 />
               </div>
 
-              {/* Estado */}
+              {/* Região */}
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Estado
+                  Região
                 </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {REGIOES.map((r) => {
+                    const ativo = regioesSel.has(r);
+                    const esmaecido = regioesSel.size > 0 && !ativo;
+                    return (
+                      <button
+                        key={r}
+                        onClick={() => alternar(regioesSel, r, setRegioesSel)}
+                        className={`rounded-md border px-2 py-1 text-[11px] font-medium transition-colors ${
+                          ativo
+                            ? "border-primary bg-primary/15 text-foreground"
+                            : "border-border bg-card hover:bg-muted"
+                        } ${esmaecido ? "opacity-40" : ""}`}
+                      >
+                        {r} ({(contagemRegiao[r] || 0).toLocaleString("pt-BR")})
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Estado */}
                 <div className="flex flex-wrap gap-1.5">
                   {ufs.map((u) => {
                     const ativo = ufsSel.has(u);
