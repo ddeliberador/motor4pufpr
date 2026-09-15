@@ -187,6 +187,25 @@ export default function Mapa() {
     busca || fontesSel.size || catsSel.size || ufsSel.size ||
     regioesSel.size || tiposSel.size || segmentosSel.size || soEmbrapii;
 
+  const filtrosAtivos = useMemo(() => {
+    const f: string[] = [];
+    if (busca.trim()) f.push(`busca "${busca.trim()}"`);
+    if (regioesSel.size) f.push(`região: ${[...regioesSel].join(", ")}`);
+    if (ufsSel.size) f.push(`estado: ${[...ufsSel].sort().join(", ")}`);
+    if (catsSel.size)
+      f.push(
+        `tipo: ${[...catsSel]
+          .map((k) => CATEGORIAS.find((c) => c.key === k)?.label || k)
+          .join(", ")}`,
+      );
+    if (tiposSel.size) f.push(`tipo detalhado: ${[...tiposSel].join(", ")}`);
+    if (segmentosSel.size) f.push(`segmento: ${[...segmentosSel].join(", ")}`);
+    if (soEmbrapii) f.push("somente unidades EMBRAPII");
+    if (fontesSel.size)
+      f.push(`base de origem: ${[...fontesSel].map(fonteLabel).join(", ")}`);
+    return f;
+  }, [busca, regioesSel, ufsSel, catsSel, tiposSel, segmentosSel, soEmbrapii, fontesSel]);
+
   useEffect(() => {
     setSelecao(null);
   }, [busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii]);
