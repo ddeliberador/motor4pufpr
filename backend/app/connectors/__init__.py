@@ -43,3 +43,6 @@ from .ans import ANSConnector
 from .dados_gov_br import DadosGovBrConnector
 from .sisab import SISABConnector
 from .inpi_rpi import INPIRPIConnector
+from .cvm_dados import buscar_empresas_cvm
+from .lei_do_bem import buscar_lei_do_bem
+from .abvcap import buscar_dados_abvcap
