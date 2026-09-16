@@ -11,7 +11,7 @@ import MapaBrasil, { type Ponto } from "@/components/mapa/MapaBrasil";
 
 import ListaFiltrados from "@/components/mapa/ListaFiltrados";
 import FiltrosPorBase from "@/components/mapa/FiltrosPorBase";
-import { passaFiltros, resumoFiltros, type SelecaoFiltros } from "@/components/mapa/filtrosBase";
+import { FILTROS, resumoFiltros, type SelecaoFiltros } from "@/components/mapa/filtrosBase";
 import { fetchLocationEnrichment } from "@/lib/locationEnrichment";
 import { CATEGORIAS, categorizar, fonteLabel, type CategoriaKey } from "@/components/mapa/tipos";
 import { safeSupabase } from "@/lib/supabaseClient";
