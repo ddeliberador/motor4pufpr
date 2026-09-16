@@ -19,6 +19,9 @@ import { CATEGORIAS, categorizar, fonteLabel, type CategoriaKey } from "@/compon
 import { safeSupabase } from "@/lib/supabaseClient";
 import { downloadLocations, type ResearchLocation } from "@/lib/researchLocations";
 import { safeHttpUrl } from "@/lib/utils";
+import PainelDataLake from "@/components/mapa/PainelDataLake";
+import MetricasCruzamento from "@/components/mapa/MetricasCruzamento";
+import { canonizar, passaLake, resumoLake, type SelecaoLake } from "@/components/mapa/dataLake";
 
 const COLUNAS =
   "id,nome,tipo,uf,municipio,latitude,longitude,fonte,fonte_url,cnpj,data_coleta,raw_metadata";
