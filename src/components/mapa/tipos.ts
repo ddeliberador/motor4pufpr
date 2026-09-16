@@ -2,17 +2,9 @@
 // no mapa, cada uma com seu próprio ícone. Módulo único: mapa, legenda e filtro
 // consomem daqui.
 
-import {
-  GraduationCap,
-  Building2,
-  FlaskConical,
-  Rocket,
-  Cpu,
-  Factory,
-  Network,
-  MapPin,
-  type LucideIcon,
-} from "lucide-react";
+// Ícones: Google Material Symbols (fonte carregada no index.html).
+// Cada categoria guarda o NOME do glifo Material, renderizado como
+// <span className="material-symbols-outlined">{icon}</span>.
 
 export type CategoriaKey =
   | "universidade"
