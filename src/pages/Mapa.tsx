@@ -624,7 +624,7 @@ export default function Mapa() {
 
             {metricas && !isLoading && !error && (
               <MetricasCruzamento
-                itens={filtrados}
+                itens={metricasItens}
                 total={locais.length}
                 onFechar={() => setMetricas(false)}
               />
