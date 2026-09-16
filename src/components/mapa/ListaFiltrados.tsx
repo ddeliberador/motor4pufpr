@@ -91,6 +91,10 @@ export default function ListaFiltrados({
   const [expandido, setExpandido] = useState<string | null>(null);
   const [gerando, setGerando] = useState(false);
 
+  useEffect(() => {
+    setExpandido(pontoSelecionadoId ?? null);
+  }, [pontoSelecionadoId]);
+
   const visiveis = useMemo(() => itens.slice(0, limite), [itens, limite]);
 
   const exportarPdf = async () => {
