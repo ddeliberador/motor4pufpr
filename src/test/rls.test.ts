@@ -11,10 +11,13 @@
  *   VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY   (opcionais; caem no projeto padrão)
  *   VITE_TEST_USER_EMAIL / VITE_TEST_USER_PASSWORD      conta SEM papel admin (obrigatórias p/ bloco 2)
  *   VITE_TEST_ADMIN_EMAIL / VITE_TEST_ADMIN_PASSWORD    conta COM papel admin (opcionais p/ bloco 3)
+ *   VITE_TEST_TELEMETRY_WRITE=1                         liga o bloco 4 (issue #11)
  *
  * Sem as credenciais os blocos 2 e 3 aparecem como SKIPPED no vitest, nunca
  * como passed. Use um projeto de teste ou uma conta descartável: o bloco 3
- * insere e apaga uma linha real.
+ * insere e apaga uma linha real, e o bloco 4 insere 31 linhas em
+ * telemetry_events que só service_role consegue apagar — por isso só roda
+ * quando pedido explicitamente, e num projeto de teste.
  *
  * Execução: npx vitest run src/test/rls.test.ts
  */
@@ -34,6 +37,7 @@ const adminPassword = import.meta.env.VITE_TEST_ADMIN_PASSWORD ?? "";
 
 const temUsuario = Boolean(userEmail && userPassword);
 const temAdmin = Boolean(adminEmail && adminPassword);
+const testaTelemetria = import.meta.env.VITE_TEST_TELEMETRY_WRITE === "1";
 
 // Marca para reconhecer (e apagar) qualquer linha que o bloco 3 venha a criar.
 const MARCA = `rls-test-${Date.now()}`;
@@ -94,6 +98,30 @@ describe("RLS — leitura pública (sem login)", () => {
     const { data, error } = await anon().from(table).select("id").limit(1);
     expect(error).toBeNull();
     expect(data).toEqual([]);
+  });
+});
+
+describe.skipIf(!testaTelemetria)("telemetry_events — limite de INSERT anônimo por sessão (issue #11)", () => {
+  // Migração 20260916120100: o 31º evento da mesma sessão em 60 s é recusado
+  // pelo trigger limit_telemetry_rate(), que sinaliza com HINT telemetry_rate_limit.
+  const LIMITE = 30;
+  const sessao = MARCA;
+
+  it(`aceita ${LIMITE} eventos e recusa o seguinte`, async () => {
+    const cliente = anon();
+    for (let i = 0; i < LIMITE; i++) {
+      const { error } = await cliente.from("telemetry_events").insert({ session_id: sessao, event_type: "pillar_view" });
+      expect(error, `evento ${i + 1} deveria entrar`).toBeNull();
+    }
+
+    const { error } = await cliente.from("telemetry_events").insert({ session_id: sessao, event_type: "pillar_view" });
+    expect(error).not.toBeNull();
+    expect(error?.hint).toBe("telemetry_rate_limit");
+  });
+
+  it("outra sessão continua aceitando", async () => {
+    const { error } = await anon().from("telemetry_events").insert({ session_id: `${sessao}-b`, event_type: "pillar_view" });
+    expect(error).toBeNull();
   });
 });
 
