@@ -106,9 +106,9 @@ export default function Mapa() {
 
   // Combinação por SOMA: cada grupo de filtro marcado adiciona seus registros
   // à exibição (união). Só a busca por texto restringe o resultado.
-  const filtradosBases = useMemo(() => {
+  const filtrados = useMemo(() => {
     const q = norm(busca.trim());
-    const grupos: ((l: (typeof comCanon)[number]) => boolean)[] = [];
+    const grupos: ((l: (typeof comCategoria)[number]) => boolean)[] = [];
     if (fontesSel.size) grupos.push((l) => fontesSel.has(l.fonte));
     if (catsSel.size) grupos.push((l) => catsSel.has(l.categoria));
     if (ufsSel.size) grupos.push((l) => !!l.uf && ufsSel.has(l.uf));
@@ -126,25 +126,12 @@ export default function Mapa() {
         def.valores(l, enriquecimento[l.id] || {}).some((v) => escolhidos.has(v)),
       );
     }
-    return comCanon.filter((l) => {
+    return comCategoria.filter((l) => {
       if (q && !norm(`${l.nome} ${l.municipio || ""}`).includes(q)) return false;
       if (grupos.length === 0) return true;
       return grupos.some((g) => g(l));
     });
-  }, [comCanon, busca, fontesSel, catsSel, ufsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular, enriquecimento]);
-
-  // Data Lake Cruzado: interseção entre eixos canônicos (E), somando dentro
-  // de cada eixo (OU). A busca por texto restringe em qualquer modo.
-  const filtradosLake = useMemo(() => {
-    const q = norm(busca.trim());
-    return comCanon.filter((l) => {
-      if (q && !norm(`${l.nome} ${l.municipio || ""}`).includes(q)) return false;
-      if (ufsSel.size && !(l.uf && ufsSel.has(l.uf))) return false;
-      return passaLake(l.canon, lakeSel);
-    });
-  }, [comCanon, busca, ufsSel, lakeSel]);
-
-  const filtrados = modo === "lake" ? filtradosLake : filtradosBases;
+  }, [comCategoria, busca, fontesSel, catsSel, ufsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular, enriquecimento]);
 
   const pontos: Ponto[] = useMemo(
     () =>
