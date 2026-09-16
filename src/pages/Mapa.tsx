@@ -315,6 +315,27 @@ export default function Mapa() {
           {/* Coluna lateral de filtros */}
           <aside className="w-full shrink-0 overflow-y-auto border-b border-border bg-muted/20 p-5 lg:w-80 lg:border-b-0 lg:border-r">
             <div className="space-y-6">
+              {/* Modo de leitura */}
+              <div className="flex gap-1 rounded-lg border border-border bg-card p-1">
+                {([
+                  { key: "lake" as const, label: "Data Lake Cruzado", icone: Database },
+                  { key: "bases" as const, label: "Bases de Origem", icone: Filter },
+                ]).map(({ key, label, icone: Icone }) => (
+                  <button
+                    key={key}
+                    onClick={() => setModo(key)}
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-semibold transition-colors ${
+                      modo === key
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <Icone className="h-3.5 w-3.5" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+
               {/* Total + limpar */}
               <div className="flex items-center justify-between">
                 <div>
