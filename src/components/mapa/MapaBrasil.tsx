@@ -151,7 +151,7 @@ export default function MapaBrasil({
   const clusters = useMemo(() => agrupar(pontos, 16 * escala), [pontos, escala]);
 
   const maxUf = Math.max(1, ...Object.values(contagemPorUf));
-  const tam = 17 * escala;
+  const tam = 12 * escala;
 
   if (erroMalha) {
     return (
