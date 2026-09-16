@@ -290,11 +290,17 @@ export default function Mapa() {
     apply(novo);
   };
 
-  const detalhados = selecao
-    ? selecao.pontos
+  const detalhados = useMemo(() => {
+    if (selecao)
+      return selecao.pontos
         .map((p) => filtrados.find((l) => l.id === p.id))
-        .filter(Boolean) as (ResearchLocation & { categoria: CategoriaKey })[]
-    : [];
+        .filter(Boolean) as (ResearchLocation & { categoria: CategoriaKey })[];
+    if (pontoSelecionadoId) {
+      const l = filtrados.find((l) => l.id === pontoSelecionadoId);
+      return l ? [l] : [];
+    }
+    return [];
+  }, [selecao, pontoSelecionadoId, filtrados]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
