@@ -136,12 +136,25 @@ export default function Mapa() {
         def.valores(l, enriquecimento[l.id] || {}).some((v) => escolhidos.has(v)),
       );
     }
-    return comCategoria.filter((l) => {
+    return comCanon.filter((l) => {
       if (q && !norm(`${l.nome} ${l.municipio || ""}`).includes(q)) return false;
       if (grupos.length === 0) return true;
       return grupos.some((g) => g(l));
     });
-  }, [comCategoria, busca, fontesSel, catsSel, ufsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular, enriquecimento]);
+  }, [comCanon, busca, fontesSel, catsSel, ufsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular, enriquecimento]);
+
+  // Data Lake Cruzado: interseção entre eixos canônicos (E), somando dentro
+  // de cada eixo (OU). A busca por texto restringe em qualquer modo.
+  const filtradosLake = useMemo(() => {
+    const q = norm(busca.trim());
+    return comCanon.filter((l) => {
+      if (q && !norm(`${l.nome} ${l.municipio || ""}`).includes(q)) return false;
+      if (ufsSel.size && !(l.uf && ufsSel.has(l.uf))) return false;
+      return passaLake(l.canon, lakeSel);
+    });
+  }, [comCanon, busca, ufsSel, lakeSel]);
+
+  const filtrados = modo === "lake" ? filtradosLake : filtradosBases;
 
   const pontos: Ponto[] = useMemo(
     () =>
