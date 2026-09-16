@@ -641,6 +641,43 @@ export default function Mapa() {
 
           {/* Mapa */}
           <section className="relative min-h-[70vh] flex-1 bg-background p-4">
+            {/* Barra do cruzamento */}
+            {!isLoading && !error && (
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-2 py-1 text-[11px] font-semibold text-background">
+                    <Database className="h-3 w-3" />
+                    {modo === "lake" ? "Data Lake C,T&I" : "Bases de origem"}
+                  </span>
+                  <span>
+                    <strong className="font-semibold text-foreground">
+                      {filtrados.length.toLocaleString("pt-BR")}
+                    </strong>{" "}
+                    de {locais.length.toLocaleString("pt-BR")} entidades
+                  </span>
+                </p>
+                <button
+                  onClick={() => setMetricas((v) => !v)}
+                  className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                    metricas
+                      ? "border-primary bg-primary/15"
+                      : "border-border bg-card hover:bg-muted"
+                  }`}
+                >
+                  <BarChart3 className="h-3.5 w-3.5" />
+                  Métricas do cruzamento
+                </button>
+              </div>
+            )}
+
+            {metricas && !isLoading && !error && (
+              <MetricasCruzamento
+                itens={filtrados}
+                total={locais.length}
+                onFechar={() => setMetricas(false)}
+              />
+            )}
+
             {isLoading && (
               <div className="flex h-full items-center justify-center">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
