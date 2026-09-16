@@ -21,6 +21,10 @@ const TIPO_STYLE: Record<string, string> = {
   "unidade embrapii": "bg-teal-500/10 text-teal-600 dark:text-teal-400",
   "parque tecnológico": "bg-violet-500/10 text-violet-600 dark:text-violet-400",
   "supercomputação": "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+  "incubadora": "bg-pink-500/10 text-pink-600 dark:text-pink-400",
+  "instituto federal": "bg-orange-500/10 text-orange-600 dark:text-orange-400",
+  "universidade": "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
+  "centro de supercomputação": "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   outro: "bg-muted text-muted-foreground",
 };
 
@@ -34,7 +38,7 @@ function fmtDate(d: string) {
   return y && m && day ? `${day}/${m}/${y}` : d;
 }
 
-const LIMITE_CARDS = 12;
+const LIMITE_CARDS = 24;
 
 /**
  * Concentradores de inovação do estado, lidos da base permanente de locais
@@ -46,6 +50,7 @@ function ConcentradoresInovacao({ uf, ufNome }: { uf: string; ufNome: string }) 
   const [items, setItems] = useState<ResearchLocation[] | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [tipoFiltro, setTipoFiltro] = useState<string>("todos");
+  const [busca, setBusca] = useState<string>("");
 
   useEffect(() => {
     let active = true;
@@ -80,9 +85,13 @@ function ConcentradoresInovacao({ uf, ufNome }: { uf: string; ufNome: string }) 
     acc[i.tipo.toLowerCase()] = (acc[i.tipo.toLowerCase()] || 0) + 1;
     return acc;
   }, {});
-  const filtrados = tipoFiltro === "todos"
-    ? items
-    : items.filter((i) => i.tipo.toLowerCase() === tipoFiltro);
+  const filtrados = items
+    .filter((i) => tipoFiltro === "todos" || i.tipo.toLowerCase() === tipoFiltro)
+    .filter((i) => {
+      if (!busca.trim()) return true;
+      const q = busca.toLowerCase();
+      return i.nome.toLowerCase().includes(q) || (i.municipio || "").toLowerCase().includes(q);
+    });
   const visiveis = showAll ? filtrados : filtrados.slice(0, LIMITE_CARDS);
   const fontesPresentes = [...new Set(items.map((i) => i.fonte))];
 
@@ -113,6 +122,13 @@ function ConcentradoresInovacao({ uf, ufNome }: { uf: string; ufNome: string }) 
       title="Concentradores de Inovação da Região"
       subtitle={`ICTs, hubs, parques tecnológicos, unidades EMBRAPII e centros de supercomputação em ${ufNome || uf} — ${items.length} locais catalogados (${georreferenciados} georreferenciados)`}
     >
+      <input
+        type="text"
+        value={busca}
+        onChange={(e) => { setBusca(e.target.value); setShowAll(false); }}
+        placeholder="Buscar por nome ou município…"
+        className="w-full mb-3 px-3 py-1.5 text-sm bg-muted/40 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+      />
       <div className="flex flex-wrap gap-1.5 mb-4">
         <button
           onClick={() => { setTipoFiltro("todos"); setShowAll(false); }}
