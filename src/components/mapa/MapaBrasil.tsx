@@ -275,21 +275,26 @@ export default function MapaBrasil({
       </g>
 
       {selecionado && selX != null && selY != null && (
-        <g pointerEvents="none">
+        <g pointerEvents="none" style={{ opacity: 0.95 }}>
           <circle
             cx={selX}
             cy={selY}
-            r={tam * 1.8}
-            fill="hsl(var(--primary) / 0.12)"
-            stroke="hsl(var(--primary))"
-            strokeWidth={1.2 * escala}
+            r={tam * 1.35}
+            fill="hsl(var(--primary) / 0.08)"
+            stroke="hsl(var(--primary) / 0.30)"
+            strokeWidth={0.7 * escala}
           />
-          <circle
-            cx={selX}
-            cy={selY}
-            r={tam * 0.55}
+          <text
+            x={selX}
+            y={selY - tam * 0.75}
+            textAnchor="middle"
+            dominantBaseline="central"
             fill="hsl(var(--primary))"
-          />
+            className="material-symbols-outlined select-none"
+            style={{ fontSize: tam * 2, fontVariationSettings: '"FILL" 1' }}
+          >
+            location_on
+          </text>
         </g>
       )}
     </svg>
