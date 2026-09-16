@@ -90,6 +90,7 @@ export default function Mapa() {
   const [soEmbrapii, setSoEmbrapii] = useState(false);
   const [granular, setGranular] = useState<SelecaoFiltros>({});
   const [selecao, setSelecao] = useState<{ pontos: Ponto[]; total: number } | null>(null);
+  const [pontoSelecionadoId, setPontoSelecionadoId] = useState<string | null>(null);
   // Modo de leitura: data lake cruzado (interseção entre eixos) ou bases de origem.
   const [modo, setModo] = useState<"lake" | "bases">("lake");
   const [lakeSel, setLakeSel] = useState<SelecaoLake>({});
