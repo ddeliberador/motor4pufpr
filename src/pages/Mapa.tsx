@@ -117,6 +117,12 @@ export default function Mapa() {
   // à exibição (união). Só a busca por texto restringe o resultado.
   const filtrados = useMemo(() => {
     const q = norm(busca.trim());
+    if (modo === "lake") {
+      return comCanon.filter((l) => {
+        if (q && !norm(`${l.nome} ${l.municipio || ""}`).includes(q)) return false;
+        return passaLake(l.canon, lakeSel);
+      });
+    }
     const grupos: ((l: (typeof comCategoria)[number]) => boolean)[] = [];
     if (fontesSel.size) grupos.push((l) => fontesSel.has(l.fonte));
     if (catsSel.size) grupos.push((l) => catsSel.has(l.categoria));
@@ -140,7 +146,7 @@ export default function Mapa() {
       if (grupos.length === 0) return true;
       return grupos.some((g) => g(l));
     });
-  }, [comCategoria, busca, fontesSel, catsSel, ufsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular, enriquecimento]);
+  }, [comCategoria, comCanon, busca, fontesSel, catsSel, ufsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular, enriquecimento, modo, lakeSel]);
 
   const pontos: Ponto[] = useMemo(
     () =>
