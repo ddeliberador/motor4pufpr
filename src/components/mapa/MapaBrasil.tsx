@@ -148,10 +148,10 @@ export default function MapaBrasil({
     return w / W;
   }, [viewBox]);
 
-  const clusters = useMemo(() => agrupar(pontos, 16 * escala), [pontos, escala]);
+  const clusters = useMemo(() => agrupar(pontos, 22 * escala), [pontos, escala]);
 
   const maxUf = Math.max(1, ...Object.values(contagemPorUf));
-  const tam = 17 * escala;
+  const tam = 11 * escala;
 
   if (erroMalha) {
     return (
@@ -209,9 +209,9 @@ export default function MapaBrasil({
                 y={c.y}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fontSize={tam}
                 fill="currentColor"
                 className={`material-symbols-outlined select-none ${cat.cor}`}
+                style={{ fontSize: tam }}
               >
                 {cat.icon}
               </text>
