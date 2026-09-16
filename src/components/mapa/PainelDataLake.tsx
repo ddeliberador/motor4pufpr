@@ -2,7 +2,6 @@
 // múltipla. Dentro do eixo as opções somam; entre eixos vale a interseção.
 
 import { useMemo } from "react";
-import { Database } from "lucide-react";
 import {
   EIXOS,
   valoresDoEixo,
@@ -18,14 +17,10 @@ export default function PainelDataLake({
   itens,
   selecao,
   onChange,
-  intersecao,
-  bases,
 }: {
   itens: Item[];
   selecao: SelecaoLake;
   onChange: (eixoId: string, valores: Set<string>) => void;
-  intersecao: number;
-  bases: number;
 }) {
   // Contagem por opção considerando os OUTROS eixos já selecionados,
   // para que os números reflitam o cruzamento em andamento.
