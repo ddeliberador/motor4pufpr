@@ -284,6 +284,14 @@ export default function Mapa() {
     setPontoSelecionadoId(null);
   }, [modo, lakeSel, busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular]);
 
+  // Seleção no mapa espelha na listagem: abre o painel da lista
+  useEffect(() => {
+    if (pontoSelecionadoId) {
+      setListaAberta(true);
+      setMetricas(false);
+    }
+  }, [pontoSelecionadoId]);
+
   const alternar = <T,>(set: Set<T>, v: T, apply: (s: Set<T>) => void) => {
     const novo = new Set(set);
     novo.has(v) ? novo.delete(v) : novo.add(v);
@@ -372,7 +380,14 @@ export default function Mapa() {
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
                   value={busca}
-                  onChange={(e) => setBusca(e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setBusca(v);
+                    if (v.trim()) {
+                      setListaAberta(true);
+                      setMetricas(false);
+                    }
+                  }}
                   placeholder="Nome ou cidade"
                   className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
                 />

@@ -1,7 +1,7 @@
 // Lista expansível dos registros que estão visíveis no mapa (recorte filtrado),
 // com todas as informações disponíveis na base e exportação em PDF.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, FileDown, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { CATEGORIA_MAP, fonteLabel, type CategoriaKey } from "@/components/mapa/tipos";
@@ -91,9 +91,22 @@ export default function ListaFiltrados({
   const [expandido, setExpandido] = useState<string | null>(null);
   const [gerando, setGerando] = useState(false);
 
+  const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
   useEffect(() => {
     setExpandido(pontoSelecionadoId ?? null);
-  }, [pontoSelecionadoId]);
+    if (!pontoSelecionadoId) return;
+    const idx = itens.findIndex((l) => l.id === pontoSelecionadoId);
+    if (idx < 0) return;
+    if (idx + 1 > limite) setLimite(Math.ceil((idx + 1) / PAGINA) * PAGINA);
+    const t = setTimeout(() => {
+      rowRefs.current[pontoSelecionadoId]?.scrollIntoView({
+        block: "center",
+        behavior: "smooth",
+      });
+    }, 120);
+    return () => clearTimeout(t);
+  }, [pontoSelecionadoId, itens, limite]);
 
   const visiveis = useMemo(() => itens.slice(0, limite), [itens, limite]);
 
@@ -247,7 +260,12 @@ export default function ListaFiltrados({
               const aberta = expandido === l.id;
               const extras = metaVisivel(l);
               return (
-                <div key={l.id}>
+                <div
+                  key={l.id}
+                  ref={(el) => {
+                    rowRefs.current[l.id] = el;
+                  }}
+                >
                   <button
                     onClick={() => {
                       const novo = aberta ? null : l.id;
