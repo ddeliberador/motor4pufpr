@@ -2,7 +2,7 @@
 // com todas as informações disponíveis na base e exportação em PDF.
 
 import { useMemo, useState } from "react";
-import { ChevronDown, FileDown, Loader2 } from "lucide-react";
+import { ChevronDown, FileDown, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { CATEGORIA_MAP, fonteLabel, type CategoriaKey } from "@/components/mapa/tipos";
 import type { ResearchLocation } from "@/lib/researchLocations";
