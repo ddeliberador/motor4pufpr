@@ -209,9 +209,9 @@ export default function MapaBrasil({
                 y={c.y}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fontSize={tam}
                 fill="currentColor"
                 className={`material-symbols-outlined select-none ${cat.cor}`}
+                style={{ fontSize: tam }}
               >
                 {cat.icon}
               </text>
