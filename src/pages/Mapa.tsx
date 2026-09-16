@@ -742,13 +742,6 @@ export default function Mapa() {
           </section>
         </div>
 
-        {/* Lista dos registros filtrados (recolhida) + PDF */}
-        <ListaFiltrados
-          itens={filtrados}
-          filtrosAtivos={filtrosAtivos}
-          total={locais.length}
-        />
-
       </main>
 
       <Footer />
