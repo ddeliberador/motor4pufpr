@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Search, X, Download, ExternalLink, MapPin, Loader2, Database, Filter, BarChart3,
+  Search, X, Download, ExternalLink, MapPin, Loader2, Database, Filter, BarChart3, List,
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
