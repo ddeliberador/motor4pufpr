@@ -250,6 +250,10 @@ export default function Mapa() {
   const filtrosAtivos = useMemo(() => {
     const f: string[] = [];
     if (busca.trim()) f.push(`busca "${busca.trim()}"`);
+    if (modo === "lake") {
+      f.push(...resumoLake(lakeSel));
+      return f;
+    }
     if (regioesSel.size) f.push(`região: ${[...regioesSel].join(", ")}`);
     if (ufsSel.size) f.push(`estado: ${[...ufsSel].sort().join(", ")}`);
     if (catsSel.size)
@@ -265,12 +269,12 @@ export default function Mapa() {
       f.push(`base de origem: ${[...fontesSel].map(fonteLabel).join(", ")}`);
     f.push(...resumoFiltros(granular));
     return f;
-  }, [busca, regioesSel, ufsSel, catsSel, tiposSel, segmentosSel, soEmbrapii, fontesSel, granular]);
+  }, [busca, regioesSel, ufsSel, catsSel, tiposSel, segmentosSel, soEmbrapii, fontesSel, granular, modo, lakeSel]);
 
   useEffect(() => {
     setSelecao(null);
     setPontoSelecionadoId(null);
-  }, [busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular]);
+  }, [busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular, modo, lakeSel]);
 
   // Seleção no mapa espelha na listagem: abre o painel da lista
   useEffect(() => {
