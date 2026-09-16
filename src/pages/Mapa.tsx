@@ -663,9 +663,12 @@ export default function Mapa() {
                     de {locais.length.toLocaleString("pt-BR")} entidades
                   </span>
                 </p>
-                <div className="flex items-center gap-2">
+                <div className="inline-flex items-center rounded-lg border border-border bg-card p-0.5">
                   <button
-                    onClick={() => setListaAberta((v) => !v)}
+                    onClick={() => {
+                      setListaAberta((v) => !v);
+                      setMetricas(false);
+                    }}
                     className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
                       listaAberta
                         ? "border-primary bg-primary/15"
