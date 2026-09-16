@@ -633,8 +633,11 @@ export default function Mapa() {
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <p className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-2 py-1 text-[11px] font-semibold text-background">
-                    <Filter className="h-3 w-3" />
-                    Bases de origem
+                    {modo === "lake" ? (
+                      <><Database className="h-3 w-3" /> Data Lake Cruzado</>
+                    ) : (
+                      <><Filter className="h-3 w-3" /> Bases de origem</>
+                    )}
                   </span>
                   <span>
                     <strong className="font-semibold text-foreground">
