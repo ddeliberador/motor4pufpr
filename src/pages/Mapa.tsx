@@ -659,17 +659,30 @@ export default function Mapa() {
                     de {locais.length.toLocaleString("pt-BR")} entidades
                   </span>
                 </p>
-                <button
-                  onClick={() => setMetricas((v) => !v)}
-                  className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
-                    metricas
-                      ? "border-primary bg-primary/15"
-                      : "border-border bg-card hover:bg-muted"
-                  }`}
-                >
-                  <BarChart3 className="h-3.5 w-3.5" />
-                  Métricas do cruzamento
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setListaAberta((v) => !v)}
+                    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                      listaAberta
+                        ? "border-primary bg-primary/15"
+                        : "border-border bg-card hover:bg-muted"
+                    }`}
+                  >
+                    <List className="h-3.5 w-3.5" />
+                    Listagem filtrada
+                  </button>
+                  <button
+                    onClick={() => setMetricas((v) => !v)}
+                    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                      metricas
+                        ? "border-primary bg-primary/15"
+                        : "border-border bg-card hover:bg-muted"
+                    }`}
+                  >
+                    <BarChart3 className="h-3.5 w-3.5" />
+                    Métricas do cruzamento
+                  </button>
+                </div>
               </div>
             )}
 
