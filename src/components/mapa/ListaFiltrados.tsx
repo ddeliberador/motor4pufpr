@@ -260,7 +260,12 @@ export default function ListaFiltrados({
               const aberta = expandido === l.id;
               const extras = metaVisivel(l);
               return (
-                <div key={l.id}>
+                <div
+                  key={l.id}
+                  ref={(el) => {
+                    rowRefs.current[l.id] = el;
+                  }}
+                >
                   <button
                     onClick={() => {
                       const novo = aberta ? null : l.id;
