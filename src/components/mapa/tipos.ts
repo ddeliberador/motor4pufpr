@@ -2,17 +2,9 @@
 // no mapa, cada uma com seu próprio ícone. Módulo único: mapa, legenda e filtro
 // consomem daqui.
 
-import {
-  GraduationCap,
-  Building2,
-  FlaskConical,
-  Rocket,
-  Cpu,
-  Factory,
-  Network,
-  MapPin,
-  type LucideIcon,
-} from "lucide-react";
+// Ícones: Google Material Symbols (fonte carregada no index.html).
+// Cada categoria guarda o NOME do glifo Material, renderizado como
+// <span className="material-symbols-outlined">{icon}</span>.
 
 export type CategoriaKey =
   | "universidade"
@@ -27,20 +19,21 @@ export type CategoriaKey =
 export interface Categoria {
   key: CategoriaKey;
   label: string;
-  icon: LucideIcon;
-  /** classe de cor (token semântico) para traço do ícone e legenda */
+  /** Nome do glifo do Google Material Symbols (ex.: "school"). */
+  icon: string;
+  /** classe de cor (token semântico) para o ícone e legenda */
   cor: string;
 }
 
 export const CATEGORIAS: Categoria[] = [
-  { key: "universidade", label: "Universidade / IES", icon: GraduationCap, cor: "text-primary" },
-  { key: "instituto", label: "Instituto de pesquisa / ICT", icon: Building2, cor: "text-sky-500" },
-  { key: "laboratorio", label: "Laboratório", icon: FlaskConical, cor: "text-violet-500" },
-  { key: "startup", label: "Startup / empresa", icon: Rocket, cor: "text-amber-500" },
-  { key: "supercomputacao", label: "Centro de supercomputação", icon: Cpu, cor: "text-cyan-500" },
-  { key: "embrapii", label: "Unidade EMBRAPII / NIT", icon: Factory, cor: "text-emerald-500" },
-  { key: "habitat", label: "Incubadora / parque / hub", icon: Network, cor: "text-rose-500" },
-  { key: "outro", label: "Não classificado", icon: MapPin, cor: "text-muted-foreground" },
+  { key: "universidade", label: "Universidade / IES", icon: "school", cor: "text-primary" },
+  { key: "instituto", label: "Instituto de pesquisa / ICT", icon: "account_balance", cor: "text-sky-500" },
+  { key: "laboratorio", label: "Laboratório", icon: "science", cor: "text-violet-500" },
+  { key: "startup", label: "Startup / empresa", icon: "rocket_launch", cor: "text-amber-500" },
+  { key: "supercomputacao", label: "Centro de supercomputação", icon: "memory", cor: "text-cyan-500" },
+  { key: "embrapii", label: "Unidade EMBRAPII / NIT", icon: "factory", cor: "text-emerald-500" },
+  { key: "habitat", label: "Incubadora / parque / hub", icon: "hub", cor: "text-rose-500" },
+  { key: "outro", label: "Não classificado", icon: "place", cor: "text-muted-foreground" },
 ];
 
 export const CATEGORIA_MAP: Record<CategoriaKey, Categoria> = CATEGORIAS.reduce(

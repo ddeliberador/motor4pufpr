@@ -375,7 +375,12 @@ export default function Mapa() {
                             : "border-transparent bg-card"
                         } ${esmaecido ? "opacity-40" : ""}`}
                       >
-                        <Icone className={`h-4 w-4 shrink-0 ${c.cor}`} strokeWidth={1.9} />
+                        <span
+                          className={`material-symbols-outlined shrink-0 text-base leading-none ${c.cor}`}
+                          aria-hidden
+                        >
+                          {Icone}
+                        </span>
                         <span className="flex-1 truncate">{c.label}</span>
                         <span className="font-mono text-muted-foreground">
                           {(contagemCat[c.key] || 0).toLocaleString("pt-BR")}

@@ -259,7 +259,14 @@ export default function ListaFiltrados({ itens, filtrosAtivos, total }: Props) {
                         <span className="mt-0.5 w-8 shrink-0 font-mono text-[11px] text-muted-foreground">
                           {i + 1}
                         </span>
-                        {Icone && <Icone className={`mt-0.5 h-4 w-4 shrink-0 ${cor}`} strokeWidth={1.9} />}
+                        {Icone && (
+                          <span
+                            className={`material-symbols-outlined mt-0.5 shrink-0 text-base leading-none ${cor}`}
+                            aria-hidden
+                          >
+                            {Icone}
+                          </span>
+                        )}
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm font-medium">{l.nome}</span>
                           <span className="mt-0.5 block text-[11px] text-muted-foreground">
