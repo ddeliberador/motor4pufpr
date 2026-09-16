@@ -195,7 +195,6 @@ export default function MapaBrasil({
       <g>
         {clusters.map((c) => {
           const cat = CATEGORIA_MAP[c.categoria];
-          const Icone = cat.icon;
           return (
             <g
               key={c.key}
@@ -205,14 +204,17 @@ export default function MapaBrasil({
                 onSelecionarCluster(c.pontos, c.total);
               }}
             >
-              <Icone
-                x={c.x - tam / 2}
-                y={c.y - tam / 2}
-                width={tam}
-                height={tam}
-                strokeWidth={1.9}
-                className={cat.cor}
-              />
+              <text
+                x={c.x}
+                y={c.y}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize={tam}
+                fill="currentColor"
+                className={`material-symbols-outlined select-none ${cat.cor}`}
+              >
+                {cat.icon}
+              </text>
               {c.total > 1 && (
                 <>
                   <circle
