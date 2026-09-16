@@ -10,6 +10,9 @@ import Footer from "@/components/Footer";
 import MapaBrasil, { type Ponto } from "@/components/mapa/MapaBrasil";
 
 import ListaFiltrados from "@/components/mapa/ListaFiltrados";
+import FiltrosPorBase from "@/components/mapa/FiltrosPorBase";
+import { passaFiltros, resumoFiltros, type SelecaoFiltros } from "@/components/mapa/filtrosBase";
+import { fetchLocationEnrichment } from "@/lib/locationEnrichment";
 import { CATEGORIAS, categorizar, fonteLabel, type CategoriaKey } from "@/components/mapa/tipos";
 import { safeSupabase } from "@/lib/supabaseClient";
 import { downloadLocations, type ResearchLocation } from "@/lib/researchLocations";
@@ -72,6 +75,7 @@ export default function Mapa() {
   const [tiposSel, setTiposSel] = useState<Set<string>>(new Set());
   const [segmentosSel, setSegmentosSel] = useState<Set<string>>(new Set());
   const [soEmbrapii, setSoEmbrapii] = useState(false);
+  const [granular, setGranular] = useState<SelecaoFiltros>({});
   const [selecao, setSelecao] = useState<{ pontos: Ponto[]; total: number } | null>(null);
   
 
