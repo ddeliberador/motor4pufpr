@@ -118,7 +118,7 @@ export default function Mapa() {
   // à exibição (união). Só a busca por texto restringe o resultado.
   const filtradosBases = useMemo(() => {
     const q = norm(busca.trim());
-    const grupos: ((l: (typeof comCategoria)[number]) => boolean)[] = [];
+    const grupos: ((l: (typeof comCanon)[number]) => boolean)[] = [];
     if (fontesSel.size) grupos.push((l) => fontesSel.has(l.fonte));
     if (catsSel.size) grupos.push((l) => catsSel.has(l.categoria));
     if (ufsSel.size) grupos.push((l) => !!l.uf && ufsSel.has(l.uf));
