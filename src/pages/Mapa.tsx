@@ -10,6 +10,9 @@ import Footer from "@/components/Footer";
 import MapaBrasil, { type Ponto } from "@/components/mapa/MapaBrasil";
 
 import ListaFiltrados from "@/components/mapa/ListaFiltrados";
+import FiltrosPorBase from "@/components/mapa/FiltrosPorBase";
+import { passaFiltros, resumoFiltros, type SelecaoFiltros } from "@/components/mapa/filtrosBase";
+import { fetchLocationEnrichment } from "@/lib/locationEnrichment";
 import { CATEGORIAS, categorizar, fonteLabel, type CategoriaKey } from "@/components/mapa/tipos";
 import { safeSupabase } from "@/lib/supabaseClient";
 import { downloadLocations, type ResearchLocation } from "@/lib/researchLocations";
@@ -63,6 +66,14 @@ export default function Mapa() {
     staleTime: 30 * 60 * 1000,
   });
 
+  const { data: enrData } = useQuery({
+    queryKey: ["location_enrichment", "mapa"],
+    queryFn: fetchLocationEnrichment,
+    staleTime: 30 * 60 * 1000,
+  });
+  const enriquecimento = enrData || {};
+
+
   const [busca, setBusca] = useState("");
   // Conjuntos de SELEÇÃO: vazio = tudo visível; com itens = só os selecionados.
   const [fontesSel, setFontesSel] = useState<Set<string>>(new Set());
@@ -72,6 +83,7 @@ export default function Mapa() {
   const [tiposSel, setTiposSel] = useState<Set<string>>(new Set());
   const [segmentosSel, setSegmentosSel] = useState<Set<string>>(new Set());
   const [soEmbrapii, setSoEmbrapii] = useState(false);
+  const [granular, setGranular] = useState<SelecaoFiltros>({});
   const [selecao, setSelecao] = useState<{ pontos: Ponto[]; total: number } | null>(null);
   
 
@@ -95,9 +107,10 @@ export default function Mapa() {
       if (segmentosSel.size && !segmentosSel.has(segmentoDe(l) || "")) return false;
       if (soEmbrapii && !/embrapii/i.test(l.tipo)) return false;
       if (q && !norm(`${l.nome} ${l.municipio || ""}`).includes(q)) return false;
+      if (!passaFiltros(l, enriquecimento[l.id] || {}, granular)) return false;
       return true;
     });
-  }, [comCategoria, busca, fontesSel, catsSel, ufsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii]);
+  }, [comCategoria, busca, fontesSel, catsSel, ufsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular, enriquecimento]);
 
   const pontos: Ponto[] = useMemo(
     () =>
@@ -180,12 +193,15 @@ export default function Mapa() {
     setTiposSel(new Set());
     setSegmentosSel(new Set());
     setSoEmbrapii(false);
+    setGranular({});
     setSelecao(null);
   };
 
+  const granularAtivo = Object.values(granular).some((s) => s.size > 0);
+
   const temFiltro =
     busca || fontesSel.size || catsSel.size || ufsSel.size ||
-    regioesSel.size || tiposSel.size || segmentosSel.size || soEmbrapii;
+    regioesSel.size || tiposSel.size || segmentosSel.size || soEmbrapii || granularAtivo;
 
   const filtrosAtivos = useMemo(() => {
     const f: string[] = [];
@@ -203,12 +219,13 @@ export default function Mapa() {
     if (soEmbrapii) f.push("somente unidades EMBRAPII");
     if (fontesSel.size)
       f.push(`base de origem: ${[...fontesSel].map(fonteLabel).join(", ")}`);
+    f.push(...resumoFiltros(granular));
     return f;
-  }, [busca, regioesSel, ufsSel, catsSel, tiposSel, segmentosSel, soEmbrapii, fontesSel]);
+  }, [busca, regioesSel, ufsSel, catsSel, tiposSel, segmentosSel, soEmbrapii, fontesSel, granular]);
 
   useEffect(() => {
     setSelecao(null);
-  }, [busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii]);
+  }, [busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular]);
 
   const alternar = <T,>(set: Set<T>, v: T, apply: (s: Set<T>) => void) => {
     const novo = new Set(set);
@@ -404,38 +421,17 @@ export default function Mapa() {
                 </span>
               </button>
 
-              {/* Segmento da empresa (startups) */}
-              {Object.keys(contagemSegmento).length > 0 && (
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Segmento da empresa (startups)
-                  </p>
-                  <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
-                    {Object.entries(contagemSegmento)
-                      .sort((a, b) => b[1] - a[1])
-                      .map(([s, n]) => {
-                        const ativo = segmentosSel.has(s);
-                        const esmaecido = segmentosSel.size > 0 && !ativo;
-                        return (
-                          <button
-                            key={s}
-                            onClick={() => alternar(segmentosSel, s, setSegmentosSel)}
-                            className={`flex w-full items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted ${
-                              ativo
-                                ? "border-primary bg-primary/15"
-                                : "border-transparent bg-card"
-                            } ${esmaecido ? "opacity-40" : ""}`}
-                          >
-                            <span className="flex-1 truncate">{s}</span>
-                            <span className="font-mono text-muted-foreground">
-                              {n.toLocaleString("pt-BR")}
-                            </span>
-                          </button>
-                        );
-                      })}
-                  </div>
-                </div>
-              )}
+              {/* Filtros detalhados por base (checkbox, lista suspensa ou opção única) */}
+              <FiltrosPorBase
+                itens={comCategoria}
+                enriquecimento={enriquecimento}
+                selecao={granular}
+                fontesSel={fontesSel}
+                onChange={(id, valores) =>
+                  setGranular((prev) => ({ ...prev, [id]: valores }))
+                }
+              />
+
 
               {/* Bases de origem */}
               <div>
