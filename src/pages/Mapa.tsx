@@ -300,7 +300,7 @@ export default function Mapa() {
       <main className="pt-16">
         {/* Cabeçalho institucional */}
         <div className="border-b border-border px-4 py-3 sm:px-6 sm:py-4 lg:py-5">
-          <div className="container-wide">
+          <div className="w-full">
             <h1 className="text-lg font-bold tracking-tight sm:text-xl lg:text-2xl">
               Mapa da Inovação — Brasil
             </h1>
