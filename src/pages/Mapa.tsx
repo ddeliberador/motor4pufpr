@@ -215,28 +215,19 @@ export default function Mapa() {
     setSegmentosSel(new Set());
     setSoEmbrapii(false);
     setGranular({});
-    setLakeSel({});
     setSelecao(null);
   };
 
   const granularAtivo = Object.values(granular).some((s) => s.size > 0);
-  const lakeAtivo = Object.values(lakeSel).some((s) => s.size > 0);
 
   const temFiltro =
-    modo === "lake"
-      ? !!busca || ufsSel.size > 0 || lakeAtivo
-      : !!busca || fontesSel.size > 0 || catsSel.size > 0 || ufsSel.size > 0 ||
-        regioesSel.size > 0 || tiposSel.size > 0 || segmentosSel.size > 0 ||
-        soEmbrapii || granularAtivo;
+    !!busca || fontesSel.size > 0 || catsSel.size > 0 || ufsSel.size > 0 ||
+    regioesSel.size > 0 || tiposSel.size > 0 || segmentosSel.size > 0 ||
+    soEmbrapii || granularAtivo;
 
   const filtrosAtivos = useMemo(() => {
     const f: string[] = [];
     if (busca.trim()) f.push(`busca "${busca.trim()}"`);
-    if (modo === "lake") {
-      if (ufsSel.size) f.push(`estado: ${[...ufsSel].sort().join(", ")}`);
-      f.push(...resumoLake(lakeSel));
-      return f;
-    }
     if (regioesSel.size) f.push(`região: ${[...regioesSel].join(", ")}`);
     if (ufsSel.size) f.push(`estado: ${[...ufsSel].sort().join(", ")}`);
     if (catsSel.size)
@@ -252,12 +243,12 @@ export default function Mapa() {
       f.push(`base de origem: ${[...fontesSel].map(fonteLabel).join(", ")}`);
     f.push(...resumoFiltros(granular));
     return f;
-  }, [modo, lakeSel, busca, regioesSel, ufsSel, catsSel, tiposSel, segmentosSel, soEmbrapii, fontesSel, granular]);
+  }, [busca, regioesSel, ufsSel, catsSel, tiposSel, segmentosSel, soEmbrapii, fontesSel, granular]);
 
   useEffect(() => {
     setSelecao(null);
     setPontoSelecionadoId(null);
-  }, [modo, lakeSel, busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular]);
+  }, [busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular]);
 
   // Seleção no mapa espelha na listagem: abre o painel da lista
   useEffect(() => {
