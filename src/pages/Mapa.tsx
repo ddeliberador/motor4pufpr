@@ -346,6 +346,32 @@ export default function Mapa() {
                 ) : null}
               </div>
 
+              {/* Seletor de modo */}
+              <div className="flex rounded-lg border border-border bg-card p-0.5">
+                <button
+                  onClick={() => setModo("bases")}
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-medium transition-colors ${
+                    modo === "bases"
+                      ? "bg-primary/15 text-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Filter className="h-3.5 w-3.5" />
+                  Bases de origem
+                </button>
+                <button
+                  onClick={() => setModo("lake")}
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-medium transition-colors ${
+                    modo === "lake"
+                      ? "bg-primary/15 text-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Database className="h-3.5 w-3.5" />
+                  Data Lake Cruzado
+                </button>
+              </div>
+
               {/* Busca */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
