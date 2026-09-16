@@ -367,6 +367,45 @@ export default function Mapa() {
                 />
               </div>
 
+              {modo === "lake" ? (
+                <>
+                  {/* Estado (recorte territorial dentro do cruzamento) */}
+                  <div>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Estado (UF)
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {ufs.map((u) => {
+                        const ativo = ufsSel.has(u);
+                        return (
+                          <button
+                            key={u}
+                            onClick={() => alternar(ufsSel, u, setUfsSel)}
+                            className={`rounded-md border px-2 py-1 text-[11px] font-medium transition-colors ${
+                              ativo
+                                ? "border-primary bg-primary/15 text-foreground"
+                                : "border-border bg-card hover:bg-muted"
+                            } ${ufsSel.size > 0 && !ativo ? "opacity-40" : ""}`}
+                          >
+                            {u}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <PainelDataLake
+                    itens={comCanon}
+                    selecao={lakeSel}
+                    onChange={(id, valores) =>
+                      setLakeSel((prev) => ({ ...prev, [id]: valores }))
+                    }
+                    intersecao={filtrados.length}
+                    bases={totalBases}
+                  />
+                </>
+              ) : (
+                <>
               {/* Região */}
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
