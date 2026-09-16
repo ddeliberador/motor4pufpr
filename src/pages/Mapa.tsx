@@ -11,7 +11,7 @@ import MapaBrasil, { type Ponto } from "@/components/mapa/MapaBrasil";
 
 import ListaFiltrados from "@/components/mapa/ListaFiltrados";
 import FiltrosPorBase from "@/components/mapa/FiltrosPorBase";
-import { passaFiltros, resumoFiltros, type SelecaoFiltros } from "@/components/mapa/filtrosBase";
+import { FILTROS, resumoFiltros, type SelecaoFiltros } from "@/components/mapa/filtrosBase";
 import { fetchLocationEnrichment } from "@/lib/locationEnrichment";
 import { CATEGORIAS, categorizar, fonteLabel, type CategoriaKey } from "@/components/mapa/tipos";
 import { safeSupabase } from "@/lib/supabaseClient";
@@ -94,21 +94,32 @@ export default function Mapa() {
     [locais],
   );
 
+  // Combinação por SOMA: cada grupo de filtro marcado adiciona seus registros
+  // à exibição (união). Só a busca por texto restringe o resultado.
   const filtrados = useMemo(() => {
     const q = norm(busca.trim());
+    const grupos: ((l: (typeof comCategoria)[number]) => boolean)[] = [];
+    if (fontesSel.size) grupos.push((l) => fontesSel.has(l.fonte));
+    if (catsSel.size) grupos.push((l) => catsSel.has(l.categoria));
+    if (ufsSel.size) grupos.push((l) => !!l.uf && ufsSel.has(l.uf));
+    if (regioesSel.size)
+      grupos.push((l) => !!l.uf && regioesSel.has(REGIAO_POR_UF[l.uf] || ""));
+    if (tiposSel.size)
+      grupos.push((l) => facetasTipo(l.tipo).some((t) => tiposSel.has(t)));
+    if (segmentosSel.size)
+      grupos.push((l) => segmentosSel.has(segmentoDe(l) || ""));
+    if (soEmbrapii) grupos.push((l) => /embrapii/i.test(l.tipo));
+    for (const def of FILTROS) {
+      const escolhidos = granular[def.id];
+      if (!escolhidos || escolhidos.size === 0) continue;
+      grupos.push((l) =>
+        def.valores(l, enriquecimento[l.id] || {}).some((v) => escolhidos.has(v)),
+      );
+    }
     return comCategoria.filter((l) => {
-      if (fontesSel.size && !fontesSel.has(l.fonte)) return false;
-      if (catsSel.size && !catsSel.has(l.categoria)) return false;
-      if (ufsSel.size && (!l.uf || !ufsSel.has(l.uf))) return false;
-      if (regioesSel.size && (!l.uf || !regioesSel.has(REGIAO_POR_UF[l.uf] || "")))
-        return false;
-      if (tiposSel.size && !facetasTipo(l.tipo).some((t) => tiposSel.has(t)))
-        return false;
-      if (segmentosSel.size && !segmentosSel.has(segmentoDe(l) || "")) return false;
-      if (soEmbrapii && !/embrapii/i.test(l.tipo)) return false;
       if (q && !norm(`${l.nome} ${l.municipio || ""}`).includes(q)) return false;
-      if (!passaFiltros(l, enriquecimento[l.id] || {}, granular)) return false;
-      return true;
+      if (grupos.length === 0) return true;
+      return grupos.some((g) => g(l));
     });
   }, [comCategoria, busca, fontesSel, catsSel, ufsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular, enriquecimento]);
 
