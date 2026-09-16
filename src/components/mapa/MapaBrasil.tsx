@@ -158,8 +158,6 @@ export default function MapaBrasil({
   const tam = 14 * Math.sqrt(escala);
   const clusters = useMemo(() => agrupar(pontos, tam * 1.7), [pontos, tam]);
 
-  const maxUf = Math.max(1, ...Object.values(contagemPorUf));
-
   const temSelecao = pontoSelecionadoId != null;
   const selecionado = useMemo(
     () => pontos.find((p) => p.id === pontoSelecionadoId) || null,
@@ -193,16 +191,15 @@ export default function MapaBrasil({
       <g>
         {paths.map((p) => {
           const n = contagemPorUf[p.sigla] || 0;
-          const intensidade = 0.04 + (n / maxUf) * 0.16;
           const ativa = ufsSelecionadas.has(p.sigla);
           return (
             <path
               key={p.sigla}
               d={p.d}
-              fill={`hsl(var(--primary) / ${ativa ? 0.28 : intensidade})`}
+              fill={ativa ? "hsl(var(--primary) / 0.22)" : "hsl(var(--muted) / 0.35)"}
               stroke="hsl(var(--border))"
               strokeWidth={0.8 * escala}
-              className="cursor-pointer transition-[fill] duration-200 hover:brightness-125"
+              className="cursor-pointer transition-[fill] duration-200 hover:brightness-110"
               onClick={() => onSelecionarUf(p.sigla)}
             >
               <title>{`${p.sigla} — ${n.toLocaleString("pt-BR")} registros`}</title>
