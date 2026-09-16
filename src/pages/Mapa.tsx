@@ -601,9 +601,9 @@ export default function Mapa() {
                 <div className="rounded-xl border border-border bg-card p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <p className="text-xs font-semibold">
-                      {selecao!.total > detalhados.length
-                        ? `${detalhados.length} de ${selecao!.total} neste ponto`
-                        : `${detalhados.length} selecionado(s)`}
+                      {selecao && selecao.total > detalhados.length
+                        ? `${detalhados.length} de ${selecao.total} neste ponto`
+                        : `${detalhados.length} local selecionado`}
                     </p>
                     <button
                       onClick={() => {
