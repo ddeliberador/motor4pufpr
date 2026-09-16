@@ -245,7 +245,7 @@ export default function Mapa() {
   const temFiltro =
     !!busca || fontesSel.size > 0 || catsSel.size > 0 || ufsSel.size > 0 ||
     regioesSel.size > 0 || tiposSel.size > 0 || segmentosSel.size > 0 ||
-    soEmbrapii || granularAtivo;
+    soEmbrapii || granularAtivo || lakeAtivo;
 
   const filtrosAtivos = useMemo(() => {
     const f: string[] = [];
