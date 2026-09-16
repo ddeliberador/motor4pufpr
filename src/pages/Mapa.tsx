@@ -284,6 +284,14 @@ export default function Mapa() {
     setPontoSelecionadoId(null);
   }, [modo, lakeSel, busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular]);
 
+  // Seleção no mapa espelha na listagem: abre o painel da lista
+  useEffect(() => {
+    if (pontoSelecionadoId) {
+      setListaAberta(true);
+      setMetricas(false);
+    }
+  }, [pontoSelecionadoId]);
+
   const alternar = <T,>(set: Set<T>, v: T, apply: (s: Set<T>) => void) => {
     const novo = new Set(set);
     novo.has(v) ? novo.delete(v) : novo.add(v);
