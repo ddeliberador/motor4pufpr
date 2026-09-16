@@ -91,9 +91,22 @@ export default function ListaFiltrados({
   const [expandido, setExpandido] = useState<string | null>(null);
   const [gerando, setGerando] = useState(false);
 
+  const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
   useEffect(() => {
     setExpandido(pontoSelecionadoId ?? null);
-  }, [pontoSelecionadoId]);
+    if (!pontoSelecionadoId) return;
+    const idx = itens.findIndex((l) => l.id === pontoSelecionadoId);
+    if (idx < 0) return;
+    if (idx + 1 > limite) setLimite(Math.ceil((idx + 1) / PAGINA) * PAGINA);
+    const t = setTimeout(() => {
+      rowRefs.current[pontoSelecionadoId]?.scrollIntoView({
+        block: "center",
+        behavior: "smooth",
+      });
+    }, 120);
+    return () => clearTimeout(t);
+  }, [pontoSelecionadoId, itens, limite]);
 
   const visiveis = useMemo(() => itens.slice(0, limite), [itens, limite]);
 
