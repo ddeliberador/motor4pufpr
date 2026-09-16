@@ -90,7 +90,10 @@ export default function Mapa() {
   const [soEmbrapii, setSoEmbrapii] = useState(false);
   const [granular, setGranular] = useState<SelecaoFiltros>({});
   const [selecao, setSelecao] = useState<{ pontos: Ponto[]; total: number } | null>(null);
-  
+  // Modo de leitura: data lake cruzado (interseção entre eixos) ou bases de origem.
+  const [modo, setModo] = useState<"lake" | "bases">("lake");
+  const [lakeSel, setLakeSel] = useState<SelecaoLake>({});
+  const [metricas, setMetricas] = useState(false);
 
   const locais = data || [];
 
@@ -99,9 +102,21 @@ export default function Mapa() {
     [locais],
   );
 
+  // Esquema canônico: traduz cada registro para os eixos comuns às 7 bases.
+  const comCanon = useMemo(
+    () =>
+      comCategoria.map((l) => ({ ...l, canon: canonizar(l, enriquecimento[l.id] || {}) })),
+    [comCategoria, enriquecimento],
+  );
+
+  const totalBases = useMemo(
+    () => new Set(locais.map((l) => l.fonte)).size,
+    [locais],
+  );
+
   // Combinação por SOMA: cada grupo de filtro marcado adiciona seus registros
   // à exibição (união). Só a busca por texto restringe o resultado.
-  const filtrados = useMemo(() => {
+  const filtradosBases = useMemo(() => {
     const q = norm(busca.trim());
     const grupos: ((l: (typeof comCategoria)[number]) => boolean)[] = [];
     if (fontesSel.size) grupos.push((l) => fontesSel.has(l.fonte));
