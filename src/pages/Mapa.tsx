@@ -694,6 +694,16 @@ export default function Mapa() {
               />
             )}
 
+            {listaAberta && !isLoading && !error && (
+              <ListaFiltrados
+                itens={filtrados}
+                filtrosAtivos={filtrosAtivos}
+                total={locais.length}
+                aberto={listaAberta}
+                onFechar={() => setListaAberta(false)}
+              />
+            )}
+
             {isLoading && (
               <div className="flex h-full items-center justify-center">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
