@@ -20,6 +20,7 @@ import { safeSupabase } from "@/lib/supabaseClient";
 import { type ResearchLocation } from "@/lib/researchLocations";
 import { safeHttpUrl } from "@/lib/utils";
 import MetricasCruzamento from "@/components/mapa/MetricasCruzamento";
+import { canonizar } from "@/components/mapa/dataLake";
 
 const COLUNAS =
   "id,nome,tipo,uf,municipio,latitude,longitude,fonte,fonte_url,cnpj,data_coleta,raw_metadata";
