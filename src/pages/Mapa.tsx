@@ -66,6 +66,14 @@ export default function Mapa() {
     staleTime: 30 * 60 * 1000,
   });
 
+  const { data: enrData } = useQuery({
+    queryKey: ["location_enrichment", "mapa"],
+    queryFn: fetchLocationEnrichment,
+    staleTime: 30 * 60 * 1000,
+  });
+  const enriquecimento = enrData || {};
+
+
   const [busca, setBusca] = useState("");
   // Conjuntos de SELEÇÃO: vazio = tudo visível; com itens = só os selecionados.
   const [fontesSel, setFontesSel] = useState<Set<string>>(new Set());
@@ -99,9 +107,10 @@ export default function Mapa() {
       if (segmentosSel.size && !segmentosSel.has(segmentoDe(l) || "")) return false;
       if (soEmbrapii && !/embrapii/i.test(l.tipo)) return false;
       if (q && !norm(`${l.nome} ${l.municipio || ""}`).includes(q)) return false;
+      if (!passaFiltros(l, enriquecimento[l.id] || {}, granular)) return false;
       return true;
     });
-  }, [comCategoria, busca, fontesSel, catsSel, ufsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii]);
+  }, [comCategoria, busca, fontesSel, catsSel, ufsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular, enriquecimento]);
 
   const pontos: Ponto[] = useMemo(
     () =>
