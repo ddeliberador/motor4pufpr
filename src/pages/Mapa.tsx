@@ -275,11 +275,11 @@ export default function Mapa() {
       f.push(`base de origem: ${[...fontesSel].map(fonteLabel).join(", ")}`);
     f.push(...resumoFiltros(granular));
     return f;
-  }, [busca, regioesSel, ufsSel, catsSel, tiposSel, segmentosSel, soEmbrapii, fontesSel, granular]);
+  }, [modo, lakeSel, busca, regioesSel, ufsSel, catsSel, tiposSel, segmentosSel, soEmbrapii, fontesSel, granular]);
 
   useEffect(() => {
     setSelecao(null);
-  }, [busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular]);
+  }, [modo, lakeSel, busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular]);
 
   const alternar = <T,>(set: Set<T>, v: T, apply: (s: Set<T>) => void) => {
     const novo = new Set(set);
