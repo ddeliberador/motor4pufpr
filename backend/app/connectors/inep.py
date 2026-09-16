@@ -26,6 +26,13 @@ class INEPConnector(BaseConnector):
         self.base_url = "https://dadosabertos.inep.gov.br/api"
         self.timeout = 30.0
 
+    def get_source_name(self) -> str:
+        return "INEP"
+
+    async def search(self, query: str, **kwargs) -> List[Dict[str, Any]]:
+        result = await self.search_institutions(query, kwargs.get("state"))
+        return result.get("institutions", []) if isinstance(result, dict) else []
+
     async def search_institutions(self, term: str, state: str = None) -> Dict[str, Any]:
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
