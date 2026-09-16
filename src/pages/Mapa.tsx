@@ -605,7 +605,13 @@ export default function Mapa() {
                         ? `${detalhados.length} de ${selecao!.total} neste ponto`
                         : `${detalhados.length} selecionado(s)`}
                     </p>
-                    <button onClick={() => setSelecao(null)} aria-label="fechar">
+                    <button
+                      onClick={() => {
+                        setSelecao(null);
+                        setPontoSelecionadoId(null);
+                      }}
+                      aria-label="fechar"
+                    >
                       <X className="h-3.5 w-3.5 text-muted-foreground" />
                     </button>
                   </div>
