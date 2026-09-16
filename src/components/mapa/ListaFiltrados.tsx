@@ -371,19 +371,25 @@ export default function ListaFiltrados({
   if (abertoProp !== undefined) {
     if (!aberto) return null;
     return (
-      <div className="absolute right-4 top-16 z-20 w-[min(28rem,calc(100%-2rem))] max-h-[calc(100%-5rem)] overflow-y-auto rounded-xl border border-border bg-card/95 p-4 shadow-lg backdrop-blur">
-        <div className="mb-3 flex items-start justify-between gap-2">
-          <div>
+      <div
+        className="absolute right-4 top-16 z-20 flex w-[min(28rem,calc(100%-2rem))] max-h-[calc(100%-5rem)] flex-col overflow-hidden rounded-xl border border-border/60 bg-card/60 shadow-lg backdrop-blur-md transition-colors duration-300 hover:bg-card/90 focus-within:bg-card/90"
+        role="dialog"
+        aria-label="Listagem filtrada"
+      >
+        {/* Barra de ações: fora da lista, servindo à listagem */}
+        <div className="flex shrink-0 items-start justify-between gap-2 border-b border-border/60 bg-card/80 px-4 py-3 backdrop-blur-sm">
+          <div className="min-w-0">
             <p className="text-sm font-semibold">Listagem filtrada</p>
             <p className="text-[11px] text-muted-foreground">
               {itens.length.toLocaleString("pt-BR")} de {total.toLocaleString("pt-BR")} registros
             </p>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={exportarPdf}
               disabled={!itens.length || gerando}
-              className="flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-[11px] font-medium transition-colors hover:bg-muted disabled:opacity-40"
+              className="flex items-center gap-1.5 rounded-full border border-border bg-background/90 px-3 py-1.5 text-[11px] font-medium shadow-sm transition-colors hover:bg-muted disabled:opacity-40"
+              title="Exportar listagem em PDF"
             >
               {gerando ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -392,12 +398,20 @@ export default function ListaFiltrados({
               )}
               PDF
             </button>
-            <button onClick={onFechar} aria-label="fechar listagem">
-              <X className="h-4 w-4 text-muted-foreground" />
+            <button
+              onClick={onFechar}
+              aria-label="fechar listagem"
+              className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-background/90 shadow-sm transition-colors hover:bg-muted"
+            >
+              <X className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
           </div>
         </div>
-        {lista}
+
+        {/* Lista rolável */}
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          {lista}
+        </div>
       </div>
     );
   }
