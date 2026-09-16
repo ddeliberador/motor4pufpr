@@ -103,6 +103,11 @@ export default function Mapa() {
     [locais],
   );
 
+  const comCanon = useMemo(
+    () => comCategoria.map((l) => ({ ...l, canon: canonizar(l, enriquecimento[l.id] || {}) })),
+    [comCategoria, enriquecimento],
+  );
+
   const totalBases = useMemo(
     () => new Set(locais.map((l) => l.fonte)).size,
     [locais],
