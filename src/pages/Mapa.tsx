@@ -566,6 +566,15 @@ export default function Mapa() {
                     })}
                 </div>
               </div>
+              </>)}
+
+              {modo === "lake" && (
+                <PainelDataLake
+                  itens={comCanon}
+                  selecao={lakeSel}
+                  onChange={(id, vals) => setLakeSel((prev) => ({ ...prev, [id]: vals }))}
+                />
+              )}
 
               {/* Ficha do ponto/agrupamento selecionado */}
               {detalhados.length > 0 && (
