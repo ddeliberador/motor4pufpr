@@ -214,13 +214,21 @@ export default function MapaBrasil({
       <g>
         {clusters.map((c) => {
           const cat = CATEGORIA_MAP[c.categoria];
+          const selecionadoAqui = c.pontos.some((p) => p.id === pontoSelecionadoId);
+          const opacidade = temSelecao ? (selecionadoAqui ? 1 : 0.15) : 1;
           return (
             <g
               key={c.key}
               className="cursor-pointer"
+              style={{ opacity: opacidade, transition: "opacity 200ms ease" }}
               onClick={(e) => {
                 e.stopPropagation();
-                onSelecionarCluster(c.pontos, c.total);
+                if (c.total === 1) {
+                  onSelecionarPonto?.(c.pontos[0].id);
+                } else {
+                  onSelecionarPonto?.(null);
+                  onSelecionarCluster(c.pontos, c.total);
+                }
               }}
             >
               <text
@@ -265,6 +273,25 @@ export default function MapaBrasil({
           );
         })}
       </g>
+
+      {selecionado && selX != null && selY != null && (
+        <g pointerEvents="none">
+          <circle
+            cx={selX}
+            cy={selY}
+            r={tam * 1.8}
+            fill="hsl(var(--primary) / 0.12)"
+            stroke="hsl(var(--primary))"
+            strokeWidth={1.2 * escala}
+          />
+          <circle
+            cx={selX}
+            cy={selY}
+            r={tam * 0.55}
+            fill="hsl(var(--primary))"
+          />
+        </g>
+      )}
     </svg>
   );
 }
