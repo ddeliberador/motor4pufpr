@@ -89,6 +89,8 @@ export default function Mapa() {
   const [segmentosSel, setSegmentosSel] = useState<Set<string>>(new Set());
   const [soEmbrapii, setSoEmbrapii] = useState(false);
   const [granular, setGranular] = useState<SelecaoFiltros>({});
+  const [modo, setModo] = useState<"bases" | "lake">("bases");
+  const [lakeSel, setLakeSel] = useState<SelecaoLake>({});
   const [selecao, setSelecao] = useState<{ pontos: Ponto[]; total: number } | null>(null);
   const [pontoSelecionadoId, setPontoSelecionadoId] = useState<string | null>(null);
   const [metricas, setMetricas] = useState(false);
