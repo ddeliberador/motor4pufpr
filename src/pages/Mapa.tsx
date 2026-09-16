@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Search, X, Download, ExternalLink, MapPin, Loader2, Database, Filter, BarChart3, List,
+  Search, X, ExternalLink, MapPin, Loader2, Database, Filter, BarChart3, List,
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -17,7 +17,7 @@ import { FILTROS, resumoFiltros, type SelecaoFiltros } from "@/components/mapa/f
 import { fetchLocationEnrichment } from "@/lib/locationEnrichment";
 import { CATEGORIAS, categorizar, fonteLabel, type CategoriaKey } from "@/components/mapa/tipos";
 import { safeSupabase } from "@/lib/supabaseClient";
-import { downloadLocations, type ResearchLocation } from "@/lib/researchLocations";
+import { type ResearchLocation } from "@/lib/researchLocations";
 import { safeHttpUrl } from "@/lib/utils";
 import PainelDataLake from "@/components/mapa/PainelDataLake";
 import MetricasCruzamento from "@/components/mapa/MetricasCruzamento";
@@ -587,16 +587,6 @@ export default function Mapa() {
               </div>
                 </>
               )}
-
-              {/* Exportação */}
-              <button
-                onClick={() => downloadLocations(filtrados, "csv")}
-                disabled={!filtrados.length}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium transition-colors hover:bg-muted disabled:opacity-40"
-              >
-                <Download className="h-3.5 w-3.5" />
-                Exportar recorte em CSV
-              </button>
 
               {/* Ficha do ponto/agrupamento selecionado */}
               {detalhados.length > 0 && (
