@@ -421,38 +421,17 @@ export default function Mapa() {
                 </span>
               </button>
 
-              {/* Segmento da empresa (startups) */}
-              {Object.keys(contagemSegmento).length > 0 && (
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Segmento da empresa (startups)
-                  </p>
-                  <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
-                    {Object.entries(contagemSegmento)
-                      .sort((a, b) => b[1] - a[1])
-                      .map(([s, n]) => {
-                        const ativo = segmentosSel.has(s);
-                        const esmaecido = segmentosSel.size > 0 && !ativo;
-                        return (
-                          <button
-                            key={s}
-                            onClick={() => alternar(segmentosSel, s, setSegmentosSel)}
-                            className={`flex w-full items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted ${
-                              ativo
-                                ? "border-primary bg-primary/15"
-                                : "border-transparent bg-card"
-                            } ${esmaecido ? "opacity-40" : ""}`}
-                          >
-                            <span className="flex-1 truncate">{s}</span>
-                            <span className="font-mono text-muted-foreground">
-                              {n.toLocaleString("pt-BR")}
-                            </span>
-                          </button>
-                        );
-                      })}
-                  </div>
-                </div>
-              )}
+              {/* Filtros detalhados por base (checkbox, lista suspensa ou opção única) */}
+              <FiltrosPorBase
+                itens={comCategoria}
+                enriquecimento={enriquecimento}
+                selecao={granular}
+                fontesSel={fontesSel}
+                onChange={(id, valores) =>
+                  setGranular((prev) => ({ ...prev, [id]: valores }))
+                }
+              />
+
 
               {/* Bases de origem */}
               <div>
