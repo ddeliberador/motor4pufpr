@@ -17,6 +17,13 @@ class InternationalScholarshipsConnector(BaseConnector):
         # APIs públicas de bolsas
         self.scholarship_db_url = "https://api.scholarshipdb.net"  # Exemplo
         self.study_portals_url = "https://api.studyportals.com"  # Exemplo
+
+    def get_source_name(self) -> str:
+        return "International Scholarships"
+
+    async def search(self, query: str, **kwargs) -> List[Dict[str, Any]]:
+        result = await self.search_international_scholarships(query, kwargs.get("field"))
+        return result.get("scholarships", []) if isinstance(result, dict) else []
     
     async def search_international_scholarships(self, term: str, field: str = None) -> Dict[str, Any]:
         """

@@ -1,0 +1,6 @@
+# MOTOR 4P UFPR - Backend: dependências só de teste
+# Gere requirements-dev.txt com:  pip-compile --generate-hashes requirements-dev.in
+# As versões de produção vêm de requirements.txt como restrição (-c).
+-c requirements.txt
+pytest
+anyio

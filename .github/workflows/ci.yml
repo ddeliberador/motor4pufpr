@@ -1,7 +1,7 @@
 # CI mínima — issue #7
 # Roda em todo push na main e em todo pull request:
 #   web: instala do lockfile, checa tipos, build, testes, auditoria de dependências
-#   api: instala do requirements.txt (com hashes), importa a app, auditoria de dependências
+#   api: instala do requirements.txt (com hashes), importa a app, testes, auditoria de dependências
 # Actions pinadas por SHA (não por tag) para a cadeia de suprimentos ser reprodutível.
 name: ci
 
@@ -47,7 +47,11 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip pip-audit
       - run: pip install -r requirements.txt
+      - run: pip install -r requirements-dev.txt
       - run: python -c "from app.main import app; print(app.title)"
+        env:
+          MCTI_API_KEY: ci-placeholder
+      - run: pytest -q tests
         env:
           MCTI_API_KEY: ci-placeholder
       - run: pip-audit -r requirements.txt

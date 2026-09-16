@@ -166,6 +166,15 @@ class BaseConnector(ABC):
             self._set_cached(cache_key, content)
         return content
 
+    def _handle_error(self, error: Exception, source: str) -> Dict[str, Any]:
+        """Registra a falha e devolve um dicionário vazio com o motivo.
+
+        Os conectores chamam isto no `except`; o incidence_engine lê o resultado
+        com `.get(...)`, então a resposta precisa continuar sendo um dict.
+        """
+        logger.warning(f"{source}: {type(error).__name__}: {error}")
+        return {"source": source, "error": str(error)[:200]}
+
     @abstractmethod
     async def search(self, query: str, **kwargs) -> List[Any]:
         """Método de busca a ser implementado por cada conector"""

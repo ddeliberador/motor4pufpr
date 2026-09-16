@@ -15,6 +15,13 @@ class GitHubConnector(BaseConnector):
         super().__init__()
         self.base_url = "https://api.github.com"
         self.timeout = 30.0
+
+    def get_source_name(self) -> str:
+        return "GitHub"
+
+    async def search(self, query: str, **kwargs) -> List[Dict[str, Any]]:
+        result = await self.search_projects(query)
+        return result.get("projects", []) if isinstance(result, dict) else []
     
     async def search_projects(self, term: str) -> Dict[str, Any]:
         """
