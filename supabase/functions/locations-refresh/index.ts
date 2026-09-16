@@ -54,6 +54,7 @@ async function registrarDiario(resumo: string, detalhe: string) {
     method: "POST",
     headers: { Prefer: "return=minimal" },
     body: JSON.stringify({
+      data: new Date().toISOString().slice(0, 10),
       titulo: resumo,
       descricao: detalhe,
       categoria: "integracao_externa",
