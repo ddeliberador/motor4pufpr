@@ -580,8 +580,10 @@ export default function Mapa() {
                         </button>
                       );
                     })}
-                </div>
+                 </div>
               </div>
+                </>
+              )}
 
               {/* Exportação */}
               <button
