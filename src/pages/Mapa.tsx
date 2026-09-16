@@ -94,6 +94,7 @@ export default function Mapa() {
   const [modo, setModo] = useState<"lake" | "bases">("lake");
   const [lakeSel, setLakeSel] = useState<SelecaoLake>({});
   const [metricas, setMetricas] = useState(false);
+  const [listaAberta, setListaAberta] = useState(false);
 
   const locais = data || [];
 
