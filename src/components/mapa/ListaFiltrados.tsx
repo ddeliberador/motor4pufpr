@@ -249,8 +249,14 @@ export default function ListaFiltrados({
               return (
                 <div key={l.id}>
                   <button
-                    onClick={() => setExpandido(aberta ? null : l.id)}
-                    className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50"
+                    onClick={() => {
+                      const novo = aberta ? null : l.id;
+                      setExpandido(novo);
+                      onSelecionarPonto?.(novo);
+                    }}
+                    className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 ${
+                      aberta ? "bg-primary/5 ring-1 ring-primary/30" : ""
+                    }`}
                   >
                     <span className="mt-0.5 w-8 shrink-0 font-mono text-[11px] text-muted-foreground">
                       {i + 1}
