@@ -160,6 +160,15 @@ export default function MapaBrasil({
 
   const maxUf = Math.max(1, ...Object.values(contagemPorUf));
 
+  const temSelecao = pontoSelecionadoId != null;
+  const selecionado = useMemo(
+    () => pontos.find((p) => p.id === pontoSelecionadoId) || null,
+    [pontos, pontoSelecionadoId],
+  );
+  const [selX, selY] = selecionado
+    ? projetar(selecionado.longitude, selecionado.latitude)
+    : [null, null];
+
   if (erroMalha) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-center">
