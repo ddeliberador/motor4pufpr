@@ -735,6 +735,8 @@ export default function Mapa() {
                   contagemPorUf={contagemPorUf}
                   onSelecionarUf={(u) => u && alternar(ufsSel, u, setUfsSel)}
                   onSelecionarCluster={(pontos, total) => setSelecao({ pontos, total })}
+                  pontoSelecionadoId={pontoSelecionadoId}
+                  onSelecionarPonto={setPontoSelecionadoId}
                 />
                 <p className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 text-center text-[11px] text-muted-foreground">
                   <MapPin className="mr-1 inline h-3 w-3" />
