@@ -89,6 +89,8 @@ interface Props {
   contagemPorUf: Record<string, number>;
   onSelecionarUf: (uf: string) => void;
   onSelecionarCluster: (pontos: Ponto[], total: number) => void;
+  pontoSelecionadoId?: string | null;
+  onSelecionarPonto?: (id: string | null) => void;
 }
 
 export default function MapaBrasil({
@@ -98,6 +100,8 @@ export default function MapaBrasil({
   contagemPorUf,
   onSelecionarUf,
   onSelecionarCluster,
+  pontoSelecionadoId,
+  onSelecionarPonto,
 }: Props) {
   const [features, setFeatures] = useState<Feature[] | null>(null);
   const [erroMalha, setErroMalha] = useState<string | null>(null);

@@ -70,6 +70,8 @@ interface Props {
   /** Quando definido, o componente vira um painel flutuante controlado. */
   aberto?: boolean;
   onFechar?: () => void;
+  pontoSelecionadoId?: string | null;
+  onSelecionarPonto?: (id: string | null) => void;
 }
 
 export default function ListaFiltrados({
@@ -78,6 +80,8 @@ export default function ListaFiltrados({
   total,
   aberto: abertoProp,
   onFechar,
+  pontoSelecionadoId,
+  onSelecionarPonto,
 }: Props) {
   const [abertoLocal, setAbertoLocal] = useState(false);
   const aberto = abertoProp !== undefined ? abertoProp : abertoLocal;
