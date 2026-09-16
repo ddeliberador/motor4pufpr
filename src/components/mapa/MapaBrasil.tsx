@@ -279,19 +279,19 @@ export default function MapaBrasil({
           <circle
             cx={selX}
             cy={selY}
-            r={tam * 1.1}
-            fill="hsl(var(--primary) / 0.10)"
-            stroke="hsl(var(--primary) / 0.35)"
-            strokeWidth={0.8 * escala}
+            r={tam * 1.35}
+            fill="hsl(var(--primary) / 0.08)"
+            stroke="hsl(var(--primary) / 0.30)"
+            strokeWidth={0.7 * escala}
           />
           <text
             x={selX}
-            y={selY}
+            y={selY - tam * 0.75}
             textAnchor="middle"
             dominantBaseline="central"
             fill="hsl(var(--primary))"
             className="material-symbols-outlined select-none"
-            style={{ fontSize: tam * 1.35 }}
+            style={{ fontSize: tam * 2, fontVariationSettings: '"FILL" 1' }}
           >
             location_on
           </text>
