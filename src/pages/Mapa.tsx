@@ -281,6 +281,7 @@ export default function Mapa() {
 
   useEffect(() => {
     setSelecao(null);
+    setPontoSelecionadoId(null);
   }, [modo, lakeSel, busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular]);
 
   const alternar = <T,>(set: Set<T>, v: T, apply: (s: Set<T>) => void) => {
