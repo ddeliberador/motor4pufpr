@@ -186,6 +186,9 @@ export default function MapaBrasil({
       className="h-full w-full"
       role="img"
       aria-label="Mapa do Brasil com instituições de pesquisa e inovação por estado"
+      onClick={(e) => {
+        if (e.target === svgRef.current) onSelecionarPonto?.(null);
+      }}
     >
       <g>
         {paths.map((p) => {
