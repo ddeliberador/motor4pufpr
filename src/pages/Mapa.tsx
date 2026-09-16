@@ -193,12 +193,15 @@ export default function Mapa() {
     setTiposSel(new Set());
     setSegmentosSel(new Set());
     setSoEmbrapii(false);
+    setGranular({});
     setSelecao(null);
   };
 
+  const granularAtivo = Object.values(granular).some((s) => s.size > 0);
+
   const temFiltro =
     busca || fontesSel.size || catsSel.size || ufsSel.size ||
-    regioesSel.size || tiposSel.size || segmentosSel.size || soEmbrapii;
+    regioesSel.size || tiposSel.size || segmentosSel.size || soEmbrapii || granularAtivo;
 
   const filtrosAtivos = useMemo(() => {
     const f: string[] = [];
@@ -216,12 +219,13 @@ export default function Mapa() {
     if (soEmbrapii) f.push("somente unidades EMBRAPII");
     if (fontesSel.size)
       f.push(`base de origem: ${[...fontesSel].map(fonteLabel).join(", ")}`);
+    f.push(...resumoFiltros(granular));
     return f;
-  }, [busca, regioesSel, ufsSel, catsSel, tiposSel, segmentosSel, soEmbrapii, fontesSel]);
+  }, [busca, regioesSel, ufsSel, catsSel, tiposSel, segmentosSel, soEmbrapii, fontesSel, granular]);
 
   useEffect(() => {
     setSelecao(null);
-  }, [busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii]);
+  }, [busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular]);
 
   const alternar = <T,>(set: Set<T>, v: T, apply: (s: Set<T>) => void) => {
     const novo = new Set(set);
