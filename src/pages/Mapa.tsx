@@ -235,10 +235,12 @@ export default function Mapa() {
     setSegmentosSel(new Set());
     setSoEmbrapii(false);
     setGranular({});
+    setLakeSel({});
     setSelecao(null);
   };
 
   const granularAtivo = Object.values(granular).some((s) => s.size > 0);
+  const lakeAtivo = Object.values(lakeSel).some((s) => s.size > 0);
 
   const temFiltro =
     !!busca || fontesSel.size > 0 || catsSel.size > 0 || ufsSel.size > 0 ||
