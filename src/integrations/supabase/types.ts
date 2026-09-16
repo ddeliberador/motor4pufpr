@@ -161,6 +161,47 @@ export type Database = {
         }
         Relationships: []
       }
+      location_enrichment: {
+        Row: {
+          created_at: string
+          dados: Json
+          data_coleta: string
+          fonte: string
+          fonte_coleta: string
+          id: string
+          location_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dados?: Json
+          data_coleta?: string
+          fonte: string
+          fonte_coleta: string
+          id?: string
+          location_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dados?: Json
+          data_coleta?: string
+          fonte?: string
+          fonte_coleta?: string
+          id?: string
+          location_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_enrichment_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: true
+            referencedRelation: "research_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mapa_inovacao_fontes: {
         Row: {
           autenticacao: string | null
