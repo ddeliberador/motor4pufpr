@@ -67,10 +67,22 @@ interface Props {
   itens: Item[];
   filtrosAtivos: string[];
   total: number;
+  /** Quando definido, o componente vira um painel flutuante controlado. */
+  aberto?: boolean;
+  onFechar?: () => void;
 }
 
-export default function ListaFiltrados({ itens, filtrosAtivos, total }: Props) {
-  const [aberto, setAberto] = useState(false);
+export default function ListaFiltrados({
+  itens,
+  filtrosAtivos,
+  total,
+  aberto: abertoProp,
+  onFechar,
+}: Props) {
+  const [abertoLocal, setAbertoLocal] = useState(false);
+  const aberto = abertoProp !== undefined ? abertoProp : abertoLocal;
+  const setAberto = abertoProp !== undefined ? onFechar || (() => {}) : setAbertoLocal;
+
   const [limite, setLimite] = useState(PAGINA);
   const [expandido, setExpandido] = useState<string | null>(null);
   const [gerando, setGerando] = useState(false);
