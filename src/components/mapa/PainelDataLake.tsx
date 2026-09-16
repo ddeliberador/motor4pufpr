@@ -2,7 +2,6 @@
 // múltipla. Dentro do eixo as opções somam; entre eixos vale a interseção.
 
 import { useMemo } from "react";
-import { Database } from "lucide-react";
 import {
   EIXOS,
   valoresDoEixo,
@@ -18,14 +17,10 @@ export default function PainelDataLake({
   itens,
   selecao,
   onChange,
-  intersecao,
-  bases,
 }: {
   itens: Item[];
   selecao: SelecaoLake;
   onChange: (eixoId: string, valores: Set<string>) => void;
-  intersecao: number;
-  bases: number;
 }) {
   // Contagem por opção considerando os OUTROS eixos já selecionados,
   // para que os números reflitam o cruzamento em andamento.
@@ -59,31 +54,6 @@ export default function PainelDataLake({
 
   return (
     <div className="space-y-6">
-      {/* Cartão do data lake */}
-      <div className="rounded-xl border border-primary/40 bg-primary/10 p-3">
-        <div className="flex items-start gap-2.5">
-          <span className="mt-0.5 rounded-lg bg-primary/20 p-1.5">
-            <Database className="h-4 w-4 text-primary" />
-          </span>
-          <div className="min-w-0">
-            <p className="flex items-center gap-1.5 text-sm font-semibold">
-              Data Lake Unificado
-              <span className="rounded bg-primary/25 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">
-                {bases} bases
-              </span>
-            </p>
-            <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
-              Cruzamento de variáveis em esquema canônico integrado
-            </p>
-          </div>
-        </div>
-        <div className="mt-3 flex items-center justify-between border-t border-primary/25 pt-2">
-          <span className="text-[11px] text-muted-foreground">Interseção ativa</span>
-          <span className="rounded bg-primary px-2 py-0.5 font-mono text-[11px] font-semibold text-primary-foreground">
-            {intersecao.toLocaleString("pt-BR")}
-          </span>
-        </div>
-      </div>
 
       {EIXOS.map((eixo) => {
         const id = eixo.id as string;

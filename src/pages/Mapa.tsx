@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Search, X, ExternalLink, MapPin, Loader2, Filter, BarChart3, List,
+  Search, X, ExternalLink, MapPin, Loader2, Filter, BarChart3, List, Database,
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -20,7 +20,8 @@ import { safeSupabase } from "@/lib/supabaseClient";
 import { type ResearchLocation } from "@/lib/researchLocations";
 import { safeHttpUrl } from "@/lib/utils";
 import MetricasCruzamento from "@/components/mapa/MetricasCruzamento";
-import { canonizar } from "@/components/mapa/dataLake";
+import PainelDataLake from "@/components/mapa/PainelDataLake";
+import { canonizar, passaLake, resumoLake, type SelecaoLake } from "@/components/mapa/dataLake";
 
 const COLUNAS =
   "id,nome,tipo,uf,municipio,latitude,longitude,fonte,fonte_url,cnpj,data_coleta,raw_metadata";
@@ -88,6 +89,8 @@ export default function Mapa() {
   const [segmentosSel, setSegmentosSel] = useState<Set<string>>(new Set());
   const [soEmbrapii, setSoEmbrapii] = useState(false);
   const [granular, setGranular] = useState<SelecaoFiltros>({});
+  const [modo, setModo] = useState<"bases" | "lake">("bases");
+  const [lakeSel, setLakeSel] = useState<SelecaoLake>({});
   const [selecao, setSelecao] = useState<{ pontos: Ponto[]; total: number } | null>(null);
   const [pontoSelecionadoId, setPontoSelecionadoId] = useState<string | null>(null);
   const [metricas, setMetricas] = useState(false);
@@ -100,6 +103,11 @@ export default function Mapa() {
     [locais],
   );
 
+  const comCanon = useMemo(
+    () => comCategoria.map((l) => ({ ...l, canon: canonizar(l, enriquecimento[l.id] || {}) })),
+    [comCategoria, enriquecimento],
+  );
+
   const totalBases = useMemo(
     () => new Set(locais.map((l) => l.fonte)).size,
     [locais],
@@ -109,6 +117,12 @@ export default function Mapa() {
   // à exibição (união). Só a busca por texto restringe o resultado.
   const filtrados = useMemo(() => {
     const q = norm(busca.trim());
+    if (modo === "lake") {
+      return comCanon.filter((l) => {
+        if (q && !norm(`${l.nome} ${l.municipio || ""}`).includes(q)) return false;
+        return passaLake(l.canon, lakeSel);
+      });
+    }
     const grupos: ((l: (typeof comCategoria)[number]) => boolean)[] = [];
     if (fontesSel.size) grupos.push((l) => fontesSel.has(l.fonte));
     if (catsSel.size) grupos.push((l) => catsSel.has(l.categoria));
@@ -132,7 +146,7 @@ export default function Mapa() {
       if (grupos.length === 0) return true;
       return grupos.some((g) => g(l));
     });
-  }, [comCategoria, busca, fontesSel, catsSel, ufsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular, enriquecimento]);
+  }, [comCategoria, comCanon, busca, fontesSel, catsSel, ufsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular, enriquecimento, modo, lakeSel]);
 
   const pontos: Ponto[] = useMemo(
     () =>
@@ -221,19 +235,25 @@ export default function Mapa() {
     setSegmentosSel(new Set());
     setSoEmbrapii(false);
     setGranular({});
+    setLakeSel({});
     setSelecao(null);
   };
 
   const granularAtivo = Object.values(granular).some((s) => s.size > 0);
+  const lakeAtivo = Object.values(lakeSel).some((s) => s.size > 0);
 
   const temFiltro =
     !!busca || fontesSel.size > 0 || catsSel.size > 0 || ufsSel.size > 0 ||
     regioesSel.size > 0 || tiposSel.size > 0 || segmentosSel.size > 0 ||
-    soEmbrapii || granularAtivo;
+    soEmbrapii || granularAtivo || lakeAtivo;
 
   const filtrosAtivos = useMemo(() => {
     const f: string[] = [];
     if (busca.trim()) f.push(`busca "${busca.trim()}"`);
+    if (modo === "lake") {
+      f.push(...resumoLake(lakeSel));
+      return f;
+    }
     if (regioesSel.size) f.push(`região: ${[...regioesSel].join(", ")}`);
     if (ufsSel.size) f.push(`estado: ${[...ufsSel].sort().join(", ")}`);
     if (catsSel.size)
@@ -249,12 +269,12 @@ export default function Mapa() {
       f.push(`base de origem: ${[...fontesSel].map(fonteLabel).join(", ")}`);
     f.push(...resumoFiltros(granular));
     return f;
-  }, [busca, regioesSel, ufsSel, catsSel, tiposSel, segmentosSel, soEmbrapii, fontesSel, granular]);
+  }, [busca, regioesSel, ufsSel, catsSel, tiposSel, segmentosSel, soEmbrapii, fontesSel, granular, modo, lakeSel]);
 
   useEffect(() => {
     setSelecao(null);
     setPontoSelecionadoId(null);
-  }, [busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular]);
+  }, [busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular, modo, lakeSel]);
 
   // Seleção no mapa espelha na listagem: abre o painel da lista
   useEffect(() => {
@@ -326,6 +346,33 @@ export default function Mapa() {
                 ) : null}
               </div>
 
+              {/* Seletor de modo */}
+              <div className="flex rounded-lg border border-border bg-card p-0.5">
+                <button
+                  onClick={() => setModo("bases")}
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-medium transition-colors ${
+                    modo === "bases"
+                      ? "bg-primary/15 text-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Filter className="h-3.5 w-3.5" />
+                  Bases de origem
+                </button>
+                <button
+                  onClick={() => setModo("lake")}
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-medium transition-colors ${
+                    modo === "lake"
+                      ? "bg-primary/15 text-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Database className="h-3.5 w-3.5" />
+                  Data Lake Cruzado
+                </button>
+              </div>
+
+              {modo === "bases" && (<>
               {/* Busca */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -519,6 +566,15 @@ export default function Mapa() {
                     })}
                 </div>
               </div>
+              </>)}
+
+              {modo === "lake" && (
+                <PainelDataLake
+                  itens={comCanon}
+                  selecao={lakeSel}
+                  onChange={(id, vals) => setLakeSel((prev) => ({ ...prev, [id]: vals }))}
+                />
+              )}
 
               {/* Ficha do ponto/agrupamento selecionado */}
               {detalhados.length > 0 && (
@@ -577,8 +633,11 @@ export default function Mapa() {
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <p className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-2 py-1 text-[11px] font-semibold text-background">
-                    <Filter className="h-3 w-3" />
-                    Bases de origem
+                    {modo === "lake" ? (
+                      <><Database className="h-3 w-3" /> Data Lake Cruzado</>
+                    ) : (
+                      <><Filter className="h-3 w-3" /> Bases de origem</>
+                    )}
                   </span>
                   <span>
                     <strong className="font-semibold text-foreground">
