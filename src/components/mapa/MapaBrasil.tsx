@@ -148,10 +148,13 @@ export default function MapaBrasil({
     return w / W;
   }, [viewBox]);
 
-  const clusters = useMemo(() => agrupar(pontos, 22 * escala), [pontos, escala]);
+  // Ícones com tamanho amortecido: crescem menos que o zoom, então ao
+  // aproximar num estado populoso eles ficam proporcionalmente menores
+  // e deixam de se sobrepor. No mapa inteiro (escala 1) ficam em 14px.
+  const tam = 14 * Math.sqrt(escala);
+  const clusters = useMemo(() => agrupar(pontos, tam * 1.7), [pontos, tam]);
 
   const maxUf = Math.max(1, ...Object.values(contagemPorUf));
-  const tam = 11 * escala;
 
   if (erroMalha) {
     return (
