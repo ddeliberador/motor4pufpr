@@ -161,6 +161,84 @@ export type Database = {
         }
         Relationships: []
       }
+      ingest_jobs: {
+        Row: {
+          consecutive_failures: number
+          created_at: string
+          id: string
+          last_finished_at: string | null
+          last_started_at: string | null
+          lock_until: string | null
+          pause_reason: string | null
+          paused: boolean
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          consecutive_failures?: number
+          created_at?: string
+          id: string
+          last_finished_at?: string | null
+          last_started_at?: string | null
+          lock_until?: string | null
+          pause_reason?: string | null
+          paused?: boolean
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          consecutive_failures?: number
+          created_at?: string
+          id?: string
+          last_finished_at?: string | null
+          last_started_at?: string | null
+          lock_until?: string | null
+          pause_reason?: string | null
+          paused?: boolean
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ingest_runs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          fonte: string
+          found: number
+          id: string
+          inserted: number
+          job_id: string
+          ok: boolean
+          started_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          fonte: string
+          found?: number
+          id?: string
+          inserted?: number
+          job_id: string
+          ok: boolean
+          started_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          fonte?: string
+          found?: number
+          id?: string
+          inserted?: number
+          job_id?: string
+          ok?: boolean
+          started_at?: string
+        }
+        Relationships: []
+      }
       location_enrichment: {
         Row: {
           created_at: string
