@@ -299,14 +299,16 @@ export default function Mapa() {
 
       <main className="pt-16">
         {/* Cabeçalho institucional */}
-        <div className="border-b border-border px-6 py-5">
+        <div className="border-b border-border px-4 py-3 sm:px-6 sm:py-4 lg:py-5">
           <div className="container-wide">
-            <h1 className="text-2xl font-bold tracking-tight">
+            <h1 className="text-lg font-bold tracking-tight sm:text-xl lg:text-2xl">
               Mapa da Inovação — Brasil
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground sm:mt-1 sm:text-sm">
               Motor da Inovação · UFPR/PPGPP · Pesquisa Colaborativa do Mapa da Inovação
-              {ultimaColeta && ` · última coleta em ${ultimaColeta}`}
+              {ultimaColeta && (
+                <span className="block sm:inline"> última coleta em {ultimaColeta}</span>
+              )}
             </p>
           </div>
         </div>
