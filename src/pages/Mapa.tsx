@@ -180,6 +180,11 @@ export default function Mapa() {
     return c;
   }, [comCategoria]);
 
+  const metricasItens = useMemo(
+    () => filtrados.map((l) => ({ ...l, canon: canonizar(l, enriquecimento[l.id] || {}) })),
+    [filtrados, enriquecimento],
+  );
+
   const contagemTipo = useMemo(() => {
     const c: Record<string, number> = {};
     for (const l of comCategoria)
