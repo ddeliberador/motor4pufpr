@@ -105,7 +105,10 @@ function UploadDialog({
 
     setBusy(true);
     const path = `${userId}/${authorId}/${Date.now()}_${file.name.replace(/[^\w.-]+/g, "_")}`;
-    const { error: upErr } = await supabase.storage.from("research-docs").upload(path, file);
+    // Tipo explícito: o navegador nem sempre reconhece .md, e o bucket só aceita
+    // os MIME types da migração 20260916120000 (issue #8).
+    const contentType = ext === "pdf" ? "application/pdf" : "text/markdown";
+    const { error: upErr } = await supabase.storage.from("research-docs").upload(path, file, { contentType });
     if (upErr) { setBusy(false); return toast.error(upErr.message); }
 
     const { error } = await supabase.from("research_documents").insert({
