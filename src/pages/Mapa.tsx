@@ -90,6 +90,7 @@ export default function Mapa() {
   const [soEmbrapii, setSoEmbrapii] = useState(false);
   const [granular, setGranular] = useState<SelecaoFiltros>({});
   const [selecao, setSelecao] = useState<{ pontos: Ponto[]; total: number } | null>(null);
+  const [pontoSelecionadoId, setPontoSelecionadoId] = useState<string | null>(null);
   // Modo de leitura: data lake cruzado (interseção entre eixos) ou bases de origem.
   const [modo, setModo] = useState<"lake" | "bases">("lake");
   const [lakeSel, setLakeSel] = useState<SelecaoLake>({});
@@ -280,6 +281,7 @@ export default function Mapa() {
 
   useEffect(() => {
     setSelecao(null);
+    setPontoSelecionadoId(null);
   }, [modo, lakeSel, busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular]);
 
   const alternar = <T,>(set: Set<T>, v: T, apply: (s: Set<T>) => void) => {
@@ -288,11 +290,17 @@ export default function Mapa() {
     apply(novo);
   };
 
-  const detalhados = selecao
-    ? selecao.pontos
+  const detalhados = useMemo(() => {
+    if (selecao)
+      return selecao.pontos
         .map((p) => filtrados.find((l) => l.id === p.id))
-        .filter(Boolean) as (ResearchLocation & { categoria: CategoriaKey })[]
-    : [];
+        .filter(Boolean) as (ResearchLocation & { categoria: CategoriaKey })[];
+    if (pontoSelecionadoId) {
+      const l = filtrados.find((l) => l.id === pontoSelecionadoId);
+      return l ? [l] : [];
+    }
+    return [];
+  }, [selecao, pontoSelecionadoId, filtrados]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -593,11 +601,17 @@ export default function Mapa() {
                 <div className="rounded-xl border border-border bg-card p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <p className="text-xs font-semibold">
-                      {selecao!.total > detalhados.length
-                        ? `${detalhados.length} de ${selecao!.total} neste ponto`
-                        : `${detalhados.length} selecionado(s)`}
+                      {selecao && selecao.total > detalhados.length
+                        ? `${detalhados.length} de ${selecao.total} neste ponto`
+                        : `${detalhados.length} local selecionado`}
                     </p>
-                    <button onClick={() => setSelecao(null)} aria-label="fechar">
+                    <button
+                      onClick={() => {
+                        setSelecao(null);
+                        setPontoSelecionadoId(null);
+                      }}
+                      aria-label="fechar"
+                    >
                       <X className="h-3.5 w-3.5 text-muted-foreground" />
                     </button>
                   </div>
@@ -691,6 +705,8 @@ export default function Mapa() {
                 total={locais.length}
                 aberto={listaAberta}
                 onFechar={() => setListaAberta(false)}
+                pontoSelecionadoId={pontoSelecionadoId}
+                onSelecionarPonto={setPontoSelecionadoId}
               />
             )}
 
@@ -721,6 +737,8 @@ export default function Mapa() {
                   contagemPorUf={contagemPorUf}
                   onSelecionarUf={(u) => u && alternar(ufsSel, u, setUfsSel)}
                   onSelecionarCluster={(pontos, total) => setSelecao({ pontos, total })}
+                  pontoSelecionadoId={pontoSelecionadoId}
+                  onSelecionarPonto={setPontoSelecionadoId}
                 />
                 <p className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 text-center text-[11px] text-muted-foreground">
                   <MapPin className="mr-1 inline h-3 w-3" />

@@ -1,7 +1,7 @@
 // Lista expansível dos registros que estão visíveis no mapa (recorte filtrado),
 // com todas as informações disponíveis na base e exportação em PDF.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, FileDown, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { CATEGORIA_MAP, fonteLabel, type CategoriaKey } from "@/components/mapa/tipos";
@@ -70,6 +70,8 @@ interface Props {
   /** Quando definido, o componente vira um painel flutuante controlado. */
   aberto?: boolean;
   onFechar?: () => void;
+  pontoSelecionadoId?: string | null;
+  onSelecionarPonto?: (id: string | null) => void;
 }
 
 export default function ListaFiltrados({
@@ -78,6 +80,8 @@ export default function ListaFiltrados({
   total,
   aberto: abertoProp,
   onFechar,
+  pontoSelecionadoId,
+  onSelecionarPonto,
 }: Props) {
   const [abertoLocal, setAbertoLocal] = useState(false);
   const aberto = abertoProp !== undefined ? abertoProp : abertoLocal;
@@ -86,6 +90,10 @@ export default function ListaFiltrados({
   const [limite, setLimite] = useState(PAGINA);
   const [expandido, setExpandido] = useState<string | null>(null);
   const [gerando, setGerando] = useState(false);
+
+  useEffect(() => {
+    setExpandido(pontoSelecionadoId ?? null);
+  }, [pontoSelecionadoId]);
 
   const visiveis = useMemo(() => itens.slice(0, limite), [itens, limite]);
 
@@ -241,8 +249,14 @@ export default function ListaFiltrados({
               return (
                 <div key={l.id}>
                   <button
-                    onClick={() => setExpandido(aberta ? null : l.id)}
-                    className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50"
+                    onClick={() => {
+                      const novo = aberta ? null : l.id;
+                      setExpandido(novo);
+                      onSelecionarPonto?.(novo);
+                    }}
+                    className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 ${
+                      aberta ? "bg-primary/5 ring-1 ring-primary/30" : ""
+                    }`}
                   >
                     <span className="mt-0.5 w-8 shrink-0 font-mono text-[11px] text-muted-foreground">
                       {i + 1}
