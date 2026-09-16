@@ -669,21 +669,26 @@ export default function Mapa() {
                       setListaAberta((v) => !v);
                       setMetricas(false);
                     }}
-                    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                    aria-pressed={listaAberta}
+                    className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
                       listaAberta
-                        ? "border-primary bg-primary/15"
-                        : "border-border bg-card hover:bg-muted"
+                        ? "bg-primary/15 text-foreground"
+                        : "text-muted-foreground hover:bg-muted"
                     }`}
                   >
                     <List className="h-3.5 w-3.5" />
                     Listagem filtrada
                   </button>
                   <button
-                    onClick={() => setMetricas((v) => !v)}
-                    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                    onClick={() => {
+                      setMetricas((v) => !v);
+                      setListaAberta(false);
+                    }}
+                    aria-pressed={metricas}
+                    className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
                       metricas
-                        ? "border-primary bg-primary/15"
-                        : "border-border bg-card hover:bg-muted"
+                        ? "bg-primary/15 text-foreground"
+                        : "text-muted-foreground hover:bg-muted"
                     }`}
                   >
                     <BarChart3 className="h-3.5 w-3.5" />
