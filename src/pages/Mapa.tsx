@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Search, X, Download, ExternalLink, MapPin, Loader2, Database, Filter, BarChart3,
+  Search, X, Download, ExternalLink, MapPin, Loader2, Database, Filter, BarChart3, List,
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -94,6 +94,7 @@ export default function Mapa() {
   const [modo, setModo] = useState<"lake" | "bases">("lake");
   const [lakeSel, setLakeSel] = useState<SelecaoLake>({});
   const [metricas, setMetricas] = useState(false);
+  const [listaAberta, setListaAberta] = useState(false);
 
   const locais = data || [];
 
@@ -658,17 +659,30 @@ export default function Mapa() {
                     de {locais.length.toLocaleString("pt-BR")} entidades
                   </span>
                 </p>
-                <button
-                  onClick={() => setMetricas((v) => !v)}
-                  className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
-                    metricas
-                      ? "border-primary bg-primary/15"
-                      : "border-border bg-card hover:bg-muted"
-                  }`}
-                >
-                  <BarChart3 className="h-3.5 w-3.5" />
-                  Métricas do cruzamento
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setListaAberta((v) => !v)}
+                    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                      listaAberta
+                        ? "border-primary bg-primary/15"
+                        : "border-border bg-card hover:bg-muted"
+                    }`}
+                  >
+                    <List className="h-3.5 w-3.5" />
+                    Listagem filtrada
+                  </button>
+                  <button
+                    onClick={() => setMetricas((v) => !v)}
+                    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                      metricas
+                        ? "border-primary bg-primary/15"
+                        : "border-border bg-card hover:bg-muted"
+                    }`}
+                  >
+                    <BarChart3 className="h-3.5 w-3.5" />
+                    Métricas do cruzamento
+                  </button>
+                </div>
               </div>
             )}
 
@@ -677,6 +691,16 @@ export default function Mapa() {
                 itens={filtrados}
                 total={locais.length}
                 onFechar={() => setMetricas(false)}
+              />
+            )}
+
+            {listaAberta && !isLoading && !error && (
+              <ListaFiltrados
+                itens={filtrados}
+                filtrosAtivos={filtrosAtivos}
+                total={locais.length}
+                aberto={listaAberta}
+                onFechar={() => setListaAberta(false)}
               />
             )}
 
@@ -717,13 +741,6 @@ export default function Mapa() {
             )}
           </section>
         </div>
-
-        {/* Lista dos registros filtrados (recolhida) + PDF */}
-        <ListaFiltrados
-          itens={filtrados}
-          filtrosAtivos={filtrosAtivos}
-          total={locais.length}
-        />
 
       </main>
 

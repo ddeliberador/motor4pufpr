@@ -2,7 +2,7 @@
 // com todas as informações disponíveis na base e exportação em PDF.
 
 import { useMemo, useState } from "react";
-import { ChevronDown, FileDown, Loader2 } from "lucide-react";
+import { ChevronDown, FileDown, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { CATEGORIA_MAP, fonteLabel, type CategoriaKey } from "@/components/mapa/tipos";
 import type { ResearchLocation } from "@/lib/researchLocations";
@@ -67,10 +67,22 @@ interface Props {
   itens: Item[];
   filtrosAtivos: string[];
   total: number;
+  /** Quando definido, o componente vira um painel flutuante controlado. */
+  aberto?: boolean;
+  onFechar?: () => void;
 }
 
-export default function ListaFiltrados({ itens, filtrosAtivos, total }: Props) {
-  const [aberto, setAberto] = useState(false);
+export default function ListaFiltrados({
+  itens,
+  filtrosAtivos,
+  total,
+  aberto: abertoProp,
+  onFechar,
+}: Props) {
+  const [abertoLocal, setAbertoLocal] = useState(false);
+  const aberto = abertoProp !== undefined ? abertoProp : abertoLocal;
+  const setAberto = abertoProp !== undefined ? onFechar || (() => {}) : setAbertoLocal;
+
   const [limite, setLimite] = useState(PAGINA);
   const [expandido, setExpandido] = useState<string | null>(null);
   const [gerando, setGerando] = useState(false);
@@ -205,6 +217,160 @@ export default function ListaFiltrados({ itens, filtrosAtivos, total }: Props) {
     }
   };
 
+  const lista = (
+    <>
+      {filtrosAtivos.length > 0 && (
+        <p className="mb-3 text-xs text-muted-foreground">
+          Filtros aplicados: {filtrosAtivos.join(" · ")}
+        </p>
+      )}
+
+      {!itens.length ? (
+        <p className="text-sm text-muted-foreground">
+          Nenhum registro corresponde aos filtros selecionados.
+        </p>
+      ) : (
+        <>
+          <div className="divide-y divide-border rounded-xl border border-border bg-card">
+            {visiveis.map((l, i) => {
+              const Icone = CATEGORIA_MAP[l.categoria]?.icon;
+              const cor = CATEGORIA_MAP[l.categoria]?.cor || "";
+              const href = safeHttpUrl(l.fonte_url);
+              const aberta = expandido === l.id;
+              const extras = metaVisivel(l);
+              return (
+                <div key={l.id}>
+                  <button
+                    onClick={() => setExpandido(aberta ? null : l.id)}
+                    className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50"
+                  >
+                    <span className="mt-0.5 w-8 shrink-0 font-mono text-[11px] text-muted-foreground">
+                      {i + 1}
+                    </span>
+                    {Icone && (
+                      <span
+                        className={`material-symbols-outlined mt-0.5 shrink-0 text-base leading-none ${cor}`}
+                        aria-hidden
+                      >
+                        {Icone}
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium">{l.nome}</span>
+                      <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                        {l.tipo} · {enderecoDe(l)} · {fonteLabel(l.fonte)}
+                      </span>
+                    </span>
+                    <ChevronDown
+                      className={`mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
+                        aberta ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {aberta && (
+                    <dl className="grid grid-cols-1 gap-x-8 gap-y-2 border-t border-border/60 bg-muted/20 px-4 py-4 text-xs sm:grid-cols-2 lg:grid-cols-3">
+                      {[
+                        ["Nome", l.nome],
+                        ["Tipo", l.tipo],
+                        ["Município / UF", enderecoDe(l)],
+                        ["Região", (l.uf && REGIAO_POR_UF[l.uf]) || "não informada"],
+                        ["CNPJ", l.cnpj || "não informado"],
+                        [
+                          "Coordenadas",
+                          l.latitude != null && l.longitude != null
+                            ? `${Number(l.latitude).toFixed(5)}, ${Number(l.longitude).toFixed(5)}`
+                            : "sem coordenada",
+                        ],
+                        ["Base de origem", fonteLabel(l.fonte)],
+                        [
+                          "Data da coleta",
+                          l.data_coleta
+                            ? new Date(l.data_coleta).toLocaleDateString("pt-BR")
+                            : "não informada",
+                        ],
+                        ...extras,
+                      ].map(([k, v]) => (
+                        <div key={k}>
+                          <dt className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            {k}
+                          </dt>
+                          <dd className="mt-0.5 break-words">{v}</dd>
+                        </div>
+                      ))}
+                      {href && (
+                        <div>
+                          <dt className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Fonte
+                          </dt>
+                          <dd className="mt-0.5">
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="break-all text-primary hover:underline"
+                            >
+                              {href}
+                            </a>
+                          </dd>
+                        </div>
+                      )}
+                    </dl>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {limite < itens.length && (
+            <button
+              onClick={() => setLimite((n) => n + PAGINA * 4)}
+              className="mt-3 w-full rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium transition-colors hover:bg-muted"
+            >
+              Mostrar mais ({(itens.length - limite).toLocaleString("pt-BR")} restantes)
+            </button>
+          )}
+        </>
+      )}
+    </>
+  );
+
+  // Modo painel flutuante (controlado pelo pai)
+  if (abertoProp !== undefined) {
+    if (!aberto) return null;
+    return (
+      <div className="absolute right-4 top-16 z-20 w-[28rem] max-h-[calc(100%-5rem)] overflow-y-auto rounded-xl border border-border bg-card/95 p-4 shadow-lg backdrop-blur">
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <div>
+            <p className="text-sm font-semibold">Listagem filtrada</p>
+            <p className="text-[11px] text-muted-foreground">
+              {itens.length.toLocaleString("pt-BR")} de {total.toLocaleString("pt-BR")} registros
+            </p>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={exportarPdf}
+              disabled={!itens.length || gerando}
+              className="flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-[11px] font-medium transition-colors hover:bg-muted disabled:opacity-40"
+            >
+              {gerando ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <FileDown className="h-3 w-3" />
+              )}
+              PDF
+            </button>
+            <button onClick={onFechar} aria-label="fechar listagem">
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
+          </div>
+        </div>
+        {lista}
+      </div>
+    );
+  }
+
+  // Modo recolhível legado (embaixo do mapa)
   return (
     <div className="border-t border-border">
       <div className="container-wide flex flex-wrap items-center justify-between gap-3 px-6 py-4">
@@ -229,123 +395,7 @@ export default function ListaFiltrados({ itens, filtrosAtivos, total }: Props) {
         </button>
       </div>
 
-      {aberto && (
-        <div className="container-wide px-6 pb-8">
-          {filtrosAtivos.length > 0 && (
-            <p className="mb-3 text-xs text-muted-foreground">
-              Filtros aplicados: {filtrosAtivos.join(" · ")}
-            </p>
-          )}
-
-          {!itens.length ? (
-            <p className="text-sm text-muted-foreground">
-              Nenhum registro corresponde aos filtros selecionados.
-            </p>
-          ) : (
-            <>
-              <div className="divide-y divide-border rounded-xl border border-border bg-card">
-                {visiveis.map((l, i) => {
-                  const Icone = CATEGORIA_MAP[l.categoria]?.icon;
-                  const cor = CATEGORIA_MAP[l.categoria]?.cor || "";
-                  const href = safeHttpUrl(l.fonte_url);
-                  const aberta = expandido === l.id;
-                  const extras = metaVisivel(l);
-                  return (
-                    <div key={l.id}>
-                      <button
-                        onClick={() => setExpandido(aberta ? null : l.id)}
-                        className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50"
-                      >
-                        <span className="mt-0.5 w-8 shrink-0 font-mono text-[11px] text-muted-foreground">
-                          {i + 1}
-                        </span>
-                        {Icone && (
-                          <span
-                            className={`material-symbols-outlined mt-0.5 shrink-0 text-base leading-none ${cor}`}
-                            aria-hidden
-                          >
-                            {Icone}
-                          </span>
-                        )}
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-medium">{l.nome}</span>
-                          <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                            {l.tipo} · {enderecoDe(l)} · {fonteLabel(l.fonte)}
-                          </span>
-                        </span>
-                        <ChevronDown
-                          className={`mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
-                            aberta ? "rotate-180" : ""
-                          }`}
-                        />
-                      </button>
-
-                      {aberta && (
-                        <dl className="grid grid-cols-1 gap-x-8 gap-y-2 border-t border-border/60 bg-muted/20 px-4 py-4 text-xs sm:grid-cols-2 lg:grid-cols-3">
-                          {[
-                            ["Nome", l.nome],
-                            ["Tipo", l.tipo],
-                            ["Município / UF", enderecoDe(l)],
-                            ["Região", (l.uf && REGIAO_POR_UF[l.uf]) || "não informada"],
-                            ["CNPJ", l.cnpj || "não informado"],
-                            [
-                              "Coordenadas",
-                              l.latitude != null && l.longitude != null
-                                ? `${Number(l.latitude).toFixed(5)}, ${Number(l.longitude).toFixed(5)}`
-                                : "sem coordenada",
-                            ],
-                            ["Base de origem", fonteLabel(l.fonte)],
-                            [
-                              "Data da coleta",
-                              l.data_coleta
-                                ? new Date(l.data_coleta).toLocaleDateString("pt-BR")
-                                : "não informada",
-                            ],
-                            ...extras,
-                          ].map(([k, v]) => (
-                            <div key={k}>
-                              <dt className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                {k}
-                              </dt>
-                              <dd className="mt-0.5 break-words">{v}</dd>
-                            </div>
-                          ))}
-                          {href && (
-                            <div>
-                              <dt className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                Fonte
-                              </dt>
-                              <dd className="mt-0.5">
-                                <a
-                                  href={href}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="break-all text-primary hover:underline"
-                                >
-                                  {href}
-                                </a>
-                              </dd>
-                            </div>
-                          )}
-                        </dl>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {limite < itens.length && (
-                <button
-                  onClick={() => setLimite((n) => n + PAGINA * 4)}
-                  className="mt-3 w-full rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium transition-colors hover:bg-muted"
-                >
-                  Mostrar mais ({(itens.length - limite).toLocaleString("pt-BR")} restantes)
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      )}
+      {aberto && <div className="container-wide px-6 pb-8">{lista}</div>}
     </div>
   );
 }
