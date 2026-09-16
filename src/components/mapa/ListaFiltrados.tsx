@@ -353,7 +353,7 @@ export default function ListaFiltrados({
   if (abertoProp !== undefined) {
     if (!aberto) return null;
     return (
-      <div className="absolute right-4 top-16 z-20 w-[28rem] max-h-[calc(100%-5rem)] overflow-y-auto rounded-xl border border-border bg-card/95 p-4 shadow-lg backdrop-blur">
+      <div className="absolute right-4 top-16 z-20 w-[min(28rem,calc(100%-2rem))] max-h-[calc(100%-5rem)] overflow-y-auto rounded-xl border border-border bg-card/95 p-4 shadow-lg backdrop-blur">
         <div className="mb-3 flex items-start justify-between gap-2">
           <div>
             <p className="text-sm font-semibold">Listagem filtrada</p>
