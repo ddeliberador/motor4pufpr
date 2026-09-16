@@ -705,6 +705,8 @@ export default function Mapa() {
                 total={locais.length}
                 aberto={listaAberta}
                 onFechar={() => setListaAberta(false)}
+                pontoSelecionadoId={pontoSelecionadoId}
+                onSelecionarPonto={setPontoSelecionadoId}
               />
             )}
 
