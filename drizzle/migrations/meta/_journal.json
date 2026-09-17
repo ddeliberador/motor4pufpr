@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789688608336,
+      "tag": "0000_create_staging_locations",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789688634373,
+      "tag": "0001_promote_staging_to_gold",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789688640292,
+      "tag": "0002_rollback_fonte",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789688646779,
+      "tag": "0003_classify_tipo",
+      "breakpoints": true
+    }
+  ]
+}

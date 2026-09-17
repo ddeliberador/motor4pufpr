@@ -728,6 +728,75 @@ export type Database = {
         }
         Relationships: []
       }
+      staging_locations: {
+        Row: {
+          canonical_key: string | null
+          canonical_type: string | null
+          cnpj: string | null
+          created_at: string | null
+          fonte: string
+          fonte_url: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          municipio: string | null
+          nome: string
+          promoted_at: string | null
+          promoted_by: string | null
+          quality_flags: Json | null
+          quality_rule_version: string | null
+          quality_score: number | null
+          raw_payload: Json
+          tipo: string
+          uf: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          canonical_key?: string | null
+          canonical_type?: string | null
+          cnpj?: string | null
+          created_at?: string | null
+          fonte: string
+          fonte_url?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          municipio?: string | null
+          nome: string
+          promoted_at?: string | null
+          promoted_by?: string | null
+          quality_flags?: Json | null
+          quality_rule_version?: string | null
+          quality_score?: number | null
+          raw_payload?: Json
+          tipo: string
+          uf?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          canonical_key?: string | null
+          canonical_type?: string | null
+          cnpj?: string | null
+          created_at?: string | null
+          fonte?: string
+          fonte_url?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          municipio?: string | null
+          nome?: string
+          promoted_at?: string | null
+          promoted_by?: string | null
+          quality_flags?: Json | null
+          quality_rule_version?: string | null
+          quality_score?: number | null
+          raw_payload?: Json
+          tipo?: string
+          uf?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       telemetry_events: {
         Row: {
           client_ts: string | null
@@ -819,6 +888,10 @@ export type Database = {
         }
         Returns: number
       }
+      classify_tipo: {
+        Args: { p_nome: string; p_raw_payload?: Json; p_tipo_raw: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -827,6 +900,17 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      promote_staging_to_gold: {
+        Args: { p_fonte?: string; p_min_score?: number; p_promoted_by?: string }
+        Returns: {
+          promoted: number
+          skipped: number
+        }[]
+      }
+      rollback_fonte: {
+        Args: { p_fonte: string; p_snapshot_at?: string }
+        Returns: number
+      }
     }
     Enums: {
       app_role: "admin" | "user"
