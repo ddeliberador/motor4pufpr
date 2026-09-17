@@ -245,6 +245,31 @@ export default function ListaFiltrados({
 
   const lista = (
     <>
+      {grupoTotal != null && grupoTotal > 1 && (
+        <div className="mb-3 flex items-start gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2">
+          <span className="material-symbols-outlined mt-0.5 text-base leading-none text-primary" aria-hidden>
+            layers
+          </span>
+          <div className="min-w-0 flex-1 text-xs">
+            <p className="font-medium">
+              {itens.length.toLocaleString("pt-BR")} de {grupoTotal.toLocaleString("pt-BR")} locais
+              sobrepostos neste ponto do mapa
+            </p>
+            <p className="mt-0.5 text-muted-foreground">
+              Escolha abaixo qual local você quer ver.
+            </p>
+          </div>
+          {onLimparGrupo && (
+            <button
+              onClick={onLimparGrupo}
+              className="shrink-0 rounded-md border border-border px-2 py-1 text-[11px] hover:bg-muted"
+            >
+              Ver todos
+            </button>
+          )}
+        </div>
+      )}
+
       {filtrosAtivos.length > 0 && (
         <p className="mb-3 text-xs text-muted-foreground">
           Filtros aplicados: {filtrosAtivos.join(" · ")}
