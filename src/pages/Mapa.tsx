@@ -794,26 +794,6 @@ export default function Mapa() {
               </div>
             )}
 
-            {metricas && !isLoading && !error && (
-              <MetricasCruzamento
-                itens={metricasItens}
-                total={locais.length}
-                onFechar={() => setMetricas(false)}
-              />
-            )}
-
-            {listaAberta && !isLoading && !error && (
-              <ListaFiltrados
-                itens={filtrados}
-                filtrosAtivos={filtrosAtivos}
-                total={locais.length}
-                aberto={listaAberta}
-                onFechar={() => setListaAberta(false)}
-                pontoSelecionadoId={pontoSelecionadoId}
-                onSelecionarPonto={setPontoSelecionadoId}
-              />
-            )}
-
             {isLoading && (
               <div className="flex h-full items-center justify-center">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -833,22 +813,42 @@ export default function Mapa() {
             )}
 
             {!isLoading && !error && (
-              <div className="min-h-0 flex-1">
-                <MapaBrasil
-                  pontos={pontos}
-                  ufSelecionada={ufsSel.size === 1 ? [...ufsSel][0] : null}
-                  ufsSelecionadas={ufsSel}
-                  contagemPorUf={contagemPorUf}
-                  onSelecionarUf={(u) => u && alternar(ufsSel, u, setUfsSel)}
-                  onSelecionarCluster={(pontos, total) => setSelecao({ pontos, total })}
-                  pontoSelecionadoId={pontoSelecionadoId}
-                  onSelecionarPonto={setPontoSelecionadoId}
-                />
-                <p className="pointer-events-none absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-center text-[11px] text-muted-foreground sm:block">
-                  <MapPin className="mr-1 inline h-3 w-3" />
-                  {pontos.length.toLocaleString("pt-BR")} pontos georreferenciados · clique num
-                  estado para aproximar, num ícone para ver a ficha
-                </p>
+              <div className="relative flex min-h-0 flex-1 overflow-hidden rounded-lg border border-border">
+                <div className="relative min-w-0 flex-1 overflow-hidden bg-background transition-[width] duration-300">
+                  <MapaBrasil
+                    pontos={pontos}
+                    ufSelecionada={ufsSel.size === 1 ? [...ufsSel][0] : null}
+                    ufsSelecionadas={ufsSel}
+                    contagemPorUf={contagemPorUf}
+                    onSelecionarUf={(u) => u && alternar(ufsSel, u, setUfsSel)}
+                    onSelecionarCluster={(pontos, total) => setSelecao({ pontos, total })}
+                    pontoSelecionadoId={pontoSelecionadoId}
+                    onSelecionarPonto={setPontoSelecionadoId}
+                  />
+                  {metricas && (
+                    <MetricasCruzamento
+                      itens={metricasItens}
+                      total={locais.length}
+                      onFechar={() => setMetricas(false)}
+                    />
+                  )}
+                  <p className="pointer-events-none absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-center text-[11px] text-muted-foreground sm:block">
+                    <MapPin className="mr-1 inline h-3 w-3" />
+                    {pontos.length.toLocaleString("pt-BR")} pontos georreferenciados · clique num
+                    estado para aproximar, num ícone para ver a ficha
+                  </p>
+                </div>
+                {listaAberta && (
+                  <ListaFiltrados
+                    itens={filtrados}
+                    filtrosAtivos={filtrosAtivos}
+                    total={locais.length}
+                    aberto={listaAberta}
+                    onFechar={() => setListaAberta(false)}
+                    pontoSelecionadoId={pontoSelecionadoId}
+                    onSelecionarPonto={setPontoSelecionadoId}
+                  />
+                )}
               </div>
             )}
           </section>

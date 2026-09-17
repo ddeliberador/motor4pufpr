@@ -252,7 +252,7 @@ export default function ListaFiltrados({
         </p>
       ) : (
         <>
-          <div className="divide-y divide-border rounded-xl border border-border bg-card">
+          <div className={`divide-y divide-border bg-card ${abertoProp !== undefined ? "lg:border-0" : "rounded-xl border border-border"}`}>
             {visiveis.map((l, i) => {
               const Icone = CATEGORIA_MAP[l.categoria]?.icon;
               const cor = CATEGORIA_MAP[l.categoria]?.cor || "";
@@ -301,7 +301,7 @@ export default function ListaFiltrados({
                   </button>
 
                   {aberta && (
-                    <dl className="grid grid-cols-1 gap-x-8 gap-y-2 border-t border-border/60 bg-muted/20 px-4 py-4 text-xs sm:grid-cols-2 lg:grid-cols-3">
+                    <dl className={`grid grid-cols-1 gap-x-8 gap-y-2 border-t border-border/60 bg-muted/20 px-4 py-4 text-xs ${abertoProp !== undefined ? "sm:grid-cols-2 lg:grid-cols-1" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
                       {[
                         ["Nome", l.nome],
                         ["Tipo", l.tipo],
@@ -367,17 +367,17 @@ export default function ListaFiltrados({
     </>
   );
 
-  // Modo painel flutuante (controlado pelo pai)
+  // No celular, painel inferior. No desktop, coluna fixa que reduz a área do mapa.
   if (abertoProp !== undefined) {
     if (!aberto) return null;
     return (
       <div
-        className="absolute inset-x-0 bottom-0 top-[6.75rem] z-20 flex flex-col overflow-hidden rounded-t-xl border border-border/60 bg-card/90 shadow-lg backdrop-blur-md transition-colors duration-300 hover:bg-card/95 focus-within:bg-card/95 sm:inset-x-auto sm:bottom-auto sm:right-4 sm:top-16 sm:w-[min(28rem,calc(100%-2rem))] sm:max-h-[calc(100%-5rem)] sm:rounded-xl sm:bg-card/60"
+        className="absolute inset-x-0 bottom-0 top-[6.75rem] z-20 flex flex-col overflow-hidden rounded-t-xl border border-border/60 bg-card/95 shadow-lg backdrop-blur-md transition-[width,background-color] duration-300 hover:bg-card focus-within:bg-card lg:static lg:z-auto lg:h-full lg:w-96 lg:shrink-0 lg:rounded-none lg:border-0 lg:border-l lg:border-border lg:bg-card lg:shadow-none lg:backdrop-blur-none"
         role="dialog"
         aria-label="Listagem filtrada"
       >
         {/* Barra de ações: fora da lista, servindo à listagem */}
-        <div className="flex shrink-0 items-start justify-between gap-2 border-b border-border/60 bg-card/80 px-4 py-3 backdrop-blur-sm">
+        <div className="flex shrink-0 items-start justify-between gap-2 border-b border-border/60 bg-card/90 px-4 py-3 backdrop-blur-sm lg:bg-card lg:backdrop-blur-none">
           <div className="min-w-0">
             <p className="text-sm font-semibold">Listagem filtrada</p>
             <p className="text-[11px] text-muted-foreground">
@@ -401,15 +401,19 @@ export default function ListaFiltrados({
             <button
               onClick={onFechar}
               aria-label="fechar listagem"
+              title="Recolher listagem"
               className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-background/90 shadow-sm transition-colors hover:bg-muted"
             >
-              <X className="h-3.5 w-3.5 text-muted-foreground" />
+              <X className="h-3.5 w-3.5 text-muted-foreground lg:hidden" />
+              <span className="material-symbols-outlined hidden text-base leading-none text-muted-foreground lg:inline" aria-hidden>
+                chevron_right
+              </span>
             </button>
           </div>
         </div>
 
         {/* Lista rolável */}
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 lg:p-0">
           {lista}
         </div>
       </div>
