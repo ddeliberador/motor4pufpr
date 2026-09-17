@@ -43,6 +43,13 @@
       "when": 1789688995847,
       "tag": "0005_promote_staging_to_gold",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789689006949,
+      "tag": "0006_rollback_fonte",
+      "breakpoints": true
     }
   ]
 }
