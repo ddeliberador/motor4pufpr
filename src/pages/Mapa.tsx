@@ -293,6 +293,20 @@ export default function Mapa() {
     }
   }, [pontoSelecionadoId]);
 
+  // Clique num ícone que agrupa vários locais sobrepostos: abre a listagem
+  // recortada apenas nesse grupo, para escolher qual local ver.
+  useEffect(() => {
+    if (selecao) {
+      setListaAberta(true);
+      setMetricas(false);
+    }
+  }, [selecao]);
+
+  const grupoIds = useMemo(
+    () => (selecao ? new Set(selecao.pontos.map((p) => p.id)) : null),
+    [selecao],
+  );
+
   const alternar = <T,>(set: Set<T>, v: T, apply: (s: Set<T>) => void) => {
     const novo = new Set(set);
     novo.has(v) ? novo.delete(v) : novo.add(v);
