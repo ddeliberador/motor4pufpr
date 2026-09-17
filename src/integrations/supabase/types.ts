@@ -532,6 +532,8 @@ export type Database = {
           cnpj: string | null
           created_at: string
           data_coleta: string
+          enriched_at: string | null
+          enrichment_source: string | null
           fonte: string
           fonte_url: string | null
           id: string
@@ -539,6 +541,8 @@ export type Database = {
           longitude: number | null
           municipio: string | null
           nome: string
+          quality_flags: Json | null
+          quality_score: number | null
           raw_metadata: Json
           tipo: string
           uf: string | null
@@ -548,6 +552,8 @@ export type Database = {
           cnpj?: string | null
           created_at?: string
           data_coleta?: string
+          enriched_at?: string | null
+          enrichment_source?: string | null
           fonte: string
           fonte_url?: string | null
           id?: string
@@ -555,6 +561,8 @@ export type Database = {
           longitude?: number | null
           municipio?: string | null
           nome: string
+          quality_flags?: Json | null
+          quality_score?: number | null
           raw_metadata?: Json
           tipo?: string
           uf?: string | null
@@ -564,6 +572,8 @@ export type Database = {
           cnpj?: string | null
           created_at?: string
           data_coleta?: string
+          enriched_at?: string | null
+          enrichment_source?: string | null
           fonte?: string
           fonte_url?: string | null
           id?: string
@@ -571,6 +581,8 @@ export type Database = {
           longitude?: number | null
           municipio?: string | null
           nome?: string
+          quality_flags?: Json | null
+          quality_score?: number | null
           raw_metadata?: Json
           tipo?: string
           uf?: string | null
@@ -795,6 +807,18 @@ export type Database = {
       }
     }
     Functions: {
+      calc_quality_score: {
+        Args: {
+          p_cnpj: string
+          p_fonte_url: string
+          p_latitude: number
+          p_longitude: number
+          p_metadata: Json
+          p_municipio: string
+          p_nome: string
+        }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
