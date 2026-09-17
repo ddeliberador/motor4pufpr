@@ -158,7 +158,10 @@ export default function Mapa() {
   const pontos: Ponto[] = useMemo(
     () =>
       filtrados
-        .filter((l) => l.latitude != null && l.longitude != null)
+        .filter(
+          (l) =>
+            l.latitude != null && l.longitude != null && camadas.has(l.categoria),
+        )
         .map((l) => ({
           id: l.id,
           nome: l.nome,
@@ -166,7 +169,7 @@ export default function Mapa() {
           longitude: Number(l.longitude),
           categoria: l.categoria,
         })),
-    [filtrados],
+    [filtrados, camadas],
   );
 
   const contagemPorUf = useMemo(() => {
