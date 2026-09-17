@@ -860,6 +860,7 @@ export default function Mapa() {
                     onFechar={() => setListaAberta(false)}
                     pontoSelecionadoId={pontoSelecionadoId}
                     onSelecionarPonto={setPontoSelecionadoId}
+                    grupoIds={grupoIds}
                   />
                 )}
               </div>
