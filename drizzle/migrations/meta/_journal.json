@@ -50,6 +50,13 @@
       "when": 1789689006949,
       "tag": "0006_rollback_fonte",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789689022678,
+      "tag": "0007_classify_tipo",
+      "breakpoints": true
     }
   ]
 }
