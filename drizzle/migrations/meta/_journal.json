@@ -36,6 +36,13 @@
       "when": 1789688981341,
       "tag": "0004_create_staging_locations",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789688995847,
+      "tag": "0005_promote_staging_to_gold",
+      "breakpoints": true
     }
   ]
 }
