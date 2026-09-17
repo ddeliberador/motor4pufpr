@@ -306,7 +306,9 @@ export default function MapaBrasil({
         <g>
           {clusters.map((c) => {
             const cat = CATEGORIA_MAP[c.categoria];
-            const selecionadoAqui = c.pontos.some((p) => p.id === pontoSelecionadoId);
+            const selecionadoAqui = c.pontos.some(
+              (p) => p.id === pontoSelecionadoId || grupoIds?.has(p.id),
+            );
             const opacidade = temSelecao ? (selecionadoAqui ? 1 : 0.15) : 1;
             return (
               <g
