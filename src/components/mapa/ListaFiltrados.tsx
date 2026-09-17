@@ -72,6 +72,9 @@ interface Props {
   onFechar?: () => void;
   pontoSelecionadoId?: string | null;
   onSelecionarPonto?: (id: string | null) => void;
+  /** Total de locais sobrepostos no ícone clicado no mapa (recorte de grupo). */
+  grupoTotal?: number | null;
+  onLimparGrupo?: () => void;
 }
 
 export default function ListaFiltrados({
