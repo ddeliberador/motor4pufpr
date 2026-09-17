@@ -1,6 +1,6 @@
 # ADR-0001 — Arquitetura de dados em duas camadas (Staging → Gold)
 Data: 2026-09-17  
-Status: proposta  
+Status: aceita e implementada (2026-09-17) — ver Adendo  
 Decidido por: André Maia, Décio Dalton Deliberador Filho
 
 ## Contexto
