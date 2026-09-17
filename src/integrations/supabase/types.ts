@@ -728,6 +728,75 @@ export type Database = {
         }
         Relationships: []
       }
+      staging_locations: {
+        Row: {
+          canonical_key: string | null
+          canonical_type: string | null
+          cnpj: string | null
+          created_at: string | null
+          fonte: string
+          fonte_url: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          municipio: string | null
+          nome: string
+          promoted_at: string | null
+          promoted_by: string | null
+          quality_flags: Json | null
+          quality_rule_version: string | null
+          quality_score: number | null
+          raw_payload: Json
+          tipo: string
+          uf: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          canonical_key?: string | null
+          canonical_type?: string | null
+          cnpj?: string | null
+          created_at?: string | null
+          fonte: string
+          fonte_url?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          municipio?: string | null
+          nome: string
+          promoted_at?: string | null
+          promoted_by?: string | null
+          quality_flags?: Json | null
+          quality_rule_version?: string | null
+          quality_score?: number | null
+          raw_payload?: Json
+          tipo: string
+          uf?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          canonical_key?: string | null
+          canonical_type?: string | null
+          cnpj?: string | null
+          created_at?: string | null
+          fonte?: string
+          fonte_url?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          municipio?: string | null
+          nome?: string
+          promoted_at?: string | null
+          promoted_by?: string | null
+          quality_flags?: Json | null
+          quality_rule_version?: string | null
+          quality_score?: number | null
+          raw_payload?: Json
+          tipo?: string
+          uf?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       telemetry_events: {
         Row: {
           client_ts: string | null
