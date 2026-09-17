@@ -105,6 +105,8 @@ interface Props {
   onSelecionarCluster: (pontos: Ponto[], total: number) => void;
   pontoSelecionadoId?: string | null;
   onSelecionarPonto?: (id: string | null) => void;
+  /** IDs do grupo aberto na listagem (pontos sobrepostos num mesmo ícone). */
+  grupoIds?: Set<string> | null;
 }
 
 export default function MapaBrasil({
@@ -116,6 +118,7 @@ export default function MapaBrasil({
   onSelecionarCluster,
   pontoSelecionadoId,
   onSelecionarPonto,
+  grupoIds,
 }: Props) {
   const [features, setFeatures] = useState<Feature[] | null>(null);
   const [erroMalha, setErroMalha] = useState<string | null>(null);
@@ -222,7 +225,7 @@ export default function MapaBrasil({
   const tam = 14 * Math.sqrt(escala);
   const clusters = useMemo(() => agrupar(pontos, tam * 1.7), [pontos, tam]);
 
-  const temSelecao = pontoSelecionadoId != null;
+  const temSelecao = pontoSelecionadoId != null || (grupoIds != null && grupoIds.size > 0);
   const selecionado = useMemo(
     () => pontos.find((p) => p.id === pontoSelecionadoId) || null,
     [pontos, pontoSelecionadoId],
@@ -303,7 +306,9 @@ export default function MapaBrasil({
         <g>
           {clusters.map((c) => {
             const cat = CATEGORIA_MAP[c.categoria];
-            const selecionadoAqui = c.pontos.some((p) => p.id === pontoSelecionadoId);
+            const selecionadoAqui = c.pontos.some(
+              (p) => p.id === pontoSelecionadoId || grupoIds?.has(p.id),
+            );
             const opacidade = temSelecao ? (selecionadoAqui ? 1 : 0.15) : 1;
             return (
               <g
