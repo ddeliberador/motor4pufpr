@@ -888,6 +888,10 @@ export type Database = {
         }
         Returns: number
       }
+      classify_tipo: {
+        Args: { p_nome: string; p_raw_payload?: Json; p_tipo_raw: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -896,6 +900,17 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      promote_staging_to_gold: {
+        Args: { p_fonte?: string; p_min_score?: number; p_promoted_by?: string }
+        Returns: {
+          promoted: number
+          skipped: number
+        }[]
+      }
+      rollback_fonte: {
+        Args: { p_fonte: string; p_snapshot_at?: string }
+        Returns: number
+      }
     }
     Enums: {
       app_role: "admin" | "user"
