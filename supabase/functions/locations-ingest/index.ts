@@ -41,8 +41,15 @@ const rest = (path: string, init: RequestInit = {}) =>
 const norm = (s: string) =>
   (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
-/** Substitui integralmente os registros de uma fonte (ingestão idempotente). */
-async function replaceSource(fonte: Fonte, rows: Local[]): Promise<number> {
+/**
+ * Rota ADR-0001: grava o lote na camada Staging e promove ao Gold via
+ * promote_staging_to_gold(). Score, tipo canônico e chave de deduplicação
+ * são calculados no banco (gatilho trg_staging_qualify) — nunca aqui.
+ * A Staging mantém o histórico (base do rollback_fonte); o Gold faz upsert
+ * pela chave (fonte, nome, uf). Registros que saírem da fonte permanecem
+ * no Gold até um rollback/prune explícito — decisão registrada no ADR.
+ */
+async function stageAndPromote(fonte: Fonte, rows: Local[]): Promise<{ staged: number; promoted: number; skipped: number }> {
   const seen = new Set<string>();
   const unique = rows.filter((r) => {
     if (!r.nome) return false;
@@ -52,24 +59,39 @@ async function replaceSource(fonte: Fonte, rows: Local[]): Promise<number> {
     return true;
   });
 
-  const del = await rest(`research_locations?fonte=eq.${fonte}`, {
-    method: "DELETE",
-    headers: { Prefer: "return=minimal" },
-  });
-  if (!del.ok) throw new Error(`falha ao limpar fonte ${fonte}: ${await del.text()}`);
-
-  let inserted = 0;
+  let staged = 0;
   for (let i = 0; i < unique.length; i += 200) {
-    const chunk = unique.slice(i, i + 200);
-    const res = await rest("research_locations", {
+    const chunk = unique.slice(i, i + 200).map((r) => ({
+      nome: r.nome,
+      tipo: r.tipo,
+      uf: r.uf,
+      municipio: r.municipio,
+      latitude: r.latitude,
+      longitude: r.longitude,
+      fonte: r.fonte,
+      fonte_url: r.fonte_url,
+      cnpj: r.cnpj,
+      raw_payload: r.raw_metadata,
+    }));
+    const res = await rest("staging_locations", {
       method: "POST",
       headers: { Prefer: "return=minimal" },
       body: JSON.stringify(chunk),
     });
-    if (!res.ok) throw new Error(`falha ao inserir em ${fonte}: ${await res.text()}`);
-    inserted += chunk.length;
+    if (!res.ok) throw new Error(`falha ao gravar staging de ${fonte}: ${await res.text()}`);
+    staged += chunk.length;
   }
-  return inserted;
+
+  const rpc = await rest("rpc/promote_staging_to_gold", {
+    method: "POST",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ p_fonte: fonte, p_promoted_by: "locations-ingest" }),
+  });
+  if (!rpc.ok) throw new Error(`falha ao promover ${fonte} ao Gold: ${await rpc.text()}`);
+  const promo = await rpc.json();
+  const promoted = Number(promo?.[0]?.promoted ?? 0);
+  const skipped = Number(promo?.[0]?.skipped ?? 0);
+  return { staged, promoted, skipped };
 }
 
 // ---------------------------------------------------------------- OpenAlex

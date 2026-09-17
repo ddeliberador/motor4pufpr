@@ -8,7 +8,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const BULK_KEY = Deno.env.get("BULK_INGEST_KEY") || "";
 
-const TABELAS_PERMITIDAS = new Set(["city_geocode", "research_locations"]);
+const TABELAS_PERMITIDAS = new Set(["city_geocode", "research_locations", "staging_locations"]);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
