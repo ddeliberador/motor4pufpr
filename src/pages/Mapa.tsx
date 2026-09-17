@@ -9,7 +9,6 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import MapaBrasil, { type Ponto } from "@/components/mapa/MapaBrasil";
 
 import ListaFiltrados from "@/components/mapa/ListaFiltrados";
@@ -332,7 +331,7 @@ export default function Mapa() {
           </div>
         </div>
 
-        <div className="flex flex-col lg:h-[calc(100vh-9.5rem)] lg:flex-row">
+        <div className="flex flex-col lg:h-[calc(100vh-4rem)] lg:flex-row">
           {/* Coluna lateral de filtros */}
           <aside
             className={`${
@@ -855,8 +854,6 @@ export default function Mapa() {
         </div>
 
       </main>
-
-      <Footer />
     </div>
   );
 }
