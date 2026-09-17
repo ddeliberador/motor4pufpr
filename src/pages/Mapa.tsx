@@ -835,10 +835,11 @@ export default function Mapa() {
                     contagemPorUf={contagemPorUf}
                     onSelecionarUf={(u) => u && alternar(ufsSel, u, setUfsSel)}
                     onSelecionarCluster={(pontos, total) => setSelecao({ pontos, total })}
-                    pontoSelecionadoId={pontoSelecionadoId}
-                    onSelecionarPonto={setPontoSelecionadoId}
-                  />
-                  {metricas && (
+                     pontoSelecionadoId={pontoSelecionadoId}
+                     onSelecionarPonto={setPontoSelecionadoId}
+                     grupoIds={grupoIds}
+                   />
+                   {metricas && (
                     <MetricasCruzamento
                       itens={metricasItens}
                       total={locais.length}
