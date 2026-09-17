@@ -29,6 +29,34 @@
       "when": 1789688646779,
       "tag": "0003_classify_tipo",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789688981341,
+      "tag": "0004_create_staging_locations",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789688995847,
+      "tag": "0005_promote_staging_to_gold",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789689006949,
+      "tag": "0006_rollback_fonte",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789689022678,
+      "tag": "0007_classify_tipo",
+      "breakpoints": true
     }
   ]
 }
