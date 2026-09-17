@@ -399,7 +399,54 @@ export default function Mapa() {
                 </button>
               </div>
 
+              {/* Camadas de dados exibidas no mapa */}
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Camadas no mapa
+                  </p>
+                  <button
+                    onClick={() =>
+                      setCamadas(
+                        camadas.size === CATEGORIAS.length
+                          ? new Set()
+                          : new Set(CATEGORIAS.map((c) => c.key)),
+                      )
+                    }
+                    className="text-[11px] text-primary hover:underline"
+                  >
+                    {camadas.size === CATEGORIAS.length ? "nenhuma" : "todas"}
+                  </button>
+                </div>
+                <div className="space-y-1">
+                  {CATEGORIAS.map((c) => (
+                    <label
+                      key={c.key}
+                      className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={camadas.has(c.key)}
+                        onChange={() => alternar(camadas, c.key, setCamadas)}
+                        className="h-3.5 w-3.5 shrink-0 accent-primary"
+                      />
+                      <span
+                        className={`material-symbols-outlined shrink-0 text-base leading-none ${c.cor}`}
+                        aria-hidden
+                      >
+                        {c.icon}
+                      </span>
+                      <span className="flex-1 truncate">{c.label}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  Controla apenas a exibição no mapa; a listagem segue os filtros.
+                </p>
+              </div>
+
               {modo === "bases" && (<>
+
               {/* Busca */}
               <div className="relative hidden lg:block">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
