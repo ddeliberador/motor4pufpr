@@ -93,8 +93,8 @@ export default function ListaFiltrados({
 
   const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
+  // Ao selecionar no mapa, apenas destaca e rola até o item — sem abrir o detalhamento.
   useEffect(() => {
-    setExpandido(pontoSelecionadoId ?? null);
     if (!pontoSelecionadoId) return;
     const idx = itens.findIndex((l) => l.id === pontoSelecionadoId);
     if (idx < 0) return;
@@ -258,6 +258,7 @@ export default function ListaFiltrados({
               const cor = CATEGORIA_MAP[l.categoria]?.cor || "";
               const href = safeHttpUrl(l.fonte_url);
               const aberta = expandido === l.id;
+              const selecionada = pontoSelecionadoId === l.id;
               const extras = metaVisivel(l);
               return (
                 <div
@@ -273,7 +274,7 @@ export default function ListaFiltrados({
                       onSelecionarPonto?.(novo);
                     }}
                     className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 ${
-                      aberta ? "bg-primary/5 ring-1 ring-primary/30" : ""
+                      selecionada ? "bg-primary/15 ring-1 ring-primary/40" : aberta ? "bg-primary/5 ring-1 ring-primary/30" : ""
                     }`}
                   >
                     <span className="mt-0.5 w-8 shrink-0 font-mono text-[11px] text-muted-foreground">
