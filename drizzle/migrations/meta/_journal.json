@@ -57,6 +57,20 @@
       "when": 1789689022678,
       "tag": "0007_classify_tipo",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789689415088,
+      "tag": "0008_staging_quality_and_canonical_triggers",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789689428530,
+      "tag": "0009_promote_threshold_default_55",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,6 @@
 # ADR-0001 — Arquitetura de dados em duas camadas (Staging → Gold)
 Data: 2026-09-17  
-Status: proposta  
+Status: aceita e implementada (2026-09-17) — ver Adendo  
 Decidido por: André Maia, Décio Dalton Deliberador Filho
 
 ## Contexto
@@ -118,3 +118,29 @@ AND trigger_name = 'trg_quality_score';
 4. Primeira promoção Staging → Gold com `canonical_type` incluído; atualizar `Mapa.tsx`
 5. Remover escrita direta em `research_locations` da ingestão
 6. Remover lógica de classificação do `dataLake.ts`
+
+## Adendo (2026-09-17) — implementação e ajustes medidos
+
+Implementado conforme os passos 1–5. O passo 6 (classificação no frontend)
+permanece: `dataLake.ts` segue classificando os 7 eixos para os filtros do
+/mapa, agora consistente com `classify_tipo()` no banco.
+
+Ajustes decididos na implementação, com números reais:
+
+- **Limiar de promoção 70 → 55.** Distribuição medida no Gold (6.010
+  registros): 20 em 0–29, 101 em 30–49, 5.869 em 50–69 e 20 em 70+. Fontes
+  sem CNPJ/endereço (OpenAlex, startups) têm teto prático de ~55–65; com 70,
+  quase nada seria promovido. Parâmetro segue configurável por chamada.
+- **Gatilho de qualificação também na Staging** (`trg_staging_qualify`):
+  score, flags, `canonical_type` e `canonical_key` são calculados no banco em
+  toda escrita — o conector nunca calcula score.
+- **Sem DELETE no Gold pela rotina.** A Staging guarda o histórico (base do
+  `rollback_fonte`); o Gold faz upsert pela chave. Registros que saírem de
+  uma fonte permanecem no Gold até rollback/prune explícito — aceito para
+  preservar histórico e evitar janela de fonte vazia.
+- **Backfill executado:** 6.013 registros do Gold copiados para a Staging
+  (marcados como promovidos), todos com tipo canônico e chave.
+- **Verificação:** registro de teste recebeu score 80, `canonical_type =
+  'Universidade'` e chave canônica automaticamente (removido após o teste).
+  Confirmação de ponta a ponta pela rota real ocorre na primeira execução do
+  cron após a mudança — conferir `ingest_runs`.
