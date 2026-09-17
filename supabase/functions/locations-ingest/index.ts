@@ -450,8 +450,17 @@ Deno.serve(async (req) => {
 
   try {
     const rows = await INGESTORES[source]();
-    const inserted = await replaceSource(source, rows);
-    return json({ source, failed: false, found: rows.length, inserted, data_coleta: new Date().toISOString() });
+    const { staged, promoted, skipped } = await stageAndPromote(source, rows);
+    return json({
+      source,
+      failed: false,
+      found: rows.length,
+      inserted: promoted,
+      staged,
+      promoted,
+      skipped_review: skipped,
+      data_coleta: new Date().toISOString(),
+    });
   } catch (e) {
     // Falha explícita: nada é gravado nem estimado para essa fonte.
     return json({ source, failed: true, inserted: 0, error: (e as Error).message }, 200);
