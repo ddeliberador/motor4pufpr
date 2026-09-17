@@ -118,6 +118,7 @@ export default function MapaBrasil({
   onSelecionarCluster,
   pontoSelecionadoId,
   onSelecionarPonto,
+  grupoIds,
 }: Props) {
   const [features, setFeatures] = useState<Feature[] | null>(null);
   const [erroMalha, setErroMalha] = useState<string | null>(null);
