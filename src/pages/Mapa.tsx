@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search, X, ExternalLink, MapPin, Loader2, Filter, BarChart3, List, Database,
+  SlidersHorizontal,
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -22,6 +23,7 @@ import { safeHttpUrl } from "@/lib/utils";
 import MetricasCruzamento from "@/components/mapa/MetricasCruzamento";
 import PainelDataLake from "@/components/mapa/PainelDataLake";
 import { canonizar, passaLake, resumoLake, type SelecaoLake } from "@/components/mapa/dataLake";
+import { Button } from "@/components/ui/button";
 
 const COLUNAS =
   "id,nome,tipo,uf,municipio,latitude,longitude,fonte,fonte_url,cnpj,data_coleta,raw_metadata";
@@ -95,6 +97,7 @@ export default function Mapa() {
   const [pontoSelecionadoId, setPontoSelecionadoId] = useState<string | null>(null);
   const [metricas, setMetricas] = useState(false);
   const [listaAberta, setListaAberta] = useState(false);
+  const [filtrosMobileAbertos, setFiltrosMobileAbertos] = useState(false);
 
   const locais = data || [];
 
@@ -324,7 +327,12 @@ export default function Mapa() {
 
         <div className="flex flex-col lg:h-[calc(100vh-9.5rem)] lg:flex-row">
           {/* Coluna lateral de filtros */}
-          <aside className="w-full shrink-0 overflow-y-auto border-b border-border bg-muted/20 p-5 lg:w-80 lg:border-b-0 lg:border-r">
+          <aside
+            className={`${
+              filtrosMobileAbertos ? "fixed inset-0 z-50 flex" : "hidden"
+            } w-full flex-col overflow-y-auto border-border bg-background p-5 lg:static lg:z-auto lg:flex lg:w-80 lg:shrink-0 lg:border-r lg:bg-muted/20`}
+            aria-label="Filtros do mapa"
+          >
             <div className="space-y-6">
               {/* Total + limpar */}
               <div className="flex items-center justify-between">
@@ -336,14 +344,26 @@ export default function Mapa() {
                     de {locais.length.toLocaleString("pt-BR")} registros
                   </p>
                 </div>
-                {temFiltro ? (
-                  <button
-                    onClick={limpar}
-                    className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                <div className="flex items-center gap-2">
+                  {temFiltro ? (
+                    <button
+                      onClick={limpar}
+                      className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      <X className="h-3 w-3" /> limpar filtros
+                    </button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="lg:hidden"
+                    onClick={() => setFiltrosMobileAbertos(false)}
+                    aria-label="Fechar filtros"
                   >
-                    <X className="h-3 w-3" /> limpar filtros
-                  </button>
-                ) : null}
+                    <X />
+                  </Button>
+                </div>
               </div>
 
               {/* Seletor de modo */}
@@ -374,7 +394,7 @@ export default function Mapa() {
 
               {modo === "bases" && (<>
               {/* Busca */}
-              <div className="relative">
+              <div className="relative hidden lg:block">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
                   value={busca}
@@ -623,44 +643,81 @@ export default function Mapa() {
                   </div>
                 </div>
               )}
+
+              <Button
+                type="button"
+                className="sticky bottom-0 w-full lg:hidden"
+                onClick={() => setFiltrosMobileAbertos(false)}
+              >
+                Ver {filtrados.length.toLocaleString("pt-BR")} no mapa
+              </Button>
             </div>
           </aside>
 
           {/* Mapa */}
-          <section className="relative min-h-[70vh] flex-1 bg-background p-4">
+          <section className="relative flex h-[calc(100dvh-9.75rem)] min-h-[34rem] flex-1 flex-col overflow-hidden bg-background p-3 sm:p-4 lg:h-auto lg:min-h-0">
+            <div className="mb-3 flex gap-2 lg:hidden">
+              <div className="relative min-w-0 flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={busca}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setBusca(v);
+                    if (v.trim()) {
+                      setListaAberta(true);
+                      setMetricas(false);
+                    }
+                  }}
+                  placeholder="Nome ou cidade"
+                  className="h-11 w-full rounded-lg border border-border bg-muted/40 pl-9 pr-3 text-sm outline-none focus:border-primary"
+                />
+              </div>
+              <Button
+                type="button"
+                className="h-11 shrink-0 px-3"
+                onClick={() => setFiltrosMobileAbertos(true)}
+              >
+                <SlidersHorizontal />
+                Filtros{filtrosAtivos.length ? ` (${filtrosAtivos.length})` : ""}
+              </Button>
+            </div>
+
             {/* Barra do cruzamento */}
             {!isLoading && !error && (
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <div className="mb-2 flex items-center justify-between gap-2">
                 <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-2 py-1 text-[11px] font-semibold text-background">
+                  <span className="hidden items-center gap-1.5 rounded-md bg-foreground px-2 py-1 text-[11px] font-semibold text-background sm:inline-flex">
                     {modo === "lake" ? (
                       <><Database className="h-3 w-3" /> Data Lake Cruzado</>
                     ) : (
                       <><Filter className="h-3 w-3" /> Bases de origem</>
                     )}
                   </span>
-                  <span>
+                  <span className="whitespace-nowrap">
                     <strong className="font-semibold text-foreground">
                       {filtrados.length.toLocaleString("pt-BR")}
                     </strong>{" "}
                     de {locais.length.toLocaleString("pt-BR")} entidades
                   </span>
                 </p>
-                <div className="inline-flex items-center rounded-lg border border-border bg-card p-0.5">
+                <div className="inline-flex shrink-0 items-center rounded-lg border border-border bg-card p-0.5">
                   <button
                     onClick={() => {
                       setListaAberta((v) => !v);
                       setMetricas(false);
                     }}
                     aria-pressed={listaAberta}
-                    className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                    title="Listagem filtrada"
+                    aria-label="Listagem filtrada"
+                    className={`flex h-8 w-9 items-center justify-center rounded-md text-[11px] font-medium transition-colors sm:h-auto sm:w-auto sm:gap-1.5 sm:px-2.5 sm:py-1.5 ${
                       listaAberta
                         ? "bg-primary/15 text-foreground"
                         : "text-muted-foreground hover:bg-muted"
                     }`}
                   >
                     <List className="h-3.5 w-3.5" />
-                    Listagem filtrada
+                    <span className="hidden sm:inline">Listagem filtrada</span>
                   </button>
                   <button
                     onClick={() => {
@@ -668,14 +725,16 @@ export default function Mapa() {
                       setListaAberta(false);
                     }}
                     aria-pressed={metricas}
-                    className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                    title="Métricas do cruzamento"
+                    aria-label="Métricas do cruzamento"
+                    className={`flex h-8 w-9 items-center justify-center rounded-md text-[11px] font-medium transition-colors sm:h-auto sm:w-auto sm:gap-1.5 sm:px-2.5 sm:py-1.5 ${
                       metricas
                         ? "bg-primary/15 text-foreground"
                         : "text-muted-foreground hover:bg-muted"
                     }`}
                   >
                     <BarChart3 className="h-3.5 w-3.5" />
-                    Métricas do cruzamento
+                    <span className="hidden sm:inline">Métricas do cruzamento</span>
                   </button>
                 </div>
               </div>
@@ -720,7 +779,7 @@ export default function Mapa() {
             )}
 
             {!isLoading && !error && (
-              <>
+              <div className="min-h-0 flex-1">
                 <MapaBrasil
                   pontos={pontos}
                   ufSelecionada={ufsSel.size === 1 ? [...ufsSel][0] : null}
@@ -731,12 +790,12 @@ export default function Mapa() {
                   pontoSelecionadoId={pontoSelecionadoId}
                   onSelecionarPonto={setPontoSelecionadoId}
                 />
-                <p className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 text-center text-[11px] text-muted-foreground">
+                <p className="pointer-events-none absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-center text-[11px] text-muted-foreground sm:block">
                   <MapPin className="mr-1 inline h-3 w-3" />
                   {pontos.length.toLocaleString("pt-BR")} pontos georreferenciados · clique num
                   estado para aproximar, num ícone para ver a ficha
                 </p>
-              </>
+              </div>
             )}
           </section>
         </div>
