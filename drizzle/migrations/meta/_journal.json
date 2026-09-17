@@ -29,6 +29,13 @@
       "when": 1789688646779,
       "tag": "0003_classify_tipo",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789688981341,
+      "tag": "0004_create_staging_locations",
+      "breakpoints": true
     }
   ]
 }
