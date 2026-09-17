@@ -85,6 +85,8 @@ export default function ListaFiltrados({
   onFechar,
   pontoSelecionadoId,
   onSelecionarPonto,
+  grupoTotal,
+  onLimparGrupo,
 }: Props) {
   const [abertoLocal, setAbertoLocal] = useState(false);
   const aberto = abertoProp !== undefined ? abertoProp : abertoLocal;
