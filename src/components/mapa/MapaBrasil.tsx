@@ -225,7 +225,7 @@ export default function MapaBrasil({
   const tam = 14 * Math.sqrt(escala);
   const clusters = useMemo(() => agrupar(pontos, tam * 1.7), [pontos, tam]);
 
-  const temSelecao = pontoSelecionadoId != null;
+  const temSelecao = pontoSelecionadoId != null || (grupoIds != null && grupoIds.size > 0);
   const selecionado = useMemo(
     () => pontos.find((p) => p.id === pontoSelecionadoId) || null,
     [pontos, pontoSelecionadoId],
