@@ -105,6 +105,8 @@ interface Props {
   onSelecionarCluster: (pontos: Ponto[], total: number) => void;
   pontoSelecionadoId?: string | null;
   onSelecionarPonto?: (id: string | null) => void;
+  /** IDs do grupo aberto na listagem (pontos sobrepostos num mesmo ícone). */
+  grupoIds?: Set<string> | null;
 }
 
 export default function MapaBrasil({
