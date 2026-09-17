@@ -97,6 +97,10 @@ export default function Mapa() {
   const [pontoSelecionadoId, setPontoSelecionadoId] = useState<string | null>(null);
   const [metricas, setMetricas] = useState(false);
   const [listaAberta, setListaAberta] = useState(false);
+  // Camadas de dados exibidas no mapa (todas ligadas por padrão).
+  const [camadas, setCamadas] = useState<Set<CategoriaKey>>(
+    () => new Set(CATEGORIAS.map((c) => c.key)),
+  );
   const [filtrosMobileAbertos, setFiltrosMobileAbertos] = useState(false);
 
   const locais = data || [];
