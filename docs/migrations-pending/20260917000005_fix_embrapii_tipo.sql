@@ -13,6 +13,6 @@
 
 UPDATE research_locations
 SET
-  type       = 'Unidade Embrapii',
+  tipo       = 'Unidade Embrapii',
   updated_at = now()
 WHERE tipo = 'Unidade EMBRAPII';
