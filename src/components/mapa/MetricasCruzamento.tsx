@@ -69,7 +69,7 @@ export default function MetricasCruzamento({
   const comTema = itens.filter((i) => i.canon.tema.length > 0).length;
 
   return (
-    <div className="absolute right-4 top-16 z-20 w-[min(28rem,calc(100%-2rem))] max-h-[calc(100%-5rem)] overflow-y-auto rounded-xl border border-border bg-card/95 p-4 shadow-lg backdrop-blur">
+    <div className="absolute inset-x-0 bottom-0 top-[6.75rem] z-20 overflow-y-auto rounded-t-xl border border-border bg-card/95 p-4 shadow-lg backdrop-blur sm:inset-x-auto sm:bottom-auto sm:right-4 sm:top-16 sm:w-[min(28rem,calc(100%-2rem))] sm:max-h-[calc(100%-5rem)] sm:rounded-xl">
       <div className="mb-3 flex items-start justify-between gap-2">
         <div>
           <p className="text-sm font-semibold">Métricas do cruzamento</p>

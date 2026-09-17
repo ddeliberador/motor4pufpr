@@ -372,7 +372,7 @@ export default function ListaFiltrados({
     if (!aberto) return null;
     return (
       <div
-        className="absolute right-4 top-16 z-20 flex w-[min(28rem,calc(100%-2rem))] max-h-[calc(100%-5rem)] flex-col overflow-hidden rounded-xl border border-border/60 bg-card/60 shadow-lg backdrop-blur-md transition-colors duration-300 hover:bg-card/90 focus-within:bg-card/90"
+        className="absolute inset-x-0 bottom-0 top-[6.75rem] z-20 flex flex-col overflow-hidden rounded-t-xl border border-border/60 bg-card/90 shadow-lg backdrop-blur-md transition-colors duration-300 hover:bg-card/95 focus-within:bg-card/95 sm:inset-x-auto sm:bottom-auto sm:right-4 sm:top-16 sm:w-[min(28rem,calc(100%-2rem))] sm:max-h-[calc(100%-5rem)] sm:rounded-xl sm:bg-card/60"
         role="dialog"
         aria-label="Listagem filtrada"
       >
