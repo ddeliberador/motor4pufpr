@@ -854,15 +854,16 @@ export default function Mapa() {
                 </div>
                 {listaAberta && (
                   <ListaFiltrados
-                    itens={filtrados}
-                    filtrosAtivos={filtrosAtivos}
-                    total={locais.length}
-                    aberto={listaAberta}
-                    onFechar={() => setListaAberta(false)}
-                    pontoSelecionadoId={pontoSelecionadoId}
-                    onSelecionarPonto={setPontoSelecionadoId}
-                    grupoIds={grupoIds}
-                  />
+                     itens={grupoIds ? filtrados.filter((l) => grupoIds.has(l.id)) : filtrados}
+                     filtrosAtivos={filtrosAtivos}
+                     total={locais.length}
+                     aberto={listaAberta}
+                     onFechar={() => setListaAberta(false)}
+                     pontoSelecionadoId={pontoSelecionadoId}
+                     onSelecionarPonto={setPontoSelecionadoId}
+                     grupoTotal={selecao?.total ?? null}
+                     onLimparGrupo={() => setSelecao(null)}
+                   />
                 )}
               </div>
             )}
