@@ -319,8 +319,8 @@ export default function MapaBrasil({
       >
         <defs>
           <filter id="pais-outline" x="-10%" y="-10%" width="120%" height="120%">
-            <feMorphology in="SourceAlpha" result="dilated" operator="dilate" radius="2.5" />
-            <feFlood flood-color="hsl(var(--foreground))" flood-opacity="0.38" result="cor" />
+            <feMorphology in="SourceAlpha" result="dilated" operator="dilate" radius="3" />
+            <feFlood flood-color="hsl(var(--foreground))" flood-opacity="0.45" result="cor" />
             <feComposite in="cor" in2="dilated" operator="in" result="borda" />
             <feComposite in="borda" in2="SourceAlpha" operator="out" result="sombra" />
             <feMerge>
@@ -338,8 +338,9 @@ export default function MapaBrasil({
                 key={p.sigla}
                 d={p.d}
                 fill={ativa ? "hsl(var(--primary) / 0.22)" : "hsl(var(--muted) / 0.35)"}
-                stroke="hsl(var(--foreground) / 0.18)"
-                strokeWidth={1.1 * escala}
+                stroke="hsl(var(--foreground) / 0.25)"
+                strokeWidth={1.4 * escala}
+                strokeLinejoin="round"
                 className="cursor-pointer transition-[fill] duration-200 hover:brightness-110"
                 onClick={() => {
                   if (!arrasteRef.current?.movido) onSelecionarUf(p.sigla);

@@ -722,7 +722,7 @@ export default function Mapa() {
           </aside>
 
           {/* Mapa */}
-          <section className="relative flex h-[calc(100dvh-9.75rem)] min-h-[34rem] flex-1 flex-col overflow-hidden bg-muted p-3 sm:p-4 lg:h-auto lg:min-h-0">
+          <section className="relative flex h-[calc(100dvh-9.75rem)] min-h-[34rem] flex-1 flex-col overflow-hidden bg-secondary p-3 sm:p-4 lg:h-auto lg:min-h-0">
             <div className="mb-3 flex gap-2 lg:hidden">
               <div className="relative min-w-0 flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
