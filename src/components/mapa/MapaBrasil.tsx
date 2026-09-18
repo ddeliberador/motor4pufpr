@@ -68,6 +68,38 @@ interface Cluster {
   pontos: Ponto[];
 }
 
+// Muitos registros vêm geocodificados no centro do município (ex.: 825 startups
+// exatamente em -23.5507/-46.6334, São Paulo). Sem tratamento eles ficam
+// empilhados num único ícone. Aqui a posição de exibição de cada registro que
+// divide a mesma coordenada é afastada de forma determinística (espiral de
+// ângulo dourado, raio máx. ~0,25°), preservando o dado original no banco.
+const RAIO_BASE = 0.012;
+function dispersar(pontos: Ponto[]): Ponto[] {
+  const contagem = new Map<string, number>();
+  for (const p of pontos) {
+    const k = `${p.latitude.toFixed(4)}|${p.longitude.toFixed(4)}`;
+    contagem.set(k, (contagem.get(k) ?? 0) + 1);
+  }
+  const usados = new Map<string, number>();
+  return pontos.map((p) => {
+    const k = `${p.latitude.toFixed(4)}|${p.longitude.toFixed(4)}`;
+    if ((contagem.get(k) ?? 0) < 2) return p;
+    const i = usados.get(k) ?? 0;
+    usados.set(k, i + 1);
+    if (i === 0) return p;
+    const ang = i * 2.39996323;
+    const raio = RAIO_BASE * Math.sqrt(i);
+    const lat = p.latitude + raio * Math.sin(ang);
+    return {
+      ...p,
+      latitude: lat,
+      longitude:
+        p.longitude +
+        (raio * Math.cos(ang)) / Math.max(0.2, Math.cos((lat * Math.PI) / 180)),
+    };
+  });
+}
+
 function agrupar(pontos: Ponto[], celula: number): Cluster[] {
   const mapa = new Map<string, Cluster>();
   for (const p of pontos) {
@@ -223,12 +255,16 @@ export default function MapaBrasil({
   // aproximar num estado populoso eles ficam proporcionalmente menores
   // e deixam de se sobrepor. No mapa inteiro (escala 1) ficam em 14px.
   const tam = 14 * Math.sqrt(escala);
-  const clusters = useMemo(() => agrupar(pontos, tam * 1.7), [pontos, tam]);
+  const pontosExibidos = useMemo(() => dispersar(pontos), [pontos]);
+  const clusters = useMemo(
+    () => agrupar(pontosExibidos, tam * 1.7),
+    [pontosExibidos, tam],
+  );
 
   const temSelecao = pontoSelecionadoId != null || (grupoIds != null && grupoIds.size > 0);
   const selecionado = useMemo(
-    () => pontos.find((p) => p.id === pontoSelecionadoId) || null,
-    [pontos, pontoSelecionadoId],
+    () => pontosExibidos.find((p) => p.id === pontoSelecionadoId) || null,
+    [pontosExibidos, pontoSelecionadoId],
   );
   const [selX, selY] = selecionado
     ? projetar(selecionado.longitude, selecionado.latitude)
