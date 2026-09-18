@@ -338,8 +338,8 @@ export default function MapaBrasil({
                 key={p.sigla}
                 d={p.d}
                 fill={ativa ? "hsl(var(--primary) / 0.22)" : "hsl(var(--muted) / 0.35)"}
-                stroke="hsl(var(--border))"
-                strokeWidth={0.8 * escala}
+                stroke="hsl(var(--foreground) / 0.18)"
+                strokeWidth={1.1 * escala}
                 className="cursor-pointer transition-[fill] duration-200 hover:brightness-110"
                 onClick={() => {
                   if (!arrasteRef.current?.movido) onSelecionarUf(p.sigla);
