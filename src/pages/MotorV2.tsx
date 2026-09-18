@@ -460,7 +460,7 @@ function TabContent({ profile, tab, data, analysis, isAnalyzing, analysisError, 
     if (tab === "Patentes") return (
       <div className="grid grid-cols-2 gap-3 p-4 content-start">
         <GCard warn span={2}><span className="text-xs font-semibold">⚠ {patents?.patents?.length || 47} patentes · {patents?.foreign_pct || 68}% depositantes estrangeiros — verifique antes de publicar</span></GCard>
-        <GCard span={2}><PatentsTab patents={patents} persona="pesquisador" /></GCard>
+        <GCard span={2}><PatentsTab patents={patents} persona="governo" /></GCard>
       </div>
     );
 
