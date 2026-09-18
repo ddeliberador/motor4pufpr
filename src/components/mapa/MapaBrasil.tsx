@@ -319,8 +319,8 @@ export default function MapaBrasil({
       >
         <defs>
           <filter id="pais-outline" x="-10%" y="-10%" width="120%" height="120%">
-            <feMorphology in="SourceAlpha" result="dilated" operator="dilate" radius="2" />
-            <feFlood flood-color="hsl(var(--foreground))" flood-opacity="0.28" result="cor" />
+            <feMorphology in="SourceAlpha" result="dilated" operator="dilate" radius="2.5" />
+            <feFlood flood-color="hsl(var(--foreground))" flood-opacity="0.38" result="cor" />
             <feComposite in="cor" in2="dilated" operator="in" result="borda" />
             <feComposite in="borda" in2="SourceAlpha" operator="out" result="sombra" />
             <feMerge>
