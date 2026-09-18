@@ -57,6 +57,13 @@ const Header = () => {
               Conceito
             </Link>
             <Link
+              to="/v2"
+              className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${isActive('/v2') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              v2
+              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary uppercase tracking-wide">beta</span>
+            </Link>
+            <Link
               to="/mapa"
               className={`text-sm font-medium transition-colors ${isActive('/mapa') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
             >
@@ -100,6 +107,14 @@ const Header = () => {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/conceito') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
               >
                 Conceito
+              </Link>
+              <Link
+                to="/v2"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${isActive('/v2') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+              >
+                v2
+                <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary uppercase tracking-wide">beta</span>
               </Link>
               <Link
                 to="/mapa"
