@@ -13,7 +13,6 @@ import Index from "./pages/Index";
 import Conceito from "./pages/Conceito";
 import Mapa from "./pages/Mapa";
 import Documentacao from "./pages/Documentacao";
-import MotorV2 from "./pages/MotorV2";
 import Faq from "./pages/Faq";
 import GestaoPesquisa from "./pages/GestaoPesquisa";
 import AuthPage from "./pages/Auth";
