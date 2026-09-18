@@ -255,12 +255,16 @@ export default function MapaBrasil({
   // aproximar num estado populoso eles ficam proporcionalmente menores
   // e deixam de se sobrepor. No mapa inteiro (escala 1) ficam em 14px.
   const tam = 14 * Math.sqrt(escala);
-  const clusters = useMemo(() => agrupar(pontos, tam * 1.7), [pontos, tam]);
+  const pontosExibidos = useMemo(() => dispersar(pontos), [pontos]);
+  const clusters = useMemo(
+    () => agrupar(pontosExibidos, tam * 1.7),
+    [pontosExibidos, tam],
+  );
 
   const temSelecao = pontoSelecionadoId != null || (grupoIds != null && grupoIds.size > 0);
   const selecionado = useMemo(
-    () => pontos.find((p) => p.id === pontoSelecionadoId) || null,
-    [pontos, pontoSelecionadoId],
+    () => pontosExibidos.find((p) => p.id === pontoSelecionadoId) || null,
+    [pontosExibidos, pontoSelecionadoId],
   );
   const [selX, selY] = selecionado
     ? projetar(selecionado.longitude, selecionado.latitude)
