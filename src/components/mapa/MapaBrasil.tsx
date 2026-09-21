@@ -157,6 +157,7 @@ export default function MapaBrasil({
   const svgRef = useRef<SVGSVGElement>(null);
   const [vista, setVista] = useState<Vista>(VISTA_TOTAL);
   const arrasteRef = useRef<{ x: number; y: number; vista: Vista; movido: boolean } | null>(null);
+  const [arrastando, setArrastando] = useState(false);
 
   useEffect(() => {
     let vivo = true;
@@ -288,12 +289,14 @@ export default function MapaBrasil({
       <svg
         ref={svgRef}
         viewBox={`${vista.x} ${vista.y} ${vista.w} ${vista.h}`}
-        className={`h-full w-full touch-none ${arrasteRef.current ? "cursor-grabbing" : "cursor-grab"}`}
+        className={`h-full w-full touch-none select-none ${arrastando ? "cursor-grabbing" : "cursor-grab"}`}
+        style={arrastando ? { pointerEvents: "none", ...{ pointerEvents: "auto" } } : undefined}
         role="img"
         aria-label="Mapa do Brasil com instituições de pesquisa e inovação por estado"
         onPointerDown={(e) => {
           if (e.button !== 0) return;
           arrasteRef.current = { x: e.clientX, y: e.clientY, vista, movido: false };
+          setArrastando(true);
           (e.target as Element).setPointerCapture?.(e.pointerId);
         }}
         onPointerMove={(e) => {
@@ -309,9 +312,11 @@ export default function MapaBrasil({
         }}
         onPointerUp={() => {
           arrasteRef.current = null;
+          setArrastando(false);
         }}
         onPointerLeave={() => {
           arrasteRef.current = null;
+          setArrastando(false);
         }}
         onClick={(e) => {
           if (e.target === svgRef.current) onSelecionarPonto?.(null);
@@ -341,7 +346,8 @@ export default function MapaBrasil({
                 stroke="hsl(var(--foreground) / 0.25)"
                 strokeWidth={1.4 * escala}
                 strokeLinejoin="round"
-                className="cursor-pointer transition-[fill] duration-200 hover:brightness-110"
+                className={`transition-[fill] duration-200 hover:brightness-110 ${arrastando ? "cursor-grabbing" : "cursor-pointer"}`}
+                style={{ pointerEvents: arrastando ? "none" : "auto" }}
                 onClick={() => {
                   if (!arrasteRef.current?.movido) onSelecionarUf(p.sigla);
                 }}
@@ -362,8 +368,8 @@ export default function MapaBrasil({
             return (
               <g
                 key={c.key}
-                className="cursor-pointer"
-                style={{ opacity: opacidade, transition: "opacity 200ms ease" }}
+                className={arrastando ? "cursor-grabbing" : "cursor-pointer"}
+                style={{ opacity: opacidade, transition: "opacity 200ms ease", pointerEvents: arrastando ? "none" : "auto" }}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (arrasteRef.current?.movido) return;
