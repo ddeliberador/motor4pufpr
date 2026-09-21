@@ -1,5 +1,5 @@
 # Backlog — Motor da Inovação
-Última atualização: 2026-09-17 · Formato: `[ ] ID | item | por que importa | dono | estado`
+Última atualização: 2026-09-21 · Formato: `[ ] ID | item | por que importa | dono | estado`
 
 ---
 
@@ -36,6 +36,23 @@
 - [ ] INT-03 | PNIPE/MCTI — exportação via parceria MCTI (SPA sem API) | 3.046 laboratórios inacessíveis | Décio | ação institucional
 - [ ] INT-04 | Conectar `LeiBemCalculadora.tsx` ao endpoint `/api/v1/mcti/lei-do-bem` | funcionalidade incompleta | Décio | independente
 - [ ] INT-05 | Validar tabela SIDRA 4093 (PNAD/CNAE trimestral) como proxy de emprego setorial | dado mais granular que CAGED | Décio | independente
+
+## Integração Motor ↔ Mapa — bases exclusivas
+
+> Diagnóstico de 21/09/2026: levantamento das 29 bases por origem.
+> Bases exclusivas do Mapa não chegam ao Motor de busca — atores relevantes ficam invisíveis na busca inteligente.
+
+| Categoria | Bases | Registros |
+|-----------|-------|-----------|
+| 🔵 Exclusivas do Motor | 18 bases (INPI, PNCP, Transparência, IPEAData, SIDRA, CAPES, Anatel, SISAB, ANTT/ANAC, CVM, Lei do Bem, ABVCAP, FAPESP, Lattes, PNAD, BrasilAPI, MCTI Indicadores, Editais) | — (contexto, não locais) |
+| 🟢 Compartilhadas | OpenAlex, ABStartups, MCTI/FORMICT | 5.407 registros |
+| 🟠 Exclusivas do Mapa | OTD/CGEE, LISP Brasil, EMBRAPII, SINAPAD | 607 registros |
+
+- [ ] INT-06 | Expor OTD/CGEE (393 registros) ao Motor de busca | labs e ICTs do observatório CGEE/MCTI invisíveis na busca | Décio | independente
+- [ ] INT-07 | Expor LISP Brasil (108 registros) ao Motor de busca | laboratórios de inovação do setor público invisíveis na busca | Décio | independente
+- [ ] INT-08 | Expor EMBRAPII (96 registros) ao Motor de busca | unidades credenciadas aparecem no mapa mas não na busca por parceiro ICT | Décio | bloqueado por QLD-02 (sem coord real)
+- [ ] INT-09 | Expor SINAPAD (10 registros) ao Motor de busca | centros de supercomputação invisíveis na busca | Décio | independente
+- [ ] INT-10 | Investigar abstartups_2025 vs startupbase — são a mesma base ou complementares? | evitar duplicata conceitual entre mapa e motor | Décio | independente
 
 ## Documentação
 
