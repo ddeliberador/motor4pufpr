@@ -34,7 +34,7 @@ Os dois contam a mesma história.
 
 | Nº | Título | Status | Data |
 |----|--------|--------|------|
-| [ADR-0001](adr/0001-staging-gold-mapa.md) | Arquitetura de dados em duas camadas (Staging → Gold) | proposta | 2026-09-17 |
+| [ADR-0001](adr/0001-staging-gold-mapa.md) | Arquitetura de dados em duas camadas (Staging → Gold) | aceita e implementada | 2026-09-17 |
 
 ## Índice de fontes
 

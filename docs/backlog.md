@@ -11,11 +11,11 @@
 
 | Frente | Estado |
 |--------|--------|
-| Segurança (ciclo André Maia) | ✅ Encerrado — commit a0f2e7e |
+| Segurança (ciclo André Maia) | 🔄 11 PRs mergeados (#12–#16, #18, #20–#24); issues #9 e #19 seguem abertas |
 | Integrações Mapa da Inovação | ✅ 24 de 27 bases integradas |
 | Qualidade da base de locais | 🔄 Em desenho |
-| Arquitetura de dados (Medallion) | 📋 Backlog |
-| CI/CD + testes automatizados | 📋 Backlog |
+| Arquitetura de dados (Medallion) | ✅ Implementada em 17/09 — ADR-0001 aceita, camada Staging no ar |
+| CI/CD + testes automatizados | ✅ `.github/workflows/ci.yml` roda a cada push desde 15/09 |
 
 ---
 
