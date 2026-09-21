@@ -157,6 +157,7 @@ export default function MapaBrasil({
   const svgRef = useRef<SVGSVGElement>(null);
   const [vista, setVista] = useState<Vista>(VISTA_TOTAL);
   const arrasteRef = useRef<{ x: number; y: number; vista: Vista; movido: boolean } | null>(null);
+  const movidoRef = useRef(false);
   const [arrastando, setArrastando] = useState(false);
 
   useEffect(() => {
@@ -307,16 +308,23 @@ export default function MapaBrasil({
           const r = el.getBoundingClientRect();
           const dx = ((e.clientX - a.x) / r.width) * a.vista.w;
           const dy = ((e.clientY - a.y) / r.height) * a.vista.h;
-          if (Math.abs(e.clientX - a.x) + Math.abs(e.clientY - a.y) > 4) a.movido = true;
+          if (Math.abs(e.clientX - a.x) + Math.abs(e.clientY - a.y) > 4) {
+            a.movido = true;
+            movidoRef.current = true;
+          }
           setVista({ ...a.vista, x: a.vista.x - dx, y: a.vista.y - dy });
         }}
         onPointerUp={() => {
           arrasteRef.current = null;
           setArrastando(false);
+          // movidoRef é limpo depois do ciclo de eventos,
+          // para que o onClick dos filhos ainda o leia como true
+          setTimeout(() => { movidoRef.current = false; }, 0);
         }}
         onPointerLeave={() => {
           arrasteRef.current = null;
           setArrastando(false);
+          setTimeout(() => { movidoRef.current = false; }, 0);
         }}
         onClick={(e) => {
           if (e.target === svgRef.current) onSelecionarPonto?.(null);
@@ -348,8 +356,9 @@ export default function MapaBrasil({
                 strokeLinejoin="round"
                 className={`transition-[fill] duration-200 hover:brightness-110 ${arrastando ? "cursor-grabbing" : "cursor-pointer"}`}
                 style={{ pointerEvents: arrastando ? "none" : "auto" }}
-                onClick={() => {
-                  if (!arrasteRef.current?.movido) onSelecionarUf(p.sigla);
+                onClick={(e) => {
+                  if (movidoRef.current) { e.stopPropagation(); return; }
+                  onSelecionarUf(p.sigla);
                 }}
               >
                 <title>{`${p.sigla} — ${n.toLocaleString("pt-BR")} registros`}</title>
@@ -372,7 +381,7 @@ export default function MapaBrasil({
                 style={{ opacity: opacidade, transition: "opacity 200ms ease", pointerEvents: arrastando ? "none" : "auto" }}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (arrasteRef.current?.movido) return;
+                  if (movidoRef.current) return;
                   if (c.total === 1) {
                     onSelecionarPonto?.(c.pontos[0].id);
                   } else {
