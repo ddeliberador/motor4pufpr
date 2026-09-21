@@ -854,7 +854,7 @@ export default function Mapa() {
                 </div>
                 {listaAberta && (
                   <ListaFiltrados
-                     itens={grupoIds ? filtrados.filter((l) => grupoIds.has(l.id)) : filtrados}
+                     itens={grupoIds ? filtrados.filter((l) => grupoIds.has(l.id)) : filtrados.filter((l) => camadas.has(l.categoria))}
                      filtrosAtivos={filtrosAtivos}
                      total={locais.length}
                      aberto={listaAberta}
