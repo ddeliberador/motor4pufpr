@@ -332,53 +332,124 @@ export default function ListaFiltrados({
                   </button>
 
                   {aberta && (
-                    <dl className={`grid grid-cols-1 gap-x-8 gap-y-2 border-t border-border/60 bg-muted/20 px-4 py-4 text-xs ${abertoProp !== undefined ? "sm:grid-cols-2 lg:grid-cols-1" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
-                      {[
-                        ["Nome", l.nome],
-                        ["Tipo", l.tipo],
-                        ["Município / UF", enderecoDe(l)],
-                        ["Região", (l.uf && REGIAO_POR_UF[l.uf]) || "não informada"],
-                        ["CNPJ", l.cnpj || "não informado"],
-                        [
-                          "Coordenadas",
-                          l.latitude != null && l.longitude != null
-                            ? `${Number(l.latitude).toFixed(5)}, ${Number(l.longitude).toFixed(5)}`
-                            : "sem coordenada",
-                        ],
-                        ["Base de origem", fonteLabel(l.fonte)],
-                        [
-                          "Data da coleta",
-                          l.data_coleta
-                            ? new Date(l.data_coleta).toLocaleDateString("pt-BR")
-                            : "não informada",
-                        ],
-                        ...extras,
-                      ].map(([k, v]) => (
-                        <div key={k}>
-                          <dt className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            {k}
-                          </dt>
-                          <dd className="mt-0.5 break-words">{v}</dd>
+                    <div className="border-t border-border/60 bg-gradient-to-b from-muted/30 to-muted/10 px-4 py-4">
+                      {/* Cabeçalho do card */}
+                      <div className="mb-4 flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                          {Icone && (
+                            <span className={`material-symbols-outlined text-xl leading-none ${cor}`} aria-hidden>
+                              {Icone}
+                            </span>
+                          )}
                         </div>
-                      ))}
-                      {href && (
-                        <div>
-                          <dt className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            Fonte
-                          </dt>
-                          <dd className="mt-0.5">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-foreground leading-tight">{l.nome}</p>
+                          <div className="mt-1 flex flex-wrap gap-1.5">
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                              {l.tipo}
+                            </span>
+                            {l.uf && REGIAO_POR_UF[l.uf] && (
+                              <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                {REGIAO_POR_UF[l.uf]}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Grid de informações */}
+                      <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+                        {/* Localização */}
+                        <div className="flex items-center gap-3 px-3 py-2.5 border-b border-border/40">
+                          <span className="material-symbols-outlined text-base leading-none text-muted-foreground w-4 text-center" aria-hidden>location_on</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Município / UF</p>
+                            <p className="text-xs text-foreground mt-0.5">{enderecoDe(l)}</p>
+                          </div>
+                        </div>
+
+                        {/* CNPJ */}
+                        <div className="flex items-center gap-3 px-3 py-2.5 border-b border-border/40">
+                          <span className="material-symbols-outlined text-base leading-none text-muted-foreground w-4 text-center" aria-hidden>badge</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">CNPJ</p>
+                            <p className="text-xs text-foreground mt-0.5 font-mono">{l.cnpj || "não informado"}</p>
+                          </div>
+                        </div>
+
+                        {/* Coordenadas */}
+                        {l.latitude != null && l.longitude != null && (
+                          <div className="flex items-center gap-3 px-3 py-2.5 border-b border-border/40">
+                            <span className="material-symbols-outlined text-base leading-none text-muted-foreground w-4 text-center" aria-hidden>my_location</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Coordenadas</p>
+                              <p className="text-xs text-foreground mt-0.5 font-mono">
+                                {Number(l.latitude).toFixed(5)}, {Number(l.longitude).toFixed(5)}
+                              </p>
+                            </div>
                             <a
-                              href={href}
+                              href={`https://www.google.com/maps?q=${l.latitude},${l.longitude}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="break-all text-primary hover:underline"
+                              className="shrink-0 text-[10px] text-primary hover:underline flex items-center gap-0.5"
                             >
-                              {href}
+                              <span className="material-symbols-outlined text-sm leading-none" aria-hidden>open_in_new</span>
                             </a>
-                          </dd>
+                          </div>
+                        )}
+
+                        {/* Base de origem */}
+                        <div className="flex items-center gap-3 px-3 py-2.5 border-b border-border/40">
+                          <span className="material-symbols-outlined text-base leading-none text-muted-foreground w-4 text-center" aria-hidden>database</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Base de origem</p>
+                            <p className="text-xs text-foreground mt-0.5">{fonteLabel(l.fonte)}</p>
+                          </div>
                         </div>
-                      )}
-                    </dl>
+
+                        {/* Data da coleta */}
+                        <div className={`flex items-center gap-3 px-3 py-2.5 ${extras.length > 0 || href ? "border-b border-border/40" : ""}`}>
+                          <span className="material-symbols-outlined text-base leading-none text-muted-foreground w-4 text-center" aria-hidden>calendar_today</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Data da coleta</p>
+                            <p className="text-xs text-foreground mt-0.5">
+                              {l.data_coleta
+                                ? new Date(l.data_coleta).toLocaleDateString("pt-BR")
+                                : "não informada"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Campos extras do raw_metadata */}
+                        {extras.map(([k, v], idx) => (
+                          <div key={k} className={`flex items-start gap-3 px-3 py-2.5 ${idx < extras.length - 1 || href ? "border-b border-border/40" : ""}`}>
+                            <span className="material-symbols-outlined text-base leading-none text-muted-foreground w-4 text-center mt-0.5" aria-hidden>info</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{k}</p>
+                              <p className="text-xs text-foreground mt-0.5 break-words">{v}</p>
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Link da fonte */}
+                        {href && (
+                          <div className="flex items-center gap-3 px-3 py-2.5">
+                            <span className="material-symbols-outlined text-base leading-none text-muted-foreground w-4 text-center" aria-hidden>link</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Fonte</p>
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-0.5 block break-all text-xs text-primary hover:underline"
+                              >
+                                {href}
+                              </a>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               );
