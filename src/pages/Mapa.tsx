@@ -59,7 +59,13 @@ async function carregarLocais(): Promise<ResearchLocation[]> {
     todos.push(...lote);
     if (lote.length < passo) break;
   }
-  return todos;
+  // Defesa: descarta coordenadas fora do território nacional (dado incorreto na fonte).
+  return todos.filter(
+    (l) =>
+      l.latitude == null ||
+      l.longitude == null ||
+      (l.longitude >= -74.2 && l.longitude <= -33.6 && l.latitude <= 5.6 && l.latitude >= -34.0),
+  );
 }
 
 const norm = (s: string) =>
