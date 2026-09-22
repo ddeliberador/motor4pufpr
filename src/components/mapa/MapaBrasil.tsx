@@ -50,13 +50,25 @@ function ringPath(ring: number[][]) {
   return d + "Z";
 }
 
+// Ilhas oceânicas muito afastadas (ex.: Fernando de Noronha, a leste de -34,5°)
+// aparecem como um quadradinho solto no mar, confundido com um marcador.
+const LON_LIMITE_OCEANICA = -34.5;
+function ilhaOceanicaDistante(poly: number[][][]) {
+  const anel = poly[0];
+  if (!anel || anel.length > 12) return false;
+  return anel.every(([lon]) => lon > LON_LIMITE_OCEANICA);
+}
+
 function featurePath(f: Feature) {
   const g = f.geometry;
   const polys =
     g.type === "Polygon"
       ? [g.coordinates as number[][][]]
       : (g.coordinates as number[][][][]);
-  return polys.map((poly) => poly.map(ringPath).join("")).join("");
+  return polys
+    .filter((poly) => !ilhaOceanicaDistante(poly))
+    .map((poly) => poly.map(ringPath).join(""))
+    .join("");
 }
 
 function dentroDoAnel(lon: number, lat: number, anel: number[][]) {
