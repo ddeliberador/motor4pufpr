@@ -59,6 +59,28 @@ function featurePath(f: Feature) {
   return polys.map((poly) => poly.map(ringPath).join("")).join("");
 }
 
+function dentroDoAnel(lon: number, lat: number, anel: number[][]) {
+  let dentro = false;
+  for (let i = 0, j = anel.length - 1; i < anel.length; j = i++) {
+    const [xi, yi] = anel[i];
+    const [xj, yj] = anel[j];
+    const cruza = yi > lat !== yj > lat
+      && lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi;
+    if (cruza) dentro = !dentro;
+  }
+  return dentro;
+}
+
+function dentroDaFeature(lon: number, lat: number, feature: Feature) {
+  const polys = feature.geometry.type === "Polygon"
+    ? [feature.geometry.coordinates as number[][][]]
+    : (feature.geometry.coordinates as number[][][][]);
+  return polys.some((poly) => {
+    if (!poly[0] || !dentroDoAnel(lon, lat, poly[0])) return false;
+    return !poly.slice(1).some((buraco) => dentroDoAnel(lon, lat, buraco));
+  });
+}
+
 interface Cluster {
   key: string;
   x: number;
@@ -257,7 +279,15 @@ export default function MapaBrasil({
   // aproximar num estado populoso eles ficam proporcionalmente menores
   // e deixam de se sobrepor. No mapa inteiro (escala 1) ficam em 14px.
   const tam = 14 * Math.sqrt(escala);
-  const pontosExibidos = useMemo(() => dispersar(pontos), [pontos]);
+  // O retângulo geográfico aceita áreas de países vizinhos. A malha oficial
+  // das UFs é a autoridade final para impedir marcadores fora do Brasil.
+  const pontosNoBrasil = useMemo(
+    () => features
+      ? pontos.filter((p) => features.some((f) => dentroDaFeature(p.longitude, p.latitude, f)))
+      : [],
+    [pontos, features],
+  );
+  const pontosExibidos = useMemo(() => dispersar(pontosNoBrasil), [pontosNoBrasil]);
   const clusters = useMemo(
     () => agrupar(pontosExibidos, tam * 1.7),
     [pontosExibidos, tam],
@@ -341,6 +371,9 @@ export default function MapaBrasil({
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+          <clipPath id="brasil-contorno">
+            {paths.map((p) => <path key={`clip-${p.sigla}`} d={p.d} />)}
+          </clipPath>
         </defs>
         <g filter="url(#pais-outline)">
           {paths.map((p) => {
@@ -367,7 +400,7 @@ export default function MapaBrasil({
           })}
         </g>
 
-        <g>
+        <g clipPath="url(#brasil-contorno)">
           {clusters.map((c) => {
             const cat = CATEGORIA_MAP[c.categoria];
             const selecionadoAqui = c.pontos.some(
@@ -434,7 +467,7 @@ export default function MapaBrasil({
         </g>
 
         {selecionado && selX != null && selY != null && (
-          <g pointerEvents="none" style={{ opacity: 0.95 }}>
+          <g clipPath="url(#brasil-contorno)" pointerEvents="none" style={{ opacity: 0.95 }}>
             <circle
               cx={selX}
               cy={selY}
