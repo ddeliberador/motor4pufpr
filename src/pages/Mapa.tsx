@@ -845,6 +845,13 @@ export default function Mapa() {
                     estado para aproximar, num ícone para ver a ficha
                   </p>
                 </div>
+                {metricas && (
+                  <MetricasCruzamento
+                    itens={metricasItens}
+                    total={locais.length}
+                    onFechar={() => setMetricas(false)}
+                  />
+                )}
                 {listaAberta && (
                   <ListaFiltrados
                      itens={grupoIds ? filtrados.filter((l) => grupoIds.has(l.id)) : filtrados.filter((l) => camadas.has(l.categoria))}
