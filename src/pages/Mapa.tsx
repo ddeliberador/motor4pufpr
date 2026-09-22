@@ -839,19 +839,19 @@ export default function Mapa() {
                      onSelecionarPonto={setPontoSelecionadoId}
                      grupoIds={grupoIds}
                    />
-                   {metricas && (
-                    <MetricasCruzamento
-                      itens={metricasItens}
-                      total={locais.length}
-                      onFechar={() => setMetricas(false)}
-                    />
-                  )}
                   <p className="pointer-events-none absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-center text-[11px] text-muted-foreground sm:block">
                     <MapPin className="mr-1 inline h-3 w-3" />
                     {pontos.length.toLocaleString("pt-BR")} pontos georreferenciados · clique num
                     estado para aproximar, num ícone para ver a ficha
                   </p>
                 </div>
+                {metricas && (
+                  <MetricasCruzamento
+                    itens={metricasItens}
+                    total={locais.length}
+                    onFechar={() => setMetricas(false)}
+                  />
+                )}
                 {listaAberta && (
                   <ListaFiltrados
                      itens={grupoIds ? filtrados.filter((l) => grupoIds.has(l.id)) : filtrados.filter((l) => camadas.has(l.categoria))}
