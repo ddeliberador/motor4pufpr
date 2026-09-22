@@ -371,6 +371,9 @@ export default function MapaBrasil({
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+          <clipPath id="brasil-contorno">
+            {paths.map((p) => <path key={`clip-${p.sigla}`} d={p.d} />)}
+          </clipPath>
         </defs>
         <g filter="url(#pais-outline)">
           {paths.map((p) => {
@@ -397,7 +400,7 @@ export default function MapaBrasil({
           })}
         </g>
 
-        <g>
+        <g clipPath="url(#brasil-contorno)">
           {clusters.map((c) => {
             const cat = CATEGORIA_MAP[c.categoria];
             const selecionadoAqui = c.pontos.some(
@@ -464,7 +467,7 @@ export default function MapaBrasil({
         </g>
 
         {selecionado && selX != null && selY != null && (
-          <g pointerEvents="none" style={{ opacity: 0.95 }}>
+          <g clipPath="url(#brasil-contorno)" pointerEvents="none" style={{ opacity: 0.95 }}>
             <circle
               cx={selX}
               cy={selY}
