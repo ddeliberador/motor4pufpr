@@ -661,7 +661,15 @@ export default function Mapa() {
                           <input
                             type="checkbox"
                             checked={tiposUsina.size === 0 || tiposUsina.has(t.key)}
-                            onChange={() => alternar(tiposUsina, t.key, setTiposUsina)}
+                            onChange={() =>
+                              setTiposUsina((atual) => {
+                                // Nada marcado = todos. Primeiro clique isola o tipo.
+                                if (atual.size === 0) return new Set([t.key]);
+                                const novo = new Set(atual);
+                                novo.has(t.key) ? novo.delete(t.key) : novo.add(t.key);
+                                return novo;
+                              })
+                            }
                             className="h-3 w-3 shrink-0 accent-pink-500"
                           />
                           <span className="flex-1 truncate">{t.label}</span>
