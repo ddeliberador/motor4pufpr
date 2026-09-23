@@ -38,14 +38,24 @@ const LAT1 = -34.0;
 const MIN_W = W / 24; // zoom máximo
 const MAX_W = W; // mapa inteiro
 
-const COR_USINA: Record<string, string> = {
-  UHE: "#3b82f6",
-  PCH: "#60a5fa",
-  EOL: "#a78bfa",
-  UFV: "#fbbf24",
-  UTE: "#f87171",
-  CGH: "#93c5fd",
-  UTN: "#22c55e",
+const ICONE_USINA: Record<string, string> = {
+  UHE: "water",
+  PCH: "water",
+  CGH: "water",
+  EOL: "air",
+  UFV: "wb_sunny",
+  UTE: "local_fire_department",
+  UTN: "bolt",
+};
+
+const COR_CLASSE_USINA: Record<string, string> = {
+  UHE: "text-blue-400",
+  PCH: "text-blue-300",
+  CGH: "text-blue-200",
+  EOL: "text-violet-400",
+  UFV: "text-yellow-400",
+  UTE: "text-red-400",
+  UTN: "text-green-400",
 };
 
 const mercY = (lat: number) =>
@@ -483,20 +493,37 @@ export default function MapaBrasil({
               if (!Number.isFinite(m.latitude) || !Number.isFinite(m.longitude)) return null;
               if (m.longitude < -75 || m.longitude > -30 || m.latitude > 6 || m.latitude < -35) return null;
               const [x, y] = projetar(m.longitude, m.latitude);
-              const cor = m.temBackhaul ? "#d97706" : "#9ca3af";
+              if (m.temBackhaul) {
+                return (
+                  <text
+                    key={`bh-${i}`}
+                    x={x}
+                    y={y}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    className="material-symbols-outlined select-none text-amber-500"
+                    style={{ fontSize: tam * 0.6 }}
+                    fill="currentColor"
+                  >
+                    cell_tower
+                    <title>{`${m.municipio}/${m.uf} · Backhaul: ${m.tipo || "fibra"}`}</title>
+                  </text>
+                );
+              }
               return (
                 <rect
                   key={`bh-${i}`}
-                  x={x - tam * 0.18}
-                  y={y - tam * 0.18}
-                  width={tam * 0.36}
-                  height={tam * 0.36}
+                  x={x - tam * 0.15}
+                  y={y - tam * 0.15}
+                  width={tam * 0.3}
+                  height={tam * 0.3}
                   rx={0.5}
-                  fill={cor}
-                  fillOpacity={0.65}
+                  className="text-gray-400"
+                  fill="currentColor"
+                  fillOpacity={0.4}
                   stroke="none"
                 >
-                  <title>{`${m.municipio}/${m.uf} · ${m.temBackhaul ? `Backhaul: ${m.tipo || "fibra"}` : `Sem fibra (${m.tipo || "outros meios"})`}`}</title>
+                  <title>{`${m.municipio}/${m.uf} · Sem backhaul`}</title>
                 </rect>
               );
             })}
@@ -505,16 +532,27 @@ export default function MapaBrasil({
 
         {/* Layer 2b — Antenas 4G/5G (OpenCelliD) */}
         {layer2Ativa && l2Antenas && dadosAntenas && dadosAntenas.length > 0 && (
-          <g opacity={0.7} pointerEvents="none" clipPath="url(#brasil-contorno)">
+          <g opacity={0.8} pointerEvents="none" clipPath="url(#brasil-contorno)">
             {dadosAntenas.map((a) => {
               if (!Number.isFinite(a.lat) || !Number.isFinite(a.lon)) return null;
               if (a.lon < -75 || a.lon > -30 || a.lat > 6 || a.lat < -35) return null;
               const [x, y] = projetar(a.lon, a.lat);
-              const cor = a.radio === "NR" ? "#f97316" : "#fb923c";
+              const icon = a.radio === "NR" ? "network_cell" : "signal_cellular_4_bar";
+              const corClass = a.radio === "NR" ? "text-orange-500" : "text-orange-300";
               return (
-                <circle key={a.id} cx={x} cy={y} r={tam * 0.22} fill={cor} fillOpacity={0.6} stroke="none">
+                <text
+                  key={a.id}
+                  x={x}
+                  y={y}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  className={`material-symbols-outlined select-none ${corClass}`}
+                  style={{ fontSize: tam * 0.75 }}
+                  fill="currentColor"
+                >
+                  {icon}
                   <title>{`${a.operadora || a.net} · ${a.radio === "NR" ? "5G" : "4G"}`}</title>
-                </circle>
+                </text>
               );
             })}
           </g>
@@ -577,23 +615,19 @@ export default function MapaBrasil({
               if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
               const [x, y] = projetar(lon, lat);
               return (
-                <g key={p.id}>
-                  <circle
-                    cx={x} cy={y}
-                    r={7}
-                    fill="#f97316"
-                    stroke="#fff7ed"
-                    strokeWidth={2}
-                    opacity={1}
-                  />
-                  <circle
-                    cx={x} cy={y}
-                    r={3.5}
-                    fill="#fff7ed"
-                    opacity={0.9}
-                  />
+                <text
+                  key={p.id}
+                  x={x}
+                  y={y}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  className="material-symbols-outlined select-none text-orange-400"
+                  style={{ fontSize: tam * 0.85 }}
+                  fill="currentColor"
+                >
+                  lan
                   <title>{p.name}</title>
-                </g>
+                </text>
               );
             })}
           </g>
@@ -601,32 +635,34 @@ export default function MapaBrasil({
 
         {/* Layer 1 — Usinas de Energia (ANEEL), abaixo dos marcadores SNI. */}
         {layer1Ativa && dadosUsinas && (
-          <g opacity={0.8} pointerEvents="none" clipPath="url(#brasil-contorno)">
+          <g pointerEvents="none" clipPath="url(#brasil-contorno)">
             {dadosUsinas.map((u) => {
               if (!Number.isFinite(u.latitude) || !Number.isFinite(u.longitude)) return null;
               if (u.longitude < LON0 || u.longitude > LON1 || u.latitude > LAT0 || u.latitude < LAT1) return null;
               if (tiposUsina && tiposUsina.size > 0 && !tiposUsina.has(u.tipo)) return null;
               const [x, y] = projetar(u.longitude, u.latitude);
-              const cor = COR_USINA[u.tipo] || "#6b7280";
-              const r = (u.potencia_kw ?? 0) > 100000
-                ? tam * 0.6
+              const icon = ICONE_USINA[u.tipo] || "electric_bolt";
+              const corClass = COR_CLASSE_USINA[u.tipo] || "text-gray-400";
+              const sz = (u.potencia_kw ?? 0) > 100000
+                ? tam * 0.9
                 : (u.potencia_kw ?? 0) > 10000
-                  ? tam * 0.45
-                  : tam * 0.3;
+                  ? tam * 0.75
+                  : tam * 0.6;
               const local = [u.municipio, u.uf].filter(Boolean).join("/");
               return (
-                <circle
+                <text
                   key={u.id}
-                  cx={x}
-                  cy={y}
-                  r={r}
-                  fill={cor}
-                  fillOpacity={0.75}
-                  stroke="hsl(var(--background))"
-                  strokeWidth={0.5 * escala}
+                  x={x}
+                  y={y}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  className={`material-symbols-outlined select-none ${corClass}`}
+                  style={{ fontSize: sz, opacity: 0.85 }}
+                  fill="currentColor"
                 >
+                  {icon}
                   <title>{`${u.nome} · ${u.tipo}${u.potencia_kw ? ` · ${(u.potencia_kw / 1000).toFixed(0)} MW` : ""}${local ? ` · ${local}` : ""}`}</title>
-                </circle>
+                </text>
               );
             })}
           </g>
@@ -634,27 +670,26 @@ export default function MapaBrasil({
 
         {/* Layer 3 — Datacenters (PeeringDB), abaixo dos marcadores SNI. */}
         {layer3Ativa && dadosDCs && (
-          <g opacity={0.85} pointerEvents="none" clipPath="url(#brasil-contorno)">
+          <g opacity={0.9} pointerEvents="none" clipPath="url(#brasil-contorno)">
             {dadosDCs.map((dc) => {
               if (dc.latitude == null || dc.longitude == null) return null;
               if (!Number.isFinite(dc.latitude) || !Number.isFinite(dc.longitude)) return null;
               const [x, y] = projetar(dc.longitude, dc.latitude);
               const local = [dc.cidade, dc.uf].filter(Boolean).join("/");
               return (
-                <g key={dc.id}>
-                  <rect
-                    x={x - tam * 0.35}
-                    y={y - tam * 0.35}
-                    width={tam * 0.7}
-                    height={tam * 0.7}
-                    fill="#eab308"
-                    fillOpacity={0.85}
-                    stroke="hsl(var(--background))"
-                    strokeWidth={0.8 * escala}
-                    rx={1}
-                  />
+                <text
+                  key={dc.id}
+                  x={x}
+                  y={y}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  className="material-symbols-outlined select-none text-yellow-400"
+                  style={{ fontSize: tam * 0.85 }}
+                  fill="currentColor"
+                >
+                  dns
                   <title>{`${dc.nome}${local ? ` · ${local}` : ""}${dc.redes ? ` · ${dc.redes} redes` : ""}`}</title>
-                </g>
+                </text>
               );
             })}
           </g>
@@ -667,14 +702,21 @@ export default function MapaBrasil({
           return (
             <g pointerEvents="none">
               <circle cx={x} cy={y} r={tam * 1.2}
-                fill="#7c3aed" fillOpacity={0.15}
+                fill="#7c3aed" fillOpacity={0.1}
                 stroke="#7c3aed" strokeWidth={1.5 * escala} strokeDasharray="4 2"
               />
-              <circle cx={x} cy={y} r={tam * 0.5}
-                fill="#7c3aed" fillOpacity={0.8}
-                stroke="white" strokeWidth={1 * escala}
-              />
-              <title>Layer 7 — Governança · Políticas Públicas de IA e Patentes · Em construção</title>
+              <text
+                x={x}
+                y={y}
+                textAnchor="middle"
+                dominantBaseline="central"
+                className="material-symbols-outlined select-none text-violet-400"
+                style={{ fontSize: tam * 1.2 }}
+                fill="currentColor"
+              >
+                policy
+                <title>Layer 7 — Governança · Políticas Públicas de IA e Patentes · Em construção</title>
+              </text>
             </g>
           );
         })()}
@@ -819,7 +861,9 @@ export default function MapaBrasil({
             }).filter(([tipo]) => !tiposUsina || tiposUsina.size === 0 || tiposUsina.has(tipo))
               .map(([tipo, label]) => (
               <div key={tipo} className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full border border-foreground/30" style={{ background: COR_USINA[tipo] }} />
+                <span className={`material-symbols-outlined text-[12px] ${COR_CLASSE_USINA[tipo] || "text-gray-400"}`}>
+                  {ICONE_USINA[tipo] || "electric_bolt"}
+                </span>
                 <span className="text-muted-foreground">{label}</span>
               </div>
             ))}
@@ -833,19 +877,23 @@ export default function MapaBrasil({
                 <span className="text-muted-foreground">Cabo submarino (TeleGeography)</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="h-2.5 w-2.5 rounded-full border border-foreground/30 bg-orange-400" />
+                <span className="material-symbols-outlined text-[12px] text-orange-400">lan</span>
                 <span className="text-muted-foreground">Landing point (BR)</span>
               </div>
             </>)}
-            {l2Antenas && (
+            {l2Antenas && (<>
               <div className="flex items-center gap-1.5">
-                <div className="h-2 w-2 rounded-full border border-orange-400 bg-orange-300" />
-                <span className="text-muted-foreground">Antena 4G / 5G (OpenCelliD)</span>
+                <span className="material-symbols-outlined text-[12px] text-orange-300">signal_cellular_4_bar</span>
+                <span className="text-muted-foreground">Antena 4G (OpenCelliD)</span>
               </div>
-            )}
+              <div className="flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[12px] text-orange-500">network_cell</span>
+                <span className="text-muted-foreground">Antena 5G (OpenCelliD)</span>
+              </div>
+            </>)}
             {l2Backhaul && (<>
               <div className="flex items-center gap-1.5">
-                <div className="h-2 w-2 rounded-sm bg-amber-600" />
+                <span className="material-symbols-outlined text-[12px] text-amber-500">cell_tower</span>
                 <span className="text-muted-foreground">Backhaul por fibra (ANATEL)</span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -857,14 +905,14 @@ export default function MapaBrasil({
           {layer3Ativa && (<>
             <p className="font-medium text-yellow-400">Layer 3 — Infra Lógica (PeeringDB)</p>
             <div className="flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded border border-foreground/30 bg-yellow-400" />
+              <span className="material-symbols-outlined text-[12px] text-yellow-400">dns</span>
               <span className="text-muted-foreground">Datacenter</span>
             </div>
           </>)}
           {layer7Ativa && (<>
             <p className="font-medium text-violet-400">Layer 7 — Governança</p>
             <div className="flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-full border border-white/50 bg-violet-500" />
+              <span className="material-symbols-outlined text-[12px] text-violet-400">policy</span>
               <span className="text-muted-foreground">Política pública / Patente</span>
             </div>
             <p className="text-muted-foreground/60">Bases: IPEA · INPI · EBIA · NIB</p>
