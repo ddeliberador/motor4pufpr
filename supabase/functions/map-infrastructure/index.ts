@@ -53,7 +53,7 @@ async function carregarEnergia() {
     });
     const resposta = await fetch(`${ARC_BASE}/${id}/query?${params}`, {
       headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(45_000),
+      signal: AbortSignal.timeout(15_000),
     });
     if (!resposta.ok) throw new Error(`${tipo}: HTTP ${resposta.status}`);
     const payload = await resposta.json();

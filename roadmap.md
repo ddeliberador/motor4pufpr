@@ -1,9 +1,9 @@
 # Roadmap — Camada permanente research_locations
 
 ## Camadas de IA do Mapa
-- [ ] Layer 1 — Energia: lazy load ANEEL, símbolos por geração e legenda dinâmica
-- [ ] Layer 3 — Infraestrutura Lógica: lazy load PeeringDB, datacenters e legenda dinâmica
-- [ ] Validar Layers 1 e 3 isoladas e simultâneas em desktop/mobile
+- [x] Layer 1 — Energia: lazy load ANEEL, símbolos por geração e legenda dinâmica
+- [x] Layer 3 — Infraestrutura Lógica: lazy load PeeringDB, datacenters e legenda dinâmica
+- [x] Validar Layers 1 e 3 isoladas e simultâneas em desktop/mobile; falha pública do SIGEL permanece explícita quando a origem não responde
 
 - [x] Migration `research_locations` (RLS: leitura pública, escrita service role)
 - [x] Edge function `locations-ingest` (openalex, embrapii, inep_censo_superior, mcti_formict)
