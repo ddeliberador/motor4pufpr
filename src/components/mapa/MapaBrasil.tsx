@@ -458,7 +458,6 @@ export default function MapaBrasil({
                       fill="none"
                       strokeOpacity={0.35}
                       strokeLinecap="round"
-                      vectorEffect="non-scaling-stroke"
                     />
                     {/* Linha principal */}
                     <path
@@ -468,7 +467,6 @@ export default function MapaBrasil({
                       fill="none"
                       strokeOpacity={0.95}
                       strokeLinecap="round"
-                      vectorEffect="non-scaling-stroke"
                       filter="url(#cabo-glow)"
                     />
                     {/* Núcleo claro */}
@@ -479,7 +477,6 @@ export default function MapaBrasil({
                       fill="none"
                       strokeOpacity={0.65}
                       strokeLinecap="round"
-                      vectorEffect="non-scaling-stroke"
                     />
                   </g>
                 );
