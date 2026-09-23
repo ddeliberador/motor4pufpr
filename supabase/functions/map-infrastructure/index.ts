@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
       for (const alvo of alvos) {
         try {
           const r = await fetch(alvo, { signal: AbortSignal.timeout(20_000) });
-          saida.push({ alvo, status: r.status, body: (await r.text()).slice(0, 3000) });
+          saida.push({ alvo, status: r.status, body: (await r.text()).slice(0, 60000) });
         } catch (e) {
           saida.push({ alvo, erro: String(e) });
         }
