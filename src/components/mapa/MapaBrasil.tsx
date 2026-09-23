@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Minus, Plus, Maximize2 } from "lucide-react";
 import { CATEGORIA_MAP, type CategoriaKey } from "./tipos";
+import { type CaboSubmarino, type LandingPoint, corCabo } from "./cabosSub";
 
 export interface Ponto {
   id: string;
@@ -173,6 +174,9 @@ interface Props {
   onSelecionarPonto?: (id: string | null) => void;
   /** IDs do grupo aberto na listagem (pontos sobrepostos num mesmo ícone). */
   grupoIds?: Set<string> | null;
+  /** Layer 2 — Cabos submarinos (TeleGeography). */
+  cabosSub?: CaboSubmarino[];
+  landingPoints?: LandingPoint[];
 }
 
 export default function MapaBrasil({
@@ -185,6 +189,8 @@ export default function MapaBrasil({
   pontoSelecionadoId,
   onSelecionarPonto,
   grupoIds,
+  cabosSub,
+  landingPoints,
 }: Props) {
   const [features, setFeatures] = useState<Feature[] | null>(null);
   const [erroMalha, setErroMalha] = useState<string | null>(null);
@@ -193,6 +199,8 @@ export default function MapaBrasil({
   const arrasteRef = useRef<{ x: number; y: number; vista: Vista; movido: boolean } | null>(null);
   const movidoRef = useRef(false);
   const [arrastando, setArrastando] = useState(false);
+  // Geometrias dos cabos submarinos (por id), buscadas sob demanda.
+  const [cabosGeo, setCabosGeo] = useState<Map<string, [number, number][][]>>(new Map());
 
   useEffect(() => {
     let vivo = true;
@@ -286,6 +294,49 @@ export default function MapaBrasil({
   }, [aplicarZoom, paraSvg, features]);
 
   const escala = vista.w / W;
+
+  // Busca o traçado GeoJSON dos cabos que têm ponto de aterramento no Brasil.
+  useEffect(() => {
+    if (!cabosSub || cabosSub.length === 0 || !landingPoints || landingPoints.length === 0) {
+      setCabosGeo(new Map());
+      return;
+    }
+    const lpIds = new Set(landingPoints.map((lp) => lp.id));
+    const cabosBR = cabosSub.filter((c) =>
+      c.landing_points?.some((lpId) => lpIds.has(lpId)),
+    );
+    if (cabosBR.length === 0) {
+      setCabosGeo(new Map());
+      return;
+    }
+    // Limita a 30 cabos para não disparar 200+ requests individuais.
+    const alvo = cabosBR.slice(0, 30);
+    const novoMapa = new Map<string, [number, number][][]>();
+    let pendentes = alvo.length;
+    alvo.forEach((cabo) => {
+      const slug = cabo.slug || cabo.id;
+      fetch(`https://www.submarinecablemap.com/api/v3/cable/${slug}.json`)
+        .then((r) => r.json())
+        .then((fc) => {
+          const linhas: [number, number][][] = [];
+          const features = fc.features || [];
+          for (const feat of features) {
+            const coords = feat.geometry?.coordinates;
+            if (!coords) continue;
+            if (feat.geometry.type === "LineString") linhas.push(coords);
+            else if (feat.geometry.type === "MultiLineString")
+              for (const l of coords) linhas.push(l);
+          }
+          novoMapa.set(cabo.id, linhas);
+        })
+        .catch(() => { /* cabo sem geo pública — ignora */ })
+        .finally(() => {
+          pendentes--;
+          if (pendentes === 0) setCabosGeo(new Map(novoMapa));
+        });
+    });
+  }, [cabosSub, landingPoints]);
+
 
   // Ícones com tamanho amortecido: crescem menos que o zoom, então ao
   // aproximar num estado populoso eles ficam proporcionalmente menores
@@ -499,6 +550,68 @@ export default function MapaBrasil({
             >
               location_on
             </text>
+          </g>
+        )}
+        {/* Layer 2 — Cabos submarinos (traçados oceânicos + landing points BR) */}
+        {(cabosSub?.length ?? 0) > 0 && (
+          <g style={{ pointerEvents: "none" }}>
+            {/* Linhas dos cabos */}
+            {Array.from(cabosGeo.entries()).map(([caboId, linhas]) => {
+              const cabo = cabosSub!.find((c) => c.id === caboId);
+              const cor = corCabo(caboId, cabo?.color);
+              return linhas.map((linha, li) => {
+                const pts = linha
+                  .map(([lon, lat]) => {
+                    // Projeta apenas pontos dentro do bbox estendido (inclui oceano Atlântico)
+                    if (lon < -90 || lon > 20 || lat < -60 || lat > 20) return null;
+                    const [x, y] = projetar(lon, lat);
+                    return `${x.toFixed(1)},${y.toFixed(1)}`;
+                  })
+                  .filter(Boolean);
+                if (pts.length < 2) return null;
+                return (
+                  <polyline
+                    key={`${caboId}-${li}`}
+                    points={pts.join(" ")}
+                    fill="none"
+                    stroke={cor}
+                    strokeWidth={1.2 * escala}
+                    strokeOpacity={0.65}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <title>{cabo?.name ?? caboId}{cabo?.rfs ? ` · RFS ${cabo.rfs}` : ""}</title>
+                  </polyline>
+                );
+              });
+            })}
+
+            {/* Pontos de aterramento no Brasil */}
+            {(landingPoints ?? []).map((lp) => {
+              const lat = Number(lp.latitude);
+              const lon = Number(lp.longitude);
+              if (!isFinite(lat) || !isFinite(lon)) return null;
+              if (lon < LON0 - 2 || lon > LON1 + 2 || lat > LAT0 + 2 || lat < LAT1 - 2) return null;
+              const [x, y] = projetar(lon, lat);
+              const r = tam * 0.55;
+              return (
+                <g key={lp.id}>
+                  <circle
+                    cx={x} cy={y} r={r * 1.8}
+                    fill="hsl(var(--background) / 0.6)"
+                    stroke="#3B82F6"
+                    strokeWidth={1.0 * escala}
+                    strokeOpacity={0.5}
+                  />
+                  <circle
+                    cx={x} cy={y} r={r}
+                    fill="#3B82F6"
+                    fillOpacity={0.9}
+                  />
+                  <title>{lp.name ?? lp.id}</title>
+                </g>
+              );
+            })}
           </g>
         )}
       </svg>
