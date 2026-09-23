@@ -121,6 +121,22 @@ Deno.serve(async (req) => {
   try {
     const guard = await guardRequest<{ layer?: string }>(req, "map-infrastructure", corsHeaders, { limit: 20 });
     if (!guard.ok) return guard.response;
+    if (guard.body.layer === "debug") {
+      const alvos = [
+        "https://sigel.aneel.gov.br/arcgis/rest/services?f=json",
+        "https://sigel.aneel.gov.br/arcgis/rest/services/PORTAL?f=json",
+      ];
+      const saida: unknown[] = [];
+      for (const alvo of alvos) {
+        try {
+          const r = await fetch(alvo, { signal: AbortSignal.timeout(20_000) });
+          saida.push({ alvo, status: r.status, body: (await r.text()).slice(0, 3000) });
+        } catch (e) {
+          saida.push({ alvo, erro: String(e) });
+        }
+      }
+      return new Response(JSON.stringify(saida), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     const resultado = guard.body.layer === "energy"
       ? await carregarEnergia()
       : guard.body.layer === "datacenters"
