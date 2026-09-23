@@ -316,14 +316,14 @@ export default function MapaBrasil({
     );
   }, [layer2Ativa, dadosCabos, landingPointsBR]);
 
-  // Busca o traçado GeoJSON de cada cabo sob demanda.
+  // Busca o traçado GeoJSON de cada cabo sob demanda (via Edge Function,
+  // evitando bloqueio de CORS da TeleGeography no browser).
   useEffect(() => {
-    if (!layer2Ativa || cabosNoBR.length === 0) return;
+    if (!layer2Ativa || cabosNoBR.length === 0 || !onFetchCableGeo) return;
     cabosNoBR.forEach(async (cabo) => {
       if (geoCabos[cabo.id]) return;
       try {
-        const res = await fetch(`https://www.submarinecablemap.com/api/v3/cable/${cabo.id}.json`);
-        const data = await res.json();
+        const data = await onFetchCableGeo(cabo.id);
         const coords: number[][][] = [];
         if (data.geometry?.type === "MultiLineString") {
           coords.push(...data.geometry.coordinates);
@@ -341,7 +341,7 @@ export default function MapaBrasil({
       } catch { /* cabo sem geo pública — ignora */ }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layer2Ativa, cabosNoBR]);
+  }, [layer2Ativa, cabosNoBR, onFetchCableGeo]);
 
 
   // Ícones com tamanho amortecido: crescem menos que o zoom, então ao
