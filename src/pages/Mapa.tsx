@@ -116,6 +116,8 @@ export default function Mapa() {
   const [layer1Ativa, setLayer1Ativa] = useState(false);
   const [layer1Carregando, setLayer1Carregando] = useState(false);
   const [dadosUsinas, setDadosUsinas] = useState<UsinaAneel[] | null>(null);
+  // Subtipos de usina selecionados (vazio = todos os tipos).
+  const [tiposUsina, setTiposUsina] = useState<Set<string>>(new Set());
   const [erroLayer1, setErroLayer1] = useState<string | null>(null);
   const [layer2Ativa, setLayer2Ativa] = useState(false);
   const [layer2Carregando, setLayer2Carregando] = useState(false);
