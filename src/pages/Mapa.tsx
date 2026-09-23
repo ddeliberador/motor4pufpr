@@ -897,13 +897,12 @@ export default function Mapa() {
                     contagemPorUf={contagemPorUf}
                     onSelecionarUf={(u) => u && alternar(ufsSel, u, setUfsSel)}
                     onSelecionarCluster={(pontos, total) => setSelecao({ pontos, total })}
-                     pontoSelecionadoId={pontoSelecionadoId}
-                     onSelecionarPonto={setPontoSelecionadoId}
-                     grupoIds={grupoIds}
-                     layer2Ativa={layer2Ativa}
-                     dadosCabos={dadosCabos}
-                     onFetchCableGeo={fetchCableGeo}
-                   />
+                    pontoSelecionadoId={pontoSelecionadoId}
+                    onSelecionarPonto={setPontoSelecionadoId}
+                    grupoIds={grupoIds}
+                    layer2Ativa={layer2Ativa}
+                    dadosCabos={dadosCabos}
+                  />
                   <p className="pointer-events-none absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-center text-[11px] text-muted-foreground sm:block">
                     <MapPin className="mr-1 inline h-3 w-3" />
                     {pontos.length.toLocaleString("pt-BR")} pontos georreferenciados · clique num
