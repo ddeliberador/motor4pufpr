@@ -643,6 +643,22 @@ export default function MapaBrasil({
           <Maximize2 className="h-3.5 w-3.5" />
         </button>
       </div>
+
+      {/* Legenda da Layer 2 — aparece só quando a camada está ativa */}
+      {layer2Ativa && (
+        <div className="absolute bottom-8 left-3 space-y-1 rounded-lg border border-border bg-card/90 p-2 text-[10px] shadow-sm backdrop-blur">
+          <p className="font-semibold text-foreground">Layer 2 — Infraestrutura Física</p>
+          <div className="flex items-center gap-1.5">
+            <div className="h-0.5 w-5 rounded bg-orange-400" />
+            <span className="text-muted-foreground">Cabo submarino</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="h-2.5 w-2.5 rounded-full border border-white bg-orange-400" />
+            <span className="text-muted-foreground">Landing point (BR)</span>
+          </div>
+          <p className="text-muted-foreground/70">Fonte: TeleGeography</p>
+        </div>
+      )}
     </div>
   );
 }
