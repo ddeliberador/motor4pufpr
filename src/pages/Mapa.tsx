@@ -123,7 +123,9 @@ export default function Mapa() {
     () => new Set(CATEGORIAS.map((c) => c.key)),
   );
   const [filtrosMobileAbertos, setFiltrosMobileAbertos] = useState(false);
-  // Camadas de IA — desligadas por padrão e carregadas somente quando ativadas.
+  // Camadas de IA — desligadas por padrão. Os locais físicos são pré-carregados
+  // para que o total represente sempre o universo completo; a renderização só
+  // ocorre quando a camada correspondente é ativada.
   const [layer1Ativa, setLayer1Ativa] = useState(false);
   const [layer1Carregando, setLayer1Carregando] = useState(false);
   const [dadosUsinas, setDadosUsinas] = useState<UsinaAneel[] | null>(null);
@@ -139,7 +141,7 @@ export default function Mapa() {
   const [erroLayer3, setErroLayer3] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!layer1Ativa || dadosUsinas) return;
+    if (dadosUsinas) return;
     setLayer1Carregando(true);
     setErroLayer1(null);
     safeSupabase.functions.invoke("map-infrastructure", { body: { layer: "energy" } })
@@ -156,7 +158,7 @@ export default function Mapa() {
         setErroLayer1(mensagem);
       })
       .finally(() => setLayer1Carregando(false));
-  }, [layer1Ativa, dadosUsinas]);
+  }, [dadosUsinas]);
 
   // Busca snapshot local dos cabos somente quando a camada for ligada (lazy load).
   useEffect(() => {
@@ -175,7 +177,7 @@ export default function Mapa() {
   }, [layer2Ativa, dadosCabos]);
 
   useEffect(() => {
-    if (!layer3Ativa || dadosDCs) return;
+    if (dadosDCs) return;
     setLayer3Carregando(true);
     setErroLayer3(null);
     safeSupabase.functions.invoke("map-infrastructure", { body: { layer: "datacenters" } })
@@ -200,7 +202,7 @@ export default function Mapa() {
         setErroLayer3(mensagem);
       })
       .finally(() => setLayer3Carregando(false));
-  }, [layer3Ativa, dadosDCs]);
+  }, [dadosDCs]);
 
   // Camadas de equipamento físico (usinas, datacenters) entram como locais do
   // mapa: somam na contagem, na lista filtrada e nas métricas.
