@@ -14,6 +14,8 @@ export type CategoriaKey =
   | "supercomputacao"
   | "embrapii"
   | "habitat"
+  | "energia"
+  | "datacenter"
   | "outro";
 
 export interface Categoria {
@@ -33,6 +35,8 @@ export const CATEGORIAS: Categoria[] = [
   { key: "supercomputacao", label: "Centro de supercomputação", icon: "memory", cor: "text-cyan-500" },
   { key: "embrapii", label: "Unidade EMBRAPII / NIT", icon: "factory", cor: "text-emerald-500" },
   { key: "habitat", label: "Incubadora / parque / hub", icon: "hub", cor: "text-rose-500" },
+  { key: "energia", label: "Usina de energia (ANEEL)", icon: "bolt", cor: "text-pink-500" },
+  { key: "datacenter", label: "Datacenter (PeeringDB)", icon: "dns", cor: "text-yellow-500" },
   { key: "outro", label: "Não classificado", icon: "place", cor: "text-muted-foreground" },
 ];
 
@@ -48,6 +52,8 @@ const norm = (s: string) =>
 export function categorizar(tipo: string | null | undefined): CategoriaKey {
   const t = norm(tipo || "");
   if (!t) return "outro";
+  if (t.includes("datacenter") || t.includes("data center")) return "datacenter";
+  if (t.includes("usina") || t.includes("central geradora")) return "energia";
   if (t.includes("startup") || t.includes("empresa")) return "startup";
   if (t.includes("supercomput")) return "supercomputacao";
   if (t.includes("embrapii") || t.includes("nit")) return "embrapii";
@@ -69,6 +75,8 @@ export const FONTE_CURTA: Record<string, string> = {
   lisp_brasil_mapeamento: "LISP Brasil",
   abstartups_2025: "StartupBase / ABStartups",
   otd_cgee: "Observatório CGEE/MCTI",
+  aneel_siga: "ANEEL — SIGA (usinas)",
+  peeringdb: "PeeringDB (datacenters)",
 };
 
 export const fonteLabel = (f: string) => FONTE_CURTA[f] || f;
