@@ -826,15 +826,33 @@ export default function MapaBrasil({
             <p className="text-muted-foreground/60">Tamanho proporcional à potência</p>
           </>)}
           {layer2Ativa && (<>
-            <p className="font-medium text-orange-400">Layer 2 — Infra Física (TeleGeography)</p>
-            <div className="flex items-center gap-1.5">
-              <div className="h-0.5 w-5 rounded bg-orange-400" />
-              <span className="text-muted-foreground">Cabo submarino</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-full border border-foreground/30 bg-orange-400" />
-              <span className="text-muted-foreground">Landing point (BR)</span>
-            </div>
+            <p className="font-medium text-orange-400">Layer 2 — Infra Física</p>
+            {l2Cabos !== false && (<>
+              <div className="flex items-center gap-1.5">
+                <div className="h-0.5 w-5 rounded bg-orange-400" />
+                <span className="text-muted-foreground">Cabo submarino (TeleGeography)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-2.5 w-2.5 rounded-full border border-foreground/30 bg-orange-400" />
+                <span className="text-muted-foreground">Landing point (BR)</span>
+              </div>
+            </>)}
+            {l2Antenas && (
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 rounded-full border border-orange-400 bg-orange-300" />
+                <span className="text-muted-foreground">Antena 4G / 5G (OpenCelliD)</span>
+              </div>
+            )}
+            {l2Backhaul && (<>
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 rounded-sm bg-amber-600" />
+                <span className="text-muted-foreground">Backhaul por fibra (ANATEL)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 rounded-sm bg-gray-400" />
+                <span className="text-muted-foreground">Sem fibra (rádio/satélite)</span>
+              </div>
+            </>)}
           </>)}
           {layer3Ativa && (<>
             <p className="font-medium text-yellow-400">Layer 3 — Infra Lógica (PeeringDB)</p>
