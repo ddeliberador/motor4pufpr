@@ -195,6 +195,8 @@ interface Props {
   /** Layer 3 — Infraestrutura Lógica: datacenters do PeeringDB. */
   layer3Ativa?: boolean;
   dadosDCs?: Datacenter[] | null;
+  /** Layer 7 — Governança (placeholder em Brasília). */
+  layer7Ativa?: boolean;
 }
 
 export default function MapaBrasil({
@@ -214,6 +216,7 @@ export default function MapaBrasil({
   dadosCabos,
   layer3Ativa,
   dadosDCs,
+  layer7Ativa,
 }: Props) {
   const [features, setFeatures] = useState<Feature[] | null>(null);
   const [erroMalha, setErroMalha] = useState<string | null>(null);
@@ -596,6 +599,25 @@ export default function MapaBrasil({
           </g>
         )}
 
+        {/* Layer 7 — Governança (placeholder em Brasília), abaixo dos marcadores SNI. */}
+        {layer7Ativa && (() => {
+          // Brasília: -15.7801, -47.9292
+          const [x, y] = projetar(-47.9292, -15.7801);
+          return (
+            <g pointerEvents="none">
+              <circle cx={x} cy={y} r={tam * 1.2}
+                fill="#7c3aed" fillOpacity={0.15}
+                stroke="#7c3aed" strokeWidth={1.5 * escala} strokeDasharray="4 2"
+              />
+              <circle cx={x} cy={y} r={tam * 0.5}
+                fill="#7c3aed" fillOpacity={0.8}
+                stroke="white" strokeWidth={1 * escala}
+              />
+              <title>Layer 7 — Governança · Políticas Públicas de IA e Patentes · Em construção</title>
+            </g>
+          );
+        })()}
+
         <g clipPath="url(#brasil-contorno)">
           {clusters.map((c) => {
             const cat = CATEGORIA_MAP[c.categoria];
@@ -720,7 +742,7 @@ export default function MapaBrasil({
         </button>
       </div>
 
-      {(layer1Ativa || layer2Ativa || layer3Ativa) && (
+      {(layer1Ativa || layer2Ativa || layer3Ativa || layer7Ativa) && (
         <div className="absolute bottom-8 left-3 max-h-[45%] space-y-1.5 overflow-y-auto rounded-lg border border-border bg-card/90 p-2.5 text-[10px] shadow-sm backdrop-blur">
           <p className="font-semibold text-foreground">Camadas de IA ativas</p>
           {layer1Ativa && (<>
@@ -759,6 +781,14 @@ export default function MapaBrasil({
               <div className="h-2.5 w-2.5 rounded border border-foreground/30 bg-yellow-400" />
               <span className="text-muted-foreground">Datacenter</span>
             </div>
+          </>)}
+          {layer7Ativa && (<>
+            <p className="font-medium text-violet-400">Layer 7 — Governança</p>
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-full border border-white/50 bg-violet-500" />
+              <span className="text-muted-foreground">Política pública / Patente</span>
+            </div>
+            <p className="text-muted-foreground/60">Bases: IPEA · INPI · EBIA · NIB</p>
           </>)}
         </div>
       )}
