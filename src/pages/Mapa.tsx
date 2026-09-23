@@ -638,6 +638,40 @@ export default function Mapa() {
                   {erroLayer1 && layer1Ativa && (
                     <p className="px-2 text-[10px] text-destructive">ANEEL indisponível: {erroLayer1}</p>
                   )}
+                  {layer1Ativa && dadosUsinas && dadosUsinas.length > 0 && (
+                    <div className="ml-6 space-y-0.5 border-l border-border pl-2">
+                      <div className="flex items-center justify-between pr-1">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          Tipo de usina
+                        </span>
+                        {tiposUsina.size > 0 && (
+                          <button
+                            onClick={() => setTiposUsina(new Set())}
+                            className="text-[10px] text-primary hover:underline"
+                          >
+                            todas
+                          </button>
+                        )}
+                      </div>
+                      {TIPOS_USINA.filter((t) => contagemTipoUsina[t.key]).map((t) => (
+                        <label
+                          key={t.key}
+                          className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-[11px] hover:bg-muted"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={tiposUsina.size === 0 || tiposUsina.has(t.key)}
+                            onChange={() => alternar(tiposUsina, t.key, setTiposUsina)}
+                            className="h-3 w-3 shrink-0 accent-pink-500"
+                          />
+                          <span className="flex-1 truncate">{t.label}</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {contagemTipoUsina[t.key].toLocaleString("pt-BR")}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                   <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
                     <input
                       type="checkbox"
