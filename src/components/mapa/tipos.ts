@@ -14,6 +14,8 @@ export type CategoriaKey =
   | "supercomputacao"
   | "embrapii"
   | "habitat"
+  | "energia"
+  | "datacenter"
   | "outro";
 
 export interface Categoria {
