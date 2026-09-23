@@ -121,21 +121,6 @@ Deno.serve(async (req) => {
   try {
     const guard = await guardRequest<{ layer?: string }>(req, "map-infrastructure", corsHeaders, { limit: 20 });
     if (!guard.ok) return guard.response;
-    if (guard.body.layer === "debug") {
-      const alvos = [
-        "https://dadosabertos.aneel.gov.br/api/3/action/datastore_search?resource_id=11ec447d-698d-4ab8-977f-b424d5deee6a&limit=2",
-      ];
-      const saida: unknown[] = [];
-      for (const alvo of alvos) {
-        try {
-          const r = await fetch(alvo, { signal: AbortSignal.timeout(20_000) });
-          saida.push({ alvo, status: r.status, body: (await r.text()).slice(0, 60000) });
-        } catch (e) {
-          saida.push({ alvo, erro: String(e) });
-        }
-      }
-      return new Response(JSON.stringify(saida), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
     const resultado = guard.body.layer === "energy"
       ? await carregarEnergia()
       : guard.body.layer === "datacenters"
