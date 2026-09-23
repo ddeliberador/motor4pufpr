@@ -208,6 +208,7 @@ export default function MapaBrasil({
   grupoIds,
   layer1Ativa,
   dadosUsinas,
+  tiposUsina,
   layer2Ativa,
   dadosCabos,
   layer3Ativa,
