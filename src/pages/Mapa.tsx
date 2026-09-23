@@ -1111,8 +1111,11 @@ export default function Mapa() {
                     pontoSelecionadoId={pontoSelecionadoId}
                     onSelecionarPonto={setPontoSelecionadoId}
                     grupoIds={grupoIds}
+                    layer1Ativa={layer1Ativa}
+                    tiposUsina={tiposUsina}
                     layer2Ativa={layer2Ativa}
                     dadosCabos={dadosCabos}
+                    layer3Ativa={layer3Ativa}
                   />
                   <p className="pointer-events-none absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-center text-[11px] text-muted-foreground sm:block">
                     <MapPin className="mr-1 inline h-3 w-3" />
