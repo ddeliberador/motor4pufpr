@@ -186,6 +186,8 @@ interface Props {
   /** Layer 1 — Energia: usinas da ANEEL. */
   layer1Ativa?: boolean;
   dadosUsinas?: UsinaAneel[] | null;
+  /** Subtipos de usina selecionados (vazio = todos). */
+  tiposUsina?: Set<string>;
   /** Layer 2 — Infraestrutura Física: cabos submarinos (TeleGeography). */
   layer2Ativa?: boolean;
   dadosCabos?: DadosCabos | null;
