@@ -137,6 +137,16 @@ export default function Mapa() {
   const [layer2Ativa, setLayer2Ativa] = useState(false);
   const [layer2Carregando, setLayer2Carregando] = useState(false);
   const [dadosCabos, setDadosCabos] = useState<DadosCabos | null>(null);
+  // Sub-camadas da Layer 2 — cada uma com estado e carregamento independentes.
+  const [l2Cabos, setL2Cabos] = useState(true);
+  const [l2Antenas, setL2Antenas] = useState(false);
+  const [l2Backhaul, setL2Backhaul] = useState(false);
+  const [dadosAntenas, setDadosAntenas] = useState<AntenaERB[] | null>(null);
+  const [antenaCarregando, setAntenaCarregando] = useState(false);
+  const [erroAntenas, setErroAntenas] = useState<string | null>(null);
+  const [dadosBackhaul, setDadosBackhaul] = useState<BackhaulMunicipio[] | null>(null);
+  const [backhaulCarregando, setBackhaulCarregando] = useState(false);
+  const [erroBackhaul, setErroBackhaul] = useState<string | null>(null);
   const [layer3Ativa, setLayer3Ativa] = useState(false);
   const [layer3Carregando, setLayer3Carregando] = useState(false);
   const [dadosDCs, setDadosDCs] = useState<Datacenter[] | null>(null);
