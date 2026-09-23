@@ -770,17 +770,90 @@ export default function Mapa() {
                       ))}
                     </div>
                   )}
-                  <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
-                    <input
-                      type="checkbox"
-                      checked={layer2Ativa}
-                      onChange={() => setLayer2Ativa((v) => !v)}
-                      className="h-3.5 w-3.5 shrink-0 accent-orange-500"
-                    />
-                    <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-orange-400" aria-hidden />
-                    <span className="flex-1 truncate">Layer 2 — Infraestrutura Física</span>
-                    {layer2Carregando && <span className="text-[10px] text-muted-foreground">carregando…</span>}
-                  </label>
+                  {/* Layer 2 — Infraestrutura Física, com sub-camadas */}
+                  <div>
+                    <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
+                      <input
+                        type="checkbox"
+                        checked={layer2Ativa}
+                        onChange={() => setLayer2Ativa((v) => !v)}
+                        className="h-3.5 w-3.5 shrink-0 accent-orange-500"
+                      />
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-orange-400" aria-hidden />
+                      <span className="flex-1 truncate">Layer 2 — Infraestrutura Física</span>
+                      {layer2Carregando && <span className="text-[10px] text-muted-foreground">carregando…</span>}
+                    </label>
+                    {layer2Ativa && (
+                      <div className="ml-6 mt-0.5 space-y-0.5 border-l border-border pl-2">
+                        {/* 2a — Cabos submarinos */}
+                        <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-[11px] hover:bg-muted">
+                          <input
+                            type="checkbox"
+                            checked={l2Cabos}
+                            onChange={() => setL2Cabos((v) => !v)}
+                            className="h-3 w-3 shrink-0 accent-orange-500"
+                          />
+                          <span className="h-1.5 w-4 shrink-0 rounded bg-orange-400" aria-hidden />
+                          <span className="flex-1 truncate">Cabos submarinos</span>
+                          {dadosCabos && (
+                            <span className="text-[10px] text-muted-foreground">
+                              {(dadosCabos.cables?.length ?? 0).toLocaleString("pt-BR")} cabos
+                            </span>
+                          )}
+                        </label>
+                        {/* 2b — Antenas 4G/5G */}
+                        <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-[11px] hover:bg-muted">
+                          <input
+                            type="checkbox"
+                            checked={l2Antenas}
+                            onChange={() => setL2Antenas((v) => !v)}
+                            className="h-3 w-3 shrink-0 accent-orange-500"
+                          />
+                          <span className="h-2 w-2 shrink-0 rounded-full border border-orange-400 bg-orange-300" aria-hidden />
+                          <span className="flex-1 truncate">Antenas 4G / 5G</span>
+                          {antenaCarregando ? (
+                            <span className="text-[10px] text-muted-foreground">carregando…</span>
+                          ) : dadosAntenas && dadosAntenas.length > 0 ? (
+                            <span className="text-[10px] text-muted-foreground">
+                              {dadosAntenas.length.toLocaleString("pt-BR")} ERBs
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground">OpenCelliD</span>
+                          )}
+                        </label>
+                        {l2Antenas && erroAntenas && (
+                          <p className="px-1 text-[10px] text-destructive">
+                            OpenCelliD indisponível: {erroAntenas}
+                          </p>
+                        )}
+                        {/* 2c — Backhaul por município */}
+                        <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-[11px] hover:bg-muted">
+                          <input
+                            type="checkbox"
+                            checked={l2Backhaul}
+                            onChange={() => setL2Backhaul((v) => !v)}
+                            className="h-3 w-3 shrink-0 accent-orange-500"
+                          />
+                          <span className="h-2 w-2 shrink-0 rounded bg-amber-500" aria-hidden />
+                          <span className="flex-1 truncate">Backhaul por município</span>
+                          {backhaulCarregando ? (
+                            <span className="text-[10px] text-muted-foreground">carregando…</span>
+                          ) : dadosBackhaul ? (
+                            <span className="text-[10px] text-muted-foreground">
+                              {dadosBackhaul.length.toLocaleString("pt-BR")} mun.
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground">ANATEL</span>
+                          )}
+                        </label>
+                        {l2Backhaul && erroBackhaul && (
+                          <p className="px-1 text-[10px] text-destructive">
+                            ANATEL indisponível: {erroBackhaul}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
                     <input
                       type="checkbox"
