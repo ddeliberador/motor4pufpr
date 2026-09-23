@@ -2,7 +2,7 @@
 // sem lista congelada em arquivo. Mapa sóbrio (contorno + UFs), coluna lateral
 // com filtros funcionais e lista exportável dos registros filtrados.
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search, X, ExternalLink, MapPin, Loader2, Filter, BarChart3, List, Database,
