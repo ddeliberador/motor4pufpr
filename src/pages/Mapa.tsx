@@ -139,6 +139,8 @@ export default function Mapa() {
   const [layer3Carregando, setLayer3Carregando] = useState(false);
   const [dadosDCs, setDadosDCs] = useState<Datacenter[] | null>(null);
   const [erroLayer3, setErroLayer3] = useState<string | null>(null);
+  // Layer 7 — Governança: sem fetch externo por ora; controla apenas visibilidade.
+  const [layer7Ativa, setLayer7Ativa] = useState(false);
 
   useEffect(() => {
     if (dadosUsinas) return;
@@ -744,6 +746,18 @@ export default function Mapa() {
                       <span className="text-[10px] text-muted-foreground">em breve</span>
                     </div>
                   ))}
+                  {/* Layer 7 — Governança */}
+                  <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
+                    <input
+                      type="checkbox"
+                      checked={layer7Ativa}
+                      onChange={() => setLayer7Ativa((v) => !v)}
+                      className="h-3.5 w-3.5 shrink-0 accent-violet-500"
+                    />
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-violet-400" aria-hidden />
+                    <span className="flex-1 truncate">Layer 7 — Governança</span>
+                    <span className="text-[10px] text-muted-foreground">em breve</span>
+                  </label>
                 </div>
                 <p className="mt-1.5 text-[11px] text-muted-foreground">
                   Infraestrutura de IA no Brasil. Desligadas por padrão.
@@ -1137,6 +1151,7 @@ export default function Mapa() {
                     dadosCabos={dadosCabos}
                     layer3Ativa={layer3Ativa}
                     dadosDCs={dadosDCs}
+                    layer7Ativa={layer7Ativa}
                   />
                   <p className="pointer-events-none absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-center text-[11px] text-muted-foreground sm:block">
                     <MapPin className="mr-1 inline h-3 w-3" />

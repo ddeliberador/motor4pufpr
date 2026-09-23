@@ -56,3 +56,17 @@ export interface Datacenter {
   website?: string;
   redes?: number;
 }
+
+// Layer 7 — Governança
+export interface PoliticaGov {
+  id: string;
+  nome: string;
+  tipo: "politica" | "patente" | "regulacao"; // distingue o símbolo
+  orgao?: string;
+  area?: string;
+  ano?: string;
+  latitude?: number;
+  longitude?: number; // opcional — políticas nacionais ficam no centroide da capital federal
+  relevancia?: "Alta" | "Média" | "Baixa";
+  link?: string;
+}
