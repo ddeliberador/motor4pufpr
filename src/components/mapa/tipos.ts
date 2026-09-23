@@ -75,6 +75,8 @@ export const FONTE_CURTA: Record<string, string> = {
   lisp_brasil_mapeamento: "LISP Brasil",
   abstartups_2025: "StartupBase / ABStartups",
   otd_cgee: "Observatório CGEE/MCTI",
+  aneel_siga: "ANEEL — SIGA (usinas)",
+  peeringdb: "PeeringDB (datacenters)",
 };
 
 export const fonteLabel = (f: string) => FONTE_CURTA[f] || f;
