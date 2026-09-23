@@ -198,6 +198,12 @@ interface Props {
   /** Layer 2 — Infraestrutura Física: cabos submarinos (TeleGeography). */
   layer2Ativa?: boolean;
   dadosCabos?: DadosCabos | null;
+  /** Sub-camadas da Layer 2. */
+  l2Cabos?: boolean;
+  l2Antenas?: boolean;
+  dadosAntenas?: AntenaERB[] | null;
+  l2Backhaul?: boolean;
+  dadosBackhaul?: BackhaulMunicipio[] | null;
   /** Layer 3 — Infraestrutura Lógica: datacenters do PeeringDB. */
   layer3Ativa?: boolean;
   dadosDCs?: Datacenter[] | null;
