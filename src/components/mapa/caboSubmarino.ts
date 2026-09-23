@@ -1,12 +1,18 @@
-// Tipos da API pública TeleGeography Submarine Cable Map v3.
+// Tipos da camada Layer 2 — Infraestrutura Física (cabos submarinos).
+// Fonte: TeleGeography Submarine Cable Map v3, snapshot local em
+// /submarine-cablemap/data.json.
 
 export interface LandingPoint {
   id: string;
   name: string;
-  latitude: number | string;
-  longitude: number | string;
-  country: string;
-  cables?: { cable_id: string; cable_name: string }[];
+  latitude: number;
+  longitude: number;
+  is_tbd?: boolean;
+}
+
+export interface CableGeometry {
+  type: "MultiLineString" | "LineString";
+  coordinates: number[][][];
 }
 
 export interface Cable {
@@ -14,13 +20,12 @@ export interface Cable {
   name: string;
   color?: string;
   feature_id?: string;
-  rfs?: string;
-  cable_length?: string;
-  owners?: { name: string }[];
-  landing_points?: string[];
+  geometry: CableGeometry;
 }
 
 export interface DadosCabos {
   cables: Cable[];
   points: LandingPoint[];
+  generated_at?: string;
+  source?: string;
 }
