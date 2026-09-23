@@ -98,6 +98,17 @@ async function carregarDatacenters() {
     headers: { Accept: "application/json", "User-Agent": "Motor4PUFPR/1.0" },
     signal: AbortSignal.timeout(30_000),
   });
+  // 429 = limite de requisições do PeeringDB (origem viva indisponível no momento).
+  // Devolvemos 200 com data vazia e a falha registrada: o cliente usa o snapshot
+  // público validado em vez de quebrar a tela com 502.
+  if (resposta.status === 429) {
+    const espera = resposta.headers.get("retry-after");
+    return {
+      data: [],
+      failures: [{ fonte: "peeringdb", error: `HTTP 429 (limite de requisições${espera ? `, retry-after ${espera}s` : ""})` }],
+      source: url,
+    };
+  }
   if (!resposta.ok) throw new Error(`PeeringDB: HTTP ${resposta.status}`);
   const payload = await resposta.json();
   const data = (Array.isArray(payload.data) ? payload.data : []).flatMap((fac: Record<string, unknown>) => {
