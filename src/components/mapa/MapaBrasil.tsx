@@ -39,6 +39,7 @@ const COR_USINA: Record<string, string> = {
   UFV: "#fbbf24",
   UTE: "#f87171",
   CGH: "#93c5fd",
+  UTN: "#22c55e",
 };
 
 const mercY = (lat: number) =>
