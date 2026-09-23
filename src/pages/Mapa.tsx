@@ -113,37 +113,21 @@ export default function Mapa() {
   const [layer2Carregando, setLayer2Carregando] = useState(false);
   const [dadosCabos, setDadosCabos] = useState<DadosCabos | null>(null);
 
-  // Busca dados da API TeleGeography somente quando a camada for ligada (lazy load).
-  // Passa pela Edge Function submarine-cables para evitar bloqueio de CORS.
+  // Busca snapshot local dos cabos somente quando a camada for ligada (lazy load).
   useEffect(() => {
     if (!layer2Ativa || dadosCabos) return;
     setLayer2Carregando(true);
-    safeSupabase.functions
-      .invoke("submarine-cables", { body: {} })
-      .then(({ data, error }) => {
-        if (error) throw error;
-        const cables = data?.cables || [];
-        const points = data?.points || [];
-        const cablesArr = Array.isArray(cables) ? cables : (cables.cables || cables.features || []);
-        const pointsArr = Array.isArray(points) ? points : (points["landing-points"] || points.features || points.data || []);
-        setDadosCabos({ cables: cablesArr, points: pointsArr });
+    fetch("/submarine-cablemap/data.json")
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return (await r.json()) as DadosCabos;
       })
+      .then((d) => setDadosCabos(d))
       .catch((err) => {
         console.warn("Cabos submarinos indisponíveis:", err);
       })
       .finally(() => setLayer2Carregando(false));
   }, [layer2Ativa, dadosCabos]);
-
-  const fetchCableGeo = useCallback(
-    async (cableId: string) => {
-      const { data, error } = await safeSupabase.functions.invoke("submarine-cables", {
-        body: { cable_id: cableId },
-      });
-      if (error) throw error;
-      return data;
-    },
-    [],
-  );
 
   const locais = data || [];
 
