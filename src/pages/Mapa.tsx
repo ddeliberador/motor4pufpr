@@ -589,7 +589,15 @@ export default function Mapa() {
                       <input
                         type="checkbox"
                         checked={camadas.has(c.key)}
-                        onChange={() => alternar(camadas, c.key, setCamadas)}
+                        onChange={() => {
+                          // Usinas e datacenters só existem se a camada de IA
+                          // correspondente estiver ligada — ativa junto.
+                          if (!camadas.has(c.key)) {
+                            if (c.key === "energia") setLayer1Ativa(true);
+                            if (c.key === "datacenter") setLayer3Ativa(true);
+                          }
+                          alternar(camadas, c.key, setCamadas);
+                        }}
                         className="h-3.5 w-3.5 shrink-0 accent-primary"
                       />
                       <span
