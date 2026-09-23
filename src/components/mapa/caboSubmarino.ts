@@ -29,3 +29,30 @@ export interface DadosCabos {
   generated_at?: string;
   source?: string;
 }
+
+// Layer 1 — Energia
+export interface UsinaAneel {
+  id: string;
+  nome: string;
+  tipo: string;
+  combustivel?: string;
+  potencia_kw?: number;
+  situacao?: string;
+  latitude: number;
+  longitude: number;
+  uf?: string;
+  municipio?: string;
+}
+
+// Layer 3 — Infraestrutura Lógica
+export interface Datacenter {
+  id: number;
+  nome: string;
+  cidade?: string;
+  uf?: string;
+  latitude?: number;
+  longitude?: number;
+  org?: string;
+  website?: string;
+  redes?: number;
+}
