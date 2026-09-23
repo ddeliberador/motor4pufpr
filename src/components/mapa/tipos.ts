@@ -35,6 +35,8 @@ export const CATEGORIAS: Categoria[] = [
   { key: "supercomputacao", label: "Centro de supercomputação", icon: "memory", cor: "text-cyan-500" },
   { key: "embrapii", label: "Unidade EMBRAPII / NIT", icon: "factory", cor: "text-emerald-500" },
   { key: "habitat", label: "Incubadora / parque / hub", icon: "hub", cor: "text-rose-500" },
+  { key: "energia", label: "Usina de energia (ANEEL)", icon: "bolt", cor: "text-pink-500" },
+  { key: "datacenter", label: "Datacenter (PeeringDB)", icon: "dns", cor: "text-yellow-500" },
   { key: "outro", label: "Não classificado", icon: "place", cor: "text-muted-foreground" },
 ];
 
