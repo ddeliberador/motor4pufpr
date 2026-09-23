@@ -184,7 +184,59 @@ export default function Mapa() {
       .finally(() => setLayer3Carregando(false));
   }, [layer3Ativa, dadosDCs]);
 
-  const locais = data || [];
+  // Camadas de equipamento físico (usinas, datacenters) entram como locais do
+  // mapa: somam na contagem, na lista filtrada e nas métricas.
+  const locaisInfra = useMemo(() => {
+    const extras: ResearchLocation[] = [];
+    if (layer1Ativa && dadosUsinas) {
+      for (const u of dadosUsinas) {
+        if (u.latitude == null || u.longitude == null) continue;
+        extras.push({
+          id: `aneel-${u.id}`,
+          nome: u.nome,
+          tipo: `Usina ${u.tipo}`,
+          uf: u.uf || null,
+          municipio: u.municipio || null,
+          latitude: u.latitude,
+          longitude: u.longitude,
+          fonte: "aneel_siga",
+          fonte_url: "https://dadosabertos.aneel.gov.br/dataset/siga-sistema-de-informacoes-de-geracao-da-aneel",
+          cnpj: null,
+          data_coleta: null,
+          raw_metadata: {
+            potencia_kw: u.potencia_kw ?? null,
+            combustivel: u.combustivel ?? null,
+            situacao: u.situacao ?? null,
+          },
+        } as unknown as ResearchLocation);
+      }
+    }
+    if (layer3Ativa && dadosDCs) {
+      for (const dc of dadosDCs) {
+        if (dc.latitude == null || dc.longitude == null) continue;
+        extras.push({
+          id: `peeringdb-${dc.id}`,
+          nome: dc.nome,
+          tipo: "Datacenter",
+          uf: dc.uf || null,
+          municipio: dc.cidade || null,
+          latitude: dc.latitude,
+          longitude: dc.longitude,
+          fonte: "peeringdb",
+          fonte_url: dc.website || "https://www.peeringdb.com/",
+          cnpj: null,
+          data_coleta: null,
+          raw_metadata: { org: dc.org ?? null, redes: dc.redes ?? null },
+        } as unknown as ResearchLocation);
+      }
+    }
+    return extras;
+  }, [layer1Ativa, dadosUsinas, layer3Ativa, dadosDCs]);
+
+  const locais = useMemo(
+    () => [...(data || []), ...locaisInfra],
+    [data, locaisInfra],
+  );
 
   const comCategoria = useMemo(
     () => locais.map((l) => ({ ...l, categoria: categorizar(l.tipo) })),
