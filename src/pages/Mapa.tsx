@@ -190,6 +190,52 @@ export default function Mapa() {
       .finally(() => setLayer2Carregando(false));
   }, [layer2Ativa, dadosCabos]);
 
+  // Layer 2b — Antenas 4G/5G (OpenCelliD, via função de servidor). Lazy load.
+  useEffect(() => {
+    if (!layer2Ativa || !l2Antenas || dadosAntenas) return;
+    setAntenaCarregando(true);
+    setErroAntenas(null);
+    safeSupabase.functions.invoke("map-infrastructure", { body: { layer: "antennas" } })
+      .then(({ data: resposta, error: falha }) => {
+        if (falha) throw falha;
+        if (!resposta || !Array.isArray(resposta.data)) throw new Error("resposta inválida do OpenCelliD");
+        if (resposta.data.length === 0) {
+          const motivo = resposta.failures?.[0]?.error || "nenhuma antena retornada";
+          console.warn("Layer 2b — OpenCelliD sem resultados:", resposta.failures);
+          setErroAntenas(motivo);
+        }
+        setDadosAntenas(resposta.data as AntenaERB[]);
+      })
+      .catch((err) => {
+        const mensagem = err instanceof Error ? err.message : "falha desconhecida";
+        console.error("Layer 2b — OpenCelliD indisponível:", err);
+        setErroAntenas(mensagem);
+      })
+      .finally(() => setAntenaCarregando(false));
+  }, [layer2Ativa, l2Antenas, dadosAntenas]);
+
+  // Layer 2c — Backhaul por município (ANATEL dados abertos). Lazy load.
+  useEffect(() => {
+    if (!layer2Ativa || !l2Backhaul || dadosBackhaul) return;
+    setBackhaulCarregando(true);
+    setErroBackhaul(null);
+    safeSupabase.functions.invoke("map-infrastructure", { body: { layer: "backhaul" } })
+      .then(({ data: resposta, error: falha }) => {
+        if (falha) throw falha;
+        if (!resposta || !Array.isArray(resposta.data) || resposta.data.length === 0) {
+          throw new Error("ANATEL respondeu sem municípios");
+        }
+        setDadosBackhaul(resposta.data as BackhaulMunicipio[]);
+      })
+      .catch((err) => {
+        const mensagem = err instanceof Error ? err.message : "falha desconhecida";
+        console.error("Layer 2c — ANATEL backhaul indisponível:", err);
+        setErroBackhaul(mensagem);
+      })
+      .finally(() => setBackhaulCarregando(false));
+  }, [layer2Ativa, l2Backhaul, dadosBackhaul]);
+
+
   useEffect(() => {
     if (dadosDCs) return;
     setLayer3Carregando(true);
