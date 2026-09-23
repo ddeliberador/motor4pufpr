@@ -108,38 +108,30 @@ export default function Mapa() {
     () => new Set(CATEGORIAS.map((c) => c.key)),
   );
   const [filtrosMobileAbertos, setFiltrosMobileAbertos] = useState(false);
-  // Camadas de IA — desligadas por padrão.
-  const [camadasIA, setCamadasIA] = useState<Set<string>>(new Set());
-  const [cabosSub, setCabosSub] = useState<CaboSubmarino[]>([]);
-  const [landingPoints, setLandingPoints] = useState<LandingPoint[]>([]);
-  const [carregandoCabos, setCarregandoCabos] = useState(false);
+  // Camadas de IA — desligadas por padrão. Layer 2: cabos submarinos (TeleGeography).
+  const [layer2Ativa, setLayer2Ativa] = useState(false);
+  const [layer2Carregando, setLayer2Carregando] = useState(false);
+  const [dadosCabos, setDadosCabos] = useState<DadosCabos | null>(null);
 
-  // Busca dados da API TeleGeography somente quando a camada for ligada.
+  // Busca dados da API TeleGeography somente quando a camada for ligada (lazy load).
   useEffect(() => {
-    if (!camadasIA.has("cabos-submarinos")) return;
-    if (cabosSub.length > 0) return; // já carregado
-    setCarregandoCabos(true);
+    if (!layer2Ativa || dadosCabos) return;
+    setLayer2Carregando(true);
     Promise.all([
       fetch("https://www.submarinecablemap.com/api/v3/cable/all.json").then((r) => r.json()),
       fetch("https://www.submarinecablemap.com/api/v3/landing-point/all.json").then((r) => r.json()),
     ])
-      .then(([cabos, lps]) => {
-        // Filtra apenas cabos que tocam o Brasil
-        const cabosArr = Array.isArray(cabos) ? cabos : (cabos.cables || cabos.features || []);
-        const lpsArr = Array.isArray(lps) ? lps : (lps["landing-points"] || lps.features || lps.data || []);
-        const lpsAncorados = lpsArr.filter(
-          (lp: LandingPoint) =>
-            lp.id?.startsWith("brazil-") ||
-            lp.country === "Brazil" ||
-            lp.country_name === "Brazil" ||
-            String(lp.country_code || "").toLowerCase() === "br",
-        );
-        setCabosSub(cabosArr);
-        setLandingPoints(lpsAncorados);
+      .then(([cables, points]) => {
+        const cablesArr = Array.isArray(cables) ? cables : (cables.cables || cables.features || []);
+        const pointsArr = Array.isArray(points) ? points : (points["landing-points"] || points.features || points.data || []);
+        setDadosCabos({ cables: cablesArr, points: pointsArr });
+        setLayer2Carregando(false);
       })
-      .catch((err) => console.warn("Cabos submarinos indisponíveis:", err))
-      .finally(() => setCarregandoCabos(false));
-  }, [camadasIA, cabosSub.length]);
+      .catch((err) => {
+        console.warn("Cabos submarinos indisponíveis:", err);
+        setLayer2Carregando(false);
+      });
+  }, [layer2Ativa, dadosCabos]);
 
   const locais = data || [];
 
