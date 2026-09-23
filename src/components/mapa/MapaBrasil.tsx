@@ -454,7 +454,7 @@ export default function MapaBrasil({
                     <path
                       d={d}
                       stroke="#7c2d12"
-                      strokeWidth={8}
+                      strokeWidth={10}
                       fill="none"
                       strokeOpacity={0.35}
                       strokeLinecap="round"
@@ -463,9 +463,9 @@ export default function MapaBrasil({
                     <path
                       d={d}
                       stroke={cor}
-                      strokeWidth={5}
+                      strokeWidth={6}
                       fill="none"
-                      strokeOpacity={0.95}
+                      strokeOpacity={1}
                       strokeLinecap="round"
                       filter="url(#cabo-glow)"
                     />
@@ -473,9 +473,9 @@ export default function MapaBrasil({
                     <path
                       d={d}
                       stroke="#ffedd5"
-                      strokeWidth={1.5}
+                      strokeWidth={2}
                       fill="none"
-                      strokeOpacity={0.65}
+                      strokeOpacity={0.75}
                       strokeLinecap="round"
                     />
                   </g>
