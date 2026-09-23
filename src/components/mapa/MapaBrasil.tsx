@@ -401,9 +401,9 @@ export default function MapaBrasil({
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          <filter id="cabo-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor="#fb923c" floodOpacity="0.55" />
-          </filter>
+<filter id="cabo-glow" x="-50%" y="-50%" width="200%" height="200%">
+  <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#fb923c" floodOpacity="0.75" />
+</filter>
           <clipPath id="brasil-contorno">
             {paths.map((p) => <path key={`clip-${p.sigla}`} d={p.d} />)}
           </clipPath>
