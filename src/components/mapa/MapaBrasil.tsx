@@ -723,11 +723,13 @@ export default function MapaBrasil({
             {Object.entries({
               UHE: "UHE — Hídrica",
               PCH: "PCH — Hídrica peq.",
+              CGH: "CGH — Micro-hidro",
               EOL: "EOL — Eólica",
               UFV: "UFV — Solar",
               UTE: "UTE — Termelétrica",
-              CGH: "CGH — Micro-hidro",
-            }).map(([tipo, label]) => (
+              UTN: "UTN — Nuclear",
+            }).filter(([tipo]) => !tiposUsina || tiposUsina.size === 0 || tiposUsina.has(tipo))
+              .map(([tipo, label]) => (
               <div key={tipo} className="flex items-center gap-1.5">
                 <span className="h-2.5 w-2.5 rounded-full border border-foreground/30" style={{ background: COR_USINA[tipo] }} />
                 <span className="text-muted-foreground">{label}</span>
