@@ -200,7 +200,7 @@ export default function MapaBrasil({
   const movidoRef = useRef(false);
   const [arrastando, setArrastando] = useState(false);
   // Geometrias dos cabos submarinos (por id), buscadas sob demanda.
-  const [cabosGeo, setCabosGeo] = useState<Map<string, [number, number][][]>>(new Map());
+  const [geoCabos, setGeoCabos] = useState<Record<string, number[][][]>>({});
 
   useEffect(() => {
     let vivo = true;
@@ -295,47 +295,51 @@ export default function MapaBrasil({
 
   const escala = vista.w / W;
 
-  // Busca o traçado GeoJSON dos cabos que têm ponto de aterramento no Brasil.
-  useEffect(() => {
-    if (!cabosSub || cabosSub.length === 0 || !landingPoints || landingPoints.length === 0) {
-      setCabosGeo(new Map());
-      return;
-    }
-    const lpIds = new Set(landingPoints.map((lp) => lp.id));
-    const cabosBR = cabosSub.filter((c) =>
-      c.landing_points?.some((lpId) => lpIds.has(lpId)),
-    );
-    if (cabosBR.length === 0) {
-      setCabosGeo(new Map());
-      return;
-    }
-    // Limita a 30 cabos para não disparar 200+ requests individuais.
-    const alvo = cabosBR.slice(0, 30);
-    const novoMapa = new Map<string, [number, number][][]>();
-    let pendentes = alvo.length;
-    alvo.forEach((cabo) => {
-      const slug = cabo.slug || cabo.id;
-      fetch(`https://www.submarinecablemap.com/api/v3/cable/${slug}.json`)
-        .then((r) => r.json())
-        .then((fc) => {
-          const linhas: [number, number][][] = [];
-          const features = fc.features || [];
-          for (const feat of features) {
-            const coords = feat.geometry?.coordinates;
-            if (!coords) continue;
-            if (feat.geometry.type === "LineString") linhas.push(coords);
-            else if (feat.geometry.type === "MultiLineString")
-              for (const l of coords) linhas.push(l);
-          }
-          novoMapa.set(cabo.id, linhas);
-        })
-        .catch(() => { /* cabo sem geo pública — ignora */ })
-        .finally(() => {
-          pendentes--;
-          if (pendentes === 0) setCabosGeo(new Map(novoMapa));
-        });
+  // Layer 2 — pontos de aterramento no Brasil (e margem costeira).
+  const landingPointsBR = useMemo(() => {
+    if (!layer2Ativa || !dadosCabos) return [];
+    return dadosCabos.points.filter((p) => {
+      const lat = Number(p.latitude);
+      const lon = Number(p.longitude);
+      return lat >= -35 && lat <= 6 && lon >= -75 && lon <= -30;
     });
-  }, [cabosSub, landingPoints]);
+  }, [layer2Ativa, dadosCabos]);
+
+  // Cabos que tocam o Brasil (têm pelo menos um landing point BR).
+  const cabosNoBR = useMemo(() => {
+    if (!layer2Ativa || !dadosCabos || landingPointsBR.length === 0) return [];
+    const idsBR = new Set(landingPointsBR.map((p) => p.id));
+    return dadosCabos.cables.filter((c) =>
+      c.landing_points?.some((pid) => idsBR.has(pid)),
+    );
+  }, [layer2Ativa, dadosCabos, landingPointsBR]);
+
+  // Busca o traçado GeoJSON de cada cabo sob demanda.
+  useEffect(() => {
+    if (!layer2Ativa || cabosNoBR.length === 0) return;
+    cabosNoBR.forEach(async (cabo) => {
+      if (geoCabos[cabo.id]) return;
+      try {
+        const res = await fetch(`https://www.submarinecablemap.com/api/v3/cable/${cabo.id}.json`);
+        const data = await res.json();
+        const coords: number[][][] = [];
+        if (data.geometry?.type === "MultiLineString") {
+          coords.push(...data.geometry.coordinates);
+        } else if (data.geometry?.type === "LineString") {
+          coords.push(data.geometry.coordinates);
+        } else if (Array.isArray(data.features)) {
+          for (const feat of data.features) {
+            const g = feat.geometry;
+            if (!g) continue;
+            if (g.type === "LineString") coords.push(g.coordinates);
+            else if (g.type === "MultiLineString") coords.push(...g.coordinates);
+          }
+        }
+        setGeoCabos((prev) => ({ ...prev, [cabo.id]: coords }));
+      } catch { /* cabo sem geo pública — ignora */ }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layer2Ativa, cabosNoBR]);
 
 
   // Ícones com tamanho amortecido: crescem menos que o zoom, então ao
