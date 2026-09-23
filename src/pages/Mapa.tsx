@@ -114,24 +114,36 @@ export default function Mapa() {
   const [dadosCabos, setDadosCabos] = useState<DadosCabos | null>(null);
 
   // Busca dados da API TeleGeography somente quando a camada for ligada (lazy load).
+  // Passa pela Edge Function submarine-cables para evitar bloqueio de CORS.
   useEffect(() => {
     if (!layer2Ativa || dadosCabos) return;
     setLayer2Carregando(true);
-    Promise.all([
-      fetch("https://www.submarinecablemap.com/api/v3/cable/all.json").then((r) => r.json()),
-      fetch("https://www.submarinecablemap.com/api/v3/landing-point/all.json").then((r) => r.json()),
-    ])
-      .then(([cables, points]) => {
+    safeSupabase.functions
+      .invoke("submarine-cables", { body: {} })
+      .then(({ data, error }) => {
+        if (error) throw error;
+        const cables = data?.cables || [];
+        const points = data?.points || [];
         const cablesArr = Array.isArray(cables) ? cables : (cables.cables || cables.features || []);
         const pointsArr = Array.isArray(points) ? points : (points["landing-points"] || points.features || points.data || []);
         setDadosCabos({ cables: cablesArr, points: pointsArr });
-        setLayer2Carregando(false);
       })
       .catch((err) => {
         console.warn("Cabos submarinos indisponíveis:", err);
-        setLayer2Carregando(false);
-      });
+      })
+      .finally(() => setLayer2Carregando(false));
   }, [layer2Ativa, dadosCabos]);
+
+  const fetchCableGeo = useCallback(
+    async (cableId: string) => {
+      const { data, error } = await safeSupabase.functions.invoke("submarine-cables", {
+        body: { cable_id: cableId },
+      });
+      if (error) throw error;
+      return data;
+    },
+    [],
+  );
 
   const locais = data || [];
 
