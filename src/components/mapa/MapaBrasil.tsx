@@ -6,7 +6,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Minus, Plus, Maximize2 } from "lucide-react";
 import { CATEGORIA_MAP, type CategoriaKey } from "./tipos";
-import { type DadosCabos, type Datacenter, type UsinaAneel } from "./caboSubmarino";
+import {
+  type AntenaERB,
+  type BackhaulMunicipio,
+  type DadosCabos,
+  type Datacenter,
+  type UsinaAneel,
+} from "./caboSubmarino";
 
 export interface Ponto {
   id: string;
@@ -192,6 +198,12 @@ interface Props {
   /** Layer 2 — Infraestrutura Física: cabos submarinos (TeleGeography). */
   layer2Ativa?: boolean;
   dadosCabos?: DadosCabos | null;
+  /** Sub-camadas da Layer 2. */
+  l2Cabos?: boolean;
+  l2Antenas?: boolean;
+  dadosAntenas?: AntenaERB[] | null;
+  l2Backhaul?: boolean;
+  dadosBackhaul?: BackhaulMunicipio[] | null;
   /** Layer 3 — Infraestrutura Lógica: datacenters do PeeringDB. */
   layer3Ativa?: boolean;
   dadosDCs?: Datacenter[] | null;
@@ -214,6 +226,11 @@ export default function MapaBrasil({
   tiposUsina,
   layer2Ativa,
   dadosCabos,
+  l2Cabos,
+  l2Antenas,
+  dadosAntenas,
+  l2Backhaul,
+  dadosBackhaul,
   layer3Ativa,
   dadosDCs,
   layer7Ativa,
@@ -459,8 +476,52 @@ export default function MapaBrasil({
           })}
         </g>
 
-        {/* Layer 2 — Cabos Submarinos (por baixo dos marcadores) */}
-        {layer2Ativa && (
+        {/* Layer 2c — Backhaul por município (ANATEL) */}
+        {layer2Ativa && l2Backhaul && dadosBackhaul && dadosBackhaul.length > 0 && (
+          <g opacity={0.8} pointerEvents="none" clipPath="url(#brasil-contorno)">
+            {dadosBackhaul.map((m, i) => {
+              if (!Number.isFinite(m.latitude) || !Number.isFinite(m.longitude)) return null;
+              if (m.longitude < -75 || m.longitude > -30 || m.latitude > 6 || m.latitude < -35) return null;
+              const [x, y] = projetar(m.longitude, m.latitude);
+              const cor = m.temBackhaul ? "#d97706" : "#9ca3af";
+              return (
+                <rect
+                  key={`bh-${i}`}
+                  x={x - tam * 0.18}
+                  y={y - tam * 0.18}
+                  width={tam * 0.36}
+                  height={tam * 0.36}
+                  rx={0.5}
+                  fill={cor}
+                  fillOpacity={0.65}
+                  stroke="none"
+                >
+                  <title>{`${m.municipio}/${m.uf} · ${m.temBackhaul ? `Backhaul: ${m.tipo || "fibra"}` : `Sem fibra (${m.tipo || "outros meios"})`}`}</title>
+                </rect>
+              );
+            })}
+          </g>
+        )}
+
+        {/* Layer 2b — Antenas 4G/5G (OpenCelliD) */}
+        {layer2Ativa && l2Antenas && dadosAntenas && dadosAntenas.length > 0 && (
+          <g opacity={0.7} pointerEvents="none" clipPath="url(#brasil-contorno)">
+            {dadosAntenas.map((a) => {
+              if (!Number.isFinite(a.lat) || !Number.isFinite(a.lon)) return null;
+              if (a.lon < -75 || a.lon > -30 || a.lat > 6 || a.lat < -35) return null;
+              const [x, y] = projetar(a.lon, a.lat);
+              const cor = a.radio === "NR" ? "#f97316" : "#fb923c";
+              return (
+                <circle key={a.id} cx={x} cy={y} r={tam * 0.22} fill={cor} fillOpacity={0.6} stroke="none">
+                  <title>{`${a.operadora || a.net} · ${a.radio === "NR" ? "5G" : "4G"}`}</title>
+                </circle>
+              );
+            })}
+          </g>
+        )}
+
+        {/* Layer 2a — Cabos Submarinos (por baixo dos marcadores) */}
+        {layer2Ativa && l2Cabos !== false && (
           <g opacity={1} pointerEvents="none">
             {/* Traçados dos cabos */}
             {cabosVisiveis.map((cabo) => {
@@ -765,15 +826,33 @@ export default function MapaBrasil({
             <p className="text-muted-foreground/60">Tamanho proporcional à potência</p>
           </>)}
           {layer2Ativa && (<>
-            <p className="font-medium text-orange-400">Layer 2 — Infra Física (TeleGeography)</p>
-            <div className="flex items-center gap-1.5">
-              <div className="h-0.5 w-5 rounded bg-orange-400" />
-              <span className="text-muted-foreground">Cabo submarino</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-full border border-foreground/30 bg-orange-400" />
-              <span className="text-muted-foreground">Landing point (BR)</span>
-            </div>
+            <p className="font-medium text-orange-400">Layer 2 — Infra Física</p>
+            {l2Cabos !== false && (<>
+              <div className="flex items-center gap-1.5">
+                <div className="h-0.5 w-5 rounded bg-orange-400" />
+                <span className="text-muted-foreground">Cabo submarino (TeleGeography)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-2.5 w-2.5 rounded-full border border-foreground/30 bg-orange-400" />
+                <span className="text-muted-foreground">Landing point (BR)</span>
+              </div>
+            </>)}
+            {l2Antenas && (
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 rounded-full border border-orange-400 bg-orange-300" />
+                <span className="text-muted-foreground">Antena 4G / 5G (OpenCelliD)</span>
+              </div>
+            )}
+            {l2Backhaul && (<>
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 rounded-sm bg-amber-600" />
+                <span className="text-muted-foreground">Backhaul por fibra (ANATEL)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 rounded-sm bg-gray-400" />
+                <span className="text-muted-foreground">Sem fibra (rádio/satélite)</span>
+              </div>
+            </>)}
           </>)}
           {layer3Ativa && (<>
             <p className="font-medium text-yellow-400">Layer 3 — Infra Lógica (PeeringDB)</p>

@@ -70,3 +70,31 @@ export interface PoliticaGov {
   relevancia?: "Alta" | "Média" | "Baixa";
   link?: string;
 }
+
+// Layer 2b — Antenas 4G/5G (OpenCelliD)
+export interface AntenaERB {
+  id: string;
+  lat: number;
+  lon: number;
+  /** LTE = 4G, NR = 5G, UMTS = 3G */
+  radio: string;
+  mcc: string;
+  /** operadora (MNC) */
+  net: string;
+  operadora?: string;
+  uf?: string;
+  municipio?: string;
+  /** raio estimado de cobertura em metros */
+  range?: number;
+}
+
+// Layer 2c — Backhaul por município (ANATEL dados abertos)
+export interface BackhaulMunicipio {
+  municipio: string;
+  uf: string;
+  latitude: number;
+  longitude: number;
+  /** true = backhaul por fibra óptica; false = outros meios (rádio/satélite) */
+  temBackhaul: boolean;
+  tipo?: string;
+}
