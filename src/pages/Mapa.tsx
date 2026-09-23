@@ -1280,6 +1280,11 @@ export default function Mapa() {
                     tiposUsina={tiposUsina}
                     layer2Ativa={layer2Ativa}
                     dadosCabos={dadosCabos}
+                    l2Cabos={l2Cabos}
+                    l2Antenas={l2Antenas}
+                    dadosAntenas={dadosAntenas}
+                    l2Backhaul={l2Backhaul}
+                    dadosBackhaul={dadosBackhaul}
                     layer3Ativa={layer3Ativa}
                     dadosDCs={dadosDCs}
                     layer7Ativa={layer7Ativa}
