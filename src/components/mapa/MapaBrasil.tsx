@@ -439,10 +439,7 @@ export default function MapaBrasil({
             {/* Traçados dos cabos */}
             {cabosVisiveis.map((cabo) => {
               const cor = cabo.color || "#f97316";
-              const linhas: number[][][] =
-                cabo.geometry.type === "MultiLineString"
-                  ? cabo.geometry.coordinates
-                  : [cabo.geometry.coordinates];
+              const linhas = cabo.geometry.coordinates as number[][][];
               return linhas.map((linha, li) => {
                 const pts = linha
                   .filter(([lon, lat]) => lon >= -100 && lon <= -20 && lat >= -60 && lat <= 20)
