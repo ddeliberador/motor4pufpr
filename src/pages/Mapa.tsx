@@ -204,12 +204,11 @@ export default function Mapa() {
 
   // Camadas de equipamento físico (usinas, datacenters) entram como locais do
   // mapa: somam na contagem, na lista filtrada e nas métricas.
-  const locaisInfra = useMemo(() => {
+  const locaisInfraTotais = useMemo(() => {
     const extras: ResearchLocation[] = [];
-    if (layer1Ativa && dadosUsinas) {
+    if (dadosUsinas) {
       for (const u of dadosUsinas) {
         if (u.latitude == null || u.longitude == null) continue;
-        if (tiposUsina.size > 0 && !tiposUsina.has(u.tipo)) continue;
         extras.push({
           id: `aneel-${u.id}`,
           nome: u.nome,
@@ -230,7 +229,7 @@ export default function Mapa() {
         } as unknown as ResearchLocation);
       }
     }
-    if (layer3Ativa && dadosDCs) {
+    if (dadosDCs) {
       for (const dc of dadosDCs) {
         if (dc.latitude == null || dc.longitude == null) continue;
         extras.push({
@@ -250,7 +249,19 @@ export default function Mapa() {
       }
     }
     return extras;
-  }, [layer1Ativa, dadosUsinas, tiposUsina, layer3Ativa, dadosDCs]);
+  }, [dadosUsinas, dadosDCs]);
+
+  const locaisInfra = useMemo(
+    () => locaisInfraTotais.filter((local) => {
+      if (local.fonte === "aneel_siga") {
+        const tipo = local.tipo.replace("Usina ", "");
+        return layer1Ativa && (tiposUsina.size === 0 || tiposUsina.has(tipo));
+      }
+      if (local.fonte === "peeringdb") return layer3Ativa;
+      return false;
+    }),
+    [locaisInfraTotais, layer1Ativa, tiposUsina, layer3Ativa],
+  );
 
   // Contagem de usinas por subtipo, para o filtro da Layer 1.
   const contagemTipoUsina = useMemo(() => {
@@ -263,6 +274,10 @@ export default function Mapa() {
     () => [...(data || []), ...locaisInfra],
     [data, locaisInfra],
   );
+
+  // O denominador é o universo carregado e não diminui ao ocultar camadas,
+  // selecionar subtipos ou aplicar filtros.
+  const totalLocais = (data?.length || 0) + locaisInfraTotais.length;
 
   const comCategoria = useMemo(
     () => locais.map((l) => ({ ...l, categoria: categorizar(l.tipo) })),
@@ -314,13 +329,15 @@ export default function Mapa() {
     });
   }, [comCategoria, comCanon, busca, fontesSel, catsSel, ufsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular, enriquecimento, modo, lakeSel]);
 
+  const selecionados = useMemo(
+    () => filtrados.filter((l) => camadas.has(l.categoria)),
+    [filtrados, camadas],
+  );
+
   const pontos: Ponto[] = useMemo(
     () =>
-      filtrados
-        .filter(
-          (l) =>
-            l.latitude != null && l.longitude != null && camadas.has(l.categoria),
-        )
+      selecionados
+        .filter((l) => l.latitude != null && l.longitude != null)
         .map((l) => ({
           id: l.id,
           nome: l.nome,
@@ -328,7 +345,7 @@ export default function Mapa() {
           longitude: Number(l.longitude),
           categoria: l.categoria,
         })),
-    [filtrados, camadas],
+    [selecionados],
   );
 
   const contagemPorUf = useMemo(() => {
@@ -364,8 +381,8 @@ export default function Mapa() {
   }, [comCategoria]);
 
   const metricasItens = useMemo(
-    () => filtrados.map((l) => ({ ...l, canon: canonizar(l, enriquecimento[l.id] || {}) })),
-    [filtrados, enriquecimento],
+    () => selecionados.map((l) => ({ ...l, canon: canonizar(l, enriquecimento[l.id] || {}) })),
+    [selecionados, enriquecimento],
   );
 
   const contagemTipo = useMemo(() => {
@@ -476,14 +493,14 @@ export default function Mapa() {
   const detalhados = useMemo(() => {
     if (selecao)
       return selecao.pontos
-        .map((p) => filtrados.find((l) => l.id === p.id))
+        .map((p) => selecionados.find((l) => l.id === p.id))
         .filter(Boolean) as (ResearchLocation & { categoria: CategoriaKey })[];
     if (pontoSelecionadoId) {
-      const l = filtrados.find((l) => l.id === pontoSelecionadoId);
+      const l = selecionados.find((l) => l.id === pontoSelecionadoId);
       return l ? [l] : [];
     }
     return [];
-  }, [selecao, pontoSelecionadoId, filtrados]);
+  }, [selecao, pontoSelecionadoId, selecionados]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -518,10 +535,10 @@ export default function Mapa() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-2xl font-bold leading-none">
-                    {filtrados.length.toLocaleString("pt-BR")}
+                    {selecionados.length.toLocaleString("pt-BR")}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    de {locais.length.toLocaleString("pt-BR")} registros
+                    selecionados de {totalLocais.toLocaleString("pt-BR")} locais
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -989,7 +1006,7 @@ export default function Mapa() {
                 className="sticky bottom-0 w-full lg:hidden"
                 onClick={() => setFiltrosMobileAbertos(false)}
               >
-                Ver {filtrados.length.toLocaleString("pt-BR")} no mapa
+                Ver {selecionados.length.toLocaleString("pt-BR")} no mapa
               </Button>
             </div>
           </aside>
@@ -1036,9 +1053,9 @@ export default function Mapa() {
                   </span>
                   <span className="whitespace-nowrap">
                     <strong className="font-semibold text-foreground">
-                      {filtrados.length.toLocaleString("pt-BR")}
+                      {selecionados.length.toLocaleString("pt-BR")}
                     </strong>{" "}
-                    de {locais.length.toLocaleString("pt-BR")} entidades
+                    selecionados de {totalLocais.toLocaleString("pt-BR")} locais
                   </span>
                 </p>
                 <div className="inline-flex shrink-0 items-center rounded-lg border border-border bg-card p-0.5">
@@ -1128,15 +1145,15 @@ export default function Mapa() {
                 {metricas && (
                   <MetricasCruzamento
                     itens={metricasItens}
-                    total={locais.length}
+                    total={totalLocais}
                     onFechar={() => setMetricas(false)}
                   />
                 )}
                 {listaAberta && (
                   <ListaFiltrados
-                     itens={grupoIds ? filtrados.filter((l) => grupoIds.has(l.id)) : filtrados.filter((l) => camadas.has(l.categoria))}
+                     itens={grupoIds ? selecionados.filter((l) => grupoIds.has(l.id)) : selecionados}
                      filtrosAtivos={filtrosAtivos}
-                     total={locais.length}
+                     total={totalLocais}
                      aberto={listaAberta}
                      onFechar={() => setListaAberta(false)}
                      pontoSelecionadoId={pontoSelecionadoId}
