@@ -545,7 +545,7 @@ export default function Mapa() {
                   </p>
                 </div>
                 <div className="space-y-1">
-                  {/* Layer 2 — Infraestrutura Física */}
+                  {/* Layers 1–3 — infraestrutura de IA */}
                   <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
                     <input
                       type="checkbox"
@@ -596,7 +596,7 @@ export default function Mapa() {
                   ))}
                 </div>
                 <p className="mt-1.5 text-[11px] text-muted-foreground">
-                  Infraestrutura física de IA no Brasil. Desligadas por padrão.
+                  Infraestrutura de IA no Brasil. Desligadas por padrão.
                 </p>
               </div>
 

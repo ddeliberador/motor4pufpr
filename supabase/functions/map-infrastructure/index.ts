@@ -14,16 +14,16 @@ type ArcFeature = {
 };
 
 const ENERGY_LAYERS = [
-  { id: 1, tipo: "UHE" },
-  { id: 2, tipo: "PCH" },
-  { id: 3, tipo: "CGH" },
-  { id: 6, tipo: "EOL" },
-  { id: 32, tipo: "UFV" },
-  { id: 29, tipo: "UTE" },
+  { id: 0, tipo: "UHE" },
+  { id: 1, tipo: "PCH" },
+  { id: 2, tipo: "EOL" },
+  { id: 3, tipo: "UFV" },
+  { id: 4, tipo: "UTE" },
+  { id: 5, tipo: "CGH" },
 ] as const;
 
 const ARC_BASE =
-  "https://sigel.aneel.gov.br/arcgis/rest/services/PORTAL/LayerToShape/MapServer";
+  "https://sigel.aneel.gov.br/arcgis/rest/services/PORTAL/PortalSIGEL/MapServer";
 
 function texto(a: Record<string, unknown>, ...chaves: string[]): string {
   for (const chave of chaves) {
