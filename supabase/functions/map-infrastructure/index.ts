@@ -130,6 +130,159 @@ async function carregarDatacenters() {
   return { data, source: url };
 }
 
+// ---------------------------------------------------------------------------
+// Layer 2b — Antenas 4G/5G (OpenCelliD). Exige chave gratuita de leitura
+// (secret OPENCELLID_API_KEY). Sem chave devolvemos 200 com data vazia e a
+// falha registrada — nunca dados simulados.
+// ---------------------------------------------------------------------------
+const MNC_OPERADORA: Record<string, string> = {
+  "02": "TIM", "03": "TIM", "04": "TIM", "05": "Claro", "06": "Vivo",
+  "10": "Nextel", "11": "Vivo", "15": "Sercomtel", "16": "Brasil Telecom / Oi",
+  "23": "Vivo", "30": "Oi", "31": "Oi", "54": "Porto Seguro", "99": "Local",
+};
+
+const QUADRANTES = [
+  "-35,-75,-15,-50",
+  "-35,-50,-5,-30",
+  "-30,-60,-10,-45",
+  "-35,-55,-20,-35",
+];
+
+async function carregarAntenas() {
+  const chave = Deno.env.get("OPENCELLID_API_KEY");
+  if (!chave) {
+    return {
+      data: [],
+      failures: [{
+        fonte: "opencellid",
+        error: "OPENCELLID_API_KEY ausente — cadastre uma chave gratuita de leitura em Project Settings → Secrets",
+      }],
+      source: "https://opencellid.org/cell/getInArea",
+    };
+  }
+
+  const failures: { fonte: string; error: string }[] = [];
+  const data: Record<string, unknown>[] = [];
+  const vistos = new Set<string>();
+
+  const respostas = await Promise.allSettled(QUADRANTES.map(async (bbox) => {
+    const url = `https://opencellid.org/cell/getInArea?key=${chave}&BBOX=${bbox}&format=json&radio=LTE&mcc=724&limit=1000`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+    if (!r.ok) throw new Error(`HTTP ${r.status} (bbox ${bbox})`);
+    return await r.json();
+  }));
+
+  for (const resposta of respostas) {
+    if (resposta.status === "rejected") {
+      failures.push({ fonte: "opencellid", error: String(resposta.reason).slice(0, 200) });
+      continue;
+    }
+    const payload = resposta.value as Record<string, unknown>;
+    const celulas = (payload.cells ?? payload.data ?? []) as Record<string, unknown>[];
+    for (const c of Array.isArray(celulas) ? celulas : []) {
+      const lat = Number(c.lat ?? c.latitude);
+      const lon = Number(c.lon ?? c.longitude ?? c.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+      if (lat < -35 || lat > 6 || lon < -75 || lon > -33) continue;
+      const net = String(c.net ?? c.mnc ?? "").padStart(2, "0");
+      const id = `erb-${c.cell ?? c.cellid ?? `${lat}-${lon}`}`;
+      if (vistos.has(id)) continue;
+      vistos.add(id);
+      data.push({
+        id,
+        lat,
+        lon,
+        radio: String(c.radio || "LTE"),
+        mcc: String(c.mcc || "724"),
+        net,
+        operadora: MNC_OPERADORA[net] || `MNC ${net}`,
+        range: Number.isFinite(Number(c.range)) ? Number(c.range) : undefined,
+      });
+    }
+  }
+
+  return { data, failures, source: "https://opencellid.org/cell/getInArea (MCC 724)" };
+}
+
+// ---------------------------------------------------------------------------
+// Layer 2c — Backhaul por município (ANATEL / dados abertos).
+// ZIP oficial "Mapeamento da Rede de Transporte"; usamos o CSV de evolução
+// (5.570 municípios) e cruzamos com as coordenadas municipais do IBGE.
+// ---------------------------------------------------------------------------
+const BACKHAUL_ZIP =
+  "https://www.anatel.gov.br/dadosabertos/paineis_de_dados/infraestrutura/mapeamento_rede_transporte.zip";
+const COORD_MUNICIPIOS =
+  "https://raw.githubusercontent.com/kelvins/municipios-brasileiros/main/csv/municipios.csv";
+
+function linhasCsv(texto: string): string[] {
+  return texto.replace(/^\uFEFF/, "").split(/\r?\n/).filter((l) => l.trim());
+}
+
+function campos(linha: string, sep: string): string[] {
+  const saida: string[] = [];
+  let atual = "";
+  let dentro = false;
+  for (const ch of linha) {
+    if (ch === '"') dentro = !dentro;
+    else if (ch === sep && !dentro) { saida.push(atual); atual = ""; }
+    else atual += ch;
+  }
+  saida.push(atual);
+  return saida.map((c) => c.trim());
+}
+
+async function carregarBackhaul() {
+  const { unzipSync, strFromU8 } = await import("https://esm.sh/fflate@0.8.2");
+
+  const [respZip, respCoord] = await Promise.all([
+    fetch(BACKHAUL_ZIP, { signal: AbortSignal.timeout(60_000) }),
+    fetch(COORD_MUNICIPIOS, { signal: AbortSignal.timeout(30_000) }),
+  ]);
+  if (!respZip.ok) throw new Error(`ANATEL backhaul: HTTP ${respZip.status}`);
+  if (!respCoord.ok) throw new Error(`Coordenadas municipais IBGE: HTTP ${respCoord.status}`);
+
+  // Coordenadas por código IBGE
+  const coords = new Map<string, { lat: number; lon: number }>();
+  const linhasCoord = linhasCsv(await respCoord.text());
+  for (const linha of linhasCoord.slice(1)) {
+    const c = campos(linha, ",");
+    const lat = Number(c[2]);
+    const lon = Number(c[3]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+    coords.set(c[0], { lat, lon });
+  }
+
+  const arquivos = unzipSync(new Uint8Array(await respZip.arrayBuffer()));
+  const nomeCsv = Object.keys(arquivos).find((n) => /evolucao\.csv$/i.test(n));
+  if (!nomeCsv) throw new Error("ANATEL backhaul: CSV de evolução não encontrado no ZIP");
+
+  const linhas = linhasCsv(strFromU8(arquivos[nomeCsv]));
+  const cabecalho = campos(linhas[0], ";");
+  const anos = cabecalho.filter((c) => /^\d{4}$/.test(c));
+  const anoRecente = anos[anos.length - 1];
+  const idxAno = cabecalho.indexOf(anoRecente);
+
+  const data = linhas.slice(1).flatMap((linha) => {
+    const c = campos(linha, ";");
+    const codigo = c[0];
+    const posicao = coords.get(codigo);
+    if (!posicao) return [];
+    const meio = (c[idxAno] || "").replace(/"/g, "");
+    const fibra = /fibra/i.test(meio);
+    return [{
+      municipio: (c[1] || "").replace(/"/g, ""),
+      uf: c[2] || "",
+      latitude: posicao.lat,
+      longitude: posicao.lon,
+      temBackhaul: fibra,
+      tipo: fibra ? "Fibra óptica" : meio || "Outros meios",
+    }];
+  });
+
+  if (data.length === 0) throw new Error("ANATEL backhaul respondeu sem municípios utilizáveis.");
+  return { data, failures: [], source: `${BACKHAUL_ZIP} (${nomeCsv}, ano ${anoRecente})`, ano: anoRecente };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
