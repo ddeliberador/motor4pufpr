@@ -42,6 +42,17 @@ const REGIAO_POR_UF: Record<string, string> = {
 };
 const REGIOES = ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"];
 
+// Subtipos de geração da ANEEL (SIGA), conforme SigTipoGeracao.
+const TIPOS_USINA = [
+  { key: "UHE", label: "Hidrelétrica (UHE)" },
+  { key: "PCH", label: "Pequena central hidrelétrica (PCH)" },
+  { key: "CGH", label: "Micro-hidrelétrica (CGH)" },
+  { key: "EOL", label: "Eólica (EOL)" },
+  { key: "UFV", label: "Solar fotovoltaica (UFV)" },
+  { key: "UTE", label: "Termelétrica (UTE)" },
+  { key: "UTN", label: "Nuclear (UTN)" },
+];
+
 /** Facetas de tipo: "ICT; Unidade Embrapii" vira ["ICT", "Unidade Embrapii"]. */
 const facetasTipo = (tipo: string) =>
   tipo.split(";").map((t) => t.trim()).filter(Boolean);
@@ -116,6 +127,8 @@ export default function Mapa() {
   const [layer1Ativa, setLayer1Ativa] = useState(false);
   const [layer1Carregando, setLayer1Carregando] = useState(false);
   const [dadosUsinas, setDadosUsinas] = useState<UsinaAneel[] | null>(null);
+  // Subtipos de usina selecionados (vazio = todos os tipos).
+  const [tiposUsina, setTiposUsina] = useState<Set<string>>(new Set());
   const [erroLayer1, setErroLayer1] = useState<string | null>(null);
   const [layer2Ativa, setLayer2Ativa] = useState(false);
   const [layer2Carregando, setLayer2Carregando] = useState(false);
@@ -196,6 +209,7 @@ export default function Mapa() {
     if (layer1Ativa && dadosUsinas) {
       for (const u of dadosUsinas) {
         if (u.latitude == null || u.longitude == null) continue;
+        if (tiposUsina.size > 0 && !tiposUsina.has(u.tipo)) continue;
         extras.push({
           id: `aneel-${u.id}`,
           nome: u.nome,
@@ -236,7 +250,14 @@ export default function Mapa() {
       }
     }
     return extras;
-  }, [layer1Ativa, dadosUsinas, layer3Ativa, dadosDCs]);
+  }, [layer1Ativa, dadosUsinas, tiposUsina, layer3Ativa, dadosDCs]);
+
+  // Contagem de usinas por subtipo, para o filtro da Layer 1.
+  const contagemTipoUsina = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const u of dadosUsinas || []) c[u.tipo] = (c[u.tipo] || 0) + 1;
+    return c;
+  }, [dadosUsinas]);
 
   const locais = useMemo(
     () => [...(data || []), ...locaisInfra],
@@ -579,7 +600,15 @@ export default function Mapa() {
                       <input
                         type="checkbox"
                         checked={camadas.has(c.key)}
-                        onChange={() => alternar(camadas, c.key, setCamadas)}
+                        onChange={() => {
+                          // Usinas e datacenters só existem se a camada de IA
+                          // correspondente estiver ligada — ativa junto.
+                          if (!camadas.has(c.key)) {
+                            if (c.key === "energia") setLayer1Ativa(true);
+                            if (c.key === "datacenter") setLayer3Ativa(true);
+                          }
+                          alternar(camadas, c.key, setCamadas);
+                        }}
                         className="h-3.5 w-3.5 shrink-0 accent-primary"
                       />
                       <span
@@ -619,6 +648,48 @@ export default function Mapa() {
                   </label>
                   {erroLayer1 && layer1Ativa && (
                     <p className="px-2 text-[10px] text-destructive">ANEEL indisponível: {erroLayer1}</p>
+                  )}
+                  {layer1Ativa && dadosUsinas && dadosUsinas.length > 0 && (
+                    <div className="ml-6 space-y-0.5 border-l border-border pl-2">
+                      <div className="flex items-center justify-between pr-1">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          Tipo de usina
+                        </span>
+                        {tiposUsina.size > 0 && (
+                          <button
+                            onClick={() => setTiposUsina(new Set())}
+                            className="text-[10px] text-primary hover:underline"
+                          >
+                            todas
+                          </button>
+                        )}
+                      </div>
+                      {TIPOS_USINA.filter((t) => contagemTipoUsina[t.key]).map((t) => (
+                        <label
+                          key={t.key}
+                          className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-[11px] hover:bg-muted"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={tiposUsina.size === 0 || tiposUsina.has(t.key)}
+                            onChange={() =>
+                              setTiposUsina((atual) => {
+                                // Nada marcado = todos. Primeiro clique isola o tipo.
+                                if (atual.size === 0) return new Set([t.key]);
+                                const novo = new Set(atual);
+                                novo.has(t.key) ? novo.delete(t.key) : novo.add(t.key);
+                                return novo;
+                              })
+                            }
+                            className="h-3 w-3 shrink-0 accent-pink-500"
+                          />
+                          <span className="flex-1 truncate">{t.label}</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {contagemTipoUsina[t.key].toLocaleString("pt-BR")}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
                   )}
                   <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
                     <input
@@ -1040,8 +1111,11 @@ export default function Mapa() {
                     pontoSelecionadoId={pontoSelecionadoId}
                     onSelecionarPonto={setPontoSelecionadoId}
                     grupoIds={grupoIds}
+                    layer1Ativa={layer1Ativa}
+                    tiposUsina={tiposUsina}
                     layer2Ativa={layer2Ativa}
                     dadosCabos={dadosCabos}
+                    layer3Ativa={layer3Ativa}
                   />
                   <p className="pointer-events-none absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-center text-[11px] text-muted-foreground sm:block">
                     <MapPin className="mr-1 inline h-3 w-3" />
