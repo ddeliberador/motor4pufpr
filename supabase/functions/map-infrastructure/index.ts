@@ -288,11 +288,16 @@ Deno.serve(async (req) => {
   try {
     const guard = await guardRequest<{ layer?: string }>(req, "map-infrastructure", corsHeaders, { limit: 20 });
     if (!guard.ok) return guard.response;
-    const resultado = guard.body.layer === "energy"
+    const camada = guard.body.layer;
+    const resultado = camada === "energy"
       ? await carregarEnergia()
-      : guard.body.layer === "datacenters"
+      : camada === "datacenters"
         ? await carregarDatacenters()
-        : null;
+        : camada === "antennas"
+          ? await carregarAntenas()
+          : camada === "backhaul"
+            ? await carregarBackhaul()
+            : null;
     if (!resultado) {
       return new Response(JSON.stringify({ error: "layer inválida" }), {
         status: 400,
