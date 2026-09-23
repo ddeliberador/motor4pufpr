@@ -10,6 +10,24 @@ const corsHeaders = {
 
 const BASE = "https://www.submarinecablemap.com/api/v3";
 
+async function fetchJson(path: string) {
+  const res = await fetch(`${BASE}${path}`);
+  const contentType = res.headers.get("content-type") || "";
+  let body: string;
+  try {
+    body = await res.text();
+  } catch (e) {
+    body = `read-error: ${e}`;
+  }
+  if (!res.ok) {
+    throw new Error(`${path}: HTTP ${res.status} (${contentType}) — ${body.slice(0, 240)}`);
+  }
+  if (!contentType.includes("application/json")) {
+    throw new Error(`${path}: resposta não-JSON (${contentType}) — ${body.slice(0, 240)}`);
+  }
+  return JSON.parse(body);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -23,25 +41,17 @@ Deno.serve(async (req: Request) => {
 
   try {
     if (cableId) {
-      const res = await fetch(`${BASE}/cable/${cableId}.json`);
-      if (!res.ok) throw new Error(`TeleGeography cable ${cableId}: ${res.status}`);
-      const data = await res.json();
+      const data = await fetchJson(`/cable/${cableId}.json`);
       return new Response(JSON.stringify(data), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const [cablesRes, pointsRes] = await Promise.all([
-      fetch(`${BASE}/cable/all.json`),
-      fetch(`${BASE}/landing-point/all.json`),
+    const [cables, points] = await Promise.all([
+      fetchJson("/cable/all.json"),
+      fetchJson("/landing-point/all.json"),
     ]);
-
-    if (!cablesRes.ok) throw new Error(`cable/all.json: ${cablesRes.status}`);
-    if (!pointsRes.ok) throw new Error(`landing-point/all.json: ${pointsRes.status}`);
-
-    const cables = await cablesRes.json();
-    const points = await pointsRes.json();
 
     return new Response(JSON.stringify({ cables, points }), {
       status: 200,
