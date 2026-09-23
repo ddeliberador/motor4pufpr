@@ -43,8 +43,8 @@ const ICONE_USINA: Record<string, string> = {
   PCH: "water",
   CGH: "water",
   EOL: "air",
-  UFV: "wb_sunny",
-  UTE: "local_fire_department",
+  UFV: "sunny",
+  UTE: "whatshot",
   UTN: "bolt",
 };
 
@@ -502,7 +502,11 @@ export default function MapaBrasil({
                     textAnchor="middle"
                     dominantBaseline="central"
                     className="material-symbols-outlined select-none text-amber-500"
-                    style={{ fontSize: tam * 0.6 }}
+                    style={{
+                      fontSize: tam * 0.6,
+                      opacity: 0.85,
+                      fontVariationSettings: '"FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24',
+                    }}
                     fill="currentColor"
                   >
                     cell_tower
@@ -537,7 +541,7 @@ export default function MapaBrasil({
               if (!Number.isFinite(a.lat) || !Number.isFinite(a.lon)) return null;
               if (a.lon < -75 || a.lon > -30 || a.lat > 6 || a.lat < -35) return null;
               const [x, y] = projetar(a.lon, a.lat);
-              const icon = a.radio === "NR" ? "network_cell" : "signal_cellular_4_bar";
+              const icon = a.radio === "NR" ? "5g" : "4g_mobiledata";
               const corClass = a.radio === "NR" ? "text-orange-500" : "text-orange-300";
               return (
                 <text
@@ -547,7 +551,11 @@ export default function MapaBrasil({
                   textAnchor="middle"
                   dominantBaseline="central"
                   className={`material-symbols-outlined select-none ${corClass}`}
-                  style={{ fontSize: tam * 0.75 }}
+                   style={{
+                     fontSize: tam * 0.75,
+                     opacity: 0.85,
+                     fontVariationSettings: '"FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24',
+                   }}
                   fill="currentColor"
                 >
                   {icon}
@@ -622,7 +630,11 @@ export default function MapaBrasil({
                   textAnchor="middle"
                   dominantBaseline="central"
                   className="material-symbols-outlined select-none text-orange-400"
-                  style={{ fontSize: tam * 0.85 }}
+                   style={{
+                     fontSize: tam * 0.85,
+                     opacity: 0.85,
+                     fontVariationSettings: '"FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24',
+                   }}
                   fill="currentColor"
                 >
                   lan
@@ -657,7 +669,11 @@ export default function MapaBrasil({
                   textAnchor="middle"
                   dominantBaseline="central"
                   className={`material-symbols-outlined select-none ${corClass}`}
-                  style={{ fontSize: sz, opacity: 0.85 }}
+                   style={{
+                     fontSize: sz,
+                     opacity: 0.85,
+                     fontVariationSettings: '"FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24',
+                   }}
                   fill="currentColor"
                 >
                   {icon}
@@ -684,7 +700,11 @@ export default function MapaBrasil({
                   textAnchor="middle"
                   dominantBaseline="central"
                   className="material-symbols-outlined select-none text-yellow-400"
-                  style={{ fontSize: tam * 0.85 }}
+                   style={{
+                     fontSize: tam * 0.85,
+                     opacity: 0.85,
+                     fontVariationSettings: '"FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24',
+                   }}
                   fill="currentColor"
                 >
                   dns
@@ -711,7 +731,11 @@ export default function MapaBrasil({
                 textAnchor="middle"
                 dominantBaseline="central"
                 className="material-symbols-outlined select-none text-violet-400"
-                style={{ fontSize: tam * 1.2 }}
+                 style={{
+                   fontSize: tam * 1.2,
+                   opacity: 0.85,
+                   fontVariationSettings: '"FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24',
+                 }}
                 fill="currentColor"
               >
                 policy
@@ -861,7 +885,10 @@ export default function MapaBrasil({
             }).filter(([tipo]) => !tiposUsina || tiposUsina.size === 0 || tiposUsina.has(tipo))
               .map(([tipo, label]) => (
               <div key={tipo} className="flex items-center gap-1.5">
-                <span className={`material-symbols-outlined text-[12px] ${COR_CLASSE_USINA[tipo] || "text-gray-400"}`}>
+                <span
+                  className={`material-symbols-outlined text-[12px] ${COR_CLASSE_USINA[tipo] || "text-gray-400"}`}
+                  style={{ fontVariationSettings: '"FILL" 1' }}
+                >
                   {ICONE_USINA[tipo] || "electric_bolt"}
                 </span>
                 <span className="text-muted-foreground">{label}</span>
@@ -877,23 +904,35 @@ export default function MapaBrasil({
                 <span className="text-muted-foreground">Cabo submarino (TeleGeography)</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[12px] text-orange-400">lan</span>
+                <span
+                  className="material-symbols-outlined text-[12px] text-orange-400"
+                  style={{ fontVariationSettings: '"FILL" 1' }}
+                >lan</span>
                 <span className="text-muted-foreground">Landing point (BR)</span>
               </div>
             </>)}
             {l2Antenas && (<>
               <div className="flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[12px] text-orange-300">signal_cellular_4_bar</span>
+                <span
+                  className="material-symbols-outlined text-[12px] text-orange-300"
+                  style={{ fontVariationSettings: '"FILL" 1' }}
+                >4g_mobiledata</span>
                 <span className="text-muted-foreground">Antena 4G (OpenCelliD)</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[12px] text-orange-500">network_cell</span>
+                <span
+                  className="material-symbols-outlined text-[12px] text-orange-500"
+                  style={{ fontVariationSettings: '"FILL" 1' }}
+                >5g</span>
                 <span className="text-muted-foreground">Antena 5G (OpenCelliD)</span>
               </div>
             </>)}
             {l2Backhaul && (<>
               <div className="flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[12px] text-amber-500">cell_tower</span>
+                <span
+                  className="material-symbols-outlined text-[12px] text-amber-500"
+                  style={{ fontVariationSettings: '"FILL" 1' }}
+                >cell_tower</span>
                 <span className="text-muted-foreground">Backhaul por fibra (ANATEL)</span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -905,14 +944,20 @@ export default function MapaBrasil({
           {layer3Ativa && (<>
             <p className="font-medium text-yellow-400">Layer 3 — Infra Lógica (PeeringDB)</p>
             <div className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[12px] text-yellow-400">dns</span>
+              <span
+                className="material-symbols-outlined text-[12px] text-yellow-400"
+                style={{ fontVariationSettings: '"FILL" 1' }}
+              >dns</span>
               <span className="text-muted-foreground">Datacenter</span>
             </div>
           </>)}
           {layer7Ativa && (<>
             <p className="font-medium text-violet-400">Layer 7 — Governança</p>
             <div className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[12px] text-violet-400">policy</span>
+              <span
+                className="material-symbols-outlined text-[12px] text-violet-400"
+                style={{ fontVariationSettings: '"FILL" 1' }}
+              >policy</span>
               <span className="text-muted-foreground">Política pública / Patente</span>
             </div>
             <p className="text-muted-foreground/60">Bases: IPEA · INPI · EBIA · NIB</p>
