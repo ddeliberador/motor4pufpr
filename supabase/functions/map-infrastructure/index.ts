@@ -12,7 +12,7 @@ const corsHeaders = {
 // O ArcGIS do SIGEL não é acessível a partir do runtime (timeout/geobloqueio).
 const SIGA_RESOURCE = "11ec447d-698d-4ab8-977f-b424d5deee6a";
 const SIGA_BASE = "https://dadosabertos.aneel.gov.br/api/3/action/datastore_search";
-const TIPOS_VALIDOS = new Set(["UHE", "PCH", "EOL", "UFV", "UTE", "CGH"]);
+const TIPOS_VALIDOS = new Set(["UHE", "PCH", "EOL", "UFV", "UTE", "CGH", "UTN"]);
 const LIMITE = 6000;
 
 function texto(a: Record<string, unknown>, ...chaves: string[]): string {
