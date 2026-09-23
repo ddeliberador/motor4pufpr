@@ -35,17 +35,16 @@ function numeroBr(valor: unknown): number | undefined {
   return Number.isFinite(numero) ? numero : undefined;
 }
 
-async function carregarEnergia() {
-  const sql = `SELECT "NomEmpreendimento","CodCEG","SigTipoGeracao","DscFaseUsina",` +
-    `"NomFonteCombustivel","MdaPotenciaFiscalizadaKw","MdaPotenciaOutorgadaKw",` +
-    `"SigUFPrincipal","DscMuninicpios","NumCoordNEmpreendimento","NumCoordEEmpreendimento" ` +
-    `FROM "${SIGA_RESOURCE}" ` +
-    `WHERE "DscFaseUsina" = 'Operação' AND "NumCoordNEmpreendimento" <> '' ` +
-    `LIMIT ${LIMITE}`;
-
-  const resposta = await fetch(`${SIGA_BASE}?sql=${encodeURIComponent(sql)}`, {
+async function buscarPagina(offset: number, limite: number) {
+  const params = new URLSearchParams({
+    resource_id: SIGA_RESOURCE,
+    filters: JSON.stringify({ DscFaseUsina: "Operação" }),
+    limit: String(limite),
+    offset: String(offset),
+  });
+  const resposta = await fetch(`${SIGA_BASE}?${params}`, {
     headers: { Accept: "application/json" },
-    signal: AbortSignal.timeout(50_000),
+    signal: AbortSignal.timeout(40_000),
   });
   if (!resposta.ok) {
     const corpo = await resposta.text();
@@ -55,7 +54,17 @@ async function carregarEnergia() {
   if (payload.success === false) {
     throw new Error(`ANEEL SIGA: ${JSON.stringify(payload.error).slice(0, 300)}`);
   }
-  const registros = (payload.result?.records ?? []) as Record<string, unknown>[];
+  return (payload.result?.records ?? []) as Record<string, unknown>[];
+}
+
+async function carregarEnergia() {
+  const PAGINA = 2000;
+  const registros: Record<string, unknown>[] = [];
+  for (let offset = 0; offset < LIMITE; offset += PAGINA) {
+    const pagina = await buscarPagina(offset, Math.min(PAGINA, LIMITE - offset));
+    registros.push(...pagina);
+    if (pagina.length < PAGINA) break;
+  }
 
   const data = registros.flatMap((r, indice) => {
     const tipo = texto(r, "SigTipoGeracao").toUpperCase();
