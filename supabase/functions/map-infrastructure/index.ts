@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
     if (!guard.ok) return guard.response;
     if (guard.body.layer === "debug") {
       const alvos = [
-        "https://dadosabertos.aneel.gov.br/api/3/action/package_show?id=siga-sistema-de-informacoes-de-geracao-da-aneel",
+        "https://dadosabertos.aneel.gov.br/api/3/action/datastore_search?resource_id=11ec447d-698d-4ab8-977f-b424d5deee6a&limit=2",
       ];
       const saida: unknown[] = [];
       for (const alvo of alvos) {
