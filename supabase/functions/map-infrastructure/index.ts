@@ -8,22 +8,12 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-type ArcFeature = {
-  attributes?: Record<string, unknown>;
-  geometry?: { x?: number; y?: number };
-};
-
-const ENERGY_LAYERS = [
-  { id: 0, tipo: "UHE" },
-  { id: 1, tipo: "PCH" },
-  { id: 2, tipo: "EOL" },
-  { id: 3, tipo: "UFV" },
-  { id: 4, tipo: "UTE" },
-  { id: 5, tipo: "CGH" },
-] as const;
-
-const ARC_BASE =
-  "https://sigel.aneel.gov.br/arcgis/rest/services/PORTAL/PortalSIGEL/MapServer";
+// Base oficial SIGA (Sistema de Informações de Geração da ANEEL), via CKAN Dados Abertos.
+// O ArcGIS do SIGEL não é acessível a partir do runtime (timeout/geobloqueio).
+const SIGA_RESOURCE = "11ec447d-698d-4ab8-977f-b424d5deee6a";
+const SIGA_BASE = "https://dadosabertos.aneel.gov.br/api/3/action/datastore_search_sql";
+const TIPOS_VALIDOS = new Set(["UHE", "PCH", "EOL", "UFV", "UTE", "CGH"]);
+const LIMITE = 6000;
 
 function texto(a: Record<string, unknown>, ...chaves: string[]): string {
   for (const chave of chaves) {
@@ -33,60 +23,64 @@ function texto(a: Record<string, unknown>, ...chaves: string[]): string {
   return "";
 }
 
-function numero(a: Record<string, unknown>, ...chaves: string[]): number | undefined {
-  for (const chave of chaves) {
-    const valor = Number(a[chave]);
-    if (Number.isFinite(valor)) return valor;
-  }
-  return undefined;
+/** Converte números no formato brasileiro ("-20,12479858" / "1.400,00"). */
+function numeroBr(valor: unknown): number | undefined {
+  if (valor == null) return undefined;
+  const bruto = String(valor).trim();
+  if (!bruto) return undefined;
+  const normalizado = bruto.includes(",")
+    ? bruto.replace(/\./g, "").replace(",", ".")
+    : bruto;
+  const numero = Number(normalizado);
+  return Number.isFinite(numero) ? numero : undefined;
 }
 
 async function carregarEnergia() {
-  const resultados = await Promise.allSettled(ENERGY_LAYERS.map(async ({ id, tipo }) => {
-    const params = new URLSearchParams({
-      where: "1=1",
-      outFields: "*",
-      returnGeometry: "true",
-      outSR: "4326",
-      f: "json",
-      resultRecordCount: "100000",
-    });
-    const resposta = await fetch(`${ARC_BASE}/${id}/query?${params}`, {
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (!resposta.ok) throw new Error(`${tipo}: HTTP ${resposta.status}`);
-    const payload = await resposta.json();
-    if (payload.error) throw new Error(`${tipo}: ${payload.error.message || "erro ArcGIS"}`);
-    return ((payload.features || []) as ArcFeature[]).flatMap((feature, indice) => {
-      const a = feature.attributes || {};
-      const longitude = Number(feature.geometry?.x);
-      const latitude = Number(feature.geometry?.y);
-      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return [];
-      const objectId = texto(a, "OBJECTID", "FID", "CEG", "COD_CEG") || String(indice);
-      return [{
-        id: `${tipo}-${objectId}`,
-        nome: texto(a, "NOME", "NomEmpreendimento", "NOME_USINA") || `${tipo} sem nome`,
-        tipo,
-        combustivel: texto(a, "COMBUSTIV", "COMBUSTIVEL", "FONTE", "NomFonteCombustivel"),
-        potencia_kw: numero(a, "POTENCIA", "POT_FISC", "MdaPotenciaFiscalizadaKW", "POTENCIA_KW"),
-        situacao: texto(a, "SITUACAO", "DscSituacaoUsina", "FASE"),
-        municipio: texto(a, "MUNIC_CF", "MUNICIPIO", "NomMunicipio"),
-        uf: texto(a, "UF_CF", "UF", "SigUFNomeMunicipio"),
-        longitude,
-        latitude,
-      }];
-    });
-  }));
+  const sql = `SELECT "NomEmpreendimento","CodCEG","SigTipoGeracao","DscFaseUsina",` +
+    `"NomFonteCombustivel","MdaPotenciaFiscalizadaKw","MdaPotenciaOutorgadaKw",` +
+    `"SigUFPrincipal","DscMuninicpios","NumCoordNEmpreendimento","NumCoordEEmpreendimento" ` +
+    `FROM "${SIGA_RESOURCE}" ` +
+    `WHERE "DscFaseUsina" = 'Operação' AND "NumCoordNEmpreendimento" <> '' ` +
+    `LIMIT ${LIMITE}`;
 
-  const data = resultados.flatMap((resultado) => resultado.status === "fulfilled" ? resultado.value : []);
-  const failures = resultados.flatMap((resultado, indice) =>
-    resultado.status === "rejected"
-      ? [{ tipo: ENERGY_LAYERS[indice].tipo, error: String(resultado.reason) }]
-      : []
-  );
-  if (data.length === 0) throw new Error(`ANEEL sem dados. Falhas: ${JSON.stringify(failures)}`);
-  return { data, failures, source: ARC_BASE };
+  const resposta = await fetch(`${SIGA_BASE}?sql=${encodeURIComponent(sql)}`, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(50_000),
+  });
+  if (!resposta.ok) {
+    const corpo = await resposta.text();
+    throw new Error(`ANEEL SIGA: HTTP ${resposta.status} ${corpo.slice(0, 300)}`);
+  }
+  const payload = await resposta.json();
+  if (payload.success === false) {
+    throw new Error(`ANEEL SIGA: ${JSON.stringify(payload.error).slice(0, 300)}`);
+  }
+  const registros = (payload.result?.records ?? []) as Record<string, unknown>[];
+
+  const data = registros.flatMap((r, indice) => {
+    const tipo = texto(r, "SigTipoGeracao").toUpperCase();
+    if (!TIPOS_VALIDOS.has(tipo)) return [];
+    const latitude = numeroBr(r.NumCoordNEmpreendimento);
+    const longitude = numeroBr(r.NumCoordEEmpreendimento);
+    if (latitude == null || longitude == null) return [];
+    if (latitude < -35 || latitude > 6 || longitude < -75 || longitude > -33) return [];
+    const municipioUf = texto(r, "DscMuninicpios");
+    return [{
+      id: `${tipo}-${texto(r, "CodCEG") || indice}`,
+      nome: texto(r, "NomEmpreendimento") || `${tipo} sem nome`,
+      tipo,
+      combustivel: texto(r, "NomFonteCombustivel"),
+      potencia_kw: numeroBr(r.MdaPotenciaFiscalizadaKw) ?? numeroBr(r.MdaPotenciaOutorgadaKw),
+      situacao: texto(r, "DscFaseUsina"),
+      municipio: municipioUf.split(" - ")[0] ?? "",
+      uf: texto(r, "SigUFPrincipal"),
+      longitude,
+      latitude,
+    }];
+  });
+
+  if (data.length === 0) throw new Error("ANEEL SIGA respondeu sem usinas georreferenciadas.");
+  return { data, failures: [], source: `${SIGA_BASE} (resource ${SIGA_RESOURCE})` };
 }
 
 async function carregarDatacenters() {
