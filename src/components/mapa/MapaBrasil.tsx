@@ -541,6 +541,7 @@ export default function MapaBrasil({
             {dadosUsinas.map((u) => {
               if (!Number.isFinite(u.latitude) || !Number.isFinite(u.longitude)) return null;
               if (u.longitude < LON0 || u.longitude > LON1 || u.latitude > LAT0 || u.latitude < LAT1) return null;
+              if (tiposUsina && tiposUsina.size > 0 && !tiposUsina.has(u.tipo)) return null;
               const [x, y] = projetar(u.longitude, u.latitude);
               const cor = COR_USINA[u.tipo] || "#6b7280";
               const r = (u.potencia_kw ?? 0) > 100000
