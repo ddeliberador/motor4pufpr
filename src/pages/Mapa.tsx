@@ -24,6 +24,8 @@ import PainelDataLake from "@/components/mapa/PainelDataLake";
 import { canonizar, passaLake, resumoLake, type SelecaoLake } from "@/components/mapa/dataLake";
 import { Button } from "@/components/ui/button";
 import {
+  type AntenaERB,
+  type BackhaulMunicipio,
   type DadosCabos,
   type Datacenter,
   type UsinaAneel,
