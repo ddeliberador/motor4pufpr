@@ -2,7 +2,11 @@
 // Resolve bloqueio de CORS no browser, mantendo a fonte real como origem.
 // Nunca armazena dados; apenas repassa a resposta da TeleGeography.
 
-import { corsHeaders } from "npm:@supabase/supabase-js@2.116.0/cors";
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "apikey, authorization, content-type, x-client-info",
+};
 
 const BASE = "https://www.submarinecablemap.com/api/v3";
 
