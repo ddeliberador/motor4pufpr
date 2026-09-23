@@ -23,7 +23,7 @@ import MetricasCruzamento from "@/components/mapa/MetricasCruzamento";
 import PainelDataLake from "@/components/mapa/PainelDataLake";
 import { canonizar, passaLake, resumoLake, type SelecaoLake } from "@/components/mapa/dataLake";
 import { Button } from "@/components/ui/button";
-import { type CaboSubmarino, type LandingPoint } from "@/components/mapa/cabosSub";
+import { type DadosCabos } from "@/components/mapa/caboSubmarino";
 
 const COLUNAS =
   "id,nome,tipo,uf,municipio,latitude,longitude,fonte,fonte_url,cnpj,data_coleta,raw_metadata";
@@ -108,38 +108,30 @@ export default function Mapa() {
     () => new Set(CATEGORIAS.map((c) => c.key)),
   );
   const [filtrosMobileAbertos, setFiltrosMobileAbertos] = useState(false);
-  // Camadas de IA — desligadas por padrão.
-  const [camadasIA, setCamadasIA] = useState<Set<string>>(new Set());
-  const [cabosSub, setCabosSub] = useState<CaboSubmarino[]>([]);
-  const [landingPoints, setLandingPoints] = useState<LandingPoint[]>([]);
-  const [carregandoCabos, setCarregandoCabos] = useState(false);
+  // Camadas de IA — desligadas por padrão. Layer 2: cabos submarinos (TeleGeography).
+  const [layer2Ativa, setLayer2Ativa] = useState(false);
+  const [layer2Carregando, setLayer2Carregando] = useState(false);
+  const [dadosCabos, setDadosCabos] = useState<DadosCabos | null>(null);
 
-  // Busca dados da API TeleGeography somente quando a camada for ligada.
+  // Busca dados da API TeleGeography somente quando a camada for ligada (lazy load).
   useEffect(() => {
-    if (!camadasIA.has("cabos-submarinos")) return;
-    if (cabosSub.length > 0) return; // já carregado
-    setCarregandoCabos(true);
+    if (!layer2Ativa || dadosCabos) return;
+    setLayer2Carregando(true);
     Promise.all([
       fetch("https://www.submarinecablemap.com/api/v3/cable/all.json").then((r) => r.json()),
       fetch("https://www.submarinecablemap.com/api/v3/landing-point/all.json").then((r) => r.json()),
     ])
-      .then(([cabos, lps]) => {
-        // Filtra apenas cabos que tocam o Brasil
-        const cabosArr = Array.isArray(cabos) ? cabos : (cabos.cables || cabos.features || []);
-        const lpsArr = Array.isArray(lps) ? lps : (lps["landing-points"] || lps.features || lps.data || []);
-        const lpsAncorados = lpsArr.filter(
-          (lp: LandingPoint) =>
-            lp.id?.startsWith("brazil-") ||
-            lp.country === "Brazil" ||
-            lp.country_name === "Brazil" ||
-            String(lp.country_code || "").toLowerCase() === "br",
-        );
-        setCabosSub(cabosArr);
-        setLandingPoints(lpsAncorados);
+      .then(([cables, points]) => {
+        const cablesArr = Array.isArray(cables) ? cables : (cables.cables || cables.features || []);
+        const pointsArr = Array.isArray(points) ? points : (points["landing-points"] || points.features || points.data || []);
+        setDadosCabos({ cables: cablesArr, points: pointsArr });
+        setLayer2Carregando(false);
       })
-      .catch((err) => console.warn("Cabos submarinos indisponíveis:", err))
-      .finally(() => setCarregandoCabos(false));
-  }, [camadasIA, cabosSub.length]);
+      .catch((err) => {
+        console.warn("Cabos submarinos indisponíveis:", err);
+        setLayer2Carregando(false);
+      });
+  }, [layer2Ativa, dadosCabos]);
 
   const locais = data || [];
 
@@ -497,40 +489,38 @@ export default function Mapa() {
                 </p>
               </div>
 
-              {/* ── Camadas de IA ── */}
+              {/* Camadas de IA */}
               <div>
-                <div className="mb-2 flex items-center gap-2">
+                <div className="mb-2 flex items-center justify-between">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Camadas de IA
                   </p>
-                  <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
-                    beta
-                  </span>
                 </div>
                 <div className="space-y-1">
+                  {/* Layer 2 — Infraestrutura Física */}
                   <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
                     <input
                       type="checkbox"
-                      checked={camadasIA.has("cabos-submarinos")}
-                      onChange={() => {
-                        const novo = new Set(camadasIA);
-                        if (novo.has("cabos-submarinos")) novo.delete("cabos-submarinos");
-                        else novo.add("cabos-submarinos");
-                        setCamadasIA(novo);
-                      }}
-                      className="h-3.5 w-3.5 shrink-0 accent-primary"
+                      checked={layer2Ativa}
+                      onChange={() => setLayer2Ativa((v) => !v)}
+                      className="h-3.5 w-3.5 shrink-0 accent-orange-500"
                     />
-                    <span className="material-symbols-outlined shrink-0 text-base leading-none text-blue-400" aria-hidden>
-                      cable
-                    </span>
-                    <span className="flex-1 truncate">
-                      Layer 2 · Cabos submarinos
-                      {carregandoCabos && <span className="ml-1 text-muted-foreground">(carregando…)</span>}
-                    </span>
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-orange-400" aria-hidden />
+                    <span className="flex-1 truncate">Layer 2 — Infraestrutura Física</span>
+                    {layer2Carregando && <span className="text-[10px] text-muted-foreground">carregando…</span>}
                   </label>
+                  {/* Layer 1, 3, 4, 5, 6 — em breve */}
+                  {["Layer 1 — Energia", "Layer 3 — Infraestrutura Lógica", "Layer 4 — Modelos", "Layer 5 — Aplicações", "Layer 6 — Pesquisa"].map((l) => (
+                    <div key={l} className="flex items-center gap-2.5 rounded-lg border border-transparent bg-card/50 px-2 py-1.5 text-xs opacity-40">
+                      <span className="h-3.5 w-3.5 shrink-0 rounded border border-border" />
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-muted" aria-hidden />
+                      <span className="flex-1 truncate">{l}</span>
+                      <span className="text-[10px] text-muted-foreground">em breve</span>
+                    </div>
+                  ))}
                 </div>
                 <p className="mt-1.5 text-[11px] text-muted-foreground">
-                  Infraestrutura física de conectividade internacional · TeleGeography
+                  Infraestrutura física de IA no Brasil. Desligadas por padrão.
                 </p>
               </div>
 
@@ -914,8 +904,8 @@ export default function Mapa() {
                      pontoSelecionadoId={pontoSelecionadoId}
                      onSelecionarPonto={setPontoSelecionadoId}
                      grupoIds={grupoIds}
-                     cabosSub={camadasIA.has("cabos-submarinos") ? cabosSub : []}
-                     landingPoints={camadasIA.has("cabos-submarinos") ? landingPoints : []}
+                     layer2Ativa={layer2Ativa}
+                     dadosCabos={dadosCabos}
                    />
                   <p className="pointer-events-none absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-center text-[11px] text-muted-foreground sm:block">
                     <MapPin className="mr-1 inline h-3 w-3" />

@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Minus, Plus, Maximize2 } from "lucide-react";
 import { CATEGORIA_MAP, type CategoriaKey } from "./tipos";
-import { type CaboSubmarino, type LandingPoint, corCabo } from "./cabosSub";
+import { type DadosCabos } from "./caboSubmarino";
 
 export interface Ponto {
   id: string;
@@ -174,9 +174,9 @@ interface Props {
   onSelecionarPonto?: (id: string | null) => void;
   /** IDs do grupo aberto na listagem (pontos sobrepostos num mesmo ícone). */
   grupoIds?: Set<string> | null;
-  /** Layer 2 — Cabos submarinos (TeleGeography). */
-  cabosSub?: CaboSubmarino[];
-  landingPoints?: LandingPoint[];
+  /** Layer 2 — Infraestrutura Física: cabos submarinos (TeleGeography). */
+  layer2Ativa?: boolean;
+  dadosCabos?: DadosCabos | null;
 }
 
 export default function MapaBrasil({
@@ -189,8 +189,8 @@ export default function MapaBrasil({
   pontoSelecionadoId,
   onSelecionarPonto,
   grupoIds,
-  cabosSub,
-  landingPoints,
+  layer2Ativa,
+  dadosCabos,
 }: Props) {
   const [features, setFeatures] = useState<Feature[] | null>(null);
   const [erroMalha, setErroMalha] = useState<string | null>(null);
@@ -200,7 +200,7 @@ export default function MapaBrasil({
   const movidoRef = useRef(false);
   const [arrastando, setArrastando] = useState(false);
   // Geometrias dos cabos submarinos (por id), buscadas sob demanda.
-  const [cabosGeo, setCabosGeo] = useState<Map<string, [number, number][][]>>(new Map());
+  const [geoCabos, setGeoCabos] = useState<Record<string, number[][][]>>({});
 
   useEffect(() => {
     let vivo = true;
@@ -295,47 +295,51 @@ export default function MapaBrasil({
 
   const escala = vista.w / W;
 
-  // Busca o traçado GeoJSON dos cabos que têm ponto de aterramento no Brasil.
-  useEffect(() => {
-    if (!cabosSub || cabosSub.length === 0 || !landingPoints || landingPoints.length === 0) {
-      setCabosGeo(new Map());
-      return;
-    }
-    const lpIds = new Set(landingPoints.map((lp) => lp.id));
-    const cabosBR = cabosSub.filter((c) =>
-      c.landing_points?.some((lpId) => lpIds.has(lpId)),
-    );
-    if (cabosBR.length === 0) {
-      setCabosGeo(new Map());
-      return;
-    }
-    // Limita a 30 cabos para não disparar 200+ requests individuais.
-    const alvo = cabosBR.slice(0, 30);
-    const novoMapa = new Map<string, [number, number][][]>();
-    let pendentes = alvo.length;
-    alvo.forEach((cabo) => {
-      const slug = cabo.slug || cabo.id;
-      fetch(`https://www.submarinecablemap.com/api/v3/cable/${slug}.json`)
-        .then((r) => r.json())
-        .then((fc) => {
-          const linhas: [number, number][][] = [];
-          const features = fc.features || [];
-          for (const feat of features) {
-            const coords = feat.geometry?.coordinates;
-            if (!coords) continue;
-            if (feat.geometry.type === "LineString") linhas.push(coords);
-            else if (feat.geometry.type === "MultiLineString")
-              for (const l of coords) linhas.push(l);
-          }
-          novoMapa.set(cabo.id, linhas);
-        })
-        .catch(() => { /* cabo sem geo pública — ignora */ })
-        .finally(() => {
-          pendentes--;
-          if (pendentes === 0) setCabosGeo(new Map(novoMapa));
-        });
+  // Layer 2 — pontos de aterramento no Brasil (e margem costeira).
+  const landingPointsBR = useMemo(() => {
+    if (!layer2Ativa || !dadosCabos) return [];
+    return dadosCabos.points.filter((p) => {
+      const lat = Number(p.latitude);
+      const lon = Number(p.longitude);
+      return lat >= -35 && lat <= 6 && lon >= -75 && lon <= -30;
     });
-  }, [cabosSub, landingPoints]);
+  }, [layer2Ativa, dadosCabos]);
+
+  // Cabos que tocam o Brasil (têm pelo menos um landing point BR).
+  const cabosNoBR = useMemo(() => {
+    if (!layer2Ativa || !dadosCabos || landingPointsBR.length === 0) return [];
+    const idsBR = new Set(landingPointsBR.map((p) => p.id));
+    return dadosCabos.cables.filter((c) =>
+      c.landing_points?.some((pid) => idsBR.has(pid)),
+    );
+  }, [layer2Ativa, dadosCabos, landingPointsBR]);
+
+  // Busca o traçado GeoJSON de cada cabo sob demanda.
+  useEffect(() => {
+    if (!layer2Ativa || cabosNoBR.length === 0) return;
+    cabosNoBR.forEach(async (cabo) => {
+      if (geoCabos[cabo.id]) return;
+      try {
+        const res = await fetch(`https://www.submarinecablemap.com/api/v3/cable/${cabo.id}.json`);
+        const data = await res.json();
+        const coords: number[][][] = [];
+        if (data.geometry?.type === "MultiLineString") {
+          coords.push(...data.geometry.coordinates);
+        } else if (data.geometry?.type === "LineString") {
+          coords.push(data.geometry.coordinates);
+        } else if (Array.isArray(data.features)) {
+          for (const feat of data.features) {
+            const g = feat.geometry;
+            if (!g) continue;
+            if (g.type === "LineString") coords.push(g.coordinates);
+            else if (g.type === "MultiLineString") coords.push(...g.coordinates);
+          }
+        }
+        setGeoCabos((prev) => ({ ...prev, [cabo.id]: coords }));
+      } catch { /* cabo sem geo pública — ignora */ }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layer2Ativa, cabosNoBR]);
 
 
   // Ícones com tamanho amortecido: crescem menos que o zoom, então ao
@@ -463,6 +467,59 @@ export default function MapaBrasil({
           })}
         </g>
 
+        {/* Layer 2 — Cabos Submarinos (por baixo dos marcadores) */}
+        {layer2Ativa && (
+          <g opacity={0.75} pointerEvents="none">
+            {/* Traçados dos cabos */}
+            {Object.entries(geoCabos).map(([cableId, linhas]) => {
+              const cabo = dadosCabos?.cables.find((c) => c.id === cableId);
+              const cor = cabo?.color || "#f97316";
+              return linhas.map((linha, li) => {
+                // Projeta apenas segmentos que cruzam o bounding box expandido
+                const pts = linha
+                  .filter(([lon, lat]) => lon >= -100 && lon <= -20 && lat >= -60 && lat <= 20)
+                  .map(([lon, lat]) => projetar(lon, lat));
+                if (pts.length < 2) return null;
+                const d = pts
+                  .map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`)
+                  .join(" ");
+                return (
+                  <path
+                    key={`${cableId}-${li}`}
+                    d={d}
+                    stroke={cor}
+                    strokeWidth={2 * escala}
+                    fill="none"
+                    strokeOpacity={0.7}
+                    strokeLinecap="round"
+                  />
+                );
+              });
+            })}
+
+            {/* Landing points brasileiros */}
+            {landingPointsBR.map((p) => {
+              const lat = Number(p.latitude);
+              const lon = Number(p.longitude);
+              if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+              const [x, y] = projetar(lon, lat);
+              return (
+                <g key={p.id}>
+                  <circle
+                    cx={x} cy={y}
+                    r={tam * 0.7}
+                    fill="#f97316"
+                    stroke="white"
+                    strokeWidth={1.2 * escala}
+                    opacity={0.9}
+                  />
+                  <title>{p.name}{p.cables?.length ? ` — ${p.cables.length} cabo(s)` : ""}</title>
+                </g>
+              );
+            })}
+          </g>
+        )}
+
         <g clipPath="url(#brasil-contorno)">
           {clusters.map((c) => {
             const cat = CATEGORIA_MAP[c.categoria];
@@ -552,68 +609,6 @@ export default function MapaBrasil({
             </text>
           </g>
         )}
-        {/* Layer 2 — Cabos submarinos (traçados oceânicos + landing points BR) */}
-        {(cabosSub?.length ?? 0) > 0 && (
-          <g style={{ pointerEvents: "none" }}>
-            {/* Linhas dos cabos */}
-            {Array.from(cabosGeo.entries()).map(([caboId, linhas]) => {
-              const cabo = cabosSub!.find((c) => c.id === caboId);
-              const cor = corCabo(caboId, cabo?.color);
-              return linhas.map((linha, li) => {
-                const pts = linha
-                  .map(([lon, lat]) => {
-                    // Projeta apenas pontos dentro do bbox estendido (inclui oceano Atlântico)
-                    if (lon < -90 || lon > 20 || lat < -60 || lat > 20) return null;
-                    const [x, y] = projetar(lon, lat);
-                    return `${x.toFixed(1)},${y.toFixed(1)}`;
-                  })
-                  .filter(Boolean);
-                if (pts.length < 2) return null;
-                return (
-                  <polyline
-                    key={`${caboId}-${li}`}
-                    points={pts.join(" ")}
-                    fill="none"
-                    stroke={cor}
-                    strokeWidth={1.2 * escala}
-                    strokeOpacity={0.65}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <title>{cabo?.name ?? caboId}{cabo?.rfs ? ` · RFS ${cabo.rfs}` : ""}</title>
-                  </polyline>
-                );
-              });
-            })}
-
-            {/* Pontos de aterramento no Brasil */}
-            {(landingPoints ?? []).map((lp) => {
-              const lat = Number(lp.latitude);
-              const lon = Number(lp.longitude);
-              if (!isFinite(lat) || !isFinite(lon)) return null;
-              if (lon < LON0 - 2 || lon > LON1 + 2 || lat > LAT0 + 2 || lat < LAT1 - 2) return null;
-              const [x, y] = projetar(lon, lat);
-              const r = tam * 0.55;
-              return (
-                <g key={lp.id}>
-                  <circle
-                    cx={x} cy={y} r={r * 1.8}
-                    fill="hsl(var(--background) / 0.6)"
-                    stroke="#3B82F6"
-                    strokeWidth={1.0 * escala}
-                    strokeOpacity={0.5}
-                  />
-                  <circle
-                    cx={x} cy={y} r={r}
-                    fill="#3B82F6"
-                    fillOpacity={0.9}
-                  />
-                  <title>{lp.name ?? lp.id}</title>
-                </g>
-              );
-            })}
-          </g>
-        )}
       </svg>
 
       {/* Controles de zoom */}
@@ -648,6 +643,22 @@ export default function MapaBrasil({
           <Maximize2 className="h-3.5 w-3.5" />
         </button>
       </div>
+
+      {/* Legenda da Layer 2 — aparece só quando a camada está ativa */}
+      {layer2Ativa && (
+        <div className="absolute bottom-8 left-3 space-y-1 rounded-lg border border-border bg-card/90 p-2 text-[10px] shadow-sm backdrop-blur">
+          <p className="font-semibold text-foreground">Layer 2 — Infraestrutura Física</p>
+          <div className="flex items-center gap-1.5">
+            <div className="h-0.5 w-5 rounded bg-orange-400" />
+            <span className="text-muted-foreground">Cabo submarino</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="h-2.5 w-2.5 rounded-full border border-white bg-orange-400" />
+            <span className="text-muted-foreground">Landing point (BR)</span>
+          </div>
+          <p className="text-muted-foreground/70">Fonte: TeleGeography</p>
+        </div>
+      )}
     </div>
   );
 }
