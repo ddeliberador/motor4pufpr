@@ -52,6 +52,8 @@ const norm = (s: string) =>
 export function categorizar(tipo: string | null | undefined): CategoriaKey {
   const t = norm(tipo || "");
   if (!t) return "outro";
+  if (t.includes("datacenter") || t.includes("data center")) return "datacenter";
+  if (t.includes("usina") || t.includes("central geradora")) return "energia";
   if (t.includes("startup") || t.includes("empresa")) return "startup";
   if (t.includes("supercomput")) return "supercomputacao";
   if (t.includes("embrapii") || t.includes("nit")) return "embrapii";
