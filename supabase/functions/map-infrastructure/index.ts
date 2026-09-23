@@ -123,8 +123,8 @@ Deno.serve(async (req) => {
     if (!guard.ok) return guard.response;
     if (guard.body.layer === "debug") {
       const alvos = [
-        "https://sigel.aneel.gov.br/arcgis/rest/services?f=json",
-        "https://sigel.aneel.gov.br/arcgis/rest/services/PORTAL?f=json",
+        "https://dadosabertos.aneel.gov.br/api/3/action/datastore_search?resource_id=b1bd71e7-d0ad-4214-9053-cbd58e9564a7&limit=1",
+        "https://gisepeprd2.epe.gov.br/arcgis/rest/services/SPG?f=json",
       ];
       const saida: unknown[] = [];
       for (const alvo of alvos) {
