@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Minus, Plus, Maximize2 } from "lucide-react";
 import { CATEGORIA_MAP, type CategoriaKey } from "./tipos";
-import { type DadosCabos } from "./caboSubmarino";
+import { type DadosCabos, type Datacenter, type UsinaAneel } from "./caboSubmarino";
 
 export interface Ponto {
   id: string;
@@ -31,6 +31,15 @@ const LAT1 = -34.0;
 
 const MIN_W = W / 24; // zoom máximo
 const MAX_W = W; // mapa inteiro
+
+const COR_USINA: Record<string, string> = {
+  UHE: "#3b82f6",
+  PCH: "#60a5fa",
+  EOL: "#a78bfa",
+  UFV: "#fbbf24",
+  UTE: "#f87171",
+  CGH: "#93c5fd",
+};
 
 const mercY = (lat: number) =>
   Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 180 / 2));
@@ -174,9 +183,15 @@ interface Props {
   onSelecionarPonto?: (id: string | null) => void;
   /** IDs do grupo aberto na listagem (pontos sobrepostos num mesmo ícone). */
   grupoIds?: Set<string> | null;
+  /** Layer 1 — Energia: usinas da ANEEL. */
+  layer1Ativa?: boolean;
+  dadosUsinas?: UsinaAneel[] | null;
   /** Layer 2 — Infraestrutura Física: cabos submarinos (TeleGeography). */
   layer2Ativa?: boolean;
   dadosCabos?: DadosCabos | null;
+  /** Layer 3 — Infraestrutura Lógica: datacenters do PeeringDB. */
+  layer3Ativa?: boolean;
+  dadosDCs?: Datacenter[] | null;
 }
 
 export default function MapaBrasil({
@@ -189,8 +204,12 @@ export default function MapaBrasil({
   pontoSelecionadoId,
   onSelecionarPonto,
   grupoIds,
+  layer1Ativa,
+  dadosUsinas,
   layer2Ativa,
   dadosCabos,
+  layer3Ativa,
+  dadosDCs,
 }: Props) {
   const [features, setFeatures] = useState<Feature[] | null>(null);
   const [erroMalha, setErroMalha] = useState<string | null>(null);
@@ -512,6 +531,66 @@ export default function MapaBrasil({
           </g>
         )}
 
+        {/* Layer 1 — Usinas de Energia (ANEEL), abaixo dos marcadores SNI. */}
+        {layer1Ativa && dadosUsinas && (
+          <g opacity={0.8} pointerEvents="none" clipPath="url(#brasil-contorno)">
+            {dadosUsinas.map((u) => {
+              if (!Number.isFinite(u.latitude) || !Number.isFinite(u.longitude)) return null;
+              if (u.longitude < LON0 || u.longitude > LON1 || u.latitude > LAT0 || u.latitude < LAT1) return null;
+              const [x, y] = projetar(u.longitude, u.latitude);
+              const cor = COR_USINA[u.tipo] || "#6b7280";
+              const r = (u.potencia_kw ?? 0) > 100000
+                ? tam * 0.6
+                : (u.potencia_kw ?? 0) > 10000
+                  ? tam * 0.45
+                  : tam * 0.3;
+              const local = [u.municipio, u.uf].filter(Boolean).join("/");
+              return (
+                <circle
+                  key={u.id}
+                  cx={x}
+                  cy={y}
+                  r={r}
+                  fill={cor}
+                  fillOpacity={0.75}
+                  stroke="hsl(var(--background))"
+                  strokeWidth={0.5 * escala}
+                >
+                  <title>{`${u.nome} · ${u.tipo}${u.potencia_kw ? ` · ${(u.potencia_kw / 1000).toFixed(0)} MW` : ""}${local ? ` · ${local}` : ""}`}</title>
+                </circle>
+              );
+            })}
+          </g>
+        )}
+
+        {/* Layer 3 — Datacenters (PeeringDB), abaixo dos marcadores SNI. */}
+        {layer3Ativa && dadosDCs && (
+          <g opacity={0.85} pointerEvents="none" clipPath="url(#brasil-contorno)">
+            {dadosDCs.map((dc) => {
+              if (dc.latitude == null || dc.longitude == null) return null;
+              if (!Number.isFinite(dc.latitude) || !Number.isFinite(dc.longitude)) return null;
+              const [x, y] = projetar(dc.longitude, dc.latitude);
+              const local = [dc.cidade, dc.uf].filter(Boolean).join("/");
+              return (
+                <g key={dc.id}>
+                  <rect
+                    x={x - tam * 0.35}
+                    y={y - tam * 0.35}
+                    width={tam * 0.7}
+                    height={tam * 0.7}
+                    fill="#eab308"
+                    fillOpacity={0.85}
+                    stroke="hsl(var(--background))"
+                    strokeWidth={0.8 * escala}
+                    rx={1}
+                  />
+                  <title>{`${dc.nome}${local ? ` · ${local}` : ""}${dc.redes ? ` · ${dc.redes} redes` : ""}`}</title>
+                </g>
+              );
+            })}
+          </g>
+        )}
+
         <g clipPath="url(#brasil-contorno)">
           {clusters.map((c) => {
             const cat = CATEGORIA_MAP[c.categoria];
@@ -636,19 +715,44 @@ export default function MapaBrasil({
         </button>
       </div>
 
-      {/* Legenda da Layer 2 — aparece só quando a camada está ativa */}
-      {layer2Ativa && (
-        <div className="absolute bottom-8 left-3 space-y-1 rounded-lg border border-border bg-card/90 p-2 text-[10px] shadow-sm backdrop-blur">
-          <p className="font-semibold text-foreground">Layer 2 — Infraestrutura Física</p>
-          <div className="flex items-center gap-1.5">
-            <div className="h-0.5 w-5 rounded bg-orange-400" />
-            <span className="text-muted-foreground">Cabo submarino</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="h-2.5 w-2.5 rounded-full border border-white bg-orange-400" />
-            <span className="text-muted-foreground">Landing point (BR)</span>
-          </div>
-          <p className="text-muted-foreground/70">Fonte: TeleGeography</p>
+      {(layer1Ativa || layer2Ativa || layer3Ativa) && (
+        <div className="absolute bottom-8 left-3 max-h-[45%] space-y-1.5 overflow-y-auto rounded-lg border border-border bg-card/90 p-2.5 text-[10px] shadow-sm backdrop-blur">
+          <p className="font-semibold text-foreground">Camadas de IA ativas</p>
+          {layer1Ativa && (<>
+            <p className="font-medium text-pink-500">Layer 1 — Energia (ANEEL)</p>
+            {Object.entries({
+              UHE: "UHE — Hídrica",
+              PCH: "PCH — Hídrica peq.",
+              EOL: "EOL — Eólica",
+              UFV: "UFV — Solar",
+              UTE: "UTE — Termelétrica",
+              CGH: "CGH — Micro-hidro",
+            }).map(([tipo, label]) => (
+              <div key={tipo} className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full border border-foreground/30" style={{ background: COR_USINA[tipo] }} />
+                <span className="text-muted-foreground">{label}</span>
+              </div>
+            ))}
+            <p className="text-muted-foreground/60">Tamanho proporcional à potência</p>
+          </>)}
+          {layer2Ativa && (<>
+            <p className="font-medium text-orange-400">Layer 2 — Infra Física (TeleGeography)</p>
+            <div className="flex items-center gap-1.5">
+              <div className="h-0.5 w-5 rounded bg-orange-400" />
+              <span className="text-muted-foreground">Cabo submarino</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-full border border-foreground/30 bg-orange-400" />
+              <span className="text-muted-foreground">Landing point (BR)</span>
+            </div>
+          </>)}
+          {layer3Ativa && (<>
+            <p className="font-medium text-yellow-400">Layer 3 — Infra Lógica (PeeringDB)</p>
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded border border-foreground/30 bg-yellow-400" />
+              <span className="text-muted-foreground">Datacenter</span>
+            </div>
+          </>)}
         </div>
       )}
     </div>

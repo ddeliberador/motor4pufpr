@@ -23,7 +23,11 @@ import MetricasCruzamento from "@/components/mapa/MetricasCruzamento";
 import PainelDataLake from "@/components/mapa/PainelDataLake";
 import { canonizar, passaLake, resumoLake, type SelecaoLake } from "@/components/mapa/dataLake";
 import { Button } from "@/components/ui/button";
-import { type DadosCabos } from "@/components/mapa/caboSubmarino";
+import {
+  type DadosCabos,
+  type Datacenter,
+  type UsinaAneel,
+} from "@/components/mapa/caboSubmarino";
 
 const COLUNAS =
   "id,nome,tipo,uf,municipio,latitude,longitude,fonte,fonte_url,cnpj,data_coleta,raw_metadata";
@@ -108,10 +112,38 @@ export default function Mapa() {
     () => new Set(CATEGORIAS.map((c) => c.key)),
   );
   const [filtrosMobileAbertos, setFiltrosMobileAbertos] = useState(false);
-  // Camadas de IA — desligadas por padrão. Layer 2: cabos submarinos (TeleGeography).
+  // Camadas de IA — desligadas por padrão e carregadas somente quando ativadas.
+  const [layer1Ativa, setLayer1Ativa] = useState(false);
+  const [layer1Carregando, setLayer1Carregando] = useState(false);
+  const [dadosUsinas, setDadosUsinas] = useState<UsinaAneel[] | null>(null);
+  const [erroLayer1, setErroLayer1] = useState<string | null>(null);
   const [layer2Ativa, setLayer2Ativa] = useState(false);
   const [layer2Carregando, setLayer2Carregando] = useState(false);
   const [dadosCabos, setDadosCabos] = useState<DadosCabos | null>(null);
+  const [layer3Ativa, setLayer3Ativa] = useState(false);
+  const [layer3Carregando, setLayer3Carregando] = useState(false);
+  const [dadosDCs, setDadosDCs] = useState<Datacenter[] | null>(null);
+  const [erroLayer3, setErroLayer3] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!layer1Ativa || dadosUsinas) return;
+    setLayer1Carregando(true);
+    setErroLayer1(null);
+    safeSupabase.functions.invoke("map-infrastructure", { body: { layer: "energy" } })
+      .then(({ data: resposta, error: falha }) => {
+        if (falha) throw falha;
+        if (!resposta || !Array.isArray(resposta.data)) {
+          throw new Error("resposta inválida da ANEEL");
+        }
+        setDadosUsinas(resposta.data as UsinaAneel[]);
+      })
+      .catch((err) => {
+        const mensagem = err instanceof Error ? err.message : "falha desconhecida";
+        console.error("Layer 1 — ANEEL indisponível:", err);
+        setErroLayer1(mensagem);
+      })
+      .finally(() => setLayer1Carregando(false));
+  }, [layer1Ativa, dadosUsinas]);
 
   // Busca snapshot local dos cabos somente quando a camada for ligada (lazy load).
   useEffect(() => {
@@ -128,6 +160,26 @@ export default function Mapa() {
       })
       .finally(() => setLayer2Carregando(false));
   }, [layer2Ativa, dadosCabos]);
+
+  useEffect(() => {
+    if (!layer3Ativa || dadosDCs) return;
+    setLayer3Carregando(true);
+    setErroLayer3(null);
+    safeSupabase.functions.invoke("map-infrastructure", { body: { layer: "datacenters" } })
+      .then(({ data: resposta, error: falha }) => {
+        if (falha) throw falha;
+        if (!resposta || !Array.isArray(resposta.data)) {
+          throw new Error("resposta inválida do PeeringDB");
+        }
+        setDadosDCs(resposta.data as Datacenter[]);
+      })
+      .catch((err) => {
+        const mensagem = err instanceof Error ? err.message : "falha desconhecida";
+        console.error("Layer 3 — PeeringDB indisponível:", err);
+        setErroLayer3(mensagem);
+      })
+      .finally(() => setLayer3Carregando(false));
+  }, [layer3Ativa, dadosDCs]);
 
   const locais = data || [];
 
@@ -497,6 +549,20 @@ export default function Mapa() {
                   <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
                     <input
                       type="checkbox"
+                      checked={layer1Ativa}
+                      onChange={() => setLayer1Ativa((v) => !v)}
+                      className="h-3.5 w-3.5 shrink-0 accent-pink-500"
+                    />
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-pink-400" aria-hidden />
+                    <span className="flex-1 truncate">Layer 1 — Energia</span>
+                    {layer1Carregando && <span className="text-[10px] text-muted-foreground">carregando…</span>}
+                  </label>
+                  {erroLayer1 && layer1Ativa && (
+                    <p className="px-2 text-[10px] text-destructive">ANEEL indisponível: {erroLayer1}</p>
+                  )}
+                  <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
+                    <input
+                      type="checkbox"
                       checked={layer2Ativa}
                       onChange={() => setLayer2Ativa((v) => !v)}
                       className="h-3.5 w-3.5 shrink-0 accent-orange-500"
@@ -505,8 +571,22 @@ export default function Mapa() {
                     <span className="flex-1 truncate">Layer 2 — Infraestrutura Física</span>
                     {layer2Carregando && <span className="text-[10px] text-muted-foreground">carregando…</span>}
                   </label>
-                  {/* Layer 1, 3, 4, 5, 6 — em breve */}
-                  {["Layer 1 — Energia", "Layer 3 — Infraestrutura Lógica", "Layer 4 — Modelos", "Layer 5 — Aplicações", "Layer 6 — Pesquisa"].map((l) => (
+                  <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
+                    <input
+                      type="checkbox"
+                      checked={layer3Ativa}
+                      onChange={() => setLayer3Ativa((v) => !v)}
+                      className="h-3.5 w-3.5 shrink-0 accent-yellow-500"
+                    />
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-yellow-400" aria-hidden />
+                    <span className="flex-1 truncate">Layer 3 — Infraestrutura Lógica</span>
+                    {layer3Carregando && <span className="text-[10px] text-muted-foreground">carregando…</span>}
+                  </label>
+                  {erroLayer3 && layer3Ativa && (
+                    <p className="px-2 text-[10px] text-destructive">PeeringDB indisponível: {erroLayer3}</p>
+                  )}
+                  {/* Layer 4, 5, 6 — em breve */}
+                  {["Layer 4 — Modelos", "Layer 5 — Aplicações", "Layer 6 — Pesquisa"].map((l) => (
                     <div key={l} className="flex items-center gap-2.5 rounded-lg border border-transparent bg-card/50 px-2 py-1.5 text-xs opacity-40">
                       <span className="h-3.5 w-3.5 shrink-0 rounded border border-border" />
                       <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-muted" aria-hidden />
@@ -900,8 +980,12 @@ export default function Mapa() {
                     pontoSelecionadoId={pontoSelecionadoId}
                     onSelecionarPonto={setPontoSelecionadoId}
                     grupoIds={grupoIds}
+                    layer1Ativa={layer1Ativa}
+                    dadosUsinas={dadosUsinas}
                     layer2Ativa={layer2Ativa}
                     dadosCabos={dadosCabos}
+                    layer3Ativa={layer3Ativa}
+                    dadosDCs={dadosDCs}
                   />
                   <p className="pointer-events-none absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-center text-[11px] text-muted-foreground sm:block">
                     <MapPin className="mr-1 inline h-3 w-3" />
