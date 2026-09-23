@@ -496,7 +496,7 @@ export default function MapaBrasil({
                 <g key={p.id}>
                   <circle
                     cx={x} cy={y}
-                    r={6}
+                    r={7}
                     fill="#f97316"
                     stroke="#fff7ed"
                     strokeWidth={2}
@@ -504,7 +504,7 @@ export default function MapaBrasil({
                   />
                   <circle
                     cx={x} cy={y}
-                    r={3}
+                    r={3.5}
                     fill="#fff7ed"
                     opacity={0.9}
                   />
