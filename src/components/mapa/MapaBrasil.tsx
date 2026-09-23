@@ -177,7 +177,6 @@ interface Props {
   /** Layer 2 — Infraestrutura Física: cabos submarinos (TeleGeography). */
   layer2Ativa?: boolean;
   dadosCabos?: DadosCabos | null;
-  onFetchCableGeo?: (id: string) => Promise<any>;
 }
 
 export default function MapaBrasil({
