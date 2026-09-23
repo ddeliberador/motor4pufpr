@@ -2,7 +2,7 @@
 // sem lista congelada em arquivo. Mapa sóbrio (contorno + UFs), coluna lateral
 // com filtros funcionais e lista exportável dos registros filtrados.
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search, X, ExternalLink, MapPin, Loader2, Filter, BarChart3, List, Database,
@@ -113,24 +113,20 @@ export default function Mapa() {
   const [layer2Carregando, setLayer2Carregando] = useState(false);
   const [dadosCabos, setDadosCabos] = useState<DadosCabos | null>(null);
 
-  // Busca dados da API TeleGeography somente quando a camada for ligada (lazy load).
+  // Busca snapshot local dos cabos somente quando a camada for ligada (lazy load).
   useEffect(() => {
     if (!layer2Ativa || dadosCabos) return;
     setLayer2Carregando(true);
-    Promise.all([
-      fetch("https://www.submarinecablemap.com/api/v3/cable/all.json").then((r) => r.json()),
-      fetch("https://www.submarinecablemap.com/api/v3/landing-point/all.json").then((r) => r.json()),
-    ])
-      .then(([cables, points]) => {
-        const cablesArr = Array.isArray(cables) ? cables : (cables.cables || cables.features || []);
-        const pointsArr = Array.isArray(points) ? points : (points["landing-points"] || points.features || points.data || []);
-        setDadosCabos({ cables: cablesArr, points: pointsArr });
-        setLayer2Carregando(false);
+    fetch("/submarine-cablemap/data.json")
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return (await r.json()) as DadosCabos;
       })
+      .then((d) => setDadosCabos(d))
       .catch((err) => {
         console.warn("Cabos submarinos indisponíveis:", err);
-        setLayer2Carregando(false);
-      });
+      })
+      .finally(() => setLayer2Carregando(false));
   }, [layer2Ativa, dadosCabos]);
 
   const locais = data || [];
@@ -901,12 +897,12 @@ export default function Mapa() {
                     contagemPorUf={contagemPorUf}
                     onSelecionarUf={(u) => u && alternar(ufsSel, u, setUfsSel)}
                     onSelecionarCluster={(pontos, total) => setSelecao({ pontos, total })}
-                     pontoSelecionadoId={pontoSelecionadoId}
-                     onSelecionarPonto={setPontoSelecionadoId}
-                     grupoIds={grupoIds}
-                     layer2Ativa={layer2Ativa}
-                     dadosCabos={dadosCabos}
-                   />
+                    pontoSelecionadoId={pontoSelecionadoId}
+                    onSelecionarPonto={setPontoSelecionadoId}
+                    grupoIds={grupoIds}
+                    layer2Ativa={layer2Ativa}
+                    dadosCabos={dadosCabos}
+                  />
                   <p className="pointer-events-none absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-center text-[11px] text-muted-foreground sm:block">
                     <MapPin className="mr-1 inline h-3 w-3" />
                     {pontos.length.toLocaleString("pt-BR")} pontos georreferenciados · clique num
