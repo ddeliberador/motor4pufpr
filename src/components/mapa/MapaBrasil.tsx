@@ -476,8 +476,52 @@ export default function MapaBrasil({
           })}
         </g>
 
-        {/* Layer 2 — Cabos Submarinos (por baixo dos marcadores) */}
-        {layer2Ativa && (
+        {/* Layer 2c — Backhaul por município (ANATEL) */}
+        {layer2Ativa && l2Backhaul && dadosBackhaul && dadosBackhaul.length > 0 && (
+          <g opacity={0.8} pointerEvents="none" clipPath="url(#brasil-contorno)">
+            {dadosBackhaul.map((m, i) => {
+              if (!Number.isFinite(m.latitude) || !Number.isFinite(m.longitude)) return null;
+              if (m.longitude < -75 || m.longitude > -30 || m.latitude > 6 || m.latitude < -35) return null;
+              const [x, y] = projetar(m.longitude, m.latitude);
+              const cor = m.temBackhaul ? "#d97706" : "#9ca3af";
+              return (
+                <rect
+                  key={`bh-${i}`}
+                  x={x - tam * 0.18}
+                  y={y - tam * 0.18}
+                  width={tam * 0.36}
+                  height={tam * 0.36}
+                  rx={0.5}
+                  fill={cor}
+                  fillOpacity={0.65}
+                  stroke="none"
+                >
+                  <title>{`${m.municipio}/${m.uf} · ${m.temBackhaul ? `Backhaul: ${m.tipo || "fibra"}` : `Sem fibra (${m.tipo || "outros meios"})`}`}</title>
+                </rect>
+              );
+            })}
+          </g>
+        )}
+
+        {/* Layer 2b — Antenas 4G/5G (OpenCelliD) */}
+        {layer2Ativa && l2Antenas && dadosAntenas && dadosAntenas.length > 0 && (
+          <g opacity={0.7} pointerEvents="none" clipPath="url(#brasil-contorno)">
+            {dadosAntenas.map((a) => {
+              if (!Number.isFinite(a.lat) || !Number.isFinite(a.lon)) return null;
+              if (a.lon < -75 || a.lon > -30 || a.lat > 6 || a.lat < -35) return null;
+              const [x, y] = projetar(a.lon, a.lat);
+              const cor = a.radio === "NR" ? "#f97316" : "#fb923c";
+              return (
+                <circle key={a.id} cx={x} cy={y} r={tam * 0.22} fill={cor} fillOpacity={0.6} stroke="none">
+                  <title>{`${a.operadora || a.net} · ${a.radio === "NR" ? "5G" : "4G"}`}</title>
+                </circle>
+              );
+            })}
+          </g>
+        )}
+
+        {/* Layer 2a — Cabos Submarinos (por baixo dos marcadores) */}
+        {layer2Ativa && l2Cabos !== false && (
           <g opacity={1} pointerEvents="none">
             {/* Traçados dos cabos */}
             {cabosVisiveis.map((cabo) => {
