@@ -437,11 +437,13 @@ export default function MapaBrasil({
         {layer2Ativa && (
           <g opacity={1} pointerEvents="none">
             {/* Traçados dos cabos */}
-            {Object.entries(geoCabos).map(([cableId, linhas]) => {
-              const cabo = dadosCabos?.cables.find((c) => c.id === cableId);
-              const cor = cabo?.color || "#f97316";
+            {cabosVisiveis.map((cabo) => {
+              const cor = cabo.color || "#f97316";
+              const linhas: number[][][] =
+                cabo.geometry.type === "MultiLineString"
+                  ? cabo.geometry.coordinates
+                  : [cabo.geometry.coordinates];
               return linhas.map((linha, li) => {
-                // Projeta apenas segmentos que cruzam o bounding box expandido
                 const pts = linha
                   .filter(([lon, lat]) => lon >= -100 && lon <= -20 && lat >= -60 && lat <= 20)
                   .map(([lon, lat]) => projetar(lon, lat));
@@ -450,7 +452,7 @@ export default function MapaBrasil({
                   .map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`)
                   .join(" ");
                 return (
-                  <g key={`${cableId}-${li}`}>
+                  <g key={`${cabo.id}-${li}`}>
                     {/* Sombra de volume */}
                     <path
                       d={d}
@@ -488,7 +490,7 @@ export default function MapaBrasil({
             })}
 
             {/* Landing points brasileiros */}
-            {landingPointsBR.map((p) => {
+            {landingPointsVisiveis.map((p) => {
               const lat = Number(p.latitude);
               const lon = Number(p.longitude);
               if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
@@ -509,7 +511,7 @@ export default function MapaBrasil({
                     fill="#fff7ed"
                     opacity={0.9}
                   />
-                  <title>{p.name}{p.cables?.length ? ` — ${p.cables.length} cabo(s)` : ""}</title>
+                  <title>{p.name}</title>
                 </g>
               );
             })}
