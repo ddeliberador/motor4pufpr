@@ -191,7 +191,6 @@ export default function MapaBrasil({
   grupoIds,
   layer2Ativa,
   dadosCabos,
-  onFetchCableGeo,
 }: Props) {
   const [features, setFeatures] = useState<Feature[] | null>(null);
   const [erroMalha, setErroMalha] = useState<string | null>(null);
