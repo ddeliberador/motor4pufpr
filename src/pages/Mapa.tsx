@@ -166,13 +166,16 @@ export default function Mapa() {
     setLayer3Carregando(true);
     setErroLayer3(null);
     safeSupabase.functions.invoke("map-infrastructure", { body: { layer: "datacenters" } })
-      .then(({ data: resposta, error: falha }) => {
-        if (falha) throw falha;
-        if (!resposta || !Array.isArray(resposta.data)) {
-          throw new Error("resposta inválida do PeeringDB");
-        }
-        setDadosDCs(resposta.data as Datacenter[]);
+      .then(async ({ data: resposta, error: falha }) => {
+        if (!falha && resposta && Array.isArray(resposta.data)) return resposta.data as Datacenter[];
+        console.warn("PeeringDB ao vivo indisponível; usando snapshot público validado:", falha);
+        const snapshot = await fetch("/peeringdb-br.json");
+        if (!snapshot.ok) throw falha || new Error(`snapshot PeeringDB: HTTP ${snapshot.status}`);
+        const salvo = await snapshot.json();
+        if (!Array.isArray(salvo.data)) throw new Error("snapshot PeeringDB inválido");
+        return salvo.data as Datacenter[];
       })
+      .then((datacenters) => setDadosDCs(datacenters))
       .catch((err) => {
         const mensagem = err instanceof Error ? err.message : "falha desconhecida";
         console.error("Layer 3 — PeeringDB indisponível:", err);
