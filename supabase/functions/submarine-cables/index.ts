@@ -11,7 +11,12 @@ const corsHeaders = {
 const BASE = "https://www.submarinecablemap.com/api/v3";
 
 async function fetchJson(path: string) {
-  const res = await fetch(`${BASE}${path}`);
+  const res = await fetch(`${BASE}${path}`, {
+    headers: {
+      Accept: "application/json",
+      "User-Agent": "Mozilla/5.0 (compatible; Motor4PUFPR/1.0)",
+    },
+  });
   const contentType = res.headers.get("content-type") || "";
   let body: string;
   try {
