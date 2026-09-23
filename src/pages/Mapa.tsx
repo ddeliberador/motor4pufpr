@@ -42,6 +42,17 @@ const REGIAO_POR_UF: Record<string, string> = {
 };
 const REGIOES = ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"];
 
+// Subtipos de geração da ANEEL (SIGA), conforme SigTipoGeracao.
+const TIPOS_USINA = [
+  { key: "UHE", label: "Hidrelétrica (UHE)" },
+  { key: "PCH", label: "Pequena central hidrelétrica (PCH)" },
+  { key: "CGH", label: "Micro-hidrelétrica (CGH)" },
+  { key: "EOL", label: "Eólica (EOL)" },
+  { key: "UFV", label: "Solar fotovoltaica (UFV)" },
+  { key: "UTE", label: "Termelétrica (UTE)" },
+  { key: "UTN", label: "Nuclear (UTN)" },
+];
+
 /** Facetas de tipo: "ICT; Unidade Embrapii" vira ["ICT", "Unidade Embrapii"]. */
 const facetasTipo = (tipo: string) =>
   tipo.split(";").map((t) => t.trim()).filter(Boolean);
