@@ -552,6 +552,68 @@ export default function MapaBrasil({
             </text>
           </g>
         )}
+        {/* Layer 2 — Cabos submarinos (traçados oceânicos + landing points BR) */}
+        {(cabosSub?.length ?? 0) > 0 && (
+          <g style={{ pointerEvents: "none" }}>
+            {/* Linhas dos cabos */}
+            {Array.from(cabosGeo.entries()).map(([caboId, linhas]) => {
+              const cabo = cabosSub!.find((c) => c.id === caboId);
+              const cor = corCabo(caboId, cabo?.color);
+              return linhas.map((linha, li) => {
+                const pts = linha
+                  .map(([lon, lat]) => {
+                    // Projeta apenas pontos dentro do bbox estendido (inclui oceano Atlântico)
+                    if (lon < -90 || lon > 20 || lat < -60 || lat > 20) return null;
+                    const [x, y] = projetar(lon, lat);
+                    return `${x.toFixed(1)},${y.toFixed(1)}`;
+                  })
+                  .filter(Boolean);
+                if (pts.length < 2) return null;
+                return (
+                  <polyline
+                    key={`${caboId}-${li}`}
+                    points={pts.join(" ")}
+                    fill="none"
+                    stroke={cor}
+                    strokeWidth={1.2 * escala}
+                    strokeOpacity={0.65}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <title>{cabo?.name ?? caboId}{cabo?.rfs ? ` · RFS ${cabo.rfs}` : ""}</title>
+                  </polyline>
+                );
+              });
+            })}
+
+            {/* Pontos de aterramento no Brasil */}
+            {(landingPoints ?? []).map((lp) => {
+              const lat = Number(lp.latitude);
+              const lon = Number(lp.longitude);
+              if (!isFinite(lat) || !isFinite(lon)) return null;
+              if (lon < LON0 - 2 || lon > LON1 + 2 || lat > LAT0 + 2 || lat < LAT1 - 2) return null;
+              const [x, y] = projetar(lon, lat);
+              const r = tam * 0.55;
+              return (
+                <g key={lp.id}>
+                  <circle
+                    cx={x} cy={y} r={r * 1.8}
+                    fill="hsl(var(--background) / 0.6)"
+                    stroke="#3B82F6"
+                    strokeWidth={1.0 * escala}
+                    strokeOpacity={0.5}
+                  />
+                  <circle
+                    cx={x} cy={y} r={r}
+                    fill="#3B82F6"
+                    fillOpacity={0.9}
+                  />
+                  <title>{lp.name ?? lp.id}</title>
+                </g>
+              );
+            })}
+          </g>
+        )}
       </svg>
 
       {/* Controles de zoom */}
