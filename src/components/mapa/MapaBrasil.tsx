@@ -401,9 +401,9 @@ export default function MapaBrasil({
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          <filter id="cabo-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor="#fb923c" floodOpacity="0.55" />
-          </filter>
+<filter id="cabo-glow" x="-50%" y="-50%" width="200%" height="200%">
+  <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#fb923c" floodOpacity="0.75" />
+</filter>
           <clipPath id="brasil-contorno">
             {paths.map((p) => <path key={`clip-${p.sigla}`} d={p.d} />)}
           </clipPath>
@@ -454,32 +454,29 @@ export default function MapaBrasil({
                     <path
                       d={d}
                       stroke="#7c2d12"
-                      strokeWidth={6}
+                      strokeWidth={10}
                       fill="none"
                       strokeOpacity={0.35}
                       strokeLinecap="round"
-                      vectorEffect="non-scaling-stroke"
                     />
                     {/* Linha principal */}
                     <path
                       d={d}
                       stroke={cor}
-                      strokeWidth={3.5}
+                      strokeWidth={6}
                       fill="none"
-                      strokeOpacity={0.95}
+                      strokeOpacity={1}
                       strokeLinecap="round"
-                      vectorEffect="non-scaling-stroke"
                       filter="url(#cabo-glow)"
                     />
                     {/* Núcleo claro */}
                     <path
                       d={d}
                       stroke="#ffedd5"
-                      strokeWidth={1}
+                      strokeWidth={2}
                       fill="none"
-                      strokeOpacity={0.65}
+                      strokeOpacity={0.75}
                       strokeLinecap="round"
-                      vectorEffect="non-scaling-stroke"
                     />
                   </g>
                 );
@@ -496,7 +493,7 @@ export default function MapaBrasil({
                 <g key={p.id}>
                   <circle
                     cx={x} cy={y}
-                    r={6}
+                    r={7}
                     fill="#f97316"
                     stroke="#fff7ed"
                     strokeWidth={2}
@@ -504,7 +501,7 @@ export default function MapaBrasil({
                   />
                   <circle
                     cx={x} cy={y}
-                    r={3}
+                    r={3.5}
                     fill="#fff7ed"
                     opacity={0.9}
                   />
