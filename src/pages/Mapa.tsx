@@ -239,7 +239,14 @@ export default function Mapa() {
       }
     }
     return extras;
-  }, [layer1Ativa, dadosUsinas, layer3Ativa, dadosDCs]);
+  }, [layer1Ativa, dadosUsinas, tiposUsina, layer3Ativa, dadosDCs]);
+
+  // Contagem de usinas por subtipo, para o filtro da Layer 1.
+  const contagemTipoUsina = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const u of dadosUsinas || []) c[u.tipo] = (c[u.tipo] || 0) + 1;
+    return c;
+  }, [dadosUsinas]);
 
   const locais = useMemo(
     () => [...(data || []), ...locaisInfra],
