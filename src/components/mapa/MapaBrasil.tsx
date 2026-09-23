@@ -472,7 +472,7 @@ export default function MapaBrasil({
 
         {/* Layer 2 — Cabos Submarinos (por baixo dos marcadores) */}
         {layer2Ativa && (
-          <g opacity={0.75} pointerEvents="none">
+          <g opacity={1} pointerEvents="none">
             {/* Traçados dos cabos */}
             {Object.entries(geoCabos).map(([cableId, linhas]) => {
               const cabo = dadosCabos?.cables.find((c) => c.id === cableId);
@@ -487,15 +487,39 @@ export default function MapaBrasil({
                   .map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`)
                   .join(" ");
                 return (
-                  <path
-                    key={`${cableId}-${li}`}
-                    d={d}
-                    stroke={cor}
-                    strokeWidth={2 * escala}
-                    fill="none"
-                    strokeOpacity={0.7}
-                    strokeLinecap="round"
-                  />
+                  <g key={`${cableId}-${li}`}>
+                    {/* Sombra de volume */}
+                    <path
+                      d={d}
+                      stroke="#7c2d12"
+                      strokeWidth={6}
+                      fill="none"
+                      strokeOpacity={0.35}
+                      strokeLinecap="round"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                    {/* Linha principal */}
+                    <path
+                      d={d}
+                      stroke={cor}
+                      strokeWidth={3.5}
+                      fill="none"
+                      strokeOpacity={0.95}
+                      strokeLinecap="round"
+                      vectorEffect="non-scaling-stroke"
+                      filter="url(#cabo-glow)"
+                    />
+                    {/* Núcleo claro */}
+                    <path
+                      d={d}
+                      stroke="#ffedd5"
+                      strokeWidth={1}
+                      fill="none"
+                      strokeOpacity={0.65}
+                      strokeLinecap="round"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  </g>
                 );
               });
             })}
@@ -510,10 +534,16 @@ export default function MapaBrasil({
                 <g key={p.id}>
                   <circle
                     cx={x} cy={y}
-                    r={tam * 0.7}
+                    r={6}
                     fill="#f97316"
-                    stroke="white"
-                    strokeWidth={1.2 * escala}
+                    stroke="#fff7ed"
+                    strokeWidth={2}
+                    opacity={1}
+                  />
+                  <circle
+                    cx={x} cy={y}
+                    r={3}
+                    fill="#fff7ed"
                     opacity={0.9}
                   />
                   <title>{p.name}{p.cables?.length ? ` — ${p.cables.length} cabo(s)` : ""}</title>
