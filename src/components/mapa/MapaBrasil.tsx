@@ -454,7 +454,7 @@ export default function MapaBrasil({
                     <path
                       d={d}
                       stroke="#7c2d12"
-                      strokeWidth={6}
+                      strokeWidth={8}
                       fill="none"
                       strokeOpacity={0.35}
                       strokeLinecap="round"
@@ -464,7 +464,7 @@ export default function MapaBrasil({
                     <path
                       d={d}
                       stroke={cor}
-                      strokeWidth={3.5}
+                      strokeWidth={5}
                       fill="none"
                       strokeOpacity={0.95}
                       strokeLinecap="round"
@@ -475,7 +475,7 @@ export default function MapaBrasil({
                     <path
                       d={d}
                       stroke="#ffedd5"
-                      strokeWidth={1}
+                      strokeWidth={1.5}
                       fill="none"
                       strokeOpacity={0.65}
                       strokeLinecap="round"
