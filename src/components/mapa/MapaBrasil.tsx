@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Minus, Plus, Maximize2 } from "lucide-react";
 import { CATEGORIA_MAP, type CategoriaKey } from "./tipos";
+import { type CaboSubmarino, type LandingPoint, corCabo } from "./cabosSub";
 
 export interface Ponto {
   id: string;
@@ -173,6 +174,9 @@ interface Props {
   onSelecionarPonto?: (id: string | null) => void;
   /** IDs do grupo aberto na listagem (pontos sobrepostos num mesmo ícone). */
   grupoIds?: Set<string> | null;
+  /** Layer 2 — Cabos submarinos (TeleGeography). */
+  cabosSub?: CaboSubmarino[];
+  landingPoints?: LandingPoint[];
 }
 
 export default function MapaBrasil({
@@ -185,6 +189,8 @@ export default function MapaBrasil({
   pontoSelecionadoId,
   onSelecionarPonto,
   grupoIds,
+  cabosSub,
+  landingPoints,
 }: Props) {
   const [features, setFeatures] = useState<Feature[] | null>(null);
   const [erroMalha, setErroMalha] = useState<string | null>(null);
