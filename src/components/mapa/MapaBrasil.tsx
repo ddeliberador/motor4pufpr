@@ -6,7 +6,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Minus, Plus, Maximize2 } from "lucide-react";
 import { CATEGORIA_MAP, type CategoriaKey } from "./tipos";
-import { type DadosCabos, type Datacenter, type UsinaAneel } from "./caboSubmarino";
+import {
+  type AntenaERB,
+  type BackhaulMunicipio,
+  type DadosCabos,
+  type Datacenter,
+  type UsinaAneel,
+} from "./caboSubmarino";
 
 export interface Ponto {
   id: string;
