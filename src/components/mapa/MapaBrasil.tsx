@@ -199,6 +199,8 @@ export default function MapaBrasil({
   const arrasteRef = useRef<{ x: number; y: number; vista: Vista; movido: boolean } | null>(null);
   const movidoRef = useRef(false);
   const [arrastando, setArrastando] = useState(false);
+  // Geometrias dos cabos submarinos (por id), buscadas sob demanda.
+  const [cabosGeo, setCabosGeo] = useState<Map<string, [number, number][][]>>(new Map());
 
   useEffect(() => {
     let vivo = true;
@@ -292,6 +294,49 @@ export default function MapaBrasil({
   }, [aplicarZoom, paraSvg, features]);
 
   const escala = vista.w / W;
+
+  // Busca o traçado GeoJSON dos cabos que têm ponto de aterramento no Brasil.
+  useEffect(() => {
+    if (!cabosSub || cabosSub.length === 0 || !landingPoints || landingPoints.length === 0) {
+      setCabosGeo(new Map());
+      return;
+    }
+    const lpIds = new Set(landingPoints.map((lp) => lp.id));
+    const cabosBR = cabosSub.filter((c) =>
+      c.landing_points?.some((lpId) => lpIds.has(lpId)),
+    );
+    if (cabosBR.length === 0) {
+      setCabosGeo(new Map());
+      return;
+    }
+    // Limita a 30 cabos para não disparar 200+ requests individuais.
+    const alvo = cabosBR.slice(0, 30);
+    const novoMapa = new Map<string, [number, number][][]>();
+    let pendentes = alvo.length;
+    alvo.forEach((cabo) => {
+      const slug = cabo.slug || cabo.id;
+      fetch(`https://www.submarinecablemap.com/api/v3/cable/${slug}.json`)
+        .then((r) => r.json())
+        .then((fc) => {
+          const linhas: [number, number][][] = [];
+          const features = fc.features || [];
+          for (const feat of features) {
+            const coords = feat.geometry?.coordinates;
+            if (!coords) continue;
+            if (feat.geometry.type === "LineString") linhas.push(coords);
+            else if (feat.geometry.type === "MultiLineString")
+              for (const l of coords) linhas.push(l);
+          }
+          novoMapa.set(cabo.id, linhas);
+        })
+        .catch(() => { /* cabo sem geo pública — ignora */ })
+        .finally(() => {
+          pendentes--;
+          if (pendentes === 0) setCabosGeo(new Map(novoMapa));
+        });
+    });
+  }, [cabosSub, landingPoints]);
+
 
   // Ícones com tamanho amortecido: crescem menos que o zoom, então ao
   // aproximar num estado populoso eles ficam proporcionalmente menores
