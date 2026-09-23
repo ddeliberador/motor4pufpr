@@ -199,8 +199,6 @@ export default function MapaBrasil({
   const arrasteRef = useRef<{ x: number; y: number; vista: Vista; movido: boolean } | null>(null);
   const movidoRef = useRef(false);
   const [arrastando, setArrastando] = useState(false);
-  // Geometrias dos cabos submarinos (por id), buscadas sob demanda.
-  const [geoCabos, setGeoCabos] = useState<Record<string, number[][][]>>({});
 
   useEffect(() => {
     let vivo = true;
@@ -295,51 +293,16 @@ export default function MapaBrasil({
 
   const escala = vista.w / W;
 
-  // Layer 2 — pontos de aterramento no Brasil (e margem costeira).
-  const landingPointsBR = useMemo(() => {
+  // Layer 2 — cabos e landing points já pré-filtrados no snapshot local.
+  const cabosVisiveis = useMemo(() => {
     if (!layer2Ativa || !dadosCabos) return [];
-    return dadosCabos.points.filter((p) => {
-      const lat = Number(p.latitude);
-      const lon = Number(p.longitude);
-      return lat >= -35 && lat <= 6 && lon >= -75 && lon <= -30;
-    });
+    return dadosCabos.cables;
   }, [layer2Ativa, dadosCabos]);
 
-  // Cabos que tocam o Brasil (têm pelo menos um landing point BR).
-  const cabosNoBR = useMemo(() => {
-    if (!layer2Ativa || !dadosCabos || landingPointsBR.length === 0) return [];
-    const idsBR = new Set(landingPointsBR.map((p) => p.id));
-    return dadosCabos.cables.filter((c) =>
-      c.landing_points?.some((pid) => idsBR.has(pid)),
-    );
-  }, [layer2Ativa, dadosCabos, landingPointsBR]);
-
-  // Busca o traçado GeoJSON de cada cabo sob demanda (via Edge Function,
-  // evitando bloqueio de CORS da TeleGeography no browser).
-  useEffect(() => {
-    if (!layer2Ativa || cabosNoBR.length === 0 || !onFetchCableGeo) return;
-    cabosNoBR.forEach(async (cabo) => {
-      if (geoCabos[cabo.id]) return;
-      try {
-        const data = await onFetchCableGeo(cabo.id);
-        const coords: number[][][] = [];
-        if (data.geometry?.type === "MultiLineString") {
-          coords.push(...data.geometry.coordinates);
-        } else if (data.geometry?.type === "LineString") {
-          coords.push(data.geometry.coordinates);
-        } else if (Array.isArray(data.features)) {
-          for (const feat of data.features) {
-            const g = feat.geometry;
-            if (!g) continue;
-            if (g.type === "LineString") coords.push(g.coordinates);
-            else if (g.type === "MultiLineString") coords.push(...g.coordinates);
-          }
-        }
-        setGeoCabos((prev) => ({ ...prev, [cabo.id]: coords }));
-      } catch { /* cabo sem geo pública — ignora */ }
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layer2Ativa, cabosNoBR, onFetchCableGeo]);
+  const landingPointsVisiveis = useMemo(() => {
+    if (!layer2Ativa || !dadosCabos) return [];
+    return dadosCabos.points;
+  }, [layer2Ativa, dadosCabos]);
 
 
   // Ícones com tamanho amortecido: crescem menos que o zoom, então ao
