@@ -23,7 +23,7 @@ import MetricasCruzamento from "@/components/mapa/MetricasCruzamento";
 import PainelDataLake from "@/components/mapa/PainelDataLake";
 import { canonizar, passaLake, resumoLake, type SelecaoLake } from "@/components/mapa/dataLake";
 import { Button } from "@/components/ui/button";
-import { type CaboSubmarino, type LandingPoint } from "@/components/mapa/cabosSub";
+import { type DadosCabos } from "@/components/mapa/caboSubmarino";
 
 const COLUNAS =
   "id,nome,tipo,uf,municipio,latitude,longitude,fonte,fonte_url,cnpj,data_coleta,raw_metadata";
