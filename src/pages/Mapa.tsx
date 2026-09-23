@@ -198,6 +198,7 @@ export default function Mapa() {
     if (layer1Ativa && dadosUsinas) {
       for (const u of dadosUsinas) {
         if (u.latitude == null || u.longitude == null) continue;
+        if (tiposUsina.size > 0 && !tiposUsina.has(u.tipo)) continue;
         extras.push({
           id: `aneel-${u.id}`,
           nome: u.nome,
