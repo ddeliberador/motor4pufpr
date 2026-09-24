@@ -385,8 +385,27 @@ export default function Mapa() {
         } as unknown as ResearchLocation);
       }
     }
+    if (dadosBackhaul) {
+      for (const b of dadosBackhaul) {
+        if (b.latitude == null || b.longitude == null) continue;
+        extras.push({
+          id: `anatel-backhaul-${b.uf}-${b.municipio}`,
+          nome: b.municipio,
+          tipo: b.temBackhaul ? "Backhaul (fibra óptica)" : "Backhaul (outros meios)",
+          uf: b.uf || null,
+          municipio: b.municipio || null,
+          latitude: b.latitude,
+          longitude: b.longitude,
+          fonte: "anatel_backhaul",
+          fonte_url: "https://www.anatel.gov.br/dadosabertos/paineis_de_dados/infraestrutura/mapeamento_rede_transporte.zip",
+          cnpj: null,
+          data_coleta: null,
+          raw_metadata: { tem_backhaul: b.temBackhaul, meio: b.tipo ?? null },
+        } as unknown as ResearchLocation);
+      }
+    }
     return extras;
-  }, [dadosUsinas, dadosDCs]);
+  }, [dadosUsinas, dadosDCs, dadosBackhaul]);
 
   const locaisInfra = useMemo(
     () => locaisInfraTotais.filter((local) => {
@@ -395,9 +414,10 @@ export default function Mapa() {
         return layer1Ativa && (tiposUsina.size === 0 || tiposUsina.has(tipo));
       }
       if (local.fonte === "peeringdb") return layer3Ativa;
+      if (local.fonte === "anatel_backhaul") return layer2Ativa && l2Backhaul;
       return false;
     }),
-    [locaisInfraTotais, layer1Ativa, tiposUsina, layer3Ativa],
+    [locaisInfraTotais, layer1Ativa, tiposUsina, layer3Ativa, layer2Ativa, l2Backhaul],
   );
 
   // Contagem de usinas por subtipo, para o filtro da Layer 1.
