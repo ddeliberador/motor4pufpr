@@ -538,8 +538,9 @@ export default function MapaBrasil({
               if (!Number.isFinite(a.lat) || !Number.isFinite(a.lon)) return null;
               if (a.lon < -75 || a.lon > -30 || a.lat > 6 || a.lat < -35) return null;
               const [x, y] = projetar(a.lon, a.lat);
-              const icon = a.radio === "NR" ? "5g" : "4g_mobiledata";
-              const corClass = a.radio === "NR" ? "text-orange-500" : "text-orange-300";
+              const anatel = a.fonte === "anatel";
+              const icon = anatel ? "settings_input_antenna" : a.radio === "NR" ? "5g" : "4g_mobiledata";
+              const corClass = anatel ? "text-orange-600" : a.radio === "NR" ? "text-orange-500" : "text-orange-300";
               return (
                 <text
                   key={a.id}
@@ -549,14 +550,14 @@ export default function MapaBrasil({
                   dominantBaseline="central"
                   className={`material-symbols-outlined select-none ${corClass}`}
                    style={{
-                     fontSize: tam * 0.75,
+                     fontSize: tam * (anatel ? 0.55 : 0.75),
                      opacity: 0.85,
                      fontVariationSettings: '"FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24',
                    }}
                   fill="currentColor"
                 >
                   {icon}
-                  <title>{`${a.operadora || a.net} · ${a.radio === "NR" ? "5G" : "4G"}`}</title>
+                  <title>{a.operadora || `${a.net} · ${a.radio === "NR" ? "5G" : "4G"}`}</title>
                 </text>
               );
             })}

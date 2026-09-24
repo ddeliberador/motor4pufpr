@@ -275,30 +275,45 @@ export default function Mapa() {
       .finally(() => setLayer2Carregando(false));
   }, [layer2Ativa, dadosCabos]);
 
-  // Layer 2b — Antenas 4G/5G (OpenCelliD, via função de servidor). Lazy load.
+  // Layer 2b — Antenas: dump OpenCelliD (grade 0,1°) + ERBs licenciadas ANATEL (por município).
+  // Snapshots reais gerados a partir das fontes oficiais; falhas por fonte ficam visíveis.
   useEffect(() => {
     if (!layer2Ativa || !l2Antenas || dadosAntenas) return;
     setAntenaCarregando(true);
     setErroAntenas(null);
-    buscarInfraestrutura("antennas")
-      .then(({ data: resposta, error: falha }) => {
-        if (falha) {
-          setErroAntenas(mensagemFalhaInfra(falha));
-          console.warn("Layer 2b — consulta indisponível:", mensagemFalhaInfra(falha));
-          return;
+    const obter = (url: string) =>
+      fetch(url).then((r) => {
+        if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
+        return r.json();
+      });
+    Promise.allSettled([obter("/opencellid-br.json"), obter("/anatel-erb-br.json")])
+      .then(([ocid, anatel]) => {
+        const lista: AntenaERB[] = [];
+        const erros: string[] = [];
+        if (ocid.status === "fulfilled" && Array.isArray(ocid.value?.grade)) {
+          for (const g of ocid.value.grade as { lat: number; lon: number; LTE: number; NR: number; outros: number }[]) {
+            const celulas = g.LTE + g.NR + g.outros;
+            lista.push({
+              id: `ocid-${g.lat}-${g.lon}`, lat: g.lat, lon: g.lon, mcc: "724", net: "",
+              radio: g.NR > 0 ? "NR" : "LTE", fonte: "opencellid", celulas,
+              operadora: `OpenCelliD · ${celulas} células (4G ${g.LTE}, 5G ${g.NR}, outras ${g.outros})`,
+            });
+          }
+        } else erros.push(`OpenCelliD: ${ocid.status === "rejected" ? String(ocid.reason) : "formato inválido"}`);
+        if (anatel.status === "fulfilled" && Array.isArray(anatel.value?.municipios)) {
+          for (const m of anatel.value.municipios as { ibge: string; municipio: string; uf: string; lat: number; lon: number; estacoes: number; operadoras: Record<string, number> }[]) {
+            lista.push({
+              id: `anatel-${m.ibge}`, lat: m.lat, lon: m.lon, mcc: "724", net: "", radio: "LICENCIADA",
+              fonte: "anatel", celulas: m.estacoes, uf: m.uf, municipio: m.municipio,
+              operadora: `ANATEL · ${m.estacoes} ERBs licenciadas em ${m.municipio}/${m.uf} — ${Object.entries(m.operadoras).map(([o, n]) => `${o} ${n}`).join(", ")}`,
+            });
+          }
+        } else erros.push(`ANATEL: ${anatel.status === "rejected" ? String(anatel.reason) : "formato inválido"}`);
+        if (erros.length) {
+          console.warn("Layer 2b — falhas:", erros);
+          setErroAntenas(erros.join(" · "));
         }
-        if (!resposta || !Array.isArray(resposta.data)) throw new Error("resposta inválida do OpenCelliD");
-        if (resposta.data.length === 0) {
-          const motivo = resposta.failures?.[0]?.error || "nenhuma antena retornada";
-          console.warn("Layer 2b — OpenCelliD sem resultados:", resposta.failures);
-          setErroAntenas(motivo);
-        }
-        setDadosAntenas(resposta.data as AntenaERB[]);
-      })
-      .catch((err) => {
-        const mensagem = err instanceof Error ? err.message : "falha desconhecida";
-        console.error("Layer 2b — OpenCelliD indisponível:", err);
-        setErroAntenas(mensagem);
+        setDadosAntenas(lista);
       })
       .finally(() => setAntenaCarregando(false));
   }, [layer2Ativa, l2Antenas, dadosAntenas]);
@@ -1078,15 +1093,15 @@ export default function Mapa() {
                             <span className="text-[10px] text-muted-foreground">carregando…</span>
                           ) : dadosAntenas && dadosAntenas.length > 0 ? (
                             <span className="text-[10px] text-muted-foreground">
-                              {dadosAntenas.length.toLocaleString("pt-BR")} ERBs
+                              {dadosAntenas.filter((a) => a.fonte === "anatel").reduce((s, a) => s + (a.celulas ?? 0), 0).toLocaleString("pt-BR")} ERBs ANATEL
                             </span>
                           ) : (
-                            <span className="text-[10px] text-muted-foreground">OpenCelliD</span>
+                            <span className="text-[10px] text-muted-foreground">ANATEL · OpenCelliD</span>
                           )}
                         </label>
                         {l2Antenas && erroAntenas && (
                           <p className="px-1 text-[10px] text-destructive">
-                            OpenCelliD indisponível: {erroAntenas}
+                            Fonte indisponível: {erroAntenas}
                           </p>
                         )}
                         {/* 2c — Backhaul por município */}
