@@ -113,8 +113,15 @@ function buscarInfraestrutura(layer: InfraLayer): Promise<InfraResponse> {
 
   const requisicao = safeSupabase.functions
     .invoke("map-infrastructure", { body: { layer } })
-    .then(({ data, error }) => ({ data: data as InfraPayload | null, error }))
-    .catch((error: unknown) => ({ error }));
+    .then(({ data, error }) => {
+      // Falhas não ficam em cache: permite nova tentativa depois.
+      if (error) requisicoesInfra.delete(layer);
+      return { data: data as InfraPayload | null, error };
+    })
+    .catch((error: unknown) => {
+      requisicoesInfra.delete(layer);
+      return { error };
+    });
   requisicoesInfra.set(layer, requisicao);
   return requisicao;
 }

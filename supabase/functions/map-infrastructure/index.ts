@@ -286,7 +286,7 @@ async function carregarBackhaul() {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const guard = await guardRequest<{ layer?: string }>(req, "map-infrastructure", corsHeaders, { limit: 20 });
+    const guard = await guardRequest<{ layer?: string }>(req, "map-infrastructure", corsHeaders, { limit: 150, windowSeconds: 300 });
     if (!guard.ok) return guard.response;
     const camada = guard.body.layer;
     const resultado = camada === "energy"
