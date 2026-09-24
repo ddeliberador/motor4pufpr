@@ -107,7 +107,7 @@ export default function PainelPoliticas({ layersAtivas, onFechar }: Props) {
   return (
     <aside
       aria-label="Políticas públicas por camada"
-      className="absolute bottom-8 right-3 z-30 w-[calc(100%-1.5rem)] max-w-80 overflow-hidden rounded-lg border border-border bg-card/95 shadow-lg backdrop-blur transition-all"
+      className="absolute inset-x-0 bottom-0 top-[6.75rem] z-20 flex flex-col overflow-hidden rounded-t-xl border border-border/60 bg-card/95 shadow-lg backdrop-blur-md lg:static lg:z-auto lg:h-full lg:w-96 lg:shrink-0 lg:rounded-none lg:border-0 lg:border-l lg:border-border lg:bg-card lg:shadow-none lg:backdrop-blur-none"
     >
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
         <div className="flex min-w-0 items-center gap-2">
@@ -146,7 +146,7 @@ export default function PainelPoliticas({ layersAtivas, onFechar }: Props) {
       </div>
 
       {!collapsed && (
-        <div className="max-h-[min(60vh,32rem)] overflow-y-auto overscroll-contain">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {carregando && (
             <div className="flex items-center justify-center gap-2 px-3 py-6 text-xs text-muted-foreground">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
