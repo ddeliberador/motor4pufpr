@@ -21,4 +21,4 @@
 - [x] Adicionar curadoria por layer, painel flutuante e controle de abertura
 - [x] Validar expansão, recolhimento, fechamento e reabertura no navegador
 
-- [ ] Mapa: remover Métricas, dividir Camadas no mapa (SNI/IA), ordenar lista com infra primeiro
+- [x] Mapa: remover Métricas, dividir Camadas no mapa (SNI/IA), ordenar lista com infra primeiro
