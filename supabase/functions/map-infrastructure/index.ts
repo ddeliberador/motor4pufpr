@@ -270,6 +270,7 @@ async function carregarBackhaul() {
     const meio = (c[idxAno] || "").replace(/"/g, "");
     const fibra = /fibra/i.test(meio);
     return [{
+      codigoIbge: codigo,
       municipio: (c[1] || "").replace(/"/g, ""),
       uf: c[2] || "",
       latitude: posicao.lat,
@@ -280,7 +281,115 @@ async function carregarBackhaul() {
   });
 
   if (data.length === 0) throw new Error("ANATEL backhaul respondeu sem municípios utilizáveis.");
-  return { data, failures: [], source: `${BACKHAUL_ZIP} (${nomeCsv}, ano ${anoRecente})`, ano: anoRecente };
+  return { data, failures: [] as string[], source: `${BACKHAUL_ZIP} (${nomeCsv}, ano ${anoRecente})`, ano: anoRecente };
+}
+
+// Cópia local em public.infra_backhaul_municipio: a ANATEL só é consultada
+// quando a cópia passa de BACKHAUL_VALIDADE_DIAS ou não existe.
+const BACKHAUL_TABELA = "infra_backhaul_municipio";
+const BACKHAUL_VALIDADE_DIAS = 30;
+const PAGINA_REST = 1000; // teto de linhas por resposta do PostgREST no Supabase
+
+type Backhaul = Awaited<ReturnType<typeof carregarBackhaul>>;
+
+function restServico(path: string, init: RequestInit = {}) {
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !key) throw new Error("SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY ausentes");
+  return fetch(`${url}/rest/v1/${path}`, {
+    ...init,
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+      ...(init.headers || {}),
+    },
+    signal: AbortSignal.timeout(15_000),
+  });
+}
+
+async function lerBackhaulGravado(): Promise<(Backhaul & { coletadoEm: string }) | null> {
+  const linhas: Record<string, unknown>[] = [];
+  for (let offset = 0; ; offset += PAGINA_REST) {
+    const res = await restServico(
+      `${BACKHAUL_TABELA}?select=*&order=codigo_ibge&limit=${PAGINA_REST}&offset=${offset}`,
+    );
+    if (!res.ok) throw new Error(`${BACKHAUL_TABELA}: HTTP ${res.status} ${await res.text()}`);
+    const pagina = await res.json();
+    linhas.push(...pagina);
+    if (pagina.length < PAGINA_REST) break;
+  }
+  if (linhas.length === 0) return null;
+
+  const coletadoEm = linhas.map((l) => String(l.coletado_em)).sort()[0];
+  return {
+    data: linhas.map((l) => ({
+      codigoIbge: String(l.codigo_ibge),
+      municipio: String(l.municipio),
+      uf: String(l.uf),
+      latitude: Number(l.latitude),
+      longitude: Number(l.longitude),
+      temBackhaul: Boolean(l.tem_backhaul),
+      tipo: String(l.tipo),
+    })),
+    failures: [],
+    source: String(linhas[0].fonte),
+    ano: String(linhas[0].ano),
+    coletadoEm,
+  };
+}
+
+async function gravarBackhaul(b: Backhaul) {
+  const coletadoEm = new Date().toISOString();
+  for (let i = 0; i < b.data.length; i += PAGINA_REST) {
+    const lote = b.data.slice(i, i + PAGINA_REST).map((m) => ({
+      codigo_ibge: m.codigoIbge,
+      municipio: m.municipio,
+      uf: m.uf,
+      latitude: m.latitude,
+      longitude: m.longitude,
+      tem_backhaul: m.temBackhaul,
+      tipo: m.tipo,
+      ano: b.ano,
+      fonte: b.source,
+      coletado_em: coletadoEm,
+    }));
+    const res = await restServico(`${BACKHAUL_TABELA}?on_conflict=codigo_ibge`, {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify(lote),
+    });
+    if (!res.ok) throw new Error(`gravar ${BACKHAUL_TABELA}: HTTP ${res.status} ${await res.text()}`);
+  }
+}
+
+async function obterBackhaul() {
+  const gravado = await lerBackhaulGravado().catch((e) => {
+    console.error("backhaul: leitura da cópia local falhou", e);
+    return null;
+  });
+  const idadeDias = gravado ? (Date.now() - Date.parse(gravado.coletadoEm)) / 86_400_000 : Infinity;
+  if (gravado && idadeDias < BACKHAUL_VALIDADE_DIAS) return gravado;
+
+  let novo: Backhaul;
+  try {
+    novo = await carregarBackhaul();
+  } catch (e) {
+    if (!gravado) throw e;
+    const motivo = e instanceof Error ? e.message : String(e);
+    console.error("backhaul: ANATEL indisponível, servindo cópia de", gravado.coletadoEm, e);
+    return {
+      ...gravado,
+      failures: [`ANATEL indisponível (${motivo}); exibindo cópia coletada em ${gravado.coletadoEm.slice(0, 10)}`],
+    };
+  }
+
+  try {
+    await gravarBackhaul(novo);
+  } catch (e) {
+    console.error("backhaul: dado novo servido, mas a cópia local não foi atualizada", e);
+  }
+  return { ...novo, coletadoEm: new Date().toISOString() };
 }
 
 Deno.serve(async (req) => {
@@ -296,7 +405,7 @@ Deno.serve(async (req) => {
         : camada === "antennas"
           ? await carregarAntenas()
           : camada === "backhaul"
-            ? await carregarBackhaul()
+            ? await obterBackhaul()
             : null;
     if (!resultado) {
       return new Response(JSON.stringify({ error: "layer inválida" }), {
