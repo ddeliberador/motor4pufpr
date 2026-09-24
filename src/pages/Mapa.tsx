@@ -220,12 +220,17 @@ export default function Mapa() {
     setBackhaulCarregando(true);
     setErroBackhaul(null);
     safeSupabase.functions.invoke("map-infrastructure", { body: { layer: "backhaul" } })
-      .then(({ data: resposta, error: falha }) => {
+      .then(async ({ data: resposta, error: falha }) => {
         if (falha) throw falha;
         if (!resposta || !Array.isArray(resposta.data) || resposta.data.length === 0) {
           throw new Error("ANATEL respondeu sem municípios");
         }
-        setDadosBackhaul(resposta.data as BackhaulMunicipio[]);
+        const lista = resposta.data as BackhaulMunicipio[];
+        const listaComCoord = await geocodeLote(lista).catch((e) => {
+          console.error("QLD-02: geocodificação do backhaul falhou; usando coordenadas do servidor", e);
+          return lista;
+        });
+        setDadosBackhaul(listaComCoord);
       })
       .catch((err) => {
         const mensagem = err instanceof Error ? err.message : "falha desconhecida";
