@@ -232,8 +232,12 @@ async function carregarAntenas() {
     const celulas = (
       (payload as Record<string, unknown>).cells ??
       (payload as Record<string, unknown>).data ??
-      []
+      (Array.isArray(payload) ? payload : [])
     ) as Record<string, unknown>[];
+    // Diagnóstico temporário: formato bruto da primeira resposta
+    if (data.length === 0 && celulas.length === 0) {
+      console.log("opencellid payload bruto:", JSON.stringify(payload).slice(0, 400));
+    }
 
     for (const c of Array.isArray(celulas) ? celulas : []) {
       const lat = Number(c.lat ?? c.latitude);
