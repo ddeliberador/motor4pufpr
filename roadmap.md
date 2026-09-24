@@ -18,6 +18,6 @@
 - [ ] Inserir os 3.306 registros `abstartups_2025` em `research_locations` — aguardando o CSV do usuário
 
 ## Painel de políticas públicas no Mapa
-- [ ] Adicionar curadoria por layer, painel flutuante e controle de abertura
-- [ ] Validar expansão, recolhimento, fechamento e reabertura no navegador
+- [x] Adicionar curadoria por layer, painel flutuante e controle de abertura
+- [x] Validar expansão, recolhimento, fechamento e reabertura no navegador
 
