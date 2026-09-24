@@ -92,6 +92,31 @@ const norm = (s: string) =>
   s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 type InfraLayer = "energy" | "antennas" | "backhaul" | "datacenters";
+
+// Vínculo equipamento → política pública, apenas onde a curadoria
+// (public/politicas-layers.json, campo conexao_mapa) cita o equipamento.
+function politicasDoEquipamento(
+  tipo: "usina" | "datacenter" | "backhaul" | "cabo",
+  detalhe = "",
+): string | null {
+  const p: string[] = [];
+  const d = detalhe.toLowerCase();
+  if (tipo === "usina") {
+    const t = detalhe.toUpperCase();
+    if (t === "EOL" || t === "PCH") p.push("PROINFA — Programa de Incentivo às Fontes Alternativas");
+    if (t === "UHE" || t === "EOL" || t === "UFV") p.push("Novo PAC — Eixo Energia");
+  }
+  if (tipo === "datacenter") p.push("PBIA — Plano Brasileiro de Inteligência Artificial");
+  if (tipo === "backhaul") {
+    p.push("FUST — Fundo de Universalização dos Serviços de Telecom");
+    p.push("ENEC — Estratégia Nacional de Escolas Conectadas");
+  }
+  if (tipo === "cabo" && (d.includes("norte conectado") || d.includes("infovia"))) {
+    p.push("Programa Norte Conectado (PAC 01 + PAC 02 + PAIS)");
+    p.push("Leilão 5G — Compromissos de Cobertura ANATEL");
+  }
+  return p.length ? p.join("; ") : null;
+}
 type InfraPayload = {
   data?: unknown[];
   failures?: Array<{ fonte?: string; error?: string }>;
@@ -339,8 +364,10 @@ export default function Mapa() {
       .finally(() => setLayer3Carregando(false));
   }, [dadosDCs]);
 
-  // Camadas de equipamento físico (usinas, datacenters) entram como locais do
-  // mapa: somam na contagem, na lista filtrada e nas métricas.
+  // Camadas de equipamento físico (usinas, datacenters, cabos, backhaul) entram
+  // como locais do mapa: somam na contagem, na lista filtrada e nas métricas.
+  // Cada item recebe as políticas públicas da curadoria que o citam
+  // explicitamente em `conexao_mapa` (public/politicas-layers.json).
   const locaisInfraTotais = useMemo(() => {
     const extras: ResearchLocation[] = [];
     if (dadosUsinas) {
@@ -362,6 +389,7 @@ export default function Mapa() {
             potencia_kw: u.potencia_kw ?? null,
             combustivel: u.combustivel ?? null,
             situacao: u.situacao ?? null,
+            politicas_publicas: politicasDoEquipamento("usina", u.tipo),
           },
         } as unknown as ResearchLocation);
       }
@@ -381,7 +409,11 @@ export default function Mapa() {
           fonte_url: dc.website || "https://www.peeringdb.com/",
           cnpj: null,
           data_coleta: null,
-          raw_metadata: { org: dc.org ?? null, redes: dc.redes ?? null },
+          raw_metadata: {
+            org: dc.org ?? null,
+            redes: dc.redes ?? null,
+            politicas_publicas: politicasDoEquipamento("datacenter"),
+          },
         } as unknown as ResearchLocation);
       }
     }
@@ -400,12 +432,65 @@ export default function Mapa() {
           fonte_url: "https://www.anatel.gov.br/dadosabertos/paineis_de_dados/infraestrutura/mapeamento_rede_transporte.zip",
           cnpj: null,
           data_coleta: null,
-          raw_metadata: { tem_backhaul: b.temBackhaul, meio: b.tipo ?? null },
+          raw_metadata: {
+            tem_backhaul: b.temBackhaul,
+            meio: b.tipo ?? null,
+            politicas_publicas: politicasDoEquipamento("backhaul"),
+          },
+        } as unknown as ResearchLocation);
+      }
+    }
+    if (dadosCabos) {
+      const pontos = new Map(dadosCabos.points.map((p) => [p.id, p]));
+      // Cabos: um item por cabo, posicionado na primeira aterragem brasileira.
+      for (const cabo of dadosCabos.cables) {
+        const aterragens = (cabo.landing_point_ids || [])
+          .map((id) => pontos.get(id))
+          .filter((p): p is NonNullable<typeof p> => !!p);
+        const ref = aterragens[0];
+        if (!ref) continue;
+        extras.push({
+          id: `cabo-${cabo.id}`,
+          nome: cabo.name,
+          tipo: "Cabo submarino",
+          uf: null,
+          municipio: ref.name.split(",")[0] || null,
+          latitude: ref.latitude,
+          longitude: ref.longitude,
+          fonte: "telegeography",
+          fonte_url: `https://www.submarinecablemap.com/submarine-cable/${cabo.id}`,
+          cnpj: null,
+          data_coleta: null,
+          raw_metadata: {
+            aterragens_brasil: aterragens.map((p) => p.name).join("; "),
+            politicas_publicas: politicasDoEquipamento("cabo", cabo.name),
+          },
+        } as unknown as ResearchLocation);
+      }
+      for (const p of dadosCabos.points) {
+        extras.push({
+          id: `landing-${p.id}`,
+          nome: `Estação de aterragem — ${p.name}`,
+          tipo: "Cabo submarino (aterragem)",
+          uf: null,
+          municipio: p.name.split(",")[0] || null,
+          latitude: p.latitude,
+          longitude: p.longitude,
+          fonte: "telegeography",
+          fonte_url: "https://www.submarinecablemap.com/",
+          cnpj: null,
+          data_coleta: null,
+          raw_metadata: {
+            cabos: dadosCabos.cables
+              .filter((c) => c.landing_point_ids?.includes(p.id))
+              .map((c) => c.name).join("; ") || null,
+            politicas_publicas: politicasDoEquipamento("cabo", p.name),
+          },
         } as unknown as ResearchLocation);
       }
     }
     return extras;
-  }, [dadosUsinas, dadosDCs, dadosBackhaul]);
+  }, [dadosUsinas, dadosDCs, dadosBackhaul, dadosCabos]);
 
   const locaisInfra = useMemo(
     () => locaisInfraTotais.filter((local) => {
@@ -415,9 +500,10 @@ export default function Mapa() {
       }
       if (local.fonte === "peeringdb") return layer3Ativa;
       if (local.fonte === "anatel_backhaul") return layer2Ativa && l2Backhaul;
+      if (local.fonte === "telegeography") return layer2Ativa && l2Cabos;
       return false;
     }),
-    [locaisInfraTotais, layer1Ativa, tiposUsina, layer3Ativa, layer2Ativa, l2Backhaul],
+    [locaisInfraTotais, layer1Ativa, tiposUsina, layer3Ativa, layer2Ativa, l2Backhaul, l2Cabos],
   );
 
   // Contagem de usinas por subtipo, para o filtro da Layer 1.
@@ -780,6 +866,8 @@ export default function Mapa() {
                           if (!camadas.has(c.key)) {
                             if (c.key === "energia") setLayer1Ativa(true);
                             if (c.key === "datacenter") setLayer3Ativa(true);
+                            if (c.key === "backhaul") { setLayer2Ativa(true); setL2Backhaul(true); }
+                            if (c.key === "cabo") { setLayer2Ativa(true); setL2Cabos(true); }
                           }
                           alternar(camadas, c.key, setCamadas);
                         }}
