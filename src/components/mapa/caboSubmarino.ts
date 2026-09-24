@@ -20,6 +20,7 @@ export interface Cable {
   name: string;
   color?: string;
   feature_id?: string;
+  landing_point_ids?: string[];
   geometry: CableGeometry;
 }
 

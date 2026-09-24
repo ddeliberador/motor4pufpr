@@ -19,6 +19,9 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
+    // Force every pre-bundled dependency to share React's single hook dispatcher.
+    // This prevents stale/duplicated Vite chunks from crashing providers after HMR.
+    dedupe: ["react", "react-dom"],
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
