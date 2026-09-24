@@ -58,10 +58,11 @@ function totalInvestimentoPublico(layer: LayerPoliticas) {
   const valores = layer.politicas
     .map((politica) => politica.investimento_publico_brl)
     .filter((valor): valor is number => typeof valor === "number" && Number.isFinite(valor));
-  if (valores.length !== layer.politicas.length || valores.length === 0) return null;
+  if (valores.length === 0) return null;
 
   const totalBilhoes = valores.reduce((total, valor) => total + valor, 0) / 1_000_000_000;
-  return `R$ ${totalBilhoes.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} bilhões`;
+  const formatado = `R$ ${totalBilhoes.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} bilhões`;
+  return valores.length === layer.politicas.length ? formatado : `${formatado} conhecidos`;
 }
 
 export default function PainelPoliticas({ layersAtivas, onFechar }: Props) {

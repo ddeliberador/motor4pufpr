@@ -57,6 +57,7 @@
           "ano": "2015",
           "status": "Ativa — 5 infovias concluídas (jun/2026)",
           "investimento": "R$ 1,3 bi (Novo PAC) + R$ 70 mi (Exército 2015-2022) + R$ 29,5 mi (Lava Jato)",
+          "investimento_publico_brl": 1399500000,
           "instrumento": "Novo PAC — Eixo Infraestrutura Digital",
           "conexao_mapa": "Cabos PAC 01 e PAC 02 visíveis na sub-layer Cabos Submarinos",
           "link": "https://www.gov.br/comunicacoes/pt-br/assuntos/noticias/2024/04/norte-conectado"
@@ -68,6 +69,7 @@
           "ano": "2000",
           "status": "Ativa — R$ 3,2 bi aprovados em 2025",
           "investimento": "R$ 3,2 bi (2025) · R$ 2,47 bi (triênio 2022-2024)",
+          "investimento_publico_brl": 3200000000,
           "instrumento": "Lei 9.998/2000 — gerido pelo BNDES desde 2021",
           "conexao_mapa": "Financia backhaul em municípios remotos — sub-layer Backhaul ANATEL",
           "link": "https://www.gov.br/comunicacoes/pt-br/assuntos/fust"
@@ -79,6 +81,7 @@
           "ano": "2023",
           "status": "Ativa",
           "investimento": "R$ 6,5 bi (até 2026) · R$ 56,7 mi aprovados (nov/2024)",
+          "investimento_publico_brl": 6500000000,
           "instrumento": "Decreto 11.713/2023",
           "conexao_mapa": "Conecta escolas via backhaul — municípios da sub-layer 2c",
           "link": "https://www.gov.br/mec/pt-br/assuntos/noticias/enec"
@@ -90,6 +93,7 @@
           "ano": "2021",
           "status": "Ativa — cobertura em execução",
           "investimento": "R$ 47 bi (arrecadação leilão) · compromissos por operadora",
+          "investimento_publico_brl": 47000000000,
           "instrumento": "Edital ANATEL 004/2021",
           "conexao_mapa": "Antenas 4G/5G da sub-layer 2b · EAF recupera infovias PAC",
           "link": "https://www.anatel.gov.br/institucional/leilao-5g"
@@ -108,6 +112,7 @@
           "ano": "2024",
           "status": "Ativa",
           "investimento": "R$ 23 bi (2024-2028)",
+          "investimento_publico_brl": 23000000000,
           "instrumento": "EBIA 2024 — Eixo Infraestrutura",
           "conexao_mapa": "Datacenters e clusters de HPC habilitados pela EBIA — Layer 3",
           "link": "https://www.gov.br/mcti/pt-br/acompanhe-o-mcti/transformacaodigital/inteligencia-artificial"
