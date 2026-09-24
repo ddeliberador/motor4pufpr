@@ -145,15 +145,37 @@ const MNC_OPERADORA: Record<string, string> = {
   "23": "Vivo", "30": "Oi", "31": "Oi", "54": "Porto Seguro", "99": "Local",
 };
 
-// Brasil dividido em 6 quadrantes — BBOX no formato lonmin,latmin,lonmax,latmax
-// Cada quadrante cobre ~1/6 do território e retorna até 100 registros (limite free)
+// BBOX no formato lonmin,latmin,lonmax,latmax. O plano gratuito limita a
+// área a 4.000.000 m² (~4.000 km²) por consulta, então cobrimos as regiões
+// metropolitanas das capitais com caixas de ~0,5° x 0,5° (~3.000 km²).
 const QUADRANTES = [
-  "-75,-35,-55,-20",  // Amazônia Ocidental
-  "-55,-35,-30,-20",  // Amazônia Oriental / Centro-Oeste
-  "-75,-20,-55,-5",   // Norte Ocidental
-  "-55,-20,-30,-5",   // Norte Oriental / Nordeste Oeste
-  "-50,-5,-35,6",     // Nordeste Leste
-  "-55,-35,-30,-5",   // Sul / Sudeste
+  "-43.96,-23.36,-42.86,-22.36", // Rio de Janeiro
+  "-47.22,-24.11,-46.12,-23.01", // São Paulo
+  "-44.34,-20.21,-43.24,-19.11", // Belo Horizonte
+  "-51.53,-30.39,-50.43,-29.29", // Porto Alegre
+  "-49.54,-25.79,-48.44,-24.69", // Curitiba
+  "-48.85,-26.51,-47.75,-25.41", // Florianópolis
+  "-54.95,-20.77,-53.85,-19.67", // Campo Grande
+  "-48.11,-16.99,-47.01,-15.89", // Goiânia
+  "-48.19,-16.01,-47.09,-14.91", // Brasília
+  "-38.81,-13.31,-37.71,-12.21", // Salvador
+  "-35.04,-9.97,-33.94,-8.87",   // Recife
+  "-38.85,-4.09,-37.75,-2.99",   // Fortaleza
+  "-42.99,-5.39,-41.89,-4.29",   // Teresina
+  "-44.55,-2.85,-43.45,-1.75",   // São Luís
+  "-60.32,-3.42,-59.22,-2.32",   // Manaus
+  "-48.81,-1.77,-47.71,-0.67",   // Belém
+  "-64.06,-9.27,-62.96,-8.17",   // Porto Velho
+  "-68.03,-10.27,-66.93,-9.17",  // Rio Branco
+  "-61.04,2.51,-59.94,3.61",     // Boa Vista
+  "-48.35,-10.5,-47.25,-9.4",    // Palmas
+  "-51.42,0.33,-50.32,1.43",     // Macapá
+  "-35.04,-7.44,-33.94,-6.34",   // João Pessoa
+  "-35.51,-5.4,-34.41,-4.3",     // Natal
+  "-37.37,-11.31,-36.27,-10.21", // Aracaju
+  "-36.01,-9.99,-34.91,-8.89",   // Maceió
+  "-40.61,-20.65,-39.51,-19.55", // Vitória
+  "-55.03,-13.0,-53.93,-11.9",   // Cuiabá
 ];
 
 async function carregarAntenas() {
