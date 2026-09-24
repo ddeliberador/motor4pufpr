@@ -454,9 +454,6 @@ export default function MapaBrasil({
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-<filter id="cabo-glow" x="-50%" y="-50%" width="200%" height="200%">
-  <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#fb923c" floodOpacity="0.75" />
-</filter>
           <clipPath id="brasil-contorno">
             {paths.map((p) => <path key={`clip-${p.sigla}`} d={p.d} />)}
           </clipPath>
@@ -568,7 +565,7 @@ export default function MapaBrasil({
 
         {/* Layer 2a — Cabos Submarinos (por baixo dos marcadores) */}
         {layer2Ativa && l2Cabos !== false && (
-          <g opacity={1} pointerEvents="none">
+          <g opacity={1}>
             {/* Traçados dos cabos */}
             {cabosVisiveis.map((cabo) => {
               const cor = cabo.color || "#f97316";
@@ -583,34 +580,30 @@ export default function MapaBrasil({
                   .join(" ");
                 return (
                   <g key={`${cabo.id}-${li}`}>
-                    {/* Sombra de volume */}
+                    {/* Contorno discreto para manter contraste sem dominar o continente. */}
                     <path
                       d={d}
                       stroke="#7c2d12"
-                      strokeWidth={10}
+                      strokeWidth={4}
                       fill="none"
-                      strokeOpacity={0.35}
+                      strokeOpacity={0.3}
                       strokeLinecap="round"
+                      pointerEvents="none"
                     />
-                    {/* Linha principal */}
+                    {/* Linha interativa: a área sensível é maior que o traço visível. */}
                     <path
                       d={d}
                       stroke={cor}
-                      strokeWidth={6}
+                      strokeWidth={2.4}
                       fill="none"
-                      strokeOpacity={1}
+                      strokeOpacity={0.95}
                       strokeLinecap="round"
-                      filter="url(#cabo-glow)"
-                    />
-                    {/* Núcleo claro */}
-                    <path
-                      d={d}
-                      stroke="#ffedd5"
-                      strokeWidth={2}
-                      fill="none"
-                      strokeOpacity={0.75}
-                      strokeLinecap="round"
-                    />
+                      className="cursor-help"
+                      pointerEvents="stroke"
+                      style={{ paintOrder: "stroke", strokeLinejoin: "round" }}
+                    >
+                      <title>{cabo.name}</title>
+                    </path>
                   </g>
                 );
               });
@@ -636,6 +629,7 @@ export default function MapaBrasil({
                      fontVariationSettings: '"FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24',
                    }}
                   fill="currentColor"
+                  pointerEvents="none"
                 >
                   lan
                   <title>{p.name}</title>
