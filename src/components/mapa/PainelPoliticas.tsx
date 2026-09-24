@@ -10,6 +10,7 @@ interface Politica {
   ano: string;
   status: string;
   investimento: string;
+  investimento_publico_brl?: number;
   instrumento: string;
   conexao_mapa: string;
   link: string;
@@ -19,7 +20,6 @@ interface LayerPoliticas {
   layer: string;
   nome: string;
   cor: string;
-  investimento_publico_total?: string;
   politicas: Politica[];
 }
 
@@ -52,6 +52,16 @@ function statusClass(status: string) {
   if (status.startsWith("Ativa")) return "text-green-400";
   if (status.includes("tramitação")) return "text-yellow-400";
   return "text-muted-foreground";
+}
+
+function totalInvestimentoPublico(layer: LayerPoliticas) {
+  const valores = layer.politicas
+    .map((politica) => politica.investimento_publico_brl)
+    .filter((valor): valor is number => typeof valor === "number" && Number.isFinite(valor));
+  if (valores.length !== layer.politicas.length || valores.length === 0) return null;
+
+  const totalBilhoes = valores.reduce((total, valor) => total + valor, 0) / 1_000_000_000;
+  return `R$ ${totalBilhoes.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} bilhões`;
 }
 
 export default function PainelPoliticas({ layersAtivas, onFechar }: Props) {
@@ -156,9 +166,9 @@ export default function PainelPoliticas({ layersAtivas, onFechar }: Props) {
                   {layer.layer}
                 </span>
                 <span className="text-[11px] font-medium text-foreground">{layer.nome}</span>
-                {layer.investimento_publico_total && (
+                {totalInvestimentoPublico(layer) && (
                   <span className="text-[10px] font-semibold text-emerald-400">
-                    {layer.investimento_publico_total}
+                    {totalInvestimentoPublico(layer)}
                   </span>
                 )}
                 <span className="ml-auto text-[10px] text-muted-foreground">{layer.politicas.length}</span>
