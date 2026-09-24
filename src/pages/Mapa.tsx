@@ -3,6 +3,7 @@
 // com filtros funcionais e lista exportável dos registros filtrados.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { geocodeLote } from "@/utils/geocodeMunicipio";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search, X, ExternalLink, MapPin, Loader2, Filter, BarChart3, List, Database,
