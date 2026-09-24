@@ -45,6 +45,11 @@ const META_LABEL: Record<string, string> = {
   motivo: "Observação",
   aviso: "Observação",
   nota_coordenada: "Observação sobre a coordenada",
+  politicas_publicas: "Políticas públicas relacionadas",
+  aterragens_brasil: "Aterragens no Brasil",
+  cabos: "Cabos conectados",
+  potencia_kw: "Potência (kW)",
+  tem_backhaul: "Tem backhaul por fibra",
 };
 
 const OCULTOS = new Set([

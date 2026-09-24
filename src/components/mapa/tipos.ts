@@ -17,6 +17,7 @@ export type CategoriaKey =
   | "energia"
   | "datacenter"
   | "backhaul"
+  | "cabo"
   | "outro";
 
 export interface Categoria {
@@ -38,6 +39,7 @@ export const CATEGORIAS: Categoria[] = [
   { key: "habitat", label: "Incubadora / parque / hub", icon: "hub", cor: "text-rose-500" },
   { key: "energia", label: "Usina de energia (ANEEL)", icon: "bolt", cor: "text-pink-500" },
   { key: "datacenter", label: "Datacenter (PeeringDB)", icon: "dns", cor: "text-yellow-500" },
+  { key: "cabo", label: "Cabo submarino (TeleGeography)", icon: "lan", cor: "text-orange-500" },
   { key: "backhaul", label: "Backhaul municipal (ANATEL)", icon: "cell_tower", cor: "text-amber-500" },
   { key: "outro", label: "Não classificado", icon: "place", cor: "text-muted-foreground" },
 ];
@@ -56,6 +58,7 @@ export function categorizar(tipo: string | null | undefined): CategoriaKey {
   if (!t) return "outro";
   if (t.includes("datacenter") || t.includes("data center")) return "datacenter";
   if (t.includes("backhaul")) return "backhaul";
+  if (t.includes("cabo submarino")) return "cabo";
   if (t.includes("usina") || t.includes("central geradora")) return "energia";
   if (t.includes("startup") || t.includes("empresa")) return "startup";
   if (t.includes("supercomput")) return "supercomputacao";
@@ -81,6 +84,7 @@ export const FONTE_CURTA: Record<string, string> = {
   aneel_siga: "ANEEL — SIGA (usinas)",
   peeringdb: "PeeringDB (datacenters)",
   anatel_backhaul: "ANATEL — Backhaul municipal",
+  telegeography: "TeleGeography — Submarine Cable Map",
 };
 
 export const fonteLabel = (f: string) => FONTE_CURTA[f] || f;
