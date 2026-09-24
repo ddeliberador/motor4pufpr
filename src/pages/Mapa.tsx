@@ -92,8 +92,14 @@ const norm = (s: string) =>
   s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 type InfraLayer = "energy" | "antennas" | "backhaul" | "datacenters";
+type InfraPayload = {
+  data?: unknown[];
+  failures?: Array<{ fonte?: string; error?: string }>;
+  source?: string;
+  ano?: string;
+};
 type InfraResponse = {
-  data?: unknown;
+  data?: InfraPayload | null;
   error?: unknown;
 };
 
@@ -107,7 +113,7 @@ function buscarInfraestrutura(layer: InfraLayer): Promise<InfraResponse> {
 
   const requisicao = safeSupabase.functions
     .invoke("map-infrastructure", { body: { layer } })
-    .then(({ data, error }) => ({ data, error }))
+    .then(({ data, error }) => ({ data: data as InfraPayload | null, error }))
     .catch((error: unknown) => ({ error }));
   requisicoesInfra.set(layer, requisicao);
   return requisicao;
