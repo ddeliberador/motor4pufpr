@@ -16,11 +16,10 @@ import ListaFiltrados from "@/components/mapa/ListaFiltrados";
 import FiltrosPorBase from "@/components/mapa/FiltrosPorBase";
 import { FILTROS, resumoFiltros, type SelecaoFiltros } from "@/components/mapa/filtrosBase";
 import { fetchLocationEnrichment } from "@/lib/locationEnrichment";
-import { CATEGORIAS, categorizar, fonteLabel, type CategoriaKey } from "@/components/mapa/tipos";
+import { CATEGORIAS, CATEGORIA_MAP, categorizar, fonteLabel, type CategoriaKey } from "@/components/mapa/tipos";
 import { safeSupabase } from "@/lib/supabaseClient";
 import { type ResearchLocation } from "@/lib/researchLocations";
 import { safeHttpUrl } from "@/lib/utils";
-import MetricasCruzamento from "@/components/mapa/MetricasCruzamento";
 import PainelDataLake from "@/components/mapa/PainelDataLake";
 import PainelPoliticas from "@/components/mapa/PainelPoliticas";
 import { canonizar, passaLake, resumoLake, type SelecaoLake } from "@/components/mapa/dataLake";
@@ -191,7 +190,6 @@ export default function Mapa() {
   const [lakeSel, setLakeSel] = useState<SelecaoLake>({});
   const [selecao, setSelecao] = useState<{ pontos: Ponto[]; total: number } | null>(null);
   const [pontoSelecionadoId, setPontoSelecionadoId] = useState<string | null>(null);
-  const [metricas, setMetricas] = useState(false);
   const [listaAberta, setListaAberta] = useState(false);
   const [painelPoliticasAberto, setPainelPoliticasAberto] = useState(false);
   // Camadas de dados exibidas no mapa (todas ligadas por padrão).
@@ -609,6 +607,40 @@ export default function Mapa() {
     return c;
   }, [comCategoria]);
 
+  // Categorias que são atores do SNI (bases de pesquisa)
+  const CATEGORIAS_SNI: CategoriaKey[] = [
+    "universidade", "instituto", "laboratorio", "startup",
+    "supercomputacao", "embrapii", "habitat", "outro",
+  ];
+  // Categorias que são infraestrutura das Camadas de IA
+  const CATEGORIAS_INFRA: CategoriaKey[] = ["energia", "datacenter", "backhaul", "cabo"];
+  const semLayer = { layer: "", layerAtiva: false, setLayerAtiva: () => {} };
+  const INFRA_LAYER_MAP: Record<CategoriaKey, { layer: string; layerAtiva: boolean; setLayerAtiva: (v: boolean) => void }> = {
+    energia: { layer: "L1", layerAtiva: layer1Ativa, setLayerAtiva: setLayer1Ativa },
+    datacenter: { layer: "L3", layerAtiva: layer3Ativa, setLayerAtiva: setLayer3Ativa },
+    backhaul: {
+      layer: "L2", layerAtiva: layer2Ativa && l2Backhaul,
+      setLayerAtiva: (v) => { if (v) setLayer2Ativa(true); setL2Backhaul(v); },
+    },
+    cabo: {
+      layer: "L2", layerAtiva: layer2Ativa && l2Cabos,
+      setLayerAtiva: (v) => { if (v) setLayer2Ativa(true); setL2Cabos(v); },
+    },
+    universidade: semLayer, instituto: semLayer, laboratorio: semLayer, startup: semLayer,
+    supercomputacao: semLayer, embrapii: semLayer, habitat: semLayer, outro: semLayer,
+  };
+
+  // Listagem: infraestrutura antes dos SNI quando alguma layer de IA está ativa.
+  const selecionadosOrdenados = useMemo(() => {
+    if (!layer1Ativa && !layer2Ativa && !layer3Ativa) return selecionados;
+    const PRIORIDADE: Partial<Record<CategoriaKey, number>> = {
+      energia: 0, datacenter: 1, cabo: 2, backhaul: 3,
+    };
+    return [...selecionados].sort(
+      (a, b) => (PRIORIDADE[a.categoria] ?? 99) - (PRIORIDADE[b.categoria] ?? 99),
+    );
+  }, [selecionados, layer1Ativa, layer2Ativa, layer3Ativa]);
+
   const ufs = useMemo(
     () => [...new Set(locais.map((l) => l.uf).filter(Boolean))].sort() as string[],
     [locais],
@@ -623,10 +655,6 @@ export default function Mapa() {
     return c;
   }, [comCategoria]);
 
-  const metricasItens = useMemo(
-    () => selecionados.map((l) => ({ ...l, canon: canonizar(l, enriquecimento[l.id] || {}) })),
-    [selecionados, enriquecimento],
-  );
 
   const contagemTipo = useMemo(() => {
     const c: Record<string, number> = {};
@@ -709,7 +737,7 @@ export default function Mapa() {
   useEffect(() => {
     if (pontoSelecionadoId) {
       setListaAberta(true);
-      setMetricas(false);
+      setPainelPoliticasAberto(false);
     }
   }, [pontoSelecionadoId]);
 
@@ -718,7 +746,7 @@ export default function Mapa() {
   useEffect(() => {
     if (selecao) {
       setListaAberta(true);
-      setMetricas(false);
+      setPainelPoliticasAberto(false);
     }
   }, [selecao]);
 
@@ -832,27 +860,27 @@ export default function Mapa() {
                 </button>
               </div>
 
-              {/* Camadas de dados exibidas no mapa */}
+              {/* Camadas no mapa — Atores do SNI */}
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Camadas no mapa
+                    Atores do SNI
                   </p>
                   <button
                     onClick={() =>
                       setCamadas(
-                        camadas.size === CATEGORIAS.length
-                          ? new Set()
-                          : new Set(CATEGORIAS.map((c) => c.key)),
+                        CATEGORIAS_SNI.every((c) => camadas.has(c))
+                          ? new Set([...camadas].filter((k) => !CATEGORIAS_SNI.includes(k)))
+                          : new Set([...camadas, ...CATEGORIAS_SNI]),
                       )
                     }
                     className="text-[11px] text-primary hover:underline"
                   >
-                    {camadas.size === CATEGORIAS.length ? "nenhuma" : "todas"}
+                    {CATEGORIAS_SNI.every((c) => camadas.has(c)) ? "nenhuma" : "todas"}
                   </button>
                 </div>
                 <div className="space-y-1">
-                  {CATEGORIAS.map((c) => (
+                  {CATEGORIAS.filter((c) => CATEGORIAS_SNI.includes(c.key)).map((c) => (
                     <label
                       key={c.key}
                       className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted"
@@ -860,31 +888,71 @@ export default function Mapa() {
                       <input
                         type="checkbox"
                         checked={camadas.has(c.key)}
-                        onChange={() => {
-                          // Usinas e datacenters só existem se a camada de IA
-                          // correspondente estiver ligada — ativa junto.
-                          if (!camadas.has(c.key)) {
-                            if (c.key === "energia") setLayer1Ativa(true);
-                            if (c.key === "datacenter") setLayer3Ativa(true);
-                            if (c.key === "backhaul") { setLayer2Ativa(true); setL2Backhaul(true); }
-                            if (c.key === "cabo") { setLayer2Ativa(true); setL2Cabos(true); }
-                          }
-                          alternar(camadas, c.key, setCamadas);
-                        }}
+                        onChange={() => alternar(camadas, c.key, setCamadas)}
                         className="h-3.5 w-3.5 shrink-0 accent-primary"
                       />
-                      <span
-                        className={`material-symbols-outlined shrink-0 text-base leading-none ${c.cor}`}
-                        aria-hidden
-                      >
+                      <span className={`material-symbols-outlined shrink-0 text-base leading-none ${c.cor}`} aria-hidden>
                         {c.icon}
                       </span>
                       <span className="flex-1 truncate">{c.label}</span>
+                      <span className="font-mono text-[10px] text-muted-foreground">
+                        {(contagemCat[c.key] || 0).toLocaleString("pt-BR")}
+                      </span>
                     </label>
                   ))}
                 </div>
+              </div>
+
+              {/* Camadas no mapa — Infraestrutura (Camadas de IA) */}
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Infraestrutura de IA
+                </p>
+                <div className="space-y-1">
+                  {CATEGORIAS_INFRA.map((key) => {
+                    const cat = CATEGORIA_MAP[key];
+                    const { layer, layerAtiva, setLayerAtiva } = INFRA_LAYER_MAP[key];
+                    const marcado = camadas.has(key) && layerAtiva;
+                    return (
+                      <label
+                        key={key}
+                        className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={marcado}
+                          onChange={() => {
+                            const ligar = !marcado;
+                            setLayerAtiva(ligar);
+                            setCamadas((prev) => {
+                              const novo = new Set(prev);
+                              if (ligar) novo.add(key);
+                              else novo.delete(key);
+                              return novo;
+                            });
+                          }}
+                          className="h-3.5 w-3.5 shrink-0 accent-primary"
+                        />
+                        <span
+                          className={`material-symbols-outlined shrink-0 text-base leading-none ${cat.cor}`}
+                          aria-hidden
+                          style={{ fontVariationSettings: '"FILL" 1' }}
+                        >
+                          {cat.icon}
+                        </span>
+                        <span className="flex-1 truncate">{cat.label}</span>
+                        <span className="rounded border border-border px-1 py-0.5 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                          {layer}
+                        </span>
+                        <span className="font-mono text-[10px] text-muted-foreground">
+                          {(contagemCat[key] || 0).toLocaleString("pt-BR")}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
                 <p className="mt-1.5 text-[11px] text-muted-foreground">
-                  Controla apenas a exibição no mapa; a listagem segue os filtros.
+                  Marcar liga a layer de IA correspondente.
                 </p>
               </div>
 
@@ -901,7 +969,11 @@ export default function Mapa() {
                     <input
                       type="checkbox"
                       checked={layer1Ativa}
-                      onChange={() => setLayer1Ativa((v) => !v)}
+                      onChange={() => {
+                        const novo = !layer1Ativa;
+                        setLayer1Ativa(novo);
+                        if (!novo) setCamadas((prev) => { const n = new Set(prev); for (const k of ["energia"] as CategoriaKey[]) n.delete(k); return n; });
+                      }}
                       className="h-3.5 w-3.5 shrink-0 accent-pink-500"
                     />
                     <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-pink-400" aria-hidden />
@@ -959,7 +1031,11 @@ export default function Mapa() {
                       <input
                         type="checkbox"
                         checked={layer2Ativa}
-                        onChange={() => setLayer2Ativa((v) => !v)}
+                        onChange={() => {
+                        const novo = !layer2Ativa;
+                        setLayer2Ativa(novo);
+                        if (!novo) setCamadas((prev) => { const n = new Set(prev); for (const k of ["backhaul", "cabo"] as CategoriaKey[]) n.delete(k); return n; });
+                      }}
                         className="h-3.5 w-3.5 shrink-0 accent-orange-500"
                       />
                       <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-orange-400" aria-hidden />
@@ -1041,7 +1117,11 @@ export default function Mapa() {
                     <input
                       type="checkbox"
                       checked={layer3Ativa}
-                      onChange={() => setLayer3Ativa((v) => !v)}
+                      onChange={() => {
+                        const novo = !layer3Ativa;
+                        setLayer3Ativa(novo);
+                        if (!novo) setCamadas((prev) => { const n = new Set(prev); for (const k of ["datacenter"] as CategoriaKey[]) n.delete(k); return n; });
+                      }}
                       className="h-3.5 w-3.5 shrink-0 accent-yellow-500"
                     />
                     <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-yellow-400" aria-hidden />
@@ -1090,7 +1170,7 @@ export default function Mapa() {
                     setBusca(v);
                     if (v.trim()) {
                       setListaAberta(true);
-                      setMetricas(false);
+                      setPainelPoliticasAberto(false);
                     }
                   }}
                   placeholder="Nome ou cidade"
@@ -1353,7 +1433,7 @@ export default function Mapa() {
                     setBusca(v);
                     if (v.trim()) {
                       setListaAberta(true);
-                      setMetricas(false);
+                      setPainelPoliticasAberto(false);
                     }
                   }}
                   placeholder="Nome ou cidade"
@@ -1392,7 +1472,6 @@ export default function Mapa() {
                   <button
                     onClick={() => {
                       setListaAberta((v) => !v);
-                      setMetricas(false);
                       setPainelPoliticasAberto(false);
                     }}
                     aria-pressed={listaAberta}
@@ -1407,24 +1486,6 @@ export default function Mapa() {
                     <List className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">Listagem filtrada</span>
                   </button>
-                  <button
-                    onClick={() => {
-                      setMetricas((v) => !v);
-                      setListaAberta(false);
-                      setPainelPoliticasAberto(false);
-                    }}
-                    aria-pressed={metricas}
-                    title="Métricas do cruzamento"
-                    aria-label="Métricas do cruzamento"
-                    className={`flex h-8 w-9 items-center justify-center rounded-md text-[11px] font-medium transition-colors sm:h-auto sm:w-auto sm:gap-1.5 sm:px-2.5 sm:py-1.5 ${
-                      metricas
-                        ? "bg-primary/15 text-foreground"
-                        : "text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <BarChart3 className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Métricas do cruzamento</span>
-                  </button>
                   {layersIaAtivas.length > 0 && (
                     <Button
                       type="button"
@@ -1432,7 +1493,6 @@ export default function Mapa() {
                       onClick={() => {
                         setPainelPoliticasAberto((valor) => !valor);
                         setListaAberta(false);
-                        setMetricas(false);
                       }}
                       aria-pressed={painelPoliticasAberto}
                       title="Políticas públicas por layer"
@@ -1508,16 +1568,9 @@ export default function Mapa() {
                     estado para aproximar, num ícone para ver a ficha
                   </p>
                 </div>
-                {metricas && (
-                  <MetricasCruzamento
-                    itens={metricasItens}
-                    total={totalLocais}
-                    onFechar={() => setMetricas(false)}
-                  />
-                )}
                 {listaAberta && (
                   <ListaFiltrados
-                     itens={grupoIds ? selecionados.filter((l) => grupoIds.has(l.id)) : selecionados}
+                     itens={grupoIds ? selecionadosOrdenados.filter((l) => grupoIds.has(l.id)) : selecionadosOrdenados}
                      filtrosAtivos={filtrosAtivos}
                      total={totalLocais}
                      aberto={listaAberta}
