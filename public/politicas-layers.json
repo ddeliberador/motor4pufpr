@@ -1,0 +1,228 @@
+{
+  "versao": "2026-09-24",
+  "fonte": "Curadoria Motor da Inovação · UFPR/PPGPP",
+  "layers": [
+    {
+      "layer": "L1",
+      "nome": "Energia",
+      "cor": "pink",
+      "politicas": [
+        {
+          "id": "pnee",
+          "nome": "Política Nacional de Eficiência Energética (PNEE)",
+          "orgao": "MME / ANEEL",
+          "ano": "2009",
+          "status": "Ativa",
+          "investimento": "R$ 100 mi/ano (P&D regulatório ANEEL)",
+          "instrumento": "Resolução ANEEL 556/2013 + Lei 9.991/2000",
+          "conexao_mapa": "Financia P&D nas distribuidoras — base do SIGEL",
+          "link": "https://www.gov.br/mme/pt-br/assuntos/secretarias/spe/eficiencia-energetica"
+        },
+        {
+          "id": "proinfa",
+          "nome": "PROINFA — Programa de Incentivo às Fontes Alternativas",
+          "orgao": "MME / Eletrobras",
+          "ano": "2002",
+          "status": "Ativa",
+          "investimento": "R$ 5,7 bi (contratados até 2023)",
+          "instrumento": "Lei 10.438/2002",
+          "conexao_mapa": "Financia usinas EOL e PCH visíveis na Layer 1",
+          "link": "https://eletrobras.com/pt/Paginas/PROINFA.aspx"
+        },
+        {
+          "id": "pac-energia",
+          "nome": "Novo PAC — Eixo Energia",
+          "orgao": "MME / Casa Civil",
+          "ano": "2023",
+          "status": "Ativa",
+          "investimento": "R$ 274 bi (previsão 2023-2026)",
+          "instrumento": "Novo PAC — Decreto 11.632/2023",
+          "conexao_mapa": "UHEs, EOLs e UFVs em construção ou ampliação no SIGEL",
+          "link": "https://www.gov.br/casacivil/pt-br/acompanhe-o-pac"
+        }
+      ]
+    },
+    {
+      "layer": "L2",
+      "nome": "Infraestrutura Física",
+      "cor": "orange",
+      "politicas": [
+        {
+          "id": "norte-conectado",
+          "nome": "Programa Norte Conectado (PAC 01 + PAC 02 + PAIS)",
+          "orgao": "Ministério das Comunicações + Exército Brasileiro",
+          "ano": "2015",
+          "status": "Ativa — 5 infovias concluídas (jun/2026)",
+          "investimento": "R$ 1,3 bi (Novo PAC) + R$ 70 mi (Exército 2015-2022) + R$ 29,5 mi (Lava Jato)",
+          "instrumento": "Novo PAC — Eixo Infraestrutura Digital",
+          "conexao_mapa": "Cabos PAC 01 e PAC 02 visíveis na sub-layer Cabos Submarinos",
+          "link": "https://www.gov.br/comunicacoes/pt-br/assuntos/noticias/2024/04/norte-conectado"
+        },
+        {
+          "id": "fust-backhaul",
+          "nome": "FUST — Fundo de Universalização dos Serviços de Telecom",
+          "orgao": "BNDES + Ministério das Comunicações",
+          "ano": "2000",
+          "status": "Ativa — R$ 3,2 bi aprovados em 2025",
+          "investimento": "R$ 3,2 bi (2025) · R$ 2,47 bi (triênio 2022-2024)",
+          "instrumento": "Lei 9.998/2000 — gerido pelo BNDES desde 2021",
+          "conexao_mapa": "Financia backhaul em municípios remotos — sub-layer Backhaul ANATEL",
+          "link": "https://www.gov.br/comunicacoes/pt-br/assuntos/fust"
+        },
+        {
+          "id": "enec",
+          "nome": "ENEC — Estratégia Nacional de Escolas Conectadas",
+          "orgao": "MEC + MCom + BNDES",
+          "ano": "2023",
+          "status": "Ativa",
+          "investimento": "R$ 6,5 bi (até 2026) · R$ 56,7 mi aprovados (nov/2024)",
+          "instrumento": "Decreto 11.713/2023",
+          "conexao_mapa": "Conecta escolas via backhaul — municípios da sub-layer 2c",
+          "link": "https://www.gov.br/mec/pt-br/assuntos/noticias/enec"
+        },
+        {
+          "id": "leilao-5g-anatel",
+          "nome": "Leilão 5G — Compromissos de Cobertura ANATEL",
+          "orgao": "ANATEL + EAF (Entidade Adm. Faixa 3,5 GHz)",
+          "ano": "2021",
+          "status": "Ativa — cobertura em execução",
+          "investimento": "R$ 47 bi (arrecadação leilão) · compromissos por operadora",
+          "instrumento": "Edital ANATEL 004/2021",
+          "conexao_mapa": "Antenas 4G/5G da sub-layer 2b · EAF recupera infovias PAC",
+          "link": "https://www.anatel.gov.br/institucional/leilao-5g"
+        }
+      ]
+    },
+    {
+      "layer": "L3",
+      "nome": "Infraestrutura Lógica",
+      "cor": "yellow",
+      "politicas": [
+        {
+          "id": "pbia",
+          "nome": "PBIA — Plano Brasileiro de Inteligência Artificial",
+          "orgao": "MCTI + CGEE",
+          "ano": "2024",
+          "status": "Ativa",
+          "investimento": "R$ 23 bi (2024-2028)",
+          "instrumento": "EBIA 2024 — Eixo Infraestrutura",
+          "conexao_mapa": "Datacenters e clusters de HPC habilitados pela EBIA — Layer 3",
+          "link": "https://www.gov.br/mcti/pt-br/acompanhe-o-mcti/transformacaodigital/inteligencia-artificial"
+        },
+        {
+          "id": "rnp-cnds",
+          "nome": "RNP — Centros Nacionais de Dados (CND)",
+          "orgao": "RNP + MCTI",
+          "ano": "2024",
+          "status": "Ativa — SP ativo; BSB ativo; FOR previsto",
+          "investimento": "Parceria RNP/Elea Data Centers (valores não divulgados)",
+          "instrumento": "Programa Conecta RNP",
+          "conexao_mapa": "CNDs em SP, BSB e FOR — ausentes do PeeringDB; candidatos a inclusão",
+          "link": "https://www.rnp.br/noticias/centros-nacionais-de-dados"
+        }
+      ]
+    },
+    {
+      "layer": "L7",
+      "nome": "Governança",
+      "cor": "violet",
+      "politicas": [
+        {
+          "id": "ebia",
+          "nome": "EBIA — Estratégia Brasileira de Inteligência Artificial",
+          "orgao": "MCTI",
+          "ano": "2024",
+          "status": "Ativa",
+          "investimento": "R$ 23 bi (2024-2028)",
+          "instrumento": "Portaria MCTI 4.617/2024",
+          "conexao_mapa": "Política transversal — habilita L1, L2, L3, L4 e L5",
+          "link": "https://www.gov.br/mcti/pt-br/acompanhe-o-mcti/transformacaodigital/inteligencia-artificial/ebia"
+        },
+        {
+          "id": "nib",
+          "nome": "Nova Indústria Brasil (NIB)",
+          "orgao": "MDIC + BNDES",
+          "ano": "2024",
+          "status": "Ativa",
+          "investimento": "R$ 3,3 bi (10 editais)",
+          "instrumento": "Decreto 11.976/2024",
+          "conexao_mapa": "Missões setoriais vinculáveis a startups/EMBRAPII do Mapa SNI",
+          "link": "https://www.gov.br/mdic/pt-br/assuntos/nova-industria-brasil"
+        },
+        {
+          "id": "marco-cti",
+          "nome": "Marco Legal de CT&I",
+          "orgao": "MCTI / MEC",
+          "ano": "2016",
+          "status": "Ativa",
+          "investimento": "Base jurídica (sem dotação direta)",
+          "instrumento": "Lei 13.243/2016",
+          "conexao_mapa": "Habilita NITs e ICTs — atores da camada SNI do Mapa",
+          "link": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2016/lei/l13243.htm"
+        },
+        {
+          "id": "pl-ia",
+          "nome": "PL 2338/2023 — Marco Regulatório de IA",
+          "orgao": "Senado Federal",
+          "ano": "2023",
+          "status": "Em tramitação",
+          "investimento": "Regulatório (sem dotação direta)",
+          "instrumento": "PL 2338/2023",
+          "conexao_mapa": "Regula uso de IA por atores de todas as layers",
+          "link": "https://www25.senado.leg.br/web/atividade/materias/-/materia/157233"
+        },
+        {
+          "id": "lei-bem",
+          "nome": "Lei do Bem — Incentivos Fiscais P&D",
+          "orgao": "MCTI / Receita Federal",
+          "ano": "2005",
+          "status": "Ativa",
+          "investimento": "R$ 11,98 bi (renúncia fiscal 2024) · 4.252 empresas",
+          "instrumento": "Lei 11.196/2005 — Cap. III",
+          "conexao_mapa": "Empresas beneficiadas vinculáveis às startups e ICTs do Mapa",
+          "link": "https://www.gov.br/mcti/pt-br/acompanhe-o-mcti/lei-do-bem"
+        }
+      ]
+    },
+    {
+      "layer": "SNI",
+      "nome": "Atores SNI (Camadas no Mapa)",
+      "cor": "teal",
+      "politicas": [
+        {
+          "id": "proninc",
+          "nome": "PRONINC — Incubadoras de Cooperativas Populares",
+          "orgao": "MJ / Finep / FBB",
+          "ano": "1997",
+          "status": "Histórica — base para ITCPs universitárias",
+          "investimento": "R$ 29,5 mi (2003-2007) + aportes Finep por edital",
+          "instrumento": "Programa Finep + parceria MTE/SENAES",
+          "conexao_mapa": "ITCPs em universidades — candidatos à camada ICTs/NITs",
+          "link": "https://www.finep.gov.br/apoio-e-financiamento-externa/instrumentos-de-apoio/programas-e-fundos/proninc"
+        },
+        {
+          "id": "sish2",
+          "nome": "SisH2-MCTI — Sistema Brasileiro de Labs de Hidrogênio",
+          "orgao": "MCTI / CNPq / EMBRAPII",
+          "ano": "2022",
+          "status": "Ativa",
+          "investimento": "R$ 33 mi (Chamada CNPq 24/2022) + R$ 60 mi (UFPR/EMBRAPII 2026)",
+          "instrumento": "Portaria MCTI 6.101/2022 + Chamada CNPq 24/2022",
+          "conexao_mapa": "15 laboratórios — ausentes das bases atuais · backlog INT-06",
+          "link": "https://www.gov.br/mcti/pt-br/acompanhe-o-mcti/noticias/2022/07/mcti-institui-o-sistema-brasileiro-de-laboratorios-de-hidrogenio"
+        },
+        {
+          "id": "embrapii-prog",
+          "nome": "Programa EMBRAPII",
+          "orgao": "MCTI + MEC + EMBRAPII",
+          "ano": "2013",
+          "status": "Ativa",
+          "investimento": "R$ 2,5 bi acumulados (2013-2024)",
+          "instrumento": "Contrato MCTI/MEC — modelo tripartite",
+          "conexao_mapa": "96 unidades credenciadas no Mapa · score 32,9 (sem coord. reais)",
+          "link": "https://embrapii.org.br"
+        }
+      ]
+    }
+  ]
+}

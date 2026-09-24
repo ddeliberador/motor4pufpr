@@ -16,3 +16,8 @@
 - [x] Geocodificação Nominatim das 395 cidades (391 com coordenada; 4 marcadas como erro da fonte)
 - [x] Função `bulk-ingest` (carga em lote protegida por `BULK_INGEST_KEY`)
 - [ ] Inserir os 3.306 registros `abstartups_2025` em `research_locations` — aguardando o CSV do usuário
+
+## Painel de políticas públicas no Mapa
+- [x] Adicionar curadoria por layer, painel flutuante e controle de abertura
+- [x] Validar expansão, recolhimento, fechamento e reabertura no navegador
+
