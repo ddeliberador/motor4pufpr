@@ -286,6 +286,53 @@ async function carregarAntenas() {
   };
 }
 
+
+// ---------------------------------------------------------------------------
+// Layer 2b (dump) — arquivo completo do OpenCelliD para MCC 724 (Brasil).
+// Streaming + gunzip; agrega em grade de 0,1° por tecnologia para caber no mapa.
+// Colunas: radio,mcc,net,area,cell,unit,lon,lat,range,samples,changeable,created,updated,averageSignal
+// ---------------------------------------------------------------------------
+async function carregarAntenasDump() {
+  const chave = Deno.env.get("OPENCELLID_API_KEY");
+  if (!chave) throw new Error("OPENCELLID_API_KEY ausente");
+  const url = `https://opencellid.org/ocid/downloads?token=${chave}&type=mcc&file=724.csv.gz`;
+  const r = await fetch(url, { signal: AbortSignal.timeout(120_000) });
+  const tipo = r.headers.get("content-type") || "";
+  if (!r.ok || !r.body || tipo.includes("text/html") || tipo.includes("json")) {
+    const corpo = await r.text().catch(() => "");
+    throw new Error(`OpenCelliD dump HTTP ${r.status} (${tipo}): ${corpo.slice(0, 200)}`);
+  }
+  const linhas = r.body
+    .pipeThrough(new DecompressionStream("gzip"))
+    .pipeThrough(new TextDecoderStream());
+  const grade = new Map<string, { lat: number; lon: number; LTE: number; NR: number; outros: number }>();
+  let resto = "";
+  let total = 0;
+  for await (const bloco of linhas) {
+    const partes = (resto + bloco).split("\n");
+    resto = partes.pop() ?? "";
+    for (const l of partes) {
+      const c = l.split(",");
+      if (c.length < 8 || c[0] === "radio") continue;
+      const lon = Number(c[6]), lat = Number(c[7]);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -35 || lat > 6 || lon < -75 || lon > -33) continue;
+      total++;
+      const gl = Math.round(lat * 10) / 10, gn = Math.round(lon * 10) / 10;
+      const k = `${gl},${gn}`;
+      let g = grade.get(k);
+      if (!g) { g = { lat: gl, lon: gn, LTE: 0, NR: 0, outros: 0 }; grade.set(k, g); }
+      if (c[0] === "LTE") g.LTE++; else if (c[0] === "NR") g.NR++; else g.outros++;
+    }
+  }
+  if (total === 0) throw new Error("OpenCelliD dump sem células válidas para o Brasil");
+  return {
+    data: [...grade.values()],
+    failures: [],
+    total_celulas: total,
+    source: "https://opencellid.org/ocid/downloads (MCC 724, agregado em grade 0,1°)",
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Layer 2c — Backhaul por município (ANATEL / dados abertos).
 // ZIP oficial "Mapeamento da Rede de Transporte"; usamos o CSV de evolução
@@ -377,6 +424,8 @@ Deno.serve(async (req) => {
         ? await carregarDatacenters()
         : camada === "antennas"
           ? await carregarAntenas()
+          : camada === "antennas_dump"
+            ? await carregarAntenasDump()
           : camada === "backhaul"
             ? await carregarBackhaul()
             : null;
