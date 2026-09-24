@@ -1013,7 +1013,10 @@ export default function Mapa() {
                                 if (novo.has(t.key)) novo.delete(t.key);
                                 else novo.add(t.key);
                                 // Se todos voltaram a ficar marcados, volta ao estado "todos" (vazio).
-                                return novo.size === TIPOS_USINA.length ? new Set() : novo;
+                                if (novo.size === TIPOS_USINA.length) return new Set();
+                                // Se nenhum ficou marcado, sentinela para não confundir com "todos".
+                                if (novo.size === 0) return new Set(["__nenhum__"]);
+                                return novo;
                               })
                             }
                             className="h-3 w-3 shrink-0 accent-pink-500"
