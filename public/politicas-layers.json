@@ -6,7 +6,6 @@
       "layer": "L1",
       "nome": "Energia",
       "cor": "pink",
-      "investimento_publico_total": "R$ 560 bilhões",
       "politicas": [
         {
           "id": "pnee",
@@ -15,6 +14,7 @@
           "ano": "2009",
           "status": "Ativa",
           "investimento": "R$ 100 mi/ano (P&D regulatório ANEEL)",
+          "investimento_publico_brl": 100000000,
           "instrumento": "Resolução ANEEL 556/2013 + Lei 9.991/2000",
           "conexao_mapa": "Financia P&D nas distribuidoras — base do SIGEL",
           "link": "https://www.gov.br/mme/pt-br/assuntos/secretarias/spe/eficiencia-energetica"
@@ -26,6 +26,7 @@
           "ano": "2002",
           "status": "Ativa",
           "investimento": "R$ 5,7 bi (contratados até 2023)",
+          "investimento_publico_brl": 5700000000,
           "instrumento": "Lei 10.438/2002",
           "conexao_mapa": "Financia usinas EOL e PCH visíveis na Layer 1",
           "link": "https://eletrobras.com/pt/Paginas/PROINFA.aspx"
@@ -37,6 +38,7 @@
           "ano": "2023",
           "status": "Ativa",
           "investimento": "R$ 274 bi (previsão 2023-2026)",
+          "investimento_publico_brl": 274000000000,
           "instrumento": "Novo PAC — Decreto 11.632/2023",
           "conexao_mapa": "UHEs, EOLs e UFVs em construção ou ampliação no SIGEL",
           "link": "https://www.gov.br/casacivil/pt-br/acompanhe-o-pac"
