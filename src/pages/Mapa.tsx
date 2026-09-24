@@ -193,7 +193,7 @@ export default function Mapa() {
   const [pontoSelecionadoId, setPontoSelecionadoId] = useState<string | null>(null);
   const [metricas, setMetricas] = useState(false);
   const [listaAberta, setListaAberta] = useState(false);
-  const [painelPoliticasAberto, setPainelPoliticasAberto] = useState(true);
+  const [painelPoliticasAberto, setPainelPoliticasAberto] = useState(false);
   // Camadas de dados exibidas no mapa (todas ligadas por padrão).
   const [camadas, setCamadas] = useState<Set<CategoriaKey>>(
     () => new Set(CATEGORIAS.map((c) => c.key)),
@@ -1393,6 +1393,7 @@ export default function Mapa() {
                     onClick={() => {
                       setListaAberta((v) => !v);
                       setMetricas(false);
+                      setPainelPoliticasAberto(false);
                     }}
                     aria-pressed={listaAberta}
                     title="Listagem filtrada"
@@ -1410,6 +1411,7 @@ export default function Mapa() {
                     onClick={() => {
                       setMetricas((v) => !v);
                       setListaAberta(false);
+                      setPainelPoliticasAberto(false);
                     }}
                     aria-pressed={metricas}
                     title="Métricas do cruzamento"
@@ -1427,7 +1429,11 @@ export default function Mapa() {
                     <Button
                       type="button"
                       variant="ghost"
-                      onClick={() => setPainelPoliticasAberto((valor) => !valor)}
+                      onClick={() => {
+                        setPainelPoliticasAberto((valor) => !valor);
+                        setListaAberta(false);
+                        setMetricas(false);
+                      }}
                       aria-pressed={painelPoliticasAberto}
                       title="Políticas públicas por layer"
                       aria-label="Políticas públicas por layer"
