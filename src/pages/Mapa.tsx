@@ -1008,11 +1008,12 @@ export default function Mapa() {
                             checked={tiposUsina.size === 0 || tiposUsina.has(t.key)}
                             onChange={() =>
                               setTiposUsina((atual) => {
-                                // Nada marcado = todos. Primeiro clique isola o tipo.
-                                if (atual.size === 0) return new Set([t.key]);
-                                const novo = new Set(atual);
-                                novo.has(t.key) ? novo.delete(t.key) : novo.add(t.key);
-                                return novo;
+                                // Conjunto vazio = todos marcados. O clique remove o tipo clicado.
+                                const novo = atual.size === 0 ? new Set(TIPOS_USINA.map((u) => u.key)) : new Set(atual);
+                                if (novo.has(t.key)) novo.delete(t.key);
+                                else novo.add(t.key);
+                                // Se todos voltaram a ficar marcados, volta ao estado "todos" (vazio).
+                                return novo.size === TIPOS_USINA.length ? new Set() : novo;
                               })
                             }
                             className="h-3 w-3 shrink-0 accent-pink-500"
