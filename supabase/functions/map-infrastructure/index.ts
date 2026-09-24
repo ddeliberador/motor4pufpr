@@ -205,7 +205,6 @@ async function carregarAntenas() {
           `&BBOX=${bbox}` +
           `&format=json` +
           `&radio=${radio}` +
-          `&mcc=724` +
           `&limit=100`;
         const r = await fetch(url, {
           headers: { "User-Agent": "Motor4PUFPR/1.0" },
