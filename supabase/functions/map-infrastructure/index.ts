@@ -262,14 +262,27 @@ async function carregarAntenas() {
     return {
       data: [],
       failures,
-      source: "https://opencellid.org/cell/getInArea (MCC 724)",
+      source: "https://opencellid.org/cell/getInArea",
     };
+  }
+
+  // A API respondeu, mas sem células: o plano gratuito do OpenCelliD só
+  // expõe medições crowdsourced e a cobertura no Brasil é praticamente nula.
+  // Registramos isso explicitamente em vez de silenciar.
+  if (data.length === 0 && failures.length === 0) {
+    failures.push({
+      fonte: "opencellid",
+      error:
+        "OpenCelliD respondeu sem células para o Brasil (0 em todas as capitais). " +
+        "O plano gratuito do getInArea tem cobertura crowdsourced esparsa no país; " +
+        "para cobertura nacional, use o dump completo (opencellid.org/downloads) ou a base de ERBs licenciadas da ANATEL.",
+    });
   }
 
   return {
     data,
     failures,
-    source: "https://opencellid.org/cell/getInArea (MCC 724, limit 100/quadrante)",
+    source: "https://opencellid.org/cell/getInArea (limit 100/consulta, capitais BR)",
   };
 }
 
