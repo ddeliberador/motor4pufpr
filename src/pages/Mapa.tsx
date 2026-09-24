@@ -22,6 +22,7 @@ import { type ResearchLocation } from "@/lib/researchLocations";
 import { safeHttpUrl } from "@/lib/utils";
 import MetricasCruzamento from "@/components/mapa/MetricasCruzamento";
 import PainelDataLake from "@/components/mapa/PainelDataLake";
+import PainelPoliticas from "@/components/mapa/PainelPoliticas";
 import { canonizar, passaLake, resumoLake, type SelecaoLake } from "@/components/mapa/dataLake";
 import { Button } from "@/components/ui/button";
 import {
@@ -121,6 +122,7 @@ export default function Mapa() {
   const [pontoSelecionadoId, setPontoSelecionadoId] = useState<string | null>(null);
   const [metricas, setMetricas] = useState(false);
   const [listaAberta, setListaAberta] = useState(false);
+  const [painelPoliticasAberto, setPainelPoliticasAberto] = useState(true);
   // Camadas de dados exibidas no mapa (todas ligadas por padrão).
   const [camadas, setCamadas] = useState<Set<CategoriaKey>>(
     () => new Set(CATEGORIAS.map((c) => c.key)),
@@ -154,6 +156,15 @@ export default function Mapa() {
   const [erroLayer3, setErroLayer3] = useState<string | null>(null);
   // Layer 7 — Governança: sem fetch externo por ora; controla apenas visibilidade.
   const [layer7Ativa, setLayer7Ativa] = useState(false);
+
+  const layersIaAtivas = useMemo(() => {
+    const ativas: string[] = [];
+    if (layer1Ativa) ativas.push("L1");
+    if (layer2Ativa) ativas.push("L2");
+    if (layer3Ativa) ativas.push("L3");
+    if (layer7Ativa) ativas.push("L7");
+    return ativas;
+  }, [layer1Ativa, layer2Ativa, layer3Ativa, layer7Ativa]);
 
   useEffect(() => {
     if (dadosUsinas) return;
@@ -1246,6 +1257,30 @@ export default function Mapa() {
                     <BarChart3 className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">Métricas do cruzamento</span>
                   </button>
+                  {layersIaAtivas.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setPainelPoliticasAberto((valor) => !valor)}
+                      aria-pressed={painelPoliticasAberto}
+                      title="Políticas públicas por layer"
+                      aria-label="Políticas públicas por layer"
+                      className={`h-8 w-9 gap-0 px-0 text-[11px] sm:h-auto sm:w-auto sm:gap-1.5 sm:px-2.5 sm:py-1.5 ${
+                        painelPoliticasAberto
+                          ? "bg-violet-500/15 text-violet-400 hover:bg-violet-500/20 hover:text-violet-400"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      <span
+                        className="material-symbols-outlined text-base leading-none"
+                        style={{ fontVariationSettings: '"FILL" 1' }}
+                        aria-hidden
+                      >
+                        policy
+                      </span>
+                      <span className="hidden sm:inline">Políticas</span>
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
@@ -1320,6 +1355,12 @@ export default function Mapa() {
                      grupoTotal={selecao?.total ?? null}
                      onLimparGrupo={() => setSelecao(null)}
                    />
+                )}
+                {layersIaAtivas.length > 0 && painelPoliticasAberto && (
+                  <PainelPoliticas
+                    layersAtivas={layersIaAtivas}
+                    onFechar={() => setPainelPoliticasAberto(false)}
+                  />
                 )}
               </div>
             )}
