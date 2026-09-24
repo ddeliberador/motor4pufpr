@@ -132,20 +132,28 @@ async function carregarDatacenters() {
 
 // ---------------------------------------------------------------------------
 // Layer 2b — Antenas 4G/5G (OpenCelliD). Exige chave gratuita de leitura
-// (secret OPENCELLID_API_KEY). Sem chave devolvemos 200 com data vazia e a
-// falha registrada — nunca dados simulados.
+// (secret OPENCELLID_API_KEY). Sem chave devolvemos 200 com data vazia.
+// API: GET /cell/getInArea
+//   BBOX = lonmin,latmin,lonmax,latmax  (longitude primeiro — padrão OGC)
+//   limit máx = 100 no plano gratuito
+//   radio = LTE (4G) ou NR (5G)
+//   mcc = 724 (Brasil)
 // ---------------------------------------------------------------------------
 const MNC_OPERADORA: Record<string, string> = {
   "02": "TIM", "03": "TIM", "04": "TIM", "05": "Claro", "06": "Vivo",
-  "10": "Nextel", "11": "Vivo", "15": "Sercomtel", "16": "Brasil Telecom / Oi",
+  "10": "Nextel", "11": "Vivo", "15": "Sercomtel", "16": "Oi",
   "23": "Vivo", "30": "Oi", "31": "Oi", "54": "Porto Seguro", "99": "Local",
 };
 
+// Brasil dividido em 6 quadrantes — BBOX no formato lonmin,latmin,lonmax,latmax
+// Cada quadrante cobre ~1/6 do território e retorna até 100 registros (limite free)
 const QUADRANTES = [
-  "-35,-75,-15,-50",
-  "-35,-50,-5,-30",
-  "-30,-60,-10,-45",
-  "-35,-55,-20,-35",
+  "-75,-35,-55,-20",  // Amazônia Ocidental
+  "-55,-35,-30,-20",  // Amazônia Oriental / Centro-Oeste
+  "-75,-20,-55,-5",   // Norte Ocidental
+  "-55,-20,-30,-5",   // Norte Oriental / Nordeste Oeste
+  "-50,-5,-35,6",     // Nordeste Leste
+  "-55,-35,-30,-5",   // Sul / Sudeste
 ];
 
 async function carregarAntenas() {
@@ -165,35 +173,62 @@ async function carregarAntenas() {
   const data: Record<string, unknown>[] = [];
   const vistos = new Set<string>();
 
-  const respostas = await Promise.allSettled(QUADRANTES.map(async (bbox) => {
-    const url = `https://opencellid.org/cell/getInArea?key=${chave}&BBOX=${bbox}&format=json&radio=LTE&mcc=724&limit=1000`;
-    const r = await fetch(url, { signal: AbortSignal.timeout(30_000) });
-    if (!r.ok) throw new Error(`HTTP ${r.status} (bbox ${bbox})`);
-    return await r.json();
-  }));
+  const respostas = await Promise.allSettled(
+    QUADRANTES.flatMap((bbox) =>
+      // Busca separada para LTE (4G) e NR (5G), cada uma com limit=100
+      ["LTE", "NR"].map(async (radio) => {
+        const url =
+          `https://opencellid.org/cell/getInArea` +
+          `?key=${chave}` +
+          `&BBOX=${bbox}` +
+          `&format=json` +
+          `&radio=${radio}` +
+          `&mcc=724` +
+          `&limit=100`;
+        const r = await fetch(url, {
+          headers: { "User-Agent": "Motor4PUFPR/1.0" },
+          signal: AbortSignal.timeout(30_000),
+        });
+        if (!r.ok) {
+          const corpo = await r.text().catch(() => "");
+          throw new Error(`HTTP ${r.status} (bbox ${bbox} radio ${radio}): ${corpo.slice(0, 200)}`);
+        }
+        return { payload: await r.json(), radio, bbox };
+      })
+    )
+  );
 
   for (const resposta of respostas) {
     if (resposta.status === "rejected") {
-      failures.push({ fonte: "opencellid", error: String(resposta.reason).slice(0, 200) });
+      failures.push({
+        fonte: "opencellid",
+        error: String(resposta.reason).slice(0, 300),
+      });
       continue;
     }
-    const payload = resposta.value as Record<string, unknown>;
-    const celulas = (payload.cells ?? payload.data ?? []) as Record<string, unknown>[];
+    const { payload, radio } = resposta.value;
+    const celulas = (
+      (payload as Record<string, unknown>).cells ??
+      (payload as Record<string, unknown>).data ??
+      []
+    ) as Record<string, unknown>[];
+
     for (const c of Array.isArray(celulas) ? celulas : []) {
       const lat = Number(c.lat ?? c.latitude);
       const lon = Number(c.lon ?? c.longitude ?? c.lng);
       if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+      // Bbox continental do Brasil
       if (lat < -35 || lat > 6 || lon < -75 || lon > -33) continue;
       const net = String(c.net ?? c.mnc ?? "").padStart(2, "0");
-      const id = `erb-${c.cell ?? c.cellid ?? `${lat}-${lon}`}`;
+      const id = `erb-${radio}-${c.cell ?? c.cellid ?? `${lat.toFixed(4)}-${lon.toFixed(4)}`}`;
       if (vistos.has(id)) continue;
       vistos.add(id);
       data.push({
         id,
         lat,
         lon,
-        radio: String(c.radio || "LTE"),
-        mcc: String(c.mcc || "724"),
+        radio: String(c.radio ?? radio),
+        mcc: String(c.mcc ?? "724"),
         net,
         operadora: MNC_OPERADORA[net] || `MNC ${net}`,
         range: Number.isFinite(Number(c.range)) ? Number(c.range) : undefined,
@@ -201,7 +236,20 @@ async function carregarAntenas() {
     }
   }
 
-  return { data, failures, source: "https://opencellid.org/cell/getInArea (MCC 724)" };
+  // Se TODAS as requisições falharam, propaga erro visível
+  if (data.length === 0 && failures.length === QUADRANTES.length * 2) {
+    return {
+      data: [],
+      failures,
+      source: "https://opencellid.org/cell/getInArea (MCC 724)",
+    };
+  }
+
+  return {
+    data,
+    failures,
+    source: "https://opencellid.org/cell/getInArea (MCC 724, limit 100/quadrante)",
+  };
 }
 
 // ---------------------------------------------------------------------------
