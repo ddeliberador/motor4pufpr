@@ -85,6 +85,10 @@ export interface AntenaERB {
   operadora?: string;
   uf?: string;
   municipio?: string;
+  /** origem: dump OpenCelliD (grade 0,1°) ou ERBs licenciadas ANATEL (centroide municipal) */
+  fonte?: "opencellid" | "anatel";
+  /** nº de células (OpenCelliD) ou de estações licenciadas (ANATEL) no ponto */
+  celulas?: number;
   /** raio estimado de cobertura em metros */
   range?: number;
 }
