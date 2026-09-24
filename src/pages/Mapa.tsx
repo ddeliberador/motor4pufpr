@@ -91,6 +91,39 @@ async function carregarLocais(): Promise<ResearchLocation[]> {
 const norm = (s: string) =>
   s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
+type InfraLayer = "energy" | "antennas" | "backhaul" | "datacenters";
+type InfraResponse = {
+  data?: unknown;
+  error?: unknown;
+};
+
+// React pode montar a página mais de uma vez em desenvolvimento. Mantemos uma
+// única chamada por camada durante a sessão para não consumir o limite da função.
+const requisicoesInfra = new Map<InfraLayer, Promise<InfraResponse>>();
+
+function buscarInfraestrutura(layer: InfraLayer): Promise<InfraResponse> {
+  const existente = requisicoesInfra.get(layer);
+  if (existente) return existente;
+
+  const requisicao = safeSupabase.functions
+    .invoke("map-infrastructure", { body: { layer } })
+    .then(({ data, error }) => ({ data, error }))
+    .catch((error: unknown) => ({ error }));
+  requisicoesInfra.set(layer, requisicao);
+  return requisicao;
+}
+
+function mensagemFalhaInfra(falha: unknown): string {
+  if (falha && typeof falha === "object") {
+    const contexto = "context" in falha ? falha.context : null;
+    if (contexto && typeof contexto === "object" && "status" in contexto && contexto.status === 429) {
+      return "Limite temporário de consultas atingido. Tente novamente em alguns minutos.";
+    }
+    if ("message" in falha && typeof falha.message === "string") return falha.message;
+  }
+  return "fonte temporariamente indisponível";
+}
+
 export default function Mapa() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["research_locations", "mapa"],
@@ -170,9 +203,13 @@ export default function Mapa() {
     if (dadosUsinas) return;
     setLayer1Carregando(true);
     setErroLayer1(null);
-    safeSupabase.functions.invoke("map-infrastructure", { body: { layer: "energy" } })
+    buscarInfraestrutura("energy")
       .then(({ data: resposta, error: falha }) => {
-        if (falha) throw falha;
+        if (falha) {
+          setErroLayer1(mensagemFalhaInfra(falha));
+          console.warn("Layer 1 — consulta indisponível:", mensagemFalhaInfra(falha));
+          return;
+        }
         if (!resposta || !Array.isArray(resposta.data)) {
           throw new Error("resposta inválida da ANEEL");
         }
@@ -207,9 +244,13 @@ export default function Mapa() {
     if (!layer2Ativa || !l2Antenas || dadosAntenas) return;
     setAntenaCarregando(true);
     setErroAntenas(null);
-    safeSupabase.functions.invoke("map-infrastructure", { body: { layer: "antennas" } })
+    buscarInfraestrutura("antennas")
       .then(({ data: resposta, error: falha }) => {
-        if (falha) throw falha;
+        if (falha) {
+          setErroAntenas(mensagemFalhaInfra(falha));
+          console.warn("Layer 2b — consulta indisponível:", mensagemFalhaInfra(falha));
+          return;
+        }
         if (!resposta || !Array.isArray(resposta.data)) throw new Error("resposta inválida do OpenCelliD");
         if (resposta.data.length === 0) {
           const motivo = resposta.failures?.[0]?.error || "nenhuma antena retornada";
@@ -231,9 +272,13 @@ export default function Mapa() {
     if (!layer2Ativa || !l2Backhaul || dadosBackhaul) return;
     setBackhaulCarregando(true);
     setErroBackhaul(null);
-    safeSupabase.functions.invoke("map-infrastructure", { body: { layer: "backhaul" } })
+    buscarInfraestrutura("backhaul")
       .then(async ({ data: resposta, error: falha }) => {
-        if (falha) throw falha;
+        if (falha) {
+          setErroBackhaul(mensagemFalhaInfra(falha));
+          console.warn("Layer 2c — consulta indisponível:", mensagemFalhaInfra(falha));
+          return;
+        }
         if (!resposta || !Array.isArray(resposta.data) || resposta.data.length === 0) {
           throw new Error("ANATEL respondeu sem municípios");
         }
@@ -257,7 +302,7 @@ export default function Mapa() {
     if (dadosDCs) return;
     setLayer3Carregando(true);
     setErroLayer3(null);
-    safeSupabase.functions.invoke("map-infrastructure", { body: { layer: "datacenters" } })
+    buscarInfraestrutura("datacenters")
       .then(async ({ data: resposta, error: falha }) => {
         if (!falha && resposta && Array.isArray(resposta.data) && resposta.data.length > 0) {
           return resposta.data as Datacenter[];
