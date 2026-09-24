@@ -19,6 +19,7 @@ interface LayerPoliticas {
   layer: string;
   nome: string;
   cor: string;
+  investimento_publico_total?: string;
   politicas: Politica[];
 }
 
@@ -155,6 +156,11 @@ export default function PainelPoliticas({ layersAtivas, onFechar }: Props) {
                   {layer.layer}
                 </span>
                 <span className="text-[11px] font-medium text-foreground">{layer.nome}</span>
+                {layer.investimento_publico_total && (
+                  <span className="text-[10px] font-semibold text-emerald-400">
+                    {layer.investimento_publico_total}
+                  </span>
+                )}
                 <span className="ml-auto text-[10px] text-muted-foreground">{layer.politicas.length}</span>
               </div>
 

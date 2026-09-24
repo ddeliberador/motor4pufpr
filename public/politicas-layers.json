@@ -6,6 +6,7 @@
       "layer": "L1",
       "nome": "Energia",
       "cor": "pink",
+      "investimento_publico_total": "R$ 560 bilhões",
       "politicas": [
         {
           "id": "pnee",
