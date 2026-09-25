@@ -114,6 +114,12 @@ export default function ListaFiltrados({
 
   const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
+  // Um novo recorte invalida paginação e ficha abertas do recorte anterior.
+  useEffect(() => {
+    setLimite(PAGINA);
+    setExpandido((id) => id && itens.some((item) => item.id === id) ? id : null);
+  }, [itens]);
+
   // Ao selecionar no mapa, apenas destaca e rola até o item — sem abrir o detalhamento.
   useEffect(() => {
     if (!pontoSelecionadoId) return;

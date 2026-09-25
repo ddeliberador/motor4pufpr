@@ -665,9 +665,21 @@ export default function Mapa() {
 
   const contagemPorUf = useMemo(() => {
     const c: Record<string, number> = {};
-    for (const l of filtrados) if (l.uf) c[l.uf] = (c[l.uf] || 0) + 1;
+    for (const l of selecionados) if (l.uf) c[l.uf] = (c[l.uf] || 0) + 1;
     return c;
-  }, [filtrados]);
+  }, [selecionados]);
+
+  // Recorte geográfico efetivo compartilhado pelo mapa-base e pelas camadas
+  // de infraestrutura. Vazio significa Brasil inteiro.
+  const ufsFiltroAtivas = useMemo(() => {
+    const resultado = new Set(ufsSel);
+    if (regioesSel.size > 0) {
+      for (const [uf, regiao] of Object.entries(REGIAO_POR_UF)) {
+        if (regioesSel.has(regiao)) resultado.add(uf);
+      }
+    }
+    return resultado;
+  }, [ufsSel, regioesSel]);
 
   const contagemFonte = useMemo(() => {
     const c: Record<string, number> = {};
@@ -814,7 +826,7 @@ export default function Mapa() {
   useEffect(() => {
     setSelecao(null);
     setPontoSelecionadoId(null);
-  }, [busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular, modo, lakeSel]);
+  }, [busca, ufsSel, fontesSel, catsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular, modo, lakeSel, camadas, tiposUsina, l2Cabos, l2Antenas, l2Backhaul, layer1Ativa, layer2Ativa, layer3Ativa, layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa]);
 
   // Seleção no mapa espelha na listagem: abre o painel da lista
   useEffect(() => {
@@ -1055,7 +1067,11 @@ export default function Mapa() {
                       onChange={() => {
                         const novo = !layer1Ativa;
                         setLayer1Ativa(novo);
-                        if (!novo) setCamadas((prev) => { const n = new Set(prev); for (const k of ["energia"] as CategoriaKey[]) n.delete(k); return n; });
+                        setCamadas((prev) => {
+                          const n = new Set(prev);
+                          if (novo) n.add("energia"); else n.delete("energia");
+                          return n;
+                        });
                       }}
                       className="h-3.5 w-3.5 shrink-0 accent-pink-500"
                     />
@@ -1121,7 +1137,17 @@ export default function Mapa() {
                         onChange={() => {
                         const novo = !layer2Ativa;
                         setLayer2Ativa(novo);
-                        if (!novo) setCamadas((prev) => { const n = new Set(prev); for (const k of ["backhaul", "cabo"] as CategoriaKey[]) n.delete(k); return n; });
+                        setCamadas((prev) => {
+                          const n = new Set(prev);
+                          if (novo) {
+                            if (l2Cabos) n.add("cabo");
+                            if (l2Backhaul) n.add("backhaul");
+                          } else {
+                            n.delete("backhaul");
+                            n.delete("cabo");
+                          }
+                          return n;
+                        });
                       }}
                         className="h-3.5 w-3.5 shrink-0 accent-orange-500"
                       />
@@ -1136,7 +1162,15 @@ export default function Mapa() {
                           <input
                             type="checkbox"
                             checked={l2Cabos}
-                            onChange={() => setL2Cabos((v) => !v)}
+                            onChange={() => {
+                              const novo = !l2Cabos;
+                              setL2Cabos(novo);
+                              setCamadas((prev) => {
+                                const n = new Set(prev);
+                                if (novo) n.add("cabo"); else n.delete("cabo");
+                                return n;
+                              });
+                            }}
                             className="h-3 w-3 shrink-0 accent-orange-500"
                           />
                           <span className="h-1.5 w-4 shrink-0 rounded bg-orange-400" aria-hidden />
@@ -1177,7 +1211,15 @@ export default function Mapa() {
                           <input
                             type="checkbox"
                             checked={l2Backhaul}
-                            onChange={() => setL2Backhaul((v) => !v)}
+                            onChange={() => {
+                              const novo = !l2Backhaul;
+                              setL2Backhaul(novo);
+                              setCamadas((prev) => {
+                                const n = new Set(prev);
+                                if (novo) n.add("backhaul"); else n.delete("backhaul");
+                                return n;
+                              });
+                            }}
                             className="h-3 w-3 shrink-0 accent-orange-500"
                           />
                           <span className="h-2 w-2 shrink-0 rounded bg-amber-500" aria-hidden />
@@ -1207,7 +1249,11 @@ export default function Mapa() {
                       onChange={() => {
                         const novo = !layer3Ativa;
                         setLayer3Ativa(novo);
-                        if (!novo) setCamadas((prev) => { const n = new Set(prev); for (const k of ["datacenter"] as CategoriaKey[]) n.delete(k); return n; });
+                        setCamadas((prev) => {
+                          const n = new Set(prev);
+                          if (novo) n.add("datacenter"); else n.delete("datacenter");
+                          return n;
+                        });
                       }}
                       className="h-3.5 w-3.5 shrink-0 accent-yellow-500"
                     />
@@ -1655,6 +1701,7 @@ export default function Mapa() {
                     pontos={pontos}
                     ufSelecionada={ufsSel.size === 1 ? [...ufsSel][0] : null}
                     ufsSelecionadas={ufsSel}
+                    ufsFiltroAtivas={ufsFiltroAtivas}
                     contagemPorUf={contagemPorUf}
                     onSelecionarUf={(u) => u && alternar(ufsSel, u, setUfsSel)}
                     onSelecionarCluster={(pontos, total) => setSelecao({ pontos, total })}

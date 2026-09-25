@@ -194,6 +194,8 @@ interface Props {
   pontos: Ponto[];
   ufSelecionada: string | null;
   ufsSelecionadas: Set<string>;
+  /** UFs do recorte efetivo (estados explícitos + regiões); vazio = Brasil inteiro. */
+  ufsFiltroAtivas: Set<string>;
   contagemPorUf: Record<string, number>;
   onSelecionarUf: (uf: string) => void;
   onSelecionarCluster: (pontos: Ponto[], total: number) => void;
@@ -231,6 +233,7 @@ export default function MapaBrasil({
   pontos,
   ufSelecionada,
   ufsSelecionadas,
+  ufsFiltroAtivas,
   contagemPorUf,
   onSelecionarUf,
   onSelecionarCluster,
@@ -357,15 +360,24 @@ export default function MapaBrasil({
   const escala = vista.w / W;
 
   // Layer 2 — cabos e landing points já pré-filtrados no snapshot local.
-  const cabosVisiveis = useMemo(() => {
-    if (!layer2Ativa || !dadosCabos) return [];
-    return dadosCabos.cables;
-  }, [layer2Ativa, dadosCabos]);
+  const pontoNaSelecaoGeografica = useCallback((lat: number, lon: number, uf?: string | null) => {
+    if (ufsFiltroAtivas.size === 0) return true;
+    if (uf) return ufsFiltroAtivas.has(uf);
+    if (!features) return false;
+    return features.some((f) => ufsFiltroAtivas.has(f.properties.sigla) && dentroDaFeature(lon, lat, f));
+  }, [features, ufsFiltroAtivas]);
 
   const landingPointsVisiveis = useMemo(() => {
     if (!layer2Ativa || !dadosCabos) return [];
-    return dadosCabos.points;
-  }, [layer2Ativa, dadosCabos]);
+    return dadosCabos.points.filter((p) => pontoNaSelecaoGeografica(Number(p.latitude), Number(p.longitude)));
+  }, [layer2Ativa, dadosCabos, pontoNaSelecaoGeografica]);
+
+  const cabosVisiveis = useMemo(() => {
+    if (!layer2Ativa || !dadosCabos) return [];
+    if (ufsFiltroAtivas.size === 0) return dadosCabos.cables;
+    const idsVisiveis = new Set(landingPointsVisiveis.map((p) => p.id));
+    return dadosCabos.cables.filter((c) => c.landing_point_ids?.some((id) => idsVisiveis.has(id)));
+  }, [layer2Ativa, dadosCabos, landingPointsVisiveis, ufsFiltroAtivas]);
 
 
   // Ícones com tamanho amortecido: crescem menos que o zoom, então ao
@@ -498,6 +510,7 @@ export default function MapaBrasil({
           <g opacity={0.8} pointerEvents="none" clipPath="url(#brasil-contorno)">
             {dadosBackhaul.map((m, i) => {
               if (!Number.isFinite(m.latitude) || !Number.isFinite(m.longitude)) return null;
+              if (!pontoNaSelecaoGeografica(m.latitude, m.longitude, m.uf)) return null;
               if (m.longitude < -75 || m.longitude > -30 || m.latitude > 6 || m.latitude < -35) return null;
               const [x, y] = projetar(m.longitude, m.latitude);
               if (m.temBackhaul) {
@@ -546,6 +559,7 @@ export default function MapaBrasil({
           <g opacity={0.8} pointerEvents="none" clipPath="url(#brasil-contorno)">
             {dadosAntenas.map((a) => {
               if (!Number.isFinite(a.lat) || !Number.isFinite(a.lon)) return null;
+              if (!pontoNaSelecaoGeografica(a.lat, a.lon, a.uf)) return null;
               if (a.lon < -75 || a.lon > -30 || a.lat > 6 || a.lat < -35) return null;
               const [x, y] = projetar(a.lon, a.lat);
               const anatel = a.fonte === "anatel";
@@ -655,6 +669,7 @@ export default function MapaBrasil({
           <g pointerEvents="none" clipPath="url(#brasil-contorno)">
             {dadosUsinas.map((u) => {
               if (!Number.isFinite(u.latitude) || !Number.isFinite(u.longitude)) return null;
+              if (!pontoNaSelecaoGeografica(u.latitude, u.longitude, u.uf)) return null;
               if (u.longitude < LON0 || u.longitude > LON1 || u.latitude > LAT0 || u.latitude < LAT1) return null;
               if (tiposUsina && tiposUsina.size > 0 && !tiposUsina.has(u.tipo)) return null;
               const [x, y] = projetar(u.longitude, u.latitude);
@@ -695,6 +710,7 @@ export default function MapaBrasil({
             {dadosDCs.map((dc) => {
               if (dc.latitude == null || dc.longitude == null) return null;
               if (!Number.isFinite(dc.latitude) || !Number.isFinite(dc.longitude)) return null;
+              if (!pontoNaSelecaoGeografica(dc.latitude, dc.longitude, dc.uf)) return null;
               const [x, y] = projetar(dc.longitude, dc.latitude);
               const local = [dc.cidade, dc.uf].filter(Boolean).join("/");
               return (
@@ -719,36 +735,6 @@ export default function MapaBrasil({
             })}
           </g>
         )}
-
-        {/* Layer 7 — Governança (placeholder em Brasília), abaixo dos marcadores SNI. */}
-        {layer7Ativa && (() => {
-          // Brasília: -15.7801, -47.9292
-          const [x, y] = projetar(-47.9292, -15.7801);
-          return (
-            <g pointerEvents="none">
-              <circle cx={x} cy={y} r={tam * 1.2}
-                fill="#7c3aed" fillOpacity={0.1}
-                stroke="#7c3aed" strokeWidth={1.5 * escala} strokeDasharray="4 2"
-              />
-              <text
-                x={x}
-                y={y}
-                textAnchor="middle"
-                dominantBaseline="central"
-                className="material-symbols-outlined select-none text-violet-400"
-                 style={{
-                   fontSize: tam * 1.2,
-                   opacity: 0.85,
-                   fontVariationSettings: '"FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24',
-                 }}
-                fill="currentColor"
-              >
-                policy
-                <title>Layer 7 — Governança · Políticas Públicas de IA e Patentes · Em construção</title>
-              </text>
-            </g>
-          );
-        })()}
 
         <g clipPath="url(#brasil-contorno)">
           {clusters.map((c) => {
@@ -843,7 +829,8 @@ export default function MapaBrasil({
                 return (layer4Ativa && v.l4) || (layer5Ativa && v.l5) || (layer6Ativa && v.l6) || (layer7Ativa && v.l7);
               })
               .map((p) => {
-                const v = enriquecimentoLayers[p.id]!;
+                const v = enriquecimentoLayers[p.id];
+                if (!v) return null;
                 const [x, y] = projetar(p.longitude, p.latitude);
                 const aneis: string[] = [];
                 if (layer7Ativa && v.l7) aneis.push("#a78bfa");
@@ -1013,17 +1000,6 @@ export default function MapaBrasil({
               >dns</span>
               <span className="text-muted-foreground">Datacenter</span>
             </div>
-          </>)}
-          {layer7Ativa && (<>
-            <p className="font-medium text-violet-400">Layer 7 — Governança</p>
-            <div className="flex items-center gap-1.5">
-              <span
-                className="material-symbols-outlined text-[12px] text-violet-400"
-                style={{ fontVariationSettings: '"FILL" 1' }}
-              >policy</span>
-              <span className="text-muted-foreground">Política pública / Patente</span>
-            </div>
-            <p className="text-muted-foreground/60">Bases: IPEA · INPI · EBIA · NIB</p>
           </>)}
           {(layer4Ativa || layer5Ativa || layer6Ativa || layer7Ativa) && (<>
             <p className="font-medium text-foreground">Enriquecimento de atores</p>
