@@ -44,7 +44,7 @@ async function buscarPagina(offset: number, limite: number) {
   });
   const resposta = await fetch(`${SIGA_BASE}?${params}`, {
     headers: { Accept: "application/json" },
-    signal: AbortSignal.timeout(40_000),
+    signal: AbortSignal.timeout(15_000),
   });
   if (!resposta.ok) {
     const corpo = await resposta.text();
