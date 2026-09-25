@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { CATEGORIA_MAP, fonteLabel, type CategoriaKey } from "@/components/mapa/tipos";
 import type { ResearchLocation } from "@/lib/researchLocations";
 import { safeHttpUrl } from "@/lib/utils";
+import type { EnriquecimentoLayers } from "@/components/mapa/caboSubmarino";
 
 type Item = ResearchLocation & { categoria: CategoriaKey };
 
@@ -80,6 +81,11 @@ interface Props {
   /** Total de locais sobrepostos no ícone clicado no mapa (recorte de grupo). */
   grupoTotal?: number | null;
   onLimparGrupo?: () => void;
+  enriquecimentoLayers?: EnriquecimentoLayers;
+  layer4Ativa?: boolean;
+  layer5Ativa?: boolean;
+  layer6Ativa?: boolean;
+  layer7Ativa?: boolean;
 }
 
 export default function ListaFiltrados({
@@ -92,6 +98,11 @@ export default function ListaFiltrados({
   onSelecionarPonto,
   grupoTotal,
   onLimparGrupo,
+  enriquecimentoLayers,
+  layer4Ativa,
+  layer5Ativa,
+  layer6Ativa,
+  layer7Ativa,
 }: Props) {
   const [abertoLocal, setAbertoLocal] = useState(false);
   const aberto = abertoProp !== undefined ? abertoProp : abertoLocal;
@@ -424,6 +435,75 @@ export default function ListaFiltrados({
                             </p>
                           </div>
                         </div>
+
+                        {/* Badges de enriquecimento das layers 4-7 */}
+                        {enriquecimentoLayers && (() => {
+                          const v = enriquecimentoLayers[l.id];
+                          if (!v) return null;
+                          const fill = { fontVariationSettings: '"FILL" 1' };
+                          return (
+                            <div className="space-y-1 border-b border-border/40 px-3 py-2">
+                              {layer4Ativa && v.l4 && (
+                                <div className="flex items-start gap-3 rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2">
+                                  <span className="material-symbols-outlined mt-0.5 text-base leading-none text-green-400" style={fill}>model_training</span>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-green-400">L4 · Modelos (Hugging Face)</p>
+                                    {v.l4.modelos.slice(0, 3).map((m) => (
+                                      <p key={m.id} className="mt-0.5 break-words text-[11px] text-foreground">
+                                        <a href={`https://huggingface.co/${m.id}`} target="_blank" rel="noopener noreferrer" className="text-green-400 hover:underline">{m.id}</a>
+                                        {m.tarefa && <span className="text-muted-foreground"> · {m.tarefa}</span>}
+                                        {m.downloads > 0 && <span className="text-muted-foreground"> · {m.downloads.toLocaleString("pt-BR")} downloads</span>}
+                                      </p>
+                                    ))}
+                                    {v.l4.modelos.length > 3 && <p className="mt-0.5 text-[10px] text-muted-foreground">+{v.l4.modelos.length - 3} modelo(s)</p>}
+                                  </div>
+                                </div>
+                              )}
+                              {layer5Ativa && v.l5 && (
+                                <div className="flex items-start gap-3 rounded-lg border border-teal-500/30 bg-teal-500/10 px-3 py-2">
+                                  <span className="material-symbols-outlined mt-0.5 text-base leading-none text-teal-400" style={fill}>rocket_launch</span>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-teal-400">L5 · Aplicações (PNCP — contratante)</p>
+                                    {v.l5.contratos.slice(0, 3).map((c, i) => {
+                                      const u = safeHttpUrl(c.url);
+                                      return (
+                                        <p key={i} className="mt-0.5 break-words text-[11px] text-foreground">
+                                          {c.valor > 0 && <span className="font-medium text-teal-400">R$ {c.valor.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>}
+                                          {c.objeto && <span className="text-muted-foreground"> · {c.objeto.slice(0, 60)}{c.objeto.length > 60 ? "…" : ""}</span>}
+                                          {u && <a href={u} target="_blank" rel="noopener noreferrer" className="ml-1 text-teal-400 hover:underline">ver</a>}
+                                        </p>
+                                      );
+                                    })}
+                                    {v.l5.contratos.length > 3 && <p className="mt-0.5 text-[10px] text-muted-foreground">+{v.l5.contratos.length - 3} contrato(s)</p>}
+                                  </div>
+                                </div>
+                              )}
+                              {layer6Ativa && v.l6 && (
+                                <div className="flex items-start gap-3 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-2">
+                                  <span className="material-symbols-outlined mt-0.5 text-base leading-none text-cyan-400" style={fill}>science</span>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-cyan-400">L6 · Pesquisa (OpenAlex)</p>
+                                    <p className="mt-0.5 text-[11px] text-foreground">
+                                      <span className="font-medium">{v.l6.artigos.toLocaleString("pt-BR")}</span>
+                                      <span className="text-muted-foreground"> publicações · </span>
+                                      <span className="font-medium">{v.l6.citacoes.toLocaleString("pt-BR")}</span>
+                                      <span className="text-muted-foreground"> citações</span>
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+                              {layer7Ativa && v.l7 && v.l7.politicas.length > 0 && (
+                                <div className="flex items-start gap-3 rounded-lg border border-violet-500/30 bg-violet-500/10 px-3 py-2">
+                                  <span className="material-symbols-outlined mt-0.5 text-base leading-none text-violet-400" style={fill}>policy</span>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-violet-400">L7 · Governança</p>
+                                    {v.l7.politicas.map((pol, i) => <p key={i} className="mt-0.5 text-[11px] text-foreground">· {pol}</p>)}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
 
                         {/* Campos extras do raw_metadata */}
                         {extras.map(([k, v], idx) => (

@@ -22,6 +22,8 @@ import { type ResearchLocation } from "@/lib/researchLocations";
 import { safeHttpUrl } from "@/lib/utils";
 import PainelDataLake from "@/components/mapa/PainelDataLake";
 import PainelPoliticas from "@/components/mapa/PainelPoliticas";
+import type { EnriquecimentoLayers } from "@/components/mapa/caboSubmarino";
+import { cruzarLayersComAtores } from "@/utils/cruzarLayers";
 import { canonizar, passaLake, resumoLake, type SelecaoLake } from "@/components/mapa/dataLake";
 import { Button } from "@/components/ui/button";
 import {
@@ -225,15 +227,25 @@ export default function Mapa() {
   const [erroLayer3, setErroLayer3] = useState<string | null>(null);
   // Layer 7 — Governança: sem fetch externo por ora; controla apenas visibilidade.
   const [layer7Ativa, setLayer7Ativa] = useState(false);
+  // Layers 4, 5, 6, 7 — enriquecimento de atores existentes
+  const [layer4Ativa, setLayer4Ativa] = useState(false);
+  const [layer5Ativa, setLayer5Ativa] = useState(false);
+  const [layer6Ativa, setLayer6Ativa] = useState(false);
+  const [enriquecimentoLayers, setEnriquecimentoLayers] = useState<EnriquecimentoLayers>({});
+  const [layersEnrCarregando, setLayersEnrCarregando] = useState(false);
+  const [erroLayersEnr, setErroLayersEnr] = useState<string | null>(null);
 
   const layersIaAtivas = useMemo(() => {
     const ativas: string[] = [];
     if (layer1Ativa) ativas.push("L1");
     if (layer2Ativa) ativas.push("L2");
     if (layer3Ativa) ativas.push("L3");
+    if (layer4Ativa) ativas.push("L4");
+    if (layer5Ativa) ativas.push("L5");
+    if (layer6Ativa) ativas.push("L6");
     if (layer7Ativa) ativas.push("L7");
     return ativas;
-  }, [layer1Ativa, layer2Ativa, layer3Ativa, layer7Ativa]);
+  }, [layer1Ativa, layer2Ativa, layer3Ativa, layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa]);
 
   useEffect(() => {
     if (dadosUsinas) return;
@@ -534,6 +546,40 @@ export default function Mapa() {
   // O denominador é o universo carregado e não diminui ao ocultar camadas,
   // selecionar subtipos ou aplicar filtros.
   const totalLocais = (data?.length || 0) + locaisInfraTotais.length;
+
+  // Cruzamento das Layers 4–7 com os atores carregados (SNI + infraestrutura).
+  useEffect(() => {
+    if (!data || (!layer4Ativa && !layer5Ativa && !layer6Ativa && !layer7Ativa)) {
+      setEnriquecimentoLayers({});
+      setErroLayersEnr(null);
+      return;
+    }
+    let cancelado = false;
+    setLayersEnrCarregando(true);
+    setErroLayersEnr(null);
+    cruzarLayersComAtores([...data, ...locaisInfraTotais], {
+      l4: layer4Ativa, l5: layer5Ativa, l6: layer6Ativa, l7: layer7Ativa,
+    })
+      .then(({ resultado, falhas }) => {
+        if (cancelado) return;
+        setEnriquecimentoLayers(resultado);
+        if (falhas.length) {
+          console.error("[Mapa] Cruzamento Layers 4–7:", falhas);
+          setErroLayersEnr(falhas.join(" · "));
+        }
+      })
+      .catch((e) => !cancelado && setErroLayersEnr(e instanceof Error ? e.message : "falha desconhecida"))
+      .finally(() => !cancelado && setLayersEnrCarregando(false));
+    return () => { cancelado = true; };
+  }, [data, locaisInfraTotais, layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa]);
+
+  const contagemEnr = useMemo(() => {
+    const vs = Object.values(enriquecimentoLayers);
+    return {
+      l4: vs.filter((v) => v.l4).length, l5: vs.filter((v) => v.l5).length,
+      l6: vs.filter((v) => v.l6).length, l7: vs.filter((v) => v.l7).length,
+    };
+  }, [enriquecimentoLayers]);
 
   const comCategoria = useMemo(
     () => locais.map((l) => ({ ...l, categoria: categorizar(l.tipo) })),
@@ -1150,27 +1196,53 @@ export default function Mapa() {
                   {erroLayer3 && layer3Ativa && (
                     <p className="px-2 text-[10px] text-destructive">PeeringDB indisponível: {erroLayer3}</p>
                   )}
-                  {/* Layer 4, 5, 6 — em breve */}
-                  {["Layer 4 — Modelos", "Layer 5 — Aplicações", "Layer 6 — Pesquisa"].map((l) => (
-                    <div key={l} className="flex items-center gap-2.5 rounded-lg border border-transparent bg-card/50 px-2 py-1.5 text-xs opacity-40">
-                      <span className="h-3.5 w-3.5 shrink-0 rounded border border-border" />
-                      <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-muted" aria-hidden />
-                      <span className="flex-1 truncate">{l}</span>
-                      <span className="text-[10px] text-muted-foreground">em breve</span>
-                    </div>
-                  ))}
-                  {/* Layer 7 — Governança */}
                   <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
-                    <input
-                      type="checkbox"
-                      checked={layer7Ativa}
-                      onChange={() => setLayer7Ativa((v) => !v)}
-                      className="h-3.5 w-3.5 shrink-0 accent-violet-500"
-                    />
-                    <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-violet-400" aria-hidden />
-                    <span className="flex-1 truncate">Layer 7 — Governança</span>
-                    <span className="text-[10px] text-muted-foreground">em breve</span>
+                    <input type="checkbox" checked={layer4Ativa} onChange={() => setLayer4Ativa((v) => !v)}
+                      className="h-3.5 w-3.5 shrink-0 accent-green-500" />
+                    <span className="material-symbols-outlined shrink-0 text-base leading-none text-green-400"
+                      style={{ fontVariationSettings: '"FILL" 1' }}>model_training</span>
+                    <span className="flex-1 truncate">Layer 4 — Modelos</span>
+                    {layersEnrCarregando && layer4Ativa && <span className="text-[10px] text-muted-foreground">cruzando…</span>}
+                    {!layersEnrCarregando && layer4Ativa && (
+                      <span className="text-[10px] text-muted-foreground">{contagemEnr.l4.toLocaleString("pt-BR")} atores</span>
+                    )}
                   </label>
+                  <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
+                    <input type="checkbox" checked={layer5Ativa} onChange={() => setLayer5Ativa((v) => !v)}
+                      className="h-3.5 w-3.5 shrink-0 accent-teal-500" />
+                    <span className="material-symbols-outlined shrink-0 text-base leading-none text-teal-400"
+                      style={{ fontVariationSettings: '"FILL" 1' }}>rocket_launch</span>
+                    <span className="flex-1 truncate">Layer 5 — Aplicações</span>
+                    {layersEnrCarregando && layer5Ativa && <span className="text-[10px] text-muted-foreground">cruzando…</span>}
+                    {!layersEnrCarregando && layer5Ativa && (
+                      <span className="text-[10px] text-muted-foreground">{contagemEnr.l5.toLocaleString("pt-BR")} atores</span>
+                    )}
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
+                    <input type="checkbox" checked={layer6Ativa} onChange={() => setLayer6Ativa((v) => !v)}
+                      className="h-3.5 w-3.5 shrink-0 accent-cyan-500" />
+                    <span className="material-symbols-outlined shrink-0 text-base leading-none text-cyan-400"
+                      style={{ fontVariationSettings: '"FILL" 1' }}>science</span>
+                    <span className="flex-1 truncate">Layer 6 — Pesquisa</span>
+                    {layersEnrCarregando && layer6Ativa && <span className="text-[10px] text-muted-foreground">cruzando…</span>}
+                    {!layersEnrCarregando && layer6Ativa && (
+                      <span className="text-[10px] text-muted-foreground">{contagemEnr.l6.toLocaleString("pt-BR")} atores</span>
+                    )}
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
+                    <input type="checkbox" checked={layer7Ativa} onChange={() => setLayer7Ativa((v) => !v)}
+                      className="h-3.5 w-3.5 shrink-0 accent-violet-500" />
+                    <span className="material-symbols-outlined shrink-0 text-base leading-none text-violet-400"
+                      style={{ fontVariationSettings: '"FILL" 1' }}>policy</span>
+                    <span className="flex-1 truncate">Layer 7 — Governança</span>
+                    {layersEnrCarregando && layer7Ativa && <span className="text-[10px] text-muted-foreground">cruzando…</span>}
+                    {!layersEnrCarregando && layer7Ativa && (
+                      <span className="text-[10px] text-muted-foreground">{contagemEnr.l7.toLocaleString("pt-BR")} atores</span>
+                    )}
+                  </label>
+                  {erroLayersEnr && (layer4Ativa || layer5Ativa || layer6Ativa || layer7Ativa) && (
+                    <p className="px-2 text-[10px] text-destructive">Cruzamento: {erroLayersEnr}</p>
+                  )}
                 </div>
                 <p className="mt-1.5 text-[11px] text-muted-foreground">
                   Infraestrutura de IA no Brasil. Desligadas por padrão.
@@ -1580,6 +1652,10 @@ export default function Mapa() {
                     layer3Ativa={layer3Ativa}
                     dadosDCs={dadosDCs}
                     layer7Ativa={layer7Ativa}
+                    layer4Ativa={layer4Ativa}
+                    layer5Ativa={layer5Ativa}
+                    layer6Ativa={layer6Ativa}
+                    enriquecimentoLayers={enriquecimentoLayers}
                   />
                   <p className="pointer-events-none absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-center text-[11px] text-muted-foreground sm:block">
                     <MapPin className="mr-1 inline h-3 w-3" />
@@ -1598,6 +1674,11 @@ export default function Mapa() {
                      onSelecionarPonto={setPontoSelecionadoId}
                      grupoTotal={selecao?.total ?? null}
                      onLimparGrupo={() => setSelecao(null)}
+                     enriquecimentoLayers={enriquecimentoLayers}
+                     layer4Ativa={layer4Ativa}
+                     layer5Ativa={layer5Ativa}
+                     layer6Ativa={layer6Ativa}
+                     layer7Ativa={layer7Ativa}
                    />
                 )}
                 {layersIaAtivas.length > 0 && painelPoliticasAberto && (

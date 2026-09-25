@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Minus, Plus, Maximize2 } from "lucide-react";
 import { CATEGORIA_MAP, type CategoriaKey } from "./tipos";
+import type { EnriquecimentoLayers } from "./caboSubmarino";
 import {
   type AntenaERB,
   type BackhaulMunicipio,
@@ -219,6 +220,11 @@ interface Props {
   dadosDCs?: Datacenter[] | null;
   /** Layer 7 — Governança (placeholder em Brasília). */
   layer7Ativa?: boolean;
+  /** Layers 4–6 e 7: anéis de enriquecimento sobre os atores existentes. */
+  layer4Ativa?: boolean;
+  layer5Ativa?: boolean;
+  layer6Ativa?: boolean;
+  enriquecimentoLayers?: EnriquecimentoLayers;
 }
 
 export default function MapaBrasil({
@@ -244,6 +250,10 @@ export default function MapaBrasil({
   layer3Ativa,
   dadosDCs,
   layer7Ativa,
+  layer4Ativa,
+  layer5Ativa,
+  layer6Ativa,
+  enriquecimentoLayers,
 }: Props) {
   const [features, setFeatures] = useState<Feature[] | null>(null);
   const [erroMalha, setErroMalha] = useState<string | null>(null);
@@ -763,6 +773,23 @@ export default function MapaBrasil({
                   }
                 }}
               >
+                {/* Anéis de enriquecimento das layers 4-7 */}
+                {(() => {
+                  if (!enriquecimentoLayers || (!layer4Ativa && !layer5Ativa && !layer6Ativa && !layer7Ativa)) return null;
+                  const aneis: { cor: string; offset: number }[] = [];
+                  const temL4 = layer4Ativa && c.pontos.some((p) => enriquecimentoLayers[p.id]?.l4);
+                  const temL5 = layer5Ativa && c.pontos.some((p) => enriquecimentoLayers[p.id]?.l5);
+                  const temL6 = layer6Ativa && c.pontos.some((p) => enriquecimentoLayers[p.id]?.l6);
+                  const temL7 = layer7Ativa && c.pontos.some((p) => enriquecimentoLayers[p.id]?.l7);
+                  if (temL7) aneis.push({ cor: "#a78bfa", offset: 3 });
+                  if (temL6) aneis.push({ cor: "#22d3ee", offset: 2 });
+                  if (temL5) aneis.push({ cor: "#2dd4bf", offset: 1 });
+                  if (temL4) aneis.push({ cor: "#4ade80", offset: 0 });
+                  return aneis.map(({ cor, offset }) => (
+                    <circle key={cor} cx={c.x} cy={c.y} r={tam * (0.78 + offset * 0.18)}
+                      fill="none" stroke={cor} strokeWidth={tam * 0.06} strokeOpacity={0.85} pointerEvents="none" />
+                  ));
+                })()}
                 <text
                   x={c.x}
                   y={c.y}
@@ -864,7 +891,7 @@ export default function MapaBrasil({
         </button>
       </div>
 
-      {(layer1Ativa || layer2Ativa || layer3Ativa || layer7Ativa) && (
+      {(layer1Ativa || layer2Ativa || layer3Ativa || layer4Ativa || layer5Ativa || layer6Ativa || layer7Ativa) && (
         <div className="absolute bottom-8 left-3 max-h-[45%] space-y-1.5 overflow-y-auto rounded-lg border border-border bg-card/90 p-2.5 text-[10px] shadow-sm backdrop-blur">
           <p className="font-semibold text-foreground">Camadas de IA ativas</p>
           {layer1Ativa && (<>
@@ -956,6 +983,34 @@ export default function MapaBrasil({
               <span className="text-muted-foreground">Política pública / Patente</span>
             </div>
             <p className="text-muted-foreground/60">Bases: IPEA · INPI · EBIA · NIB</p>
+          </>)}
+          {(layer4Ativa || layer5Ativa || layer6Ativa || layer7Ativa) && (<>
+            <p className="font-medium text-foreground">Enriquecimento de atores</p>
+            {layer4Ativa && (
+            <div className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-full border border-green-400" style={{ borderWidth: 1.5 }} />
+              <span className="text-muted-foreground">L4 · Modelos (Hugging Face)</span>
+            </div>
+            )}
+            {layer5Ativa && (
+            <div className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-full border border-teal-400" style={{ borderWidth: 1.5 }} />
+              <span className="text-muted-foreground">L5 · Aplicações (PNCP)</span>
+            </div>
+            )}
+            {layer6Ativa && (
+            <div className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-full border border-cyan-400" style={{ borderWidth: 1.5 }} />
+              <span className="text-muted-foreground">L6 · Pesquisa (OpenAlex)</span>
+            </div>
+            )}
+            {layer7Ativa && (
+            <div className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-full border border-violet-400" style={{ borderWidth: 1.5 }} />
+              <span className="text-muted-foreground">L7 · Governança</span>
+            </div>
+            )}
+            <p className="text-muted-foreground/60">Anéis nos atores com vínculo confirmado</p>
           </>)}
         </div>
       )}
