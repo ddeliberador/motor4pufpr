@@ -103,3 +103,39 @@ export interface BackhaulMunicipio {
   temBackhaul: boolean;
   tipo?: string;
 }
+
+// Enriquecimento por Layer (4, 5, 6, 7) — indexado pelo id do ator no Mapa
+export interface ModeloHF {
+  id: string;
+  author: string;
+  downloads: number;
+  tarefa: string; // pipeline_tag
+  likes: number;
+}
+
+/** Contrato PNCP cujo objeto cita IA. O ator é vinculado como órgão contratante. */
+export interface ContratoIA {
+  cnpj: string;
+  fornecedor: string;
+  valor: number;
+  objeto: string;
+  dataVigencia?: string;
+  url?: string;
+}
+
+export interface PatenteINPI {
+  numero: string;
+  titulo: string;
+  ipc: string;
+  depositante: string;
+  ano: string;
+}
+
+export interface LayerVinculos {
+  l4?: { modelos: ModeloHF[] };
+  l5?: { contratos: ContratoIA[] };
+  l6?: { artigos: number; citacoes: number; fonte: string };
+  l7?: { patentes: PatenteINPI[]; politicas: string[] };
+}
+
+export type EnriquecimentoLayers = Record<string, LayerVinculos>;
