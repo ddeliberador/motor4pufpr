@@ -833,6 +833,47 @@ export default function MapaBrasil({
           })}
         </g>
 
+        {/* Atores vinculados às Layers 4-7: marcadores individuais por cima dos clusters */}
+        {enriquecimentoLayers && (layer4Ativa || layer5Ativa || layer6Ativa || layer7Ativa) && (
+          <g clipPath="url(#brasil-contorno)">
+            {pontosExibidos
+              .filter((p) => {
+                const v = enriquecimentoLayers[p.id];
+                if (!v) return false;
+                return (layer4Ativa && v.l4) || (layer5Ativa && v.l5) || (layer6Ativa && v.l6) || (layer7Ativa && v.l7);
+              })
+              .map((p) => {
+                const v = enriquecimentoLayers[p.id]!;
+                const [x, y] = projetar(p.longitude, p.latitude);
+                const aneis: string[] = [];
+                if (layer7Ativa && v.l7) aneis.push("#a78bfa");
+                if (layer6Ativa && v.l6) aneis.push("#22d3ee");
+                if (layer5Ativa && v.l5) aneis.push("#2dd4bf");
+                if (layer4Ativa && v.l4) aneis.push("#4ade80");
+                return (
+                  <g
+                    key={`enr-${p.id}`}
+                    className={arrastando ? "cursor-grabbing" : "cursor-pointer"}
+                    style={{ pointerEvents: arrastando ? "none" : "auto" }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (movidoRef.current) return;
+                      onSelecionarPonto?.(p.id);
+                    }}
+                  >
+                    {aneis.map((cor, i) => (
+                      <circle key={cor} cx={x} cy={y} r={tam * (0.78 + i * 0.18)}
+                        fill="none" stroke={cor} strokeWidth={tam * 0.07} strokeOpacity={0.9} pointerEvents="none" />
+                    ))}
+                    <circle cx={x} cy={y} r={tam * 0.28} fill={aneis[aneis.length - 1]} fillOpacity={0.95}
+                      stroke="hsl(var(--background))" strokeWidth={0.5 * escala} />
+                    <title>{p.nome}</title>
+                  </g>
+                );
+              })}
+          </g>
+        )}
+
         {selecionado && selX != null && selY != null && (
           <g clipPath="url(#brasil-contorno)" pointerEvents="none" style={{ opacity: 0.95 }}>
             <circle
