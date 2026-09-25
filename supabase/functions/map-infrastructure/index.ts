@@ -440,8 +440,11 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error("map-infrastructure error:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "falha desconhecida" }), {
-      status: 502,
+    // Fonte externa fora do ar/timeout: responde 200 com falha explícita (sem dados simulados)
+    // para a camada mostrar o aviso em vez de derrubar a página.
+    const msg = error instanceof Error ? (error.name === "TimeoutError" ? "Fonte externa não respondeu a tempo (timeout)." : error.message) : "falha desconhecida";
+    return new Response(JSON.stringify({ data: [], failures: [{ fonte: "externa", error: msg }], indisponivel: true }), {
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
