@@ -691,16 +691,25 @@ export default function Mapa() {
     supercomputacao: semLayer, embrapii: semLayer, habitat: semLayer, outro: semLayer,
   };
 
-  // Listagem: infraestrutura antes dos SNI quando alguma layer de IA está ativa.
+  // Listagem: atores vinculados às Layers 4-7 primeiro; depois infraestrutura
+  // (Layers 1-3); por fim os demais atores do SNI.
   const selecionadosOrdenados = useMemo(() => {
-    if (!layer1Ativa && !layer2Ativa && !layer3Ativa) return selecionados;
+    const temEnr = layer4Ativa || layer5Ativa || layer6Ativa || layer7Ativa;
+    if (!temEnr && !layer1Ativa && !layer2Ativa && !layer3Ativa) return selecionados;
     const PRIORIDADE: Partial<Record<CategoriaKey, number>> = {
-      energia: 0, datacenter: 1, cabo: 2, backhaul: 3,
+      energia: 1, datacenter: 2, cabo: 3, backhaul: 4,
     };
-    return [...selecionados].sort(
-      (a, b) => (PRIORIDADE[a.categoria] ?? 99) - (PRIORIDADE[b.categoria] ?? 99),
-    );
-  }, [selecionados, layer1Ativa, layer2Ativa, layer3Ativa]);
+    const temVinculo = (id: string) => {
+      const v = enriquecimentoLayers[id];
+      if (!v) return false;
+      return (layer4Ativa && v.l4) || (layer5Ativa && v.l5) || (layer6Ativa && v.l6) || (layer7Ativa && v.l7);
+    };
+    return [...selecionados].sort((a, b) => {
+      const pa = temEnr && temVinculo(a.id) ? 0 : (PRIORIDADE[a.categoria] ?? 99);
+      const pb = temEnr && temVinculo(b.id) ? 0 : (PRIORIDADE[b.categoria] ?? 99);
+      return pa - pb;
+    });
+  }, [selecionados, layer1Ativa, layer2Ativa, layer3Ativa, layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa, enriquecimentoLayers]);
 
   const ufs = useMemo(
     () => [...new Set(locais.map((l) => l.uf).filter(Boolean))].sort() as string[],
