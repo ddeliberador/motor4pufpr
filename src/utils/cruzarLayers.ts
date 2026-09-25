@@ -77,6 +77,9 @@ export async function buscarContratosIA(): Promise<ContratoIA[]> {
     .filter((c) => c.cnpj || c.fornecedor);
 }
 
+let cacheHF: Promise<ModeloHF[]> | null = null;
+let cachePNCP: Promise<ContratoIA[]> | null = null;
+
 // ── Cruzamento principal ──────────────────────────────────────────────────────
 export async function cruzarLayersComAtores(
   atores: ResearchLocation[],
@@ -85,9 +88,12 @@ export async function cruzarLayersComAtores(
   const resultado: EnriquecimentoLayers = {};
   const falhas: string[] = [];
 
+  // Cache por sessão; em falha o cache é descartado para nova tentativa.
+  if (options.l4 && !cacheHF) cacheHF = buscarModelosHF().catch((e) => { cacheHF = null; throw e; });
+  if (options.l5 && !cachePNCP) cachePNCP = buscarContratosIA().catch((e) => { cachePNCP = null; throw e; });
   const [hf, pncp] = await Promise.allSettled([
-    options.l4 ? buscarModelosHF() : Promise.resolve([] as ModeloHF[]),
-    options.l5 ? buscarContratosIA() : Promise.resolve([] as ContratoIA[]),
+    options.l4 && cacheHF ? cacheHF : Promise.resolve([] as ModeloHF[]),
+    options.l5 && cachePNCP ? cachePNCP : Promise.resolve([] as ContratoIA[]),
   ]);
   const modelosHF = hf.status === "fulfilled" ? hf.value : [];
   const contratosIA = pncp.status === "fulfilled" ? pncp.value : [];
