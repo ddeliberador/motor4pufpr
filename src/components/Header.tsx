@@ -69,6 +69,12 @@ const Header = () => {
               Documentação
             </Link>
             <Link
+              to="/sobre"
+              className={`text-sm font-medium transition-colors ${isActive('/sobre') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Sobre
+            </Link>
+            <Link
               to={user ? "/gestao-pesquisa" : "/auth"}
               title="Gestão da Pesquisa"
               className={`p-2 rounded-lg transition-colors ${isActive('/gestao-pesquisa') ? 'text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
@@ -114,6 +120,13 @@ const Header = () => {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/documentacao') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
               >
                 Documentação
+              </Link>
+              <Link
+                to="/sobre"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/sobre') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+              >
+                Sobre
               </Link>
               <Link
                 to={user ? "/gestao-pesquisa" : "/auth"}
