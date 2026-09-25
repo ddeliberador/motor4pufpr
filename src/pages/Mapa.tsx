@@ -637,10 +637,17 @@ export default function Mapa() {
     });
   }, [comCategoria, comCanon, busca, fontesSel, catsSel, ufsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular, enriquecimento, modo, lakeSel]);
 
-  const selecionados = useMemo(
-    () => filtrados.filter((l) => camadas.has(l.categoria)),
-    [filtrados, camadas],
-  );
+  // Atores vinculados às Layers 4–7 ativas entram sempre, mesmo com a
+  // categoria SNI desmarcada em "Camadas no mapa".
+  const selecionados = useMemo(() => {
+    const temEnr = layer4Ativa || layer5Ativa || layer6Ativa || layer7Ativa;
+    return filtrados.filter((l) => {
+      if (camadas.has(l.categoria)) return true;
+      if (!temEnr) return false;
+      const v = enriquecimentoLayers[l.id];
+      return !!v && !!((layer4Ativa && v.l4) || (layer5Ativa && v.l5) || (layer6Ativa && v.l6) || (layer7Ativa && v.l7));
+    });
+  }, [filtrados, camadas, layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa, enriquecimentoLayers]);
 
   const pontos: Ponto[] = useMemo(
     () =>
