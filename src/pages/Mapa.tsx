@@ -183,6 +183,7 @@ export default function Mapa() {
   const [fontesSel, setFontesSel] = useState<Set<string>>(new Set());
   const [catsSel, setCatsSel] = useState<Set<CategoriaKey>>(new Set());
   const [ufsSel, setUfsSel] = useState<Set<string>>(new Set());
+  const [ufFoco, setUfFoco] = useState<string | null>(null);
   const [regioesSel, setRegioesSel] = useState<Set<string>>(new Set());
   const [tiposSel, setTiposSel] = useState<Set<string>>(new Set());
   const [segmentosSel, setSegmentosSel] = useState<Set<string>>(new Set());
@@ -602,8 +603,8 @@ export default function Mapa() {
     [locais],
   );
 
-  // Combinação por SOMA: cada grupo de filtro marcado adiciona seus registros
-  // à exibição (união). Só a busca por texto restringe o resultado.
+  // Combinação previsível: opções dentro do mesmo grupo somam, enquanto grupos
+  // diferentes se cruzam (ex.: Paraná + Datacenter = datacenters no Paraná).
   const filtrados = useMemo(() => {
     const q = norm(busca.trim());
     if (modo === "lake") {
@@ -632,8 +633,7 @@ export default function Mapa() {
     }
     return comCategoria.filter((l) => {
       if (q && !norm(`${l.nome} ${l.municipio || ""}`).includes(q)) return false;
-      if (grupos.length === 0) return true;
-      return grupos.some((g) => g(l));
+      return grupos.every((g) => g(l));
     });
   }, [comCategoria, comCanon, busca, fontesSel, catsSel, ufsSel, regioesSel, tiposSel, segmentosSel, soEmbrapii, granular, enriquecimento, modo, lakeSel]);
 
@@ -782,6 +782,7 @@ export default function Mapa() {
     setFontesSel(new Set());
     setCatsSel(new Set());
     setUfsSel(new Set());
+    setUfFoco(null);
     setRegioesSel(new Set());
     setTiposSel(new Set());
     setSegmentosSel(new Set());
@@ -1349,7 +1350,10 @@ export default function Mapa() {
                     return (
                       <button
                         key={r}
-                        onClick={() => alternar(regioesSel, r, setRegioesSel)}
+                        onClick={() => {
+                          setUfFoco(null);
+                          alternar(regioesSel, r, setRegioesSel);
+                        }}
                         className={`rounded-md border px-2 py-1 text-[11px] font-medium transition-colors ${
                           ativo
                             ? "border-primary bg-primary/15 text-foreground"
@@ -1375,7 +1379,11 @@ export default function Mapa() {
                     return (
                       <button
                         key={u}
-                        onClick={() => alternar(ufsSel, u, setUfsSel)}
+                        onClick={() => {
+                          const removendo = ufsSel.has(u);
+                          alternar(ufsSel, u, setUfsSel);
+                          setUfFoco(removendo ? null : u);
+                        }}
                         className={`rounded-md border px-2 py-1 text-[11px] font-medium transition-colors ${
                           ativo
                             ? "border-primary bg-primary/15 text-foreground"
@@ -1699,11 +1707,15 @@ export default function Mapa() {
                 <div className="relative min-w-0 flex-1 overflow-hidden bg-background transition-[width] duration-300">
                   <MapaBrasil
                     pontos={pontos}
-                    ufSelecionada={ufsSel.size === 1 ? [...ufsSel][0] : null}
+                    ufSelecionada={ufFoco}
                     ufsSelecionadas={ufsSel}
                     ufsFiltroAtivas={ufsFiltroAtivas}
                     contagemPorUf={contagemPorUf}
-                    onSelecionarUf={(u) => u && alternar(ufsSel, u, setUfsSel)}
+                    onSelecionarUf={(u) => {
+                      const removendo = ufsSel.has(u);
+                      alternar(ufsSel, u, setUfsSel);
+                      setUfFoco(removendo ? null : u);
+                    }}
                     onSelecionarCluster={(pontos, total) => setSelecao({ pontos, total })}
                     pontoSelecionadoId={pontoSelecionadoId}
                     onSelecionarPonto={setPontoSelecionadoId}
