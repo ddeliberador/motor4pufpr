@@ -261,6 +261,12 @@ export default function Mapa() {
         if (!resposta || !Array.isArray(resposta.data)) {
           throw new Error("resposta inválida da ANEEL");
         }
+        if (resposta.data.length === 0 && resposta.failures?.length) {
+          const msg = `ANEEL indisponível: ${resposta.failures.map((f) => f.error).join("; ")}`;
+          setErroLayer1(msg);
+          console.warn("Layer 1 —", msg);
+          return;
+        }
         setDadosUsinas(resposta.data as UsinaAneel[]);
       })
       .catch((err) => {
