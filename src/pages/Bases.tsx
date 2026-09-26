@@ -307,13 +307,28 @@ const Bases = () => {
               Catálogo de dados
             </div>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">Bases</h1>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-8">
               Fontes públicas consultadas pelo Motor e bases territoriais que alimentam o Mapa da Inovação.
             </p>
+            <div className="inline-flex items-center gap-1 p-1 bg-card border border-border rounded-full" role="tablist" aria-label="Selecionar catálogo">
+              {OPCOES_VISAO.map(({ valor, rotulo, icon: Icon }) => (
+                <button
+                  key={valor}
+                  role="tab"
+                  aria-selected={visao === valor}
+                  onClick={() => setVisao(valor)}
+                  className={`inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition-colors ${visao === valor ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {rotulo}
+                </button>
+              ))}
+            </div>
           </motion.div>
         </div>
       </section>
 
+      {visao !== "mapa" && (
       <section className="py-16 border-t border-border">
         <div className="max-w-6xl mx-auto px-6">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }}>
