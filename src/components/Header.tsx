@@ -69,6 +69,12 @@ const Header = () => {
               Documentação
             </Link>
             <Link
+              to="/bases"
+              className={`text-sm font-medium transition-colors ${isActive('/bases') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Bases
+            </Link>
+            <Link
               to="/sobre"
               className={`text-sm font-medium transition-colors ${isActive('/sobre') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
             >
@@ -120,6 +126,13 @@ const Header = () => {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/documentacao') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
               >
                 Documentação
+              </Link>
+              <Link
+                to="/bases"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/bases') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+              >
+                Bases
               </Link>
               <Link
                 to="/sobre"
