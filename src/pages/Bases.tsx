@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Building2, Cpu, Database, ExternalLink, Globe2, Microscope } from "lucide-react";
+import { Building2, Cpu, Database, ExternalLink, Globe2, Map as MapIcon, Microscope } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -282,7 +283,18 @@ const BASES_MAPA_COMPLEMENTARES: BaseMapaComplementar[] = [
 
 const TOTAL_BASES_MAPA = BASES_MAPA.length + BASES_MAPA_COMPLEMENTARES.length;
 
-const Bases = () => (
+type Visao = "tudo" | "motor" | "mapa";
+
+const OPCOES_VISAO: Array<{ valor: Visao; rotulo: string; icon: typeof Microscope }> = [
+  { valor: "tudo", rotulo: "Tudo", icon: Database },
+  { valor: "motor", rotulo: "Motor", icon: Microscope },
+  { valor: "mapa", rotulo: "Mapa", icon: MapIcon },
+];
+
+const Bases = () => {
+  const [visao, setVisao] = useState<Visao>("tudo");
+
+  return (
   <div className="min-h-screen bg-background text-foreground">
     <Header />
 
@@ -295,13 +307,28 @@ const Bases = () => (
               Catálogo de dados
             </div>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">Bases</h1>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-8">
               Fontes públicas consultadas pelo Motor e bases territoriais que alimentam o Mapa da Inovação.
             </p>
+            <div className="inline-flex items-center gap-1 p-1 bg-card border border-border rounded-full" role="tablist" aria-label="Selecionar catálogo">
+              {OPCOES_VISAO.map(({ valor, rotulo, icon: Icon }) => (
+                <button
+                  key={valor}
+                  role="tab"
+                  aria-selected={visao === valor}
+                  onClick={() => setVisao(valor)}
+                  className={`inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition-colors ${visao === valor ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {rotulo}
+                </button>
+              ))}
+            </div>
           </motion.div>
         </div>
       </section>
 
+      {visao !== "mapa" && (
       <section className="py-16 border-t border-border">
         <div className="max-w-6xl mx-auto px-6">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }}>
@@ -364,7 +391,9 @@ const Bases = () => (
           </motion.div>
         </div>
       </section>
+      )}
 
+      {visao !== "motor" && (
       <section className="py-16 border-t border-border bg-muted/30">
         <div className="max-w-6xl mx-auto px-6">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }}>
@@ -446,10 +475,12 @@ const Bases = () => (
           </motion.div>
         </div>
       </section>
+      )}
     </main>
 
     <Footer />
   </div>
-);
+  );
+};
 
 export default Bases;
