@@ -22,3 +22,7 @@
 - [x] Validar expansão, recolhimento, fechamento e reabertura no navegador
 
 - [x] Mapa: remover Métricas, dividir Camadas no mapa (SNI/IA), ordenar lista com infra primeiro
+
+## Catálogo público de bases
+- [x] Consolidar as bases do Motor sem duplicatas óbvias e separar as oito bases documentadas do Mapa em `/bases`
+- [x] Mover os catálogos para fora da Documentação e adicionar Bases ao menu principal

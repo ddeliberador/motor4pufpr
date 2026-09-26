@@ -13,6 +13,7 @@ import Index from "./pages/Index";
 import Conceito from "./pages/Conceito";
 import Mapa from "./pages/Mapa";
 import Documentacao from "./pages/Documentacao";
+import Bases from "./pages/Bases";
 import Faq from "./pages/Faq";
 import GestaoPesquisa from "./pages/GestaoPesquisa";
 import AuthPage from "./pages/Auth";
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/conceito" element={<Conceito />} />
           <Route path="/mapa" element={<Mapa />} />
           <Route path="/documentacao" element={<Documentacao />} />
+          <Route path="/bases" element={<Bases />} />
           <Route path="/sobre" element={<Sobre />} />
           <Route path="/faq" element={<Faq />} />
           <Route path="/pesquisador" element={<PesquisadorPanel />} />
