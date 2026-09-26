@@ -51,22 +51,10 @@ const Header = () => {
           {/* Nav Links + CTA */}
           <div className="hidden md:flex items-center gap-4 lg:gap-6 flex-shrink-0">
             <Link
-              to="/conceito"
-              className={`text-sm font-medium transition-colors ${isActive('/conceito') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Conceito
-            </Link>
-            <Link
               to="/mapa"
               className={`text-sm font-medium transition-colors ${isActive('/mapa') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Mapa
-            </Link>
-            <Link
-              to="/documentacao"
-              className={`text-sm font-medium transition-colors ${isActive('/documentacao') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Documentação
             </Link>
             <Link
               to="/bases"
@@ -107,25 +95,11 @@ const Header = () => {
           <div className="md:hidden py-4 border-t border-border">
             <div className="flex flex-col gap-2">
               <Link
-                to="/conceito"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/conceito') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
-              >
-                Conceito
-              </Link>
-              <Link
                 to="/mapa"
                 onClick={() => setMobileMenuOpen(false)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/mapa') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
               >
                 Mapa
-              </Link>
-              <Link
-                to="/documentacao"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/documentacao') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
-              >
-                Documentação
               </Link>
               <Link
                 to="/bases"
