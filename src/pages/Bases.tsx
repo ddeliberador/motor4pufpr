@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Building2, Cpu, Database, ExternalLink, Globe2, Microscope } from "lucide-react";
+import { Building2, Cpu, Database, ExternalLink, Globe2, Map as MapIcon, Microscope } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -282,7 +283,18 @@ const BASES_MAPA_COMPLEMENTARES: BaseMapaComplementar[] = [
 
 const TOTAL_BASES_MAPA = BASES_MAPA.length + BASES_MAPA_COMPLEMENTARES.length;
 
-const Bases = () => (
+type Visao = "tudo" | "motor" | "mapa";
+
+const OPCOES_VISAO: Array<{ valor: Visao; rotulo: string; icon: typeof Microscope }> = [
+  { valor: "tudo", rotulo: "Tudo", icon: Database },
+  { valor: "motor", rotulo: "Motor", icon: Microscope },
+  { valor: "mapa", rotulo: "Mapa", icon: MapIcon },
+];
+
+const Bases = () => {
+  const [visao, setVisao] = useState<Visao>("tudo");
+
+  return (
   <div className="min-h-screen bg-background text-foreground">
     <Header />
 
