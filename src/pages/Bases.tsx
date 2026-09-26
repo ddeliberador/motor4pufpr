@@ -241,6 +241,47 @@ const BASES_MAPA = [
   },
 ] as const;
 
+type BaseMapaComplementar = {
+  nome: string;
+  responsavel: string;
+  pilar: "P,D&I" | "Atores" | "Financiamento" | "Infraestrutura" | "Transversal" | "Camadas de IA";
+  medicao: string;
+  situacao: "Ativa" | "Falha registrada";
+  url: string;
+};
+
+// Integrações do Mapa já comprovadas no inventário de extração e nas Camadas de IA.
+// As oito bases territoriais acima não são repetidas aqui.
+const BASES_MAPA_COMPLEMENTARES: BaseMapaComplementar[] = [
+  { nome: "MCTI — Indicadores Nacionais de CT&I", responsavel: "MCTI", pilar: "P,D&I", medicao: "21 registros na extração documentada", situacao: "Ativa", url: "https://www.gov.br/mcti/pt-br/acompanhe-o-mcti/indicadores" },
+  { nome: "IBGE — SIDRA", responsavel: "IBGE", pilar: "P,D&I", medicao: "1.224 registros na extração documentada", situacao: "Ativa", url: "https://servicodados.ibge.gov.br/api/v3/agregados" },
+  { nome: "INPI — RPI", responsavel: "INPI", pilar: "P,D&I", medicao: "1.442 classificações IPC na edição medida", situacao: "Ativa", url: "https://revistas.inpi.gov.br/" },
+  { nome: "CAPES — Plataforma Sucupira", responsavel: "CAPES / MEC", pilar: "Atores", medicao: "80 conjuntos documentados", situacao: "Ativa", url: "https://dadosabertos.capes.gov.br/" },
+  { nome: "Receita Federal — Dados Abertos CNPJ", responsavel: "Receita Federal", pilar: "Atores", medicao: "Conexão recusada na medição; apoio via BrasilAPI", situacao: "Falha registrada", url: "https://arquivos.receitafederal.gov.br/dados/cnpj/dados_abertos_cnpj/" },
+  { nome: "CNPq — Lattes / LattesData", responsavel: "CNPq / Ibict", pilar: "Atores", medicao: "HTTP 503 na medição documentada", situacao: "Falha registrada", url: "https://lattesdata.cnpq.br/" },
+  { nome: "Finep / CNPq — Editais de fomento", responsavel: "Finep / CNPq", pilar: "Financiamento", medicao: "28 categorias na extração documentada", situacao: "Ativa", url: "https://www.finep.gov.br/chamadas-publicas" },
+  { nome: "FAPs estaduais — BV-FAPESP", responsavel: "FAPESP e FAPs", pilar: "Financiamento", medicao: "24 auxílios e bolsas na medição", situacao: "Ativa", url: "https://bv.fapesp.br/pt/" },
+  { nome: "CVM — Dados Abertos", responsavel: "CVM", pilar: "Financiamento", medicao: "10 conjuntos documentados", situacao: "Ativa", url: "https://dados.cvm.gov.br/" },
+  { nome: "ABVCAP", responsavel: "ABVCAP", pilar: "Financiamento", medicao: "18 itens na extração documentada", situacao: "Ativa", url: "https://www.abvcap.com.br/" },
+  { nome: "Lei do Bem", responsavel: "MCTI / Receita Federal", pilar: "Financiamento", medicao: "199 registros na extração documentada", situacao: "Ativa", url: "https://www.gov.br/mcti/pt-br/acompanhe-o-mcti/lei-do-bem" },
+  { nome: "PNCP — Contratações Públicas", responsavel: "Governo Federal", pilar: "Financiamento", medicao: "7.771 pregões na janela documentada", situacao: "Ativa", url: "https://pncp.gov.br/" },
+  { nome: "ANATEL — Dados Abertos", responsavel: "ANATEL", pilar: "Infraestrutura", medicao: "61 conjuntos; ERBs e backhaul no Mapa", situacao: "Ativa", url: "https://www.gov.br/anatel/pt-br/dados/dados-abertos" },
+  { nome: "DATASUS / SISAB", responsavel: "Ministério da Saúde", pilar: "Infraestrutura", medicao: "398 municípios do Paraná na medição", situacao: "Ativa", url: "https://relatorioaps-prd.saude.gov.br/" },
+  { nome: "ANTT / ANAC", responsavel: "ANTT / ANAC", pilar: "Infraestrutura", medicao: "117 conjuntos documentados", situacao: "Ativa", url: "https://dados.antt.gov.br/" },
+  { nome: "IBGE — PNAD Contínua", responsavel: "IBGE", pilar: "Infraestrutura", medicao: "4 trimestres na medição documentada", situacao: "Ativa", url: "https://sidra.ibge.gov.br/" },
+  { nome: "IpeaData", responsavel: "Ipea", pilar: "Infraestrutura", medicao: "3.605 séries documentadas", situacao: "Ativa", url: "http://www.ipeadata.gov.br/" },
+  { nome: "Portal da Transparência", responsavel: "CGU", pilar: "Infraestrutura", medicao: "11 convênios na janela documentada", situacao: "Ativa", url: "https://portaldatransparencia.gov.br/" },
+  { nome: "dados.gov.br", responsavel: "Governo Federal", pilar: "Transversal", medicao: "HTTP 401 na medição documentada", situacao: "Falha registrada", url: "https://dados.gov.br/" },
+  { nome: "BrasilAPI — CNPJ", responsavel: "Comunidade BrasilAPI / Receita Federal", pilar: "Transversal", medicao: "5 consultas validadas na medição", situacao: "Ativa", url: "https://brasilapi.com.br/" },
+  { nome: "ANEEL — SIGA", responsavel: "ANEEL", pilar: "Camadas de IA", medicao: "Usinas em operação georreferenciadas", situacao: "Ativa", url: "https://dadosabertos.aneel.gov.br/dataset/siga-sistema-de-informacoes-de-geracao-da-aneel" },
+  { nome: "TeleGeography — Submarine Cable Map", responsavel: "TeleGeography", pilar: "Camadas de IA", medicao: "Cabos e pontos de aterragem ligados ao Brasil", situacao: "Ativa", url: "https://www.submarinecablemap.com/" },
+  { nome: "OpenCelliD", responsavel: "Unwired Labs", pilar: "Camadas de IA", medicao: "62.517 células no snapshot nacional documentado", situacao: "Ativa", url: "https://opencellid.org/" },
+  { nome: "PeeringDB", responsavel: "PeeringDB", pilar: "Camadas de IA", medicao: "Datacenters brasileiros; snapshot validado como contingência", situacao: "Ativa", url: "https://www.peeringdb.com/" },
+  { nome: "Hugging Face", responsavel: "Hugging Face", pilar: "Camadas de IA", medicao: "Modelos vinculados aos atores por autoria", situacao: "Ativa", url: "https://huggingface.co/models" },
+];
+
+const TOTAL_BASES_MAPA = BASES_MAPA.length + BASES_MAPA_COMPLEMENTARES.length;
+
 const Bases = () => (
   <div className="min-h-screen bg-background text-foreground">
     <Header />
@@ -327,11 +368,12 @@ const Bases = () => (
       <section className="py-16 border-t border-border bg-muted/30">
         <div className="max-w-6xl mx-auto px-6">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }}>
-            <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold mb-3 text-center">Bases do Mapa</motion.h2>
+            <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold mb-3 text-center">Bases do Mapa ({TOTAL_BASES_MAPA})</motion.h2>
             <motion.p variants={fadeUp} custom={1} className="text-center text-muted-foreground mb-10 max-w-3xl mx-auto">
-              Fontes que alimentam a tabela territorial do Mapa da Inovação. Registros e limitações refletem as medições documentadas em 17/09/2026.
+              Catálogo completo das fontes territoriais, integrações analíticas e Camadas de IA. As medições históricas mantêm falhas explícitas.
             </motion.p>
 
+            <h3 className="text-xl font-semibold mb-4">Bases territoriais de atores</h3>
             <div className="grid md:grid-cols-2 gap-4">
               {BASES_MAPA.map((base, indice) => (
                 <motion.article key={base.nome} variants={fadeUp} custom={indice + 2} className="bg-card border border-border rounded-xl p-5">
@@ -362,6 +404,44 @@ const Bases = () => (
                   </dl>
                 </motion.article>
               ))}
+            </div>
+
+            <div className="mt-12">
+              <h3 className="text-xl font-semibold mb-2">Integrações complementares do Mapa</h3>
+              <p className="text-sm text-muted-foreground mb-5">
+                Indicadores, financiamento, infraestrutura e enriquecimentos que complementam os atores territoriais sem duplicar as bases acima.
+              </p>
+              <div className="overflow-x-auto bg-card border border-border rounded-xl">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left bg-muted/30">
+                      <th scope="col" className="px-4 py-3 font-semibold">Fonte</th>
+                      <th scope="col" className="px-4 py-3 font-semibold">Pilar</th>
+                      <th scope="col" className="px-4 py-3 font-semibold min-w-[260px]">Medição documentada</th>
+                      <th scope="col" className="px-4 py-3 font-semibold">Situação</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {BASES_MAPA_COMPLEMENTARES.map((base) => (
+                      <tr key={base.nome} className="border-t border-border align-top">
+                        <td className="px-4 py-3">
+                          <a href={base.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-medium hover:text-primary transition-colors">
+                            {base.nome}<ExternalLink className="w-3 h-3" />
+                          </a>
+                          <span className="block text-xs text-muted-foreground mt-1">{base.responsavel}</span>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{base.pilar}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{base.medicao}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex text-[11px] px-2 py-0.5 rounded-full whitespace-nowrap ${base.situacao === "Ativa" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
+                            {base.situacao}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </motion.div>
         </div>
