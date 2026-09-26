@@ -391,7 +391,9 @@ const Bases = () => {
           </motion.div>
         </div>
       </section>
+      )}
 
+      {visao !== "motor" && (
       <section className="py-16 border-t border-border bg-muted/30">
         <div className="max-w-6xl mx-auto px-6">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }}>
@@ -473,10 +475,12 @@ const Bases = () => {
           </motion.div>
         </div>
       </section>
+      )}
     </main>
 
     <Footer />
   </div>
-);
+  );
+};
 
 export default Bases;
