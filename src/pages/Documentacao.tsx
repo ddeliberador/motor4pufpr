@@ -43,11 +43,6 @@ const edgeFunctions = [
   { name: "competitor-search", desc: "Empresas e referências nacionais e internacionais do setor" },
 ];
 
-/**
- * Catálogo de fontes e modelos — levantado enumerando os conectores reais em
- * backend/app/connectors/*.py e as edge functions supabase/functions/layer-*, competitor-search,
- * ict-search e motor-analysis.
- */
 const Documentacao = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">

@@ -100,6 +100,8 @@ const RECURSOS: Recurso[] = [
   { fonte: "Tucano 2 (via Ollama)", mantenedor: "Tucano / comunidade brasileira de PLN — modelo aberto em português", nacionalidade: "Nacional", uso: "Análise estratégica e resumo de ICTs, auto-hospedado no próprio backend.", nota: "em adoção — substituto dos modelos pagos" },
   { fonte: "Gemini (via gateway)", mantenedor: "Google (Estados Unidos)", nacionalidade: "Estrangeiro", uso: "Gerava a análise estratégica das personas.", nota: "em descontinuação" },
   { fonte: "Claude / Anthropic API", mantenedor: "Anthropic (Estados Unidos)", nacionalidade: "Estrangeiro", uso: "Alternativa de análise textual das personas.", nota: "em descontinuação" },
+  { fonte: "FNDCT", mantenedor: "Ministério da Ciência, Tecnologia e Inovação / FINEP", nacionalidade: "Nacional", uso: "Fomento federal à ciência, tecnologia e inovação na camada de políticas públicas." },
+  { fonte: "PREVIC", mantenedor: "Superintendência Nacional de Previdência Complementar", nacionalidade: "Nacional", uso: "Dados de fundos de pensão usados no contexto econômico e institucional." },
 ];
 
 
@@ -138,6 +140,7 @@ const CLASSIFICACAO: Array<{ teste: RegExp; camada: Exclude<Camada, "Outras base
   { teste: /^Portal da Transparência$/, camada: "Política", url: "https://portaldatransparencia.gov.br/" },
   { teste: /^SICONFI$/, camada: "Política", url: "https://siconfi.tesouro.gov.br/" },
   { teste: /^FNDE$/, camada: "Política", url: "https://www.gov.br/fnde/" },
+  { teste: /^FNDCT$/, camada: "Política", url: "https://www.gov.br/mcti/pt-br/acompanhe-o-mcti/fndct" },
   { teste: /^Diário Oficial/, camada: "Política", url: "https://www.in.gov.br/" },
   { teste: /^Querido Diário$/, camada: "Política", url: "https://queridodiario.ok.org.br/" },
   { teste: /^TSE/, camada: "Política", url: "https://dadosabertos.tse.jus.br/" },
@@ -149,6 +152,7 @@ const CLASSIFICACAO: Array<{ teste: RegExp; camada: Exclude<Camada, "Outras base
   { teste: /^B3$/, camada: "Internacional", url: "https://www.b3.com.br/" },
   { teste: /^CVM/, camada: "Internacional", url: "https://dados.cvm.gov.br/" },
   { teste: /^Previdência/, camada: "Internacional", url: "https://dadosabertos.dataprev.gov.br/" },
+  { teste: /^PREVIC$/, camada: "Internacional", url: "https://www.gov.br/previc/" },
   { teste: /^ANS$/, camada: "Internacional", url: "https://www.ans.gov.br/" },
   { teste: /^ANA$/, camada: "Internacional", url: "https://dadosabertos.ana.gov.br/" },
 ];
@@ -285,7 +289,7 @@ const Bases = () => (
                           <tr className="text-left bg-muted/20">
                             <th scope="col" className="px-4 py-3 font-semibold">Fonte</th>
                             <th scope="col" className="px-4 py-3 font-semibold">Mantenedor</th>
-                            <th scope="col" className="px-4 py-3 font-semibold">Origem</th>
+                            <th scope="col" className="px-4 py-3 font-semibold">Nacionalidade</th>
                             <th scope="col" className="px-4 py-3 font-semibold min-w-[280px]">Uso no Motor</th>
                           </tr>
                         </thead>
