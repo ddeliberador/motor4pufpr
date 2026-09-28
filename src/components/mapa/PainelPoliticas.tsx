@@ -31,6 +31,7 @@ interface Props {
   layersAtivas: string[];
   onFechar: () => void;
   ufSelecionada?: string | null;
+  ufsSelecionadas?: string[];
 }
 
 const COR_BADGE: Record<string, string> = {
@@ -66,7 +67,12 @@ function totalInvestimentoPublico(layer: LayerPoliticas) {
   return valores.length === layer.politicas.length ? formatado : `${formatado} conhecidos`;
 }
 
-export default function PainelPoliticas({ layersAtivas, onFechar, ufSelecionada }: Props) {
+export default function PainelPoliticas({ layersAtivas, onFechar, ufSelecionada, ufsSelecionadas }: Props) {
+  const ufsBanner = ufsSelecionadas && ufsSelecionadas.length > 0
+    ? ufsSelecionadas
+    : ufSelecionada
+      ? [ufSelecionada]
+      : [];
   const [dados, setDados] = useState<LayerPoliticas[]>([]);
   const [expandido, setExpandido] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
