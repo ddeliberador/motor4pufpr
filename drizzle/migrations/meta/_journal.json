@@ -85,6 +85,13 @@
       "when": 1790628247125,
       "tag": "0011_andre_fixes_staging_backhaul_rollback",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790628286479,
+      "tag": "0012_search_snapshots_revoke_public_read",
+      "breakpoints": true
     }
   ]
 }
