@@ -30,6 +30,7 @@ interface PoliticasResponse {
 interface Props {
   layersAtivas: string[];
   onFechar: () => void;
+  ufSelecionada?: string | null;
 }
 
 const COR_BADGE: Record<string, string> = {
@@ -146,7 +147,23 @@ export default function PainelPoliticas({ layersAtivas, onFechar }: Props) {
       </div>
 
       {!collapsed && (
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <>
+          {ufSelecionada && (
+            <div className="flex items-center gap-2 border-b border-border/50 bg-primary/10 px-3 py-1.5">
+              <span className="material-symbols-outlined text-sm leading-none text-primary"
+                style={{ fontVariationSettings: '"FILL" 1' }}>
+                map
+              </span>
+              <span className="text-[11px] text-foreground">
+                Exibindo políticas para{" "}
+                <span className="font-semibold text-primary">{ufSelecionada}</span>
+              </span>
+              <span className="ml-auto text-[10px] text-muted-foreground">
+                filtro ativo no mapa
+              </span>
+            </div>
+          )}
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {carregando && (
             <div className="flex items-center justify-center gap-2 px-3 py-6 text-xs text-muted-foreground">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />

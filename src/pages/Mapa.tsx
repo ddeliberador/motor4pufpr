@@ -1760,12 +1760,14 @@ export default function Mapa() {
                      layer5Ativa={layer5Ativa}
                      layer6Ativa={layer6Ativa}
                      layer7Ativa={layer7Ativa}
-                   />
+                     ufSelecionada={ufsSel.size === 1 ? [...ufsSel][0] : null}
+                    />
                 )}
                 {layersIaAtivas.length > 0 && painelPoliticasAberto && (
                   <PainelPoliticas
                     layersAtivas={layersIaAtivas}
                     onFechar={() => setPainelPoliticasAberto(false)}
+                    ufSelecionada={ufsSel.size === 1 ? [...ufsSel][0] : null}
                   />
                 )}
               </div>
