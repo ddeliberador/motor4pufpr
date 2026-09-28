@@ -259,6 +259,15 @@ Consulte o arquivo [CITATION.cff](CITATION.cff) — o GitHub gera automaticament
 
 ## Licença
 
-Distribuído sob a **Licença MIT**. Veja o arquivo [LICENSE](LICENSE) para o texto completo.
+O código é distribuído sob a **Licença MIT**. Veja o arquivo [LICENSE](LICENSE) para o texto completo.
 
 Copyright (c) 2026 Decio Dalton Deliberador Filho.
+
+### Exceções — dados de terceiros (não cobertos pela MIT)
+
+| Arquivos | Origem | Licença |
+|----------|--------|---------|
+| `public/submarine-cablemap/` (`cable-geo.json`, `landing-point-geo.json`, `data.json`) | © TeleGeography — Submarine Cable Map | [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/) — **uso comercial proibido**; derivados sob a mesma licença. Licença comercial: https://www2.telegeography.com/license-geocoded-map-data |
+| `public/opencellid-br.json` | OpenCelliD (Unwired Labs) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — "Cell tower data from OpenCellID, licensed under CC BY-SA 4.0"; derivados sob a mesma licença |
+
+Detalhes em `docs/fontes/telegeography.md` e `docs/fontes/opencellid.md`.
