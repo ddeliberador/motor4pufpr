@@ -159,7 +159,7 @@ export default function PainelPoliticas({ layersAtivas, onFechar, ufSelecionada 
                 <span className="font-semibold text-primary">{ufSelecionada}</span>
               </span>
               <span className="ml-auto text-[10px] text-muted-foreground">
-                filtro ativo no mapa
+                filtro ativo
               </span>
             </div>
           )}
