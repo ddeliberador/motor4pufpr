@@ -66,7 +66,7 @@ function totalInvestimentoPublico(layer: LayerPoliticas) {
   return valores.length === layer.politicas.length ? formatado : `${formatado} conhecidos`;
 }
 
-export default function PainelPoliticas({ layersAtivas, onFechar }: Props) {
+export default function PainelPoliticas({ layersAtivas, onFechar, ufSelecionada }: Props) {
   const [dados, setDados] = useState<LayerPoliticas[]>([]);
   const [expandido, setExpandido] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
