@@ -257,6 +257,7 @@ export default function PainelPoliticas({ layersAtivas, onFechar }: Props) {
             </div>
           )}
         </div>
+        </>
       )}
     </aside>
   );
