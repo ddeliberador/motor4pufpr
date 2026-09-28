@@ -161,6 +161,45 @@ export type Database = {
         }
         Relationships: []
       }
+      infra_backhaul_municipio: {
+        Row: {
+          ano: string
+          codigo_ibge: string
+          coletado_em: string
+          fonte: string
+          latitude: number
+          longitude: number
+          municipio: string
+          tem_backhaul: boolean
+          tipo: string
+          uf: string
+        }
+        Insert: {
+          ano: string
+          codigo_ibge: string
+          coletado_em?: string
+          fonte: string
+          latitude: number
+          longitude: number
+          municipio: string
+          tem_backhaul: boolean
+          tipo: string
+          uf: string
+        }
+        Update: {
+          ano?: string
+          codigo_ibge?: string
+          coletado_em?: string
+          fonte?: string
+          latitude?: number
+          longitude?: number
+          municipio?: string
+          tem_backhaul?: boolean
+          tipo?: string
+          uf?: string
+        }
+        Relationships: []
+      }
       ingest_jobs: {
         Row: {
           consecutive_failures: number
