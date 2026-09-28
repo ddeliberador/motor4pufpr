@@ -154,7 +154,7 @@ export default function PainelPoliticas({ layersAtivas, onFechar, ufSelecionada,
 
       {!collapsed && (
         <>
-          {ufSelecionada && (
+          {ufsBanner.length > 0 && (
             <div className="flex items-center gap-2 border-b border-border/50 bg-primary/10 px-3 py-1.5">
               <span className="material-symbols-outlined text-sm leading-none text-primary"
                 style={{ fontVariationSettings: '"FILL" 1' }}>
@@ -162,7 +162,7 @@ export default function PainelPoliticas({ layersAtivas, onFechar, ufSelecionada,
               </span>
               <span className="text-[11px] text-foreground">
                 Exibindo políticas para{" "}
-                <span className="font-semibold text-primary">{ufSelecionada}</span>
+                <span className="font-semibold text-primary">{ufsBanner.join(", ")}</span>
               </span>
               <span className="ml-auto text-[10px] text-muted-foreground">
                 filtro ativo
