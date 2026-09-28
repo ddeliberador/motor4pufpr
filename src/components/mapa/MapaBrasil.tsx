@@ -960,6 +960,11 @@ export default function MapaBrasil({
                 >lan</span>
                 <span className="text-muted-foreground">Landing point (BR)</span>
               </div>
+              <p className="text-[10px] text-muted-foreground">
+                ©{" "}
+                <a href="https://www.submarinecablemap.com" target="_blank" rel="noopener noreferrer" className="underline">TeleGeography</a>,{" "}
+                <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener noreferrer" className="underline">CC BY-NC-SA 3.0</a> — uso não comercial
+              </p>
             </>)}
             {l2Antenas && (<>
               <div className="flex items-center gap-1.5">
@@ -976,6 +981,11 @@ export default function MapaBrasil({
                 >5g</span>
                 <span className="text-muted-foreground">Antena 5G (OpenCelliD)</span>
               </div>
+              <p className="text-[10px] text-muted-foreground">
+                Cell tower data from{" "}
+                <a href="https://opencellid.org" target="_blank" rel="noopener noreferrer" className="underline">OpenCellID</a>, licensed under{" "}
+                <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer" className="underline">CC BY-SA 4.0</a>
+              </p>
             </>)}
             {l2Backhaul && (<>
               <div className="flex items-center gap-1.5">
