@@ -118,9 +118,10 @@ async def chat(
                 f"{OLLAMA_URL}/api/chat",
                 json={
                     "model": MODEL,
+                    # O template do Tucano não tem ramo para role "system" (issue #19):
+                    # o prompt de sistema vai concatenado na mensagem do usuário.
                     "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_message},
+                        {"role": "user", "content": f"{system_prompt}\n\n{user_message}"},
                     ],
                     "stream": False,
                     "keep_alive": os.environ.get("OLLAMA_KEEP_ALIVE", "10m"),
