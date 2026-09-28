@@ -1767,7 +1767,7 @@ export default function Mapa() {
                   <PainelPoliticas
                     layersAtivas={layersIaAtivas}
                     onFechar={() => setPainelPoliticasAberto(false)}
-                    ufSelecionada={ufsSel.size === 1 ? [...ufsSel][0] : null}
+                    ufsSelecionadas={[...ufsSel]}
                   />
                 )}
               </div>
