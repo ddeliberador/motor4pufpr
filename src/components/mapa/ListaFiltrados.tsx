@@ -86,6 +86,7 @@ interface Props {
   layer5Ativa?: boolean;
   layer6Ativa?: boolean;
   layer7Ativa?: boolean;
+  ufSelecionada?: string | null;
 }
 
 export default function ListaFiltrados({
@@ -103,6 +104,7 @@ export default function ListaFiltrados({
   layer5Ativa,
   layer6Ativa,
   layer7Ativa,
+  ufSelecionada,
 }: Props) {
   const [abertoLocal, setAbertoLocal] = useState(false);
   const aberto = abertoProp !== undefined ? abertoProp : abertoLocal;
@@ -267,6 +269,20 @@ export default function ListaFiltrados({
 
   const lista = (
     <>
+      {ufSelecionada && (
+        <div className="mb-3 flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2">
+          <span className="material-symbols-outlined text-base leading-none text-primary"
+            style={{ fontVariationSettings: '"FILL" 1' }}>
+            location_on
+          </span>
+          <div className="min-w-0 flex-1 text-xs">
+            <p className="font-semibold text-primary">{ufSelecionada}</p>
+            <p className="text-muted-foreground">
+              Listagem filtrada para este estado
+            </p>
+          </div>
+        </div>
+      )}
       {grupoTotal != null && grupoTotal > 1 && (
         <div className="mb-3 flex items-start gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2">
           <span className="material-symbols-outlined mt-0.5 text-base leading-none text-primary" aria-hidden>
