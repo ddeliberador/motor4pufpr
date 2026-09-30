@@ -300,7 +300,7 @@ export default function Mapa() {
         setErroLayer1(mensagem);
       })
       .finally(() => setLayer1Carregando(false));
-  }, [dadosUsinas]);
+  }, [dadosUsinas, catalogo, offCat]);
 
   // Busca snapshot local dos cabos somente quando a camada for ligada (lazy load).
   useEffect(() => {
@@ -419,7 +419,7 @@ export default function Mapa() {
         setErroLayer3(mensagem);
       })
       .finally(() => setLayer3Carregando(false));
-  }, [dadosDCs]);
+  }, [dadosDCs, catalogo, offCat]);
 
   // Camadas de equipamento físico (usinas, datacenters, cabos, backhaul) entram
   // como locais do mapa: somam na contagem, na lista filtrada e nas métricas.
@@ -568,7 +568,7 @@ export default function Mapa() {
     const c: Record<string, number> = {};
     for (const u of dadosUsinas || []) c[u.tipo] = (c[u.tipo] || 0) + 1;
     return c;
-  }, [dadosUsinas]);
+  }, [dadosUsinas, catalogo, offCat]);
 
   const locais = useMemo(
     () => [...(data || []), ...locaisInfra],
