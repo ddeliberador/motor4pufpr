@@ -161,6 +161,132 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_charts: {
+        Row: {
+          chart_type: string
+          created_at: string
+          dataset_key: string
+          filters: Json
+          id: string
+          is_public: boolean
+          metric_agg: string
+          metric_column: string | null
+          row_limit: number
+          sort_order: string
+          title: string
+          updated_at: string
+          user_id: string
+          x_column: string
+        }
+        Insert: {
+          chart_type?: string
+          created_at?: string
+          dataset_key: string
+          filters?: Json
+          id?: string
+          is_public?: boolean
+          metric_agg?: string
+          metric_column?: string | null
+          row_limit?: number
+          sort_order?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          x_column: string
+        }
+        Update: {
+          chart_type?: string
+          created_at?: string
+          dataset_key?: string
+          filters?: Json
+          id?: string
+          is_public?: boolean
+          metric_agg?: string
+          metric_column?: string | null
+          row_limit?: number
+          sort_order?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          x_column?: string
+        }
+        Relationships: []
+      }
+      custom_dashboards: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dashboard_items: {
+        Row: {
+          chart_id: string
+          created_at: string
+          dashboard_id: string
+          id: string
+          largura: string
+          ordem: number
+          user_id: string
+        }
+        Insert: {
+          chart_id: string
+          created_at?: string
+          dashboard_id: string
+          id?: string
+          largura?: string
+          ordem?: number
+          user_id: string
+        }
+        Update: {
+          chart_id?: string
+          created_at?: string
+          dashboard_id?: string
+          id?: string
+          largura?: string
+          ordem?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dashboard_items_chart_id_fkey"
+            columns: ["chart_id"]
+            isOneToOne: false
+            referencedRelation: "custom_charts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dashboard_items_dashboard_id_fkey"
+            columns: ["dashboard_id"]
+            isOneToOne: false
+            referencedRelation: "custom_dashboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       infra_backhaul_municipio: {
         Row: {
           ano: string
