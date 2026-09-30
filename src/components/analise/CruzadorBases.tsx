@@ -148,93 +148,121 @@ export default function CruzadorBases({ filtroUF }: Props) {
         )}
       </div>
 
-      {/* Seletores — Base A e Base B lado a lado */}
+      {/* Seletores — Base A e Base B */}
       <div className="grid gap-4 sm:grid-cols-2">
 
         {/* Base A */}
-        <div className="space-y-2 rounded-lg border-2 p-3" style={{ borderColor: cfgA.cor + "60" }}>
-          <div className="flex items-center gap-2">
-            <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: cfgA.cor }} />
-            <p className="text-xs font-semibold text-foreground">Base A</p>
-            <span className="ml-auto rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase"
+        <div className="space-y-3 rounded-xl border-2 p-4 bg-muted/10" style={{ borderColor: cfgA.cor }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                style={{ backgroundColor: cfgA.cor }}>A</div>
+              <p className="text-sm font-bold text-foreground">Base A</p>
+            </div>
+            <span className="rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase"
               style={{ background: cfgA.cor + "20", color: cfgA.cor, borderColor: cfgA.cor + "40" }}>
               {cfgA.layer}
             </span>
           </div>
-          <select
-            value={baseA}
-            onChange={e => {
-              const nova = e.target.value as BaseId;
-              setBaseA(nova);
-              setMetricaA(BASES.find(b => b.id === nova)!.metricas[0].id);
-            }}
-            className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
-          >
-            {BASES.map(b => (
-              <option key={b.id} value={b.id}>{b.label}</option>
-            ))}
-          </select>
-          <select
-            value={metricaA}
-            onChange={e => setMetricaA(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
-          >
-            {cfgA.metricas.map(m => (
-              <option key={m.id} value={m.id}>{m.label}</option>
-            ))}
-          </select>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Base de dados</label>
+            <select
+              value={baseA}
+              onChange={e => {
+                const nova = e.target.value as BaseId;
+                setBaseA(nova);
+                setMetricaA(BASES.find(b => b.id === nova)!.metricas[0].id);
+              }}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              {BASES.map(b => (
+                <option key={b.id} value={b.id}>{b.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Métrica</label>
+            <select
+              value={metricaA}
+              onChange={e => setMetricaA(e.target.value)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground"
+            >
+              {cfgA.metricas.map(m => (
+                <option key={m.id} value={m.id}>{m.label}</option>
+              ))}
+            </select>
+          </div>
+          <p className="text-[11px] font-medium" style={{ color: cfgA.cor }}>
+            ● {lblA}
+          </p>
         </div>
 
         {/* Base B */}
-        <div className="space-y-2 rounded-lg border-2 p-3" style={{ borderColor: cfgB.cor + "60" }}>
-          <div className="flex items-center gap-2">
-            <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: cfgB.cor }} />
-            <p className="text-xs font-semibold text-foreground">Base B</p>
-            <span className="ml-auto rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase"
+        <div className="space-y-3 rounded-xl border-2 p-4 bg-muted/10" style={{ borderColor: cfgB.cor }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                style={{ backgroundColor: cfgB.cor }}>B</div>
+              <p className="text-sm font-bold text-foreground">Base B</p>
+            </div>
+            <span className="rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase"
               style={{ background: cfgB.cor + "20", color: cfgB.cor, borderColor: cfgB.cor + "40" }}>
               {cfgB.layer}
             </span>
           </div>
-          <select
-            value={baseB}
-            onChange={e => {
-              const nova = e.target.value as BaseId;
-              setBaseB(nova);
-              setMetricaB(BASES.find(b => b.id === nova)!.metricas[0].id);
-            }}
-            className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
-          >
-            {BASES.map(b => (
-              <option key={b.id} value={b.id}>{b.label}</option>
-            ))}
-          </select>
-          <select
-            value={metricaB}
-            onChange={e => setMetricaB(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
-          >
-            {cfgB.metricas.map(m => (
-              <option key={m.id} value={m.id}>{m.label}</option>
-            ))}
-          </select>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Base de dados</label>
+            <select
+              value={baseB}
+              onChange={e => {
+                const nova = e.target.value as BaseId;
+                setBaseB(nova);
+                setMetricaB(BASES.find(b => b.id === nova)!.metricas[0].id);
+              }}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground"
+            >
+              {BASES.map(b => (
+                <option key={b.id} value={b.id}>{b.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Métrica</label>
+            <select
+              value={metricaB}
+              onChange={e => setMetricaB(e.target.value)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground"
+            >
+              {cfgB.metricas.map(m => (
+                <option key={m.id} value={m.id}>{m.label}</option>
+              ))}
+            </select>
+          </div>
+          <p className="text-[11px] font-medium" style={{ color: cfgB.cor }}>
+            ● {lblB}
+          </p>
         </div>
       </div>
 
       {/* Resumo do cruzamento + modo */}
-      <div className="flex items-center gap-3 flex-wrap rounded-lg bg-muted/30 px-3 py-2">
-        <span className="text-xs text-muted-foreground flex-1">
-          <span style={{ color: cfgA.cor }} className="font-medium">{lblA}</span>
-          {" "}×{" "}
-          <span style={{ color: cfgB.cor }} className="font-medium">{lblB}</span>
-          {" "}por estado (UF)
-        </span>
-        <div className="flex gap-1">
+      <div className="flex items-center gap-3 flex-wrap rounded-lg border border-border bg-muted/20 px-4 py-3">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+            style={{ backgroundColor: cfgA.cor }}>A</span>
+          <span className="text-xs font-medium truncate" style={{ color: cfgA.cor }}>{lblA}</span>
+          <span className="text-xs text-muted-foreground shrink-0">×</span>
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+            style={{ backgroundColor: cfgB.cor }}>B</span>
+          <span className="text-xs font-medium truncate" style={{ color: cfgB.cor }}>{lblB}</span>
+          <span className="text-xs text-muted-foreground shrink-0 hidden sm:block">· por UF</span>
+        </div>
+        <div className="flex gap-1 shrink-0">
           {(["barras", "dispersao"] as const).map(m => (
             <button key={m} onClick={() => setModo(m)}
               className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
                 modo === m ? "bg-primary/20 text-primary" : "text-muted-foreground hover:bg-muted"
               }`}>
-              {m === "barras" ? "Barras duplas" : "Dispersão"}
+              {m === "barras" ? "📊 Barras" : "⬡ Dispersão"}
             </button>
           ))}
         </div>
