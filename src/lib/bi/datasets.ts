@@ -190,7 +190,7 @@ const CONECTORES: DatasetDef[] = [
 
 type Linha = Record<string, unknown>;
 
-async function lerTudo(table: string, cols: string): Promise<Linha[]> {
+export async function lerTudo(table: string, cols: string): Promise<Linha[]> {
   const out: Linha[] = [];
   for (let from = 0; from < 20000; from += 1000) {
     const { data, error } = await supabase.from(table as never).select(cols).range(from, from + 999);
@@ -206,7 +206,7 @@ const chaveMun = (m: unknown, uf: unknown) =>
   `${String(m ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()}|${String(uf ?? "").toUpperCase()}`;
 
 /** Conectividade vem pela função do Mapa (map-infrastructure), a camada de consumo — a tabela não é lida direto. */
-async function lerBackhaulPelaFuncao(): Promise<Linha[]> {
+export async function lerBackhaulPelaFuncao(): Promise<Linha[]> {
   const { data, error } = await supabase.functions.invoke("map-infrastructure", { body: { layer: "backhaul" } });
   if (error) throw new Error(`Conectividade (Anatel): ${error.message}`);
   const p = data as { data?: Linha[]; ano?: string; indisponivel?: boolean; failures?: unknown[] } | null;
@@ -224,7 +224,7 @@ async function jsonPublico<T>(url: string): Promise<T> {
   return (await r.json()) as T;
 }
 
-async function carregarUsinas(): Promise<Linha[]> {
+export async function carregarUsinas(): Promise<Linha[]> {
   const { data, error } = await supabase.functions.invoke("map-infrastructure", { body: { layer: "energy" } });
   if (error) throw new Error(`ANEEL: ${error.message}`);
   const p = data as { data?: Linha[]; failures?: { error: string }[] } | null;
@@ -247,7 +247,7 @@ async function carregarAntenas(): Promise<Linha[]> {
   return d.municipios.flatMap((mu) => Object.entries(mu.operadoras).map(([op, n]) => ({ uf: mu.uf, municipio: mu.municipio, operadora: op, estacoes: n })));
 }
 
-async function carregarDatacenters(): Promise<Linha[]> {
+export async function carregarDatacenters(): Promise<Linha[]> {
   const { data, error } = await supabase.functions.invoke("map-infrastructure", { body: { layer: "datacenters" } });
   let lista = (data as { data?: Linha[] } | null)?.data;
   if (error || !lista?.length) lista = (await jsonPublico<{ data: Linha[] }>("/peeringdb-br.json")).data;
