@@ -1,3 +1,4 @@
+import { CatalogoAvisoMotor } from "@/components/shared/CatalogoAvisoMotor";
 import AiAnalysisTab, { TUCANO_NOTE } from "@/components/shared/AiAnalysisTab";
 import RegionalTab from "@/components/shared/RegionalTab";
 import CagedSaldoChart from "@/components/shared/CagedSaldoChart";
@@ -206,6 +207,9 @@ const PesquisadorPanel = () => {
               }
             />
           )}
+
+
+          <CatalogoAvisoMotor data={data} />
 
 
           <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); track("pillar_view", { tab: v, persona: "pesquisador" }); }} className="space-y-4">
