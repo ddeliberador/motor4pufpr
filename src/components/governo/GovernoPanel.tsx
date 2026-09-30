@@ -1,3 +1,4 @@
+import { CatalogoAvisoMotor } from "@/components/shared/CatalogoAvisoMotor";
 import AiAnalysisTab from "@/components/shared/AiAnalysisTab";
 import RegionalTab from "@/components/shared/RegionalTab";
 import CagedSaldoChart from "@/components/shared/CagedSaldoChart";
@@ -147,6 +148,8 @@ const GovernoPanel = () => {
               <div key={i} className="bg-card border border-border rounded-xl p-3 text-center"><s.icon className="w-3.5 h-3.5 mx-auto mb-1 text-muted-foreground" /><p className="text-lg font-bold text-foreground">{s.value}</p><p className="text-[10px] text-muted-foreground">{s.label}</p></div>
             ))}
           </div>
+
+          <CatalogoAvisoMotor data={data} />
 
           <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); track("pillar_view", { tab: v, persona: "governo" }); }} className="space-y-4">
             <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted/30 rounded-xl mb-4">

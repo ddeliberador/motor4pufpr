@@ -3,6 +3,7 @@
 // com filtros funcionais e lista exportável dos registros filtrados.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCatalogo, inativaNoCatalogo } from "@/lib/catalogo";
 import { geocodeLote } from "@/utils/geocodeMunicipio";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -228,6 +229,16 @@ export default function Mapa() {
   const [erroLayer3, setErroLayer3] = useState<string | null>(null);
   // Layer 7 — Governança: sem fetch externo por ora; controla apenas visibilidade.
   const [layer7Ativa, setLayer7Ativa] = useState(false);
+  // Catálogo de bases = fonte da verdade: camada desativada lá não carrega nem aparece aqui.
+  const { bases: catalogo } = useCatalogo();
+  const offCat = useCallback((k: string) => inativaNoCatalogo(catalogo, k), [catalogo]);
+  const CAMADAS_CATALOGO: [string, string][] = [
+    ["l1_usinas", "L1 Energia"], ["l2_cabos", "L2 Cabos"], ["l2_antenas", "L2 Antenas"],
+    ["conectividade_municipios", "L2 Backhaul"], ["l3_datacenters", "L3 Datacenters"],
+    ["l4_modelos", "L4 Modelos"], ["l5_contratos_ia", "L5 Contratos de IA"],
+    ["l6_producao", "L6 Produção científica"], ["l7_politicas", "Políticas (L1–L7)"],
+  ];
+  const desativadasCatalogo = CAMADAS_CATALOGO.filter(([k]) => offCat(k)).map(([, n]) => n);
   // Layers 4, 5, 6, 7 — enriquecimento de atores existentes
   const [layer4Ativa, setLayer4Ativa] = useState(false);
   const [layer5Ativa, setLayer5Ativa] = useState(false);
@@ -249,6 +260,19 @@ export default function Mapa() {
   }, [layer1Ativa, layer2Ativa, layer3Ativa, layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa]);
 
   useEffect(() => {
+    if (offCat("l1_usinas")) setLayer1Ativa(false);
+    if (offCat("l2_cabos")) setL2Cabos(false);
+    if (offCat("l2_antenas")) setL2Antenas(false);
+    if (offCat("conectividade_municipios")) setL2Backhaul(false);
+    if (offCat("l3_datacenters")) setLayer3Ativa(false);
+    if (offCat("l4_modelos")) setLayer4Ativa(false);
+    if (offCat("l5_contratos_ia")) setLayer5Ativa(false);
+    if (offCat("l6_producao")) setLayer6Ativa(false);
+    if (offCat("l7_politicas")) setLayer7Ativa(false);
+  }, [offCat, layer1Ativa, l2Cabos, l2Antenas, l2Backhaul, layer3Ativa, layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa]);
+
+  useEffect(() => {
+    if (!catalogo || offCat("l1_usinas")) return;
     if (dadosUsinas) return;
     setLayer1Carregando(true);
     setErroLayer1(null);
@@ -276,7 +300,7 @@ export default function Mapa() {
         setErroLayer1(mensagem);
       })
       .finally(() => setLayer1Carregando(false));
-  }, [dadosUsinas]);
+  }, [dadosUsinas, catalogo, offCat]);
 
   // Busca snapshot local dos cabos somente quando a camada for ligada (lazy load).
   useEffect(() => {
@@ -369,6 +393,7 @@ export default function Mapa() {
 
 
   useEffect(() => {
+    if (!catalogo || offCat("l3_datacenters")) return;
     if (dadosDCs) return;
     setLayer3Carregando(true);
     setErroLayer3(null);
@@ -394,7 +419,7 @@ export default function Mapa() {
         setErroLayer3(mensagem);
       })
       .finally(() => setLayer3Carregando(false));
-  }, [dadosDCs]);
+  }, [dadosDCs, catalogo, offCat]);
 
   // Camadas de equipamento físico (usinas, datacenters, cabos, backhaul) entram
   // como locais do mapa: somam na contagem, na lista filtrada e nas métricas.
@@ -543,7 +568,7 @@ export default function Mapa() {
     const c: Record<string, number> = {};
     for (const u of dadosUsinas || []) c[u.tipo] = (c[u.tipo] || 0) + 1;
     return c;
-  }, [dadosUsinas]);
+  }, [dadosUsinas, catalogo, offCat]);
 
   const locais = useMemo(
     () => [...(data || []), ...locaisInfra],
@@ -1060,6 +1085,11 @@ export default function Mapa() {
                   </p>
                 </div>
                 <div className="space-y-1">
+                  {desativadasCatalogo.length > 0 && (
+                    <p role="status" className="rounded-md bg-muted px-2 py-1.5 text-[11px] text-muted-foreground">
+                      Desativadas no Catálogo de Bases: {desativadasCatalogo.join(", ")}.
+                    </p>
+                  )}
                   {/* Layers 1–3 — infraestrutura de IA */}
                   <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
                     <input

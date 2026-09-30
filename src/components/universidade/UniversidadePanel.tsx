@@ -1,3 +1,4 @@
+import { CatalogoAvisoMotor } from "@/components/shared/CatalogoAvisoMotor";
 import AiAnalysisTab from "@/components/shared/AiAnalysisTab";
 import RegionalTab from "@/components/shared/RegionalTab";
 import { useState, useCallback, useEffect } from "react";
@@ -148,6 +149,8 @@ const UniversidadePanel = () => {
             <div className="bg-card border border-border rounded-xl p-4 text-center"><p className="text-2xl font-bold text-accent">R$ {((totalContractValue + totalConvenioValue) / 1e6).toFixed(1)}M</p><p className="text-[10px] text-muted-foreground">Volume instrumental</p></div>
             <div className="bg-card border border-border rounded-xl p-4 text-center"><p className="text-2xl font-bold text-foreground">{data.stats.countries}</p><p className="text-[10px] text-muted-foreground">Países cooperantes</p></div>
           </div>
+
+          <CatalogoAvisoMotor data={data} />
 
           <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); track("pillar_view", { tab: v, persona: "universidade" }); }} className="space-y-4">
             <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted/30 rounded-xl mb-4">

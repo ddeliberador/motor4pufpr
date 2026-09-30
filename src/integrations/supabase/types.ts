@@ -83,6 +83,100 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_bases: {
+        Row: {
+          alvo: string | null
+          ativa: boolean
+          autenticacao: string | null
+          camada_mapa: string | null
+          caminho_consumo: Database["public"]["Enums"]["caminho_consumo"] | null
+          chave: string
+          colunas: Json
+          created_at: string
+          detalhes: Json
+          doc_md: string | null
+          grupo: string | null
+          id: string
+          licenca: string | null
+          mantenedor: string | null
+          nacionalidade: string | null
+          nome: string
+          nota: string | null
+          ordem: number
+          pilar: string | null
+          proximo_passo: string | null
+          situacao: string
+          subpilar: string | null
+          tipo_acesso: string | null
+          updated_at: string
+          url: string | null
+          uso: string | null
+          usos: string[]
+        }
+        Insert: {
+          alvo?: string | null
+          ativa?: boolean
+          autenticacao?: string | null
+          camada_mapa?: string | null
+          caminho_consumo?:
+            | Database["public"]["Enums"]["caminho_consumo"]
+            | null
+          chave: string
+          colunas?: Json
+          created_at?: string
+          detalhes?: Json
+          doc_md?: string | null
+          grupo?: string | null
+          id?: string
+          licenca?: string | null
+          mantenedor?: string | null
+          nacionalidade?: string | null
+          nome: string
+          nota?: string | null
+          ordem?: number
+          pilar?: string | null
+          proximo_passo?: string | null
+          situacao?: string
+          subpilar?: string | null
+          tipo_acesso?: string | null
+          updated_at?: string
+          url?: string | null
+          uso?: string | null
+          usos?: string[]
+        }
+        Update: {
+          alvo?: string | null
+          ativa?: boolean
+          autenticacao?: string | null
+          camada_mapa?: string | null
+          caminho_consumo?:
+            | Database["public"]["Enums"]["caminho_consumo"]
+            | null
+          chave?: string
+          colunas?: Json
+          created_at?: string
+          detalhes?: Json
+          doc_md?: string | null
+          grupo?: string | null
+          id?: string
+          licenca?: string | null
+          mantenedor?: string | null
+          nacionalidade?: string | null
+          nome?: string
+          nota?: string | null
+          ordem?: number
+          pilar?: string | null
+          proximo_passo?: string | null
+          situacao?: string
+          subpilar?: string | null
+          tipo_acesso?: string | null
+          updated_at?: string
+          url?: string | null
+          uso?: string | null
+          usos?: string[]
+        }
+        Relationships: []
+      }
       city_geocode: {
         Row: {
           cidade: string
@@ -1079,6 +1173,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "colab"
+      caminho_consumo:
+        | "gold_tabela"
+        | "funcao_mapa"
+        | "snapshot_publico"
+        | "api_cliente"
+        | "funcao_motor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1207,6 +1307,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "colab"],
+      caminho_consumo: [
+        "gold_tabela",
+        "funcao_mapa",
+        "snapshot_publico",
+        "api_cliente",
+        "funcao_motor",
+      ],
     },
   },
 } as const

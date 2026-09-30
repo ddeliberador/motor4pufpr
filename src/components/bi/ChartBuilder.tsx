@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ChartRenderer } from "./ChartRenderer";
 import {
-  DATASETS, CHART_TYPES, METRIC_AGGS, getDataset, runChartQuery, metricLabel,
+  useDatasets, type DatasetDef, CHART_TYPES, METRIC_AGGS, getDataset, runChartQuery, metricLabel,
   type ChartSpec, type ChartRow, type ChartType, type MetricAgg, type ChartFilter,
 } from "@/lib/bi/datasets";
 
@@ -26,9 +26,17 @@ const OPS: { value: ChartFilter["op"]; label: string }[] = [
   { value: "notnull", label: "não vazio" },
 ];
 
-export function ChartBuilder({ userId, onSaved }: { userId: string; onSaved?: () => void }) {
-  const [datasetKey, setDatasetKey] = useState(DATASETS[0].key);
-  const ds = getDataset(datasetKey)!;
+export function ChartBuilder(props: { userId: string; onSaved?: () => void }) {
+  const { datasets, erro } = useDatasets();
+  if (erro) return <p role="alert" className="text-sm text-destructive py-8 text-center">Catálogo de bases indisponível: {erro}</p>;
+  if (!datasets) return <p className="text-sm text-muted-foreground py-8 text-center">Carregando bases do catálogo…</p>;
+  if (!datasets.length) return <p className="text-sm text-muted-foreground py-8 text-center">Nenhuma base ativa para o construtor no catálogo.</p>;
+  return <ChartBuilderInner {...props} datasets={datasets} />;
+}
+
+function ChartBuilderInner({ userId, onSaved, datasets }: { userId: string; onSaved?: () => void; datasets: DatasetDef[] }) {
+  const [datasetKey, setDatasetKey] = useState(datasets.some((x) => x.key === "atores_sni") ? "atores_sni" : datasets[0].key);
+  const ds = datasets.find((x) => x.key === datasetKey) ?? datasets[0];
 
   const [chartType, setChartType] = useState<ChartType>("bar_vertical");
   const [xColumn, setXColumn] = useState<string>("uf");
@@ -114,7 +122,7 @@ export function ChartBuilder({ userId, onSaved }: { userId: string; onSaved?: ()
           <Select value={datasetKey} onValueChange={setDatasetKey}>
             <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {DATASETS.map((x) => <SelectItem key={x.key} value={x.key}>{x.label}</SelectItem>)}
+              {datasets.map((x) => <SelectItem key={x.key} value={x.key}>{x.label}</SelectItem>)}
             </SelectContent>
           </Select>
           <p className="text-[11px] text-muted-foreground mt-2 leading-snug">{ds.descricao}</p>

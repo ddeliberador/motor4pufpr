@@ -231,6 +231,8 @@ export interface MotorSearchResult {
   /** Memória temporal: índices de buscas anteriores do mesmo tema (asc por data) */
   historico?: HistoricoPoint[];
   ontology?: OntologyMeta;
+  /** Catálogo de Bases: fontes desativadas e camadas que ficaram fora da busca */
+  catalogo?: { desativadas: string[]; camadas_nao_consultadas: { camada: string; base: string }[] };
   stats: {
     papers: number;
     institutions: number;
