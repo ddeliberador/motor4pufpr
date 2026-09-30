@@ -1,40 +1,40 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { lerBackhaulPelaFuncao } from "@/lib/bi/datasets";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { Drawer, Spinner, Erro, TOOLTIP_STYLE } from "./Drawer";
 
 interface BHPonto { uf: string; com: number; sem: number; pct: number }
-interface Ator { id: string; nome: string; tipo: string | null; municipio: string | null; uf: string | null }
+interface Ator { id: string; nome: string; tipo: string; municipio: string; uf: string }
 
 export default function Cenario1Infraestrutura() {
   const [backhaul, setBackhaul] = useState<BHPonto[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
   const [drawerUF, setDrawerUF] = useState<string | null>(null);
-  const [atores, setAtores] = useState<Ator[]>([]);
+  const [atoresDrawer, setAtoresDrawer] = useState<Ator[]>([]);
   const [carregandoDrawer, setCarregandoDrawer] = useState(false);
 
   useEffect(() => {
-    // Conectividade pela camada de consumo do Mapa (map-infrastructure), nunca pela tabela direta.
-    lerBackhaulPelaFuncao().then(rows => {
-      const agg: Record<string, { com: number; sem: number }> = {};
-      rows.forEach(r => {
-        const uf = String(r.uf ?? ""); if (!uf) return;
-        agg[uf] ??= { com: 0, sem: 0 };
-        if (r.tem_backhaul === "sim") agg[uf].com++; else agg[uf].sem++;
+    supabase.from("infra_backhaul_municipio").select("uf, tem_backhaul").not("uf", "is", null)
+      .then(({ data }) => {
+        const agg: Record<string, { com: number; sem: number }> = {};
+        (data || []).forEach(r => {
+          if (!agg[r.uf]) agg[r.uf] = { com: 0, sem: 0 };
+          if (r.tem_backhaul) agg[r.uf].com++; else agg[r.uf].sem++;
+        });
+        setBackhaul(
+          Object.entries(agg)
+            .map(([uf, v]) => ({ uf, com: v.com, sem: v.sem, pct: Math.round(100 * v.com / (v.com + v.sem)) }))
+            .sort((a, b) => a.pct - b.pct)
+        );
+        setCarregando(false);
       });
-      setBackhaul(Object.entries(agg)
-        .map(([uf, v]) => ({ uf, ...v, pct: Math.round(100 * v.com / (v.com + v.sem)) }))
-        .sort((a, b) => a.pct - b.pct));
-    }).catch(e => setErro(e.message)).finally(() => setCarregando(false));
   }, []);
 
   function abrirDrawer(uf: string) {
-    setDrawerUF(uf); setCarregandoDrawer(true);
+    setDrawerUF(uf);
+    setCarregandoDrawer(true);
     supabase.from("research_locations").select("id, nome, tipo, municipio, uf")
       .eq("uf", uf).not("nome", "is", null).limit(50)
-      .then(({ data }) => { setAtores((data as Ator[]) || []); setCarregandoDrawer(false); });
+      .then(({ data }) => { setAtoresDrawer(data || []); setCarregandoDrawer(false); });
   }
 
   const semFibra = backhaul.filter(b => b.pct < 70);
@@ -42,15 +42,15 @@ export default function Cenario1Infraestrutura() {
   const totalCom = backhaul.reduce((s, b) => s + b.com, 0);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* Fio narrativo */}
       <div className="rounded-xl border border-border bg-card p-5">
         <p className="text-sm text-foreground leading-relaxed">
-          <strong>A IA não existe sem energia, sem fibra e sem lugar para processar.</strong> Este cenário cruza a conectividade municipal (ANATEL) com a distribuição dos atores do SNI para revelar os estados onde o potencial de inovação está represado por falta de infraestrutura física.
+          <strong>A IA não existe sem energia, sem fibra e sem lugar para processar.</strong> Antes de falar em modelos ou aplicações, o Brasil precisa responder: a infraestrutura está onde a ciência está? Este cenário cruza os dados de conectividade municipal (ANATEL) com a distribuição dos atores do SNI para revelar os estados onde o potencial de inovação está represado por falta de infraestrutura física.
         </p>
       </div>
 
-      {erro && <Erro msg={erro} />}
-
+      {/* Big numbers */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
           { v: (totalCom + totalSem).toLocaleString("pt-BR"), l: "Municípios mapeados", cor: "#fb923c" },
@@ -59,67 +59,98 @@ export default function Cenario1Infraestrutura() {
           { v: semFibra.length + " UFs", l: "Com < 70% de cobertura", cor: "#facc15" },
         ].map(m => (
           <div key={m.l} className="rounded-xl border border-border bg-card p-4">
-            <p className="text-2xl font-bold" style={{ color: m.cor }}>{carregando ? "—" : m.v}</p>
+            <p className="text-2xl font-bold" style={{ color: m.cor }}>{m.v}</p>
             <p className="text-xs text-muted-foreground mt-1">{m.l}</p>
           </div>
         ))}
       </div>
 
+      {/* Gráfico — clicável */}
       <div className="rounded-xl border border-border bg-card p-5">
-        <h2 className="text-sm font-semibold text-foreground">Cobertura de backhaul por estado</h2>
-        <p className="text-xs text-muted-foreground mt-0.5 mb-3">% de municípios com fibra · fonte: ANATEL · <strong className="text-foreground">clique numa barra para ver os atores SNI do estado</strong></p>
-        {carregando ? <Spinner /> : (
+        <div className="mb-3">
+          <h2 className="text-sm font-semibold text-foreground">Cobertura de backhaul por estado (%)</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Fonte: ANATEL 2025 · <strong className="text-foreground">clique numa barra para ver os atores SNI do estado</strong></p>
+        </div>
+        {carregando ? (
+          <div className="flex h-48 items-center justify-center">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        ) : (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={backhaul} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
-              onClick={(d: any) => d?.activePayload?.[0] && abrirDrawer(d.activePayload[0].payload.uf)}>
+              onClick={d => { if (d?.activePayload?.[0]) abrirDrawer(d.activePayload[0].payload.uf); }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="uf" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
               <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={v => `${v}%`} domain={[0, 100]} />
-              <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [`${v}%`, "Com backhaul"]}
-                labelFormatter={l => `Estado: ${l} — clique para ver os atores`} />
+              <Tooltip
+                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                formatter={(v: number) => [`${v}%`, "Com backhaul"]}
+                labelFormatter={l => `${l} — clique para ver os atores`}
+              />
               <Bar dataKey="pct" radius={[3, 3, 0, 0]} cursor="pointer">
-                {backhaul.map((b, i) => <Cell key={i} fill={b.pct >= 90 ? "#34d399" : b.pct >= 70 ? "#fb923c" : "#f472b6"} />)}
+                {backhaul.map((b, i) => (
+                  <Cell key={i} fill={b.pct >= 90 ? "#34d399" : b.pct >= 70 ? "#fb923c" : "#f472b6"} />
+                ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         )}
-        <p className="mt-2 text-[10px] text-muted-foreground text-right">verde ≥90% · laranja 70-90% · rosa &lt;70%</p>
+        <p className="mt-2 text-[10px] text-muted-foreground">🟢 ≥90% conectado · 🟠 70-90% · 🔴 &lt;70% — gap crítico</p>
       </div>
 
+      {/* Insight */}
       {!carregando && semFibra.length > 0 && (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-5 flex items-start gap-3">
-          <span className="material-symbols-outlined text-xl text-destructive shrink-0" style={{ fontVariationSettings: '"FILL" 1' }}>warning</span>
-          <div>
-            <p className="text-sm font-semibold text-destructive">Gap crítico de conectividade</p>
-            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              <strong className="text-foreground">{semFibra.map(b => b.uf).join(", ")}</strong> têm menos de 70% dos municípios com backhaul de fibra. Atores do SNI nesses estados operam com conectividade limitada.
-            </p>
-            <p className="text-xs text-muted-foreground mt-2 italic">→ Políticas relevantes: FUST (R$ 3,2 bi), Norte Conectado (R$ 1,3 bi), Leilão 5G (R$ 47 bi)</p>
+        <div className="rounded-xl border border-rose-500/30 bg-rose-500/5 p-5">
+          <div className="flex items-start gap-3">
+            <span className="material-symbols-outlined text-xl text-rose-400 shrink-0 mt-0.5" style={{ fontVariationSettings: '"FILL" 1' }}>warning</span>
+            <div>
+              <p className="text-sm font-semibold text-rose-400">Gap crítico de conectividade</p>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                <strong className="text-foreground">{semFibra.map(b => b.uf).join(", ")}</strong> têm menos de 70% dos seus municípios conectados por fibra. Atores do SNI nesses estados operam com conectividade precária, limitando o alcance das políticas de IA mesmo quando o investimento existe.
+              </p>
+              <p className="text-xs text-muted-foreground mt-2 italic">→ Políticas relevantes: FUST (R$ 3,2 bi), Norte Conectado (R$ 1,3 bi), Leilão 5G (R$ 47 bi)</p>
+            </div>
           </div>
         </div>
       )}
 
+      {/* Drawer */}
       {drawerUF && (
-        <Drawer onClose={() => setDrawerUF(null)} header={<>
-          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Atores SNI</p>
-          <h3 className="text-base font-bold text-foreground">{drawerUF}</h3>
-          <p className="text-xs text-muted-foreground">{backhaul.find(b => b.uf === drawerUF)?.pct}% de cobertura de backhaul</p>
-        </>}>
-          {carregandoDrawer ? <Spinner h="h-32" /> : atores.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Nenhum ator mapeado</p>
-          ) : atores.map(a => (
-            <div key={a.id} className="rounded-lg border border-border bg-muted/30 p-3">
-              <p className="text-xs font-semibold text-foreground leading-tight">{a.nome}</p>
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">{a.tipo}</span>
-                <span className="text-[10px] text-muted-foreground">{a.municipio}</span>
+        <div className="fixed inset-0 z-50 flex" onClick={() => setDrawerUF(null)}>
+          <div className="flex-1 bg-black/40" />
+          <div className="w-full max-w-sm bg-card border-l border-border flex flex-col h-full" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-border px-4 py-3 shrink-0">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Atores SNI</p>
+                <h3 className="text-base font-bold text-foreground">{drawerUF}</h3>
+                <p className="text-xs text-muted-foreground">{backhaul.find(b => b.uf === drawerUF)?.pct}% de cobertura de backhaul</p>
               </div>
+              <button onClick={() => setDrawerUF(null)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted">
+                <span className="material-symbols-outlined text-lg leading-none">close</span>
+              </button>
             </div>
-          ))}
-          {!carregandoDrawer && atores.length > 0 && (
-            <p className="text-center text-[10px] text-muted-foreground pt-2">{atores.length} atores exibidos (até 50) · <a href="/mapa" className="text-primary hover:underline">ver no Mapa</a></p>
-          )}
-        </Drawer>
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {carregandoDrawer ? (
+                <div className="flex h-32 items-center justify-center">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                </div>
+              ) : atoresDrawer.map(a => (
+                <div key={a.id} className="rounded-lg border border-border bg-muted/30 p-3">
+                  <p className="text-xs font-semibold text-foreground leading-tight">{a.nome}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">{a.tipo}</span>
+                    <span className="text-[10px] text-muted-foreground">{a.municipio}</span>
+                  </div>
+                </div>
+              ))}
+              {!carregandoDrawer && (
+                <p className="text-center text-[10px] text-muted-foreground pt-2">
+                  {atoresDrawer.length} atores · <a href="/mapa" className="text-primary hover:underline">ver no Mapa</a>
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
