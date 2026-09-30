@@ -14,6 +14,9 @@ export type DatasetDef = {
   label: string;
   descricao: string;
   columns: DatasetColumn[];
+  /** Bases cruzadas: montadas no cliente juntando outras tabelas. */
+  cruzado?: boolean;
+  load?: () => Promise<Record<string, unknown>[]>;
 };
 
 const d = (name: string, label: string): DatasetColumn => ({ name, label, kind: "dimension" });
@@ -61,18 +64,6 @@ export const DATASETS: DatasetDef[] = [
     columns: [d("uf", "uf"), d("tipo", "tipo"), d("nome", "nome")],
   },
   {
-    key: "diario_construcao",
-    table: "build_log",
-    label: "Diário de construção",
-    descricao: "Registros de desenvolvimento, achados e dificuldades.",
-    columns: [
-      d("categoria", "categoria"),
-      d("dificuldade", "dificuldade"),
-      d("fonte", "fonte"),
-      d("data", "data"),
-    ],
-  },
-  {
     key: "geocodificacao_municipios",
     table: "city_geocode",
     label: "Geocodificação de municípios",
@@ -86,71 +77,161 @@ export const DATASETS: DatasetDef[] = [
     ],
   },
   {
-    key: "enriquecimento_locais",
-    table: "location_enrichment",
-    label: "Enriquecimento de locais",
-    descricao: "Dados complementares coletados para cada ator do SNI.",
-    columns: [d("fonte", "fonte"), d("fonte_coleta", "fonte_coleta"), d("data_coleta", "data_coleta")],
-  },
-  {
-    key: "fontes_mapa",
-    table: "mapa_inovacao_fontes",
-    label: "Fontes do Mapa da Inovação (área logada)",
-    descricao: "Catálogo das bases do Mapa por pilar, acesso e situação.",
+    key: "conectividade_municipios",
+    table: "infra_backhaul_municipio",
+    label: "Conectividade dos municípios (Anatel)",
+    descricao: "Backhaul por município, base usada na camada de infraestrutura do Mapa.",
     columns: [
-      d("pilar", "pilar"),
-      d("subpilar", "subpilar"),
-      d("fonte", "fonte"),
-      d("tipo_acesso", "tipo_acesso"),
-      d("autenticacao", "autenticacao"),
-      d("status_pesquisa", "status_pesquisa"),
-      m("ordem", "ordem"),
-    ],
-  },
-  {
-    key: "staging_atores",
-    table: "staging_locations",
-    label: "Atores em qualificação (área logada)",
-    descricao: "Registros coletados antes da promoção para a base oficial.",
-    columns: [
-      d("fonte", "fonte"),
       d("uf", "uf"),
       d("municipio", "municipio"),
-      d("canonical_type", "canonical_type"),
       d("tipo", "tipo"),
-      m("quality_score", "quality_score"),
+      d("tem_backhaul", "tem_backhaul"),
+      d("ano", "ano"),
     ],
   },
   {
-    key: "execucoes_coleta",
-    table: "ingest_runs",
-    label: "Execuções da coleta diária (área logada)",
-    descricao: "Histórico de cada coleta: fonte, sucesso, encontrados e inseridos.",
+    key: "buscas_motor",
+    table: "search_snapshots",
+    label: "Buscas do Motor (índices)",
+    descricao: "Cada busca do Motor com os índices GT, CD, AUE, EI e TRL calculados.",
     columns: [
-      d("fonte", "fonte"),
-      d("job_id", "job_id"),
-      d("ok", "ok"),
-      d("started_at", "started_at"),
-      m("found", "found"),
-      m("inserted", "inserted"),
-      m("duration_ms", "duration_ms"),
+      d("tema_normalizado", "tema"),
+      d("uf", "uf"),
+      m("gt", "gt"),
+      m("cd", "cd"),
+      m("aue", "aue"),
+      m("ei", "ei"),
+      m("trl", "trl"),
+      m("total_papers", "total_papers"),
+      m("total_contracts", "total_contracts"),
+      m("source_count", "source_count"),
     ],
   },
   {
-    key: "telemetria",
-    table: "telemetry_events",
-    label: "Telemetria de uso (área logada)",
-    descricao: "Eventos anônimos de uso da plataforma.",
-    columns: [d("event_type", "event_type"), d("session_id", "session_id"), d("created_at", "created_at")],
+    key: "cruzado_municipios",
+    table: "",
+    cruzado: true,
+    label: "Cruzamento: municípios × atores × conectividade",
+    descricao: "Cada município (Anatel) com o número de atores do SNI e se tem backhaul.",
+    columns: [
+      d("uf", "uf"),
+      d("municipio", "municipio"),
+      d("tipo_backhaul", "tipo_backhaul"),
+      d("tem_backhaul", "tem_backhaul"),
+      d("tem_ator_sni", "tem_ator_sni"),
+      m("atores_sni", "atores_sni"),
+      m("qualidade_media", "qualidade_media"),
+    ],
+    load: carregarCruzadoMunicipios,
   },
   {
-    key: "feedback_comunidade",
-    table: "community_feedback",
-    label: "Feedback da comunidade (área logada)",
-    descricao: "Sugestões, erros e perguntas enviadas pelos usuários.",
-    columns: [d("type", "type"), d("status", "status"), d("context_persona", "context_persona")],
+    key: "cruzado_uf",
+    table: "",
+    cruzado: true,
+    label: "Cruzamento: estados (atores, conectividade, institutos, buscas)",
+    descricao: "Uma linha por UF reunindo as bases do Mapa e do Motor.",
+    columns: [
+      d("uf", "uf"),
+      m("atores_sni", "atores_sni"),
+      m("municipios", "municipios"),
+      m("municipios_com_ator", "municipios_com_ator"),
+      m("pct_municipios_backhaul", "pct_municipios_backhaul"),
+      m("institutos_regionais", "institutos_regionais"),
+      m("buscas_motor", "buscas_motor"),
+    ],
+    load: carregarCruzadoUf,
   },
 ];
+
+type Linha = Record<string, unknown>;
+
+async function lerTudo(table: string, cols: string): Promise<Linha[]> {
+  const out: Linha[] = [];
+  for (let from = 0; from < 20000; from += 1000) {
+    const { data, error } = await supabase.from(table as never).select(cols).range(from, from + 999);
+    if (error) throw new Error(`${table}: ${error.message}`);
+    const page = (data ?? []) as unknown as Linha[];
+    out.push(...page);
+    if (page.length < 1000) break;
+  }
+  return out;
+}
+
+const chaveMun = (m: unknown, uf: unknown) =>
+  `${String(m ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()}|${String(uf ?? "").toUpperCase()}`;
+
+let cacheCruz: Promise<{ atores: Linha[]; backhaul: Linha[] }> | null = null;
+function basesCruzadas() {
+  cacheCruz ??= Promise.all([
+    lerTudo("research_locations", "uf,municipio,quality_score"),
+    lerTudo("infra_backhaul_municipio", "uf,municipio,tipo,tem_backhaul"),
+  ]).then(([atores, backhaul]) => ({ atores, backhaul })).catch((e) => { cacheCruz = null; throw e; });
+  return cacheCruz;
+}
+
+async function carregarCruzadoMunicipios(): Promise<Linha[]> {
+  const { atores, backhaul } = await basesCruzadas();
+  const agg = new Map<string, { n: number; q: number; qn: number }>();
+  for (const a of atores) {
+    const k = chaveMun(a.municipio, a.uf);
+    const g = agg.get(k) ?? { n: 0, q: 0, qn: 0 };
+    g.n++;
+    if (typeof a.quality_score === "number") { g.q += a.quality_score; g.qn++; }
+    agg.set(k, g);
+  }
+  return backhaul.map((b) => {
+    const g = agg.get(chaveMun(b.municipio, b.uf));
+    return {
+      uf: b.uf, municipio: b.municipio, tipo_backhaul: b.tipo,
+      tem_backhaul: b.tem_backhaul ? "sim" : "não",
+      tem_ator_sni: g ? "sim" : "não",
+      atores_sni: g?.n ?? 0,
+      qualidade_media: g && g.qn ? Math.round(g.q / g.qn) : null,
+    };
+  });
+}
+
+async function carregarCruzadoUf(): Promise<Linha[]> {
+  const [{ atores, backhaul }, inst, buscas] = await Promise.all([
+    basesCruzadas(),
+    lerTudo("regional_institutes", "uf"),
+    lerTudo("search_snapshots", "uf"),
+  ]);
+  const ufs = new Map<string, { a: number; mun: number; bh: number; mc: Set<string>; i: number; s: number }>();
+  const get = (uf: unknown) => {
+    const k = String(uf ?? "").toUpperCase();
+    if (!k) return null;
+    if (!ufs.has(k)) ufs.set(k, { a: 0, mun: 0, bh: 0, mc: new Set(), i: 0, s: 0 });
+    return ufs.get(k)!;
+  };
+  for (const b of backhaul) { const g = get(b.uf); if (g) { g.mun++; if (b.tem_backhaul) g.bh++; } }
+  for (const a of atores) { const g = get(a.uf); if (g) { g.a++; if (a.municipio) g.mc.add(chaveMun(a.municipio, a.uf)); } }
+  for (const r of inst) { const g = get(r.uf); if (g) g.i++; }
+  for (const r of buscas) { const g = get(r.uf); if (g) g.s++; }
+  return [...ufs.entries()].map(([uf, g]) => ({
+    uf, atores_sni: g.a, municipios: g.mun, municipios_com_ator: g.mc.size,
+    pct_municipios_backhaul: g.mun ? Math.round((g.bh / g.mun) * 1000) / 10 : null,
+    institutos_regionais: g.i, buscas_motor: g.s,
+  }));
+}
+
+function filtrarLocal(rows: Linha[], filters: ChartFilter[], uf?: string | null): Linha[] {
+  return rows.filter((r) => {
+    if (uf && "uf" in r && r.uf !== uf) return false;
+    return filters.every((f) => {
+      if (!f.column) return true;
+      const v = r[f.column];
+      switch (f.op) {
+        case "notnull": return v !== null && v !== undefined && v !== "";
+        case "ilike": return String(v ?? "").toLowerCase().includes(f.value.toLowerCase());
+        case "eq": return String(v) === f.value;
+        case "neq": return String(v) !== f.value;
+        case "gte": return Number(v) >= Number(f.value);
+        case "lte": return Number(v) <= Number(f.value);
+      }
+    });
+  });
+}
 
 export const getDataset = (key: string) => DATASETS.find((x) => x.key === key);
 
@@ -207,7 +288,8 @@ export async function runChartQuery(
   if (temUf) cols.add("uf");
 
   const all: Record<string, unknown>[] = [];
-  for (let from = 0; from < MAX_ROWS; from += PAGE) {
+  if (ds.load) all.push(...filtrarLocal(await ds.load(), spec.filters, extra?.uf));
+  else for (let from = 0; from < MAX_ROWS; from += PAGE) {
     type Filtro = {
       not: (c: string, o: string, v: null) => Filtro;
       ilike: (c: string, v: string) => Filtro;
