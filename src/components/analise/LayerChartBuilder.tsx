@@ -5,6 +5,30 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
 } from "recharts";
 
+// Tipos para políticas
+interface Politica {
+  id: string;
+  nome: string;
+  orgao: string;
+  ano: string;
+  status: string;
+  investimento: string;
+  investimento_publico_brl?: number;
+  instrumento: string;
+  conexao_mapa: string;
+  link: string;
+}
+interface LayerPoliticas {
+  layer: string;
+  nome: string;
+  cor: string;
+  politicas: Politica[];
+}
+interface PoliticasJson {
+  layers: LayerPoliticas[];
+}
+
+
 // Configuração de cada layer disponível
 const LAYERS = [
   {
@@ -76,6 +100,16 @@ export default function LayerChartBuilder({ filtroUF }: Props) {
   const [layerAtiva, setLayerAtiva] = useState("sni-tipo");
   const [dados, setDados] = useState<{ name: string; value: number; value2?: number }[]>([]);
   const [carregando, setCarregando] = useState(false);
+  const [politicasData, setPoliticasData] = useState<LayerPoliticas[]>([]);
+  const [abaPolitica, setAbaPolitica] = useState<"investimento" | "timeline" | "lista">("investimento");
+
+  useEffect(() => {
+    fetch("/politicas-layers.json")
+      .then(r => r.json())
+      .then((d: PoliticasJson) => setPoliticasData(d.layers))
+      .catch(console.error);
+  }, []);
+
 
   const config = LAYERS.find(l => l.id === layerAtiva)!;
 
@@ -219,8 +253,216 @@ export default function LayerChartBuilder({ filtroUF }: Props) {
         )}
       </div>
 
+      {/* ── Relações Políticas por Layer ── */}
+      {politicasData.length > 0 && (
+        <div className="mt-6 space-y-4 border-t border-border pt-5">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="material-symbols-outlined text-xl text-violet-400" style={{ fontVariationSettings: '"FILL" 1' }}>
+              policy
+            </span>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Políticas Públicas por Layer de IA</h3>
+              <p className="text-xs text-muted-foreground">
+                {politicasData.reduce((s, l) => s + l.politicas.length, 0)} políticas curadas ·{" "}
+                R$ {(politicasData.reduce((s, l) => s + l.politicas.reduce((ss, p) => ss + (p.investimento_publico_brl || 0), 0), 0) / 1e9).toFixed(1)} bi mapeados
+              </p>
+            </div>
+            {/* Abas de visualização */}
+            <div className="ml-auto flex gap-1">
+              {(["investimento", "timeline", "lista"] as const).map(aba => (
+                <button
+                  key={aba}
+                  onClick={() => setAbaPolitica(aba)}
+                  className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                    abaPolitica === aba
+                      ? "bg-violet-500/20 text-violet-400"
+                      : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {aba === "investimento" ? "Investimentos" : aba === "timeline" ? "Linha do tempo" : "Lista"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Aba: Investimentos por layer (bar chart) ── */}
+          {abaPolitica === "investimento" && (() => {
+            const dadosPol = politicasData
+              .filter(l => l.layer !== "SNI") // SNI sem investimento_publico_brl na maioria
+              .map(l => ({
+                layer: `${l.layer} — ${l.nome}`,
+                total: l.politicas.reduce((s, p) => s + (p.investimento_publico_brl || 0), 0) / 1e9,
+                cor: l.cor === "pink" ? "#f472b6" : l.cor === "orange" ? "#fb923c" : l.cor === "yellow" ? "#facc15" : l.cor === "violet" ? "#a78bfa" : "#34d399",
+                npol: l.politicas.length,
+              }))
+              .sort((a, b) => b.total - a.total);
+            return (
+              <div className="space-y-3">
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={dadosPol} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="layer" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                    <YAxis
+                      tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                      tickFormatter={v => `R$ ${v}bi`}
+                    />
+                    <Tooltip
+                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      formatter={(v: number, _n: string, props: any) => [
+                        `R$ ${v.toFixed(1)} bilhões (${props.payload.npol} políticas)`,
+                        "Investimento público"
+                      ]}
+                    />
+                    <Bar dataKey="total" radius={[4, 4, 0, 0]}>
+                      {dadosPol.map((d, i) => (
+                        <Cell key={i} fill={d.cor} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                {/* Cards de detalhe por política */}
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {politicasData.flatMap(l =>
+                    l.politicas
+                      .filter(p => (p.investimento_publico_brl || 0) > 0)
+                      .sort((a, b) => (b.investimento_publico_brl || 0) - (a.investimento_publico_brl || 0))
+                      .slice(0, 2)
+                      .map(p => {
+                        const corHex = l.cor === "pink" ? "#f472b6" : l.cor === "orange" ? "#fb923c" : l.cor === "yellow" ? "#facc15" : l.cor === "violet" ? "#a78bfa" : "#34d399";
+                        return (
+                          <a
+                            key={p.id}
+                            href={p.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-3 hover:bg-muted/60 transition-colors"
+                          >
+                            <span
+                              className="mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase"
+                              style={{ background: `${corHex}20`, color: corHex, border: `1px solid ${corHex}40` }}
+                            >
+                              {l.layer}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[11px] font-medium text-foreground leading-tight truncate">{p.nome}</p>
+                              <p className="text-[10px] text-green-400 font-semibold mt-0.5">{p.investimento}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5 italic">{p.conexao_mapa}</p>
+                            </div>
+                          </a>
+                        );
+                      })
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* ── Aba: Linha do tempo ── */}
+          {abaPolitica === "timeline" && (() => {
+            const todas = politicasData.flatMap(l =>
+              l.politicas.map(p => ({
+                ...p,
+                layer: l.layer,
+                corHex: l.cor === "pink" ? "#f472b6" : l.cor === "orange" ? "#fb923c" : l.cor === "yellow" ? "#facc15" : l.cor === "violet" ? "#a78bfa" : "#34d399",
+              }))
+            ).sort((a, b) => Number(a.ano) - Number(b.ano));
+
+            return (
+              <div className="relative pl-4 space-y-0">
+                {/* Linha vertical */}
+                <div className="absolute left-4 top-2 bottom-2 w-px bg-border" />
+                {todas.map((p, i) => (
+                  <div key={p.id} className="relative flex gap-3 pb-4">
+                    {/* Dot */}
+                    <div
+                      className="relative z-10 mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full border-2 border-background"
+                      style={{ backgroundColor: p.corHex }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] font-bold text-muted-foreground">{p.ano}</span>
+                        <span
+                          className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase"
+                          style={{ background: `${p.corHex}20`, color: p.corHex, border: `1px solid ${p.corHex}40` }}
+                        >
+                          {p.layer}
+                        </span>
+                        <span className={`text-[10px] font-medium ${p.status.includes("tramitação") ? "text-yellow-400" : p.status.includes("Histórica") ? "text-gray-400" : "text-green-400"}`}>
+                          ● {p.status.split("—")[0].trim()}
+                        </span>
+                      </div>
+                      <a
+                        href={p.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] font-medium text-foreground hover:text-primary transition-colors"
+                      >
+                        {p.nome}
+                      </a>
+                      <p className="text-[10px] text-green-400 font-semibold">{p.investimento}</p>
+                      <p className="text-[10px] text-muted-foreground">{p.orgao}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
+          {/* ── Aba: Lista completa ── */}
+          {abaPolitica === "lista" && (
+            <div className="space-y-3">
+              {politicasData.map(l => {
+                const corHex = l.cor === "pink" ? "#f472b6" : l.cor === "orange" ? "#fb923c" : l.cor === "yellow" ? "#facc15" : l.cor === "violet" ? "#a78bfa" : "#34d399";
+                return (
+                  <div key={l.layer}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span
+                        className="rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase"
+                        style={{ background: `${corHex}20`, color: corHex, borderColor: `${corHex}40` }}
+                      >
+                        {l.layer}
+                      </span>
+                      <span className="text-xs font-semibold text-foreground">{l.nome}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        R$ {(l.politicas.reduce((s, p) => s + (p.investimento_publico_brl || 0), 0) / 1e9).toFixed(1)} bi · {l.politicas.length} políticas
+                      </span>
+                    </div>
+                    <div className="space-y-1.5 pl-4 border-l-2" style={{ borderColor: `${corHex}40` }}>
+                      {l.politicas.map(p => (
+                        <div key={p.id} className="flex items-start gap-2">
+                          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: corHex }} />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <a
+                                href={p.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[11px] font-medium text-foreground hover:text-primary"
+                              >
+                                {p.nome}
+                              </a>
+                              <span className={`text-[10px] ${p.status.includes("tramitação") ? "text-yellow-400" : p.status.includes("Histórica") ? "text-gray-400" : "text-green-400"}`}>
+                                ● {p.status.split("—")[0].trim()}
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-green-400 font-semibold">{p.investimento}</p>
+                            <p className="text-[10px] text-muted-foreground italic">{p.conexao_mapa}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Rodapé com total */}
       {dados.length > 0 && config.tipo !== "realtime" && (
+
         <p className="text-right text-[11px] text-muted-foreground">
           {dados.length} categorias · {dados.reduce((s, d) => s + d.value, 0).toLocaleString("pt-BR")} registros
           {filtroUF ? ` em ${filtroUF}` : " no Brasil"}
