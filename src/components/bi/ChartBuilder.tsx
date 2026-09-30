@@ -114,7 +114,7 @@ function ChartBuilderInner({ userId, onSaved, datasets }: { userId: string; onSa
   const mets = ds.columns.filter((c) => c.kind === "metric");
 
   return (
-    <div className="grid lg:grid-cols-[230px_280px_1fr] gap-4">
+    <div className="grid lg:grid-cols-[260px_300px_minmax(0,1fr)] gap-4">
       {/* COLUNA 1 — bases e dicionário de colunas */}
       <div className="rounded-lg border border-border bg-card p-3 space-y-3">
         <div>
