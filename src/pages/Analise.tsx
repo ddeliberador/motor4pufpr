@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import { PaineisPublicados } from "@/components/bi/PaineisPublicados";
+import LayerChartBuilder from "@/components/analise/LayerChartBuilder";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
