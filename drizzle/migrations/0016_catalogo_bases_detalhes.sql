@@ -1,0 +1,1 @@
+ALTER TABLE public.catalogo_bases ADD COLUMN detalhes jsonb NOT NULL DEFAULT '{}'::jsonb;

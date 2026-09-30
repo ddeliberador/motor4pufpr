@@ -93,6 +93,7 @@ export type Database = {
           chave: string
           colunas: Json
           created_at: string
+          detalhes: Json
           doc_md: string | null
           grupo: string | null
           id: string
@@ -123,6 +124,7 @@ export type Database = {
           chave: string
           colunas?: Json
           created_at?: string
+          detalhes?: Json
           doc_md?: string | null
           grupo?: string | null
           id?: string
@@ -153,6 +155,7 @@ export type Database = {
           chave?: string
           colunas?: Json
           created_at?: string
+          detalhes?: Json
           doc_md?: string | null
           grupo?: string | null
           id?: string

@@ -113,6 +113,13 @@
       "when": 1790778933637,
       "tag": "0015_create_catalogo_bases",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790778981856,
+      "tag": "0016_catalogo_bases_detalhes",
+      "breakpoints": true
     }
   ]
 }
