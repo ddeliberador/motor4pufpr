@@ -92,6 +92,13 @@
       "when": 1790628286479,
       "tag": "0012_search_snapshots_revoke_public_read",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790775996302,
+      "tag": "0013_create_bi_charts_dashboards",
+      "breakpoints": true
     }
   ]
 }

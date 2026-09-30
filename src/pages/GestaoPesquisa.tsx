@@ -17,7 +17,8 @@ import {
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
-import { Plus, Trash2, LogOut, BookOpen, Lightbulb, FileText, MessageSquare, NotebookPen, Database } from "lucide-react";
+import { Plus, Trash2, LogOut, BookOpen, Lightbulb, FileText, MessageSquare, NotebookPen, Database, BarChart3 } from "lucide-react";
+import { BiStudioTab } from "@/components/bi/BiStudioTab";
 import { FeedbackTab } from "@/components/research/FeedbackTab";
 import { BuildLogTab } from "@/components/research/BuildLogTab";
 import { CatalogoFontesTab } from "@/components/research/CatalogoFontesTab";
@@ -242,6 +243,7 @@ export default function GestaoPesquisa() {
             <TabsTrigger value="articles"><FileText className="w-4 h-4 mr-1" /> Artigos</TabsTrigger>
             <TabsTrigger value="buildlog"><NotebookPen className="w-4 h-4 mr-1" /> Diário de Construção</TabsTrigger>
             <TabsTrigger value="fontes"><Database className="w-4 h-4 mr-1" /> Catálogo de Fontes</TabsTrigger>
+            <TabsTrigger value="bi"><BarChart3 className="w-4 h-4 mr-1" /> Painéis e Gráficos</TabsTrigger>
             <TabsTrigger value="feedback">
               <MessageSquare className="w-4 h-4 mr-1" /> Sugestões
               {newFeedbackCount > 0 && (
@@ -358,6 +360,11 @@ export default function GestaoPesquisa() {
           {/* CATÁLOGO DE FONTES */}
           <TabsContent value="fontes" className="mt-4">
             <CatalogoFontesTab canEdit={isAdmin} />
+          </TabsContent>
+
+          {/* BI — CONSTRUTOR DE GRÁFICOS E PAINÉIS */}
+          <TabsContent value="bi" className="mt-4">
+            <BiStudioTab userId={user.id} />
           </TabsContent>
 
           {/* FEEDBACK */}
