@@ -230,6 +230,9 @@ export default function Analise() {
         </div>
       </div>
 
+      {/* Painéis montados no construtor e publicados */}
+      <PaineisPublicados />
+
       {/* Rodapé */}
       <p className="text-center text-[11px] text-muted-foreground pb-4">
         Fonte: Motor da Inovação · OpenAlex · ABStartups · EMBRAPII · OTD/CGEE · FORMICT · SINAPAD · UFPR/PPGPP · {new Date().getFullYear()}
