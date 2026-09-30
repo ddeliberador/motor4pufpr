@@ -1032,6 +1032,10 @@ Deno.serve(async (req) => {
       indices,
       persona_insights: personaInsights,
       stats,
+      catalogo: {
+        desativadas: desativadasCatalogo.map((d) => d.nome),
+        camadas_nao_consultadas: [...camadasPuladas],
+      },
       historico,
       ontology: ontology
         ? {
