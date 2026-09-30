@@ -173,8 +173,7 @@ export default function CruzadorBases({ filtroUF }: Props) {
                 setBaseA(nova);
                 setMetricaA(BASES.find(b => b.id === nova)!.metricas[0].id);
               }}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2"
-              style={{ focusRingColor: cfgA.cor }}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               {BASES.map(b => (
                 <option key={b.id} value={b.id}>{b.label}</option>
