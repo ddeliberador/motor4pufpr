@@ -83,6 +83,7 @@ export default function GestaoPesquisa() {
   const [areaFilter, setAreaFilter] = useState<string>("all");
   const [isAdmin, setIsAdmin] = useState(false);
   const [isColab, setIsColab] = useState(false);
+  const [rolesLoaded, setRolesLoaded] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -92,10 +93,12 @@ export default function GestaoPesquisa() {
       if (!active) return;
       if (error) { console.warn("is_admin:", error.message); setIsAdmin(false); }
       else setIsAdmin(data === true);
-      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+      const { data: roles, error: rErr } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
       if (!active) return;
+      if (rErr) { console.error("user_roles:", rErr.message); setIsColab(true); setRolesLoaded(true); return; }
       const rs = (roles ?? []).map((r: { role: string }) => r.role);
       setIsColab(rs.includes("colab") && !rs.includes("admin"));
+      setRolesLoaded(true);
     })();
     return () => { active = false; };
   }, [user]);
@@ -241,7 +244,7 @@ export default function GestaoPesquisa() {
           </div>
         </div>
 
-        <Tabs key={isColab ? "colab" : "full"} defaultValue={isColab ? "fontes" : "authors"}>
+        {rolesLoaded && <Tabs key={isColab ? "colab" : "full"} defaultValue={isColab ? "fontes" : "authors"}>
           <TabsList>
             {!isColab && <>
             <TabsTrigger value="authors"><BookOpen className="w-4 h-4 mr-1" /> Autores</TabsTrigger>
@@ -378,7 +381,7 @@ export default function GestaoPesquisa() {
           <TabsContent value="feedback" className="mt-4">
             <FeedbackTab onNewCountChange={setNewFeedbackCount} />
           </TabsContent>
-        </Tabs>
+        </Tabs>}
       </main>
     </div>
   );
