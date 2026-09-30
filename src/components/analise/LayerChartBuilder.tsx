@@ -5,6 +5,30 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
 } from "recharts";
 
+// Tipos para políticas
+interface Politica {
+  id: string;
+  nome: string;
+  orgao: string;
+  ano: string;
+  status: string;
+  investimento: string;
+  investimento_publico_brl?: number;
+  instrumento: string;
+  conexao_mapa: string;
+  link: string;
+}
+interface LayerPoliticas {
+  layer: string;
+  nome: string;
+  cor: string;
+  politicas: Politica[];
+}
+interface PoliticasJson {
+  layers: LayerPoliticas[];
+}
+
+
 // Configuração de cada layer disponível
 const LAYERS = [
   {
@@ -76,6 +100,16 @@ export default function LayerChartBuilder({ filtroUF }: Props) {
   const [layerAtiva, setLayerAtiva] = useState("sni-tipo");
   const [dados, setDados] = useState<{ name: string; value: number; value2?: number }[]>([]);
   const [carregando, setCarregando] = useState(false);
+  const [politicasData, setPoliticasData] = useState<LayerPoliticas[]>([]);
+  const [abaPolitica, setAbaPolitica] = useState<"investimento" | "timeline" | "lista">("investimento");
+
+  useEffect(() => {
+    fetch("/politicas-layers.json")
+      .then(r => r.json())
+      .then((d: PoliticasJson) => setPoliticasData(d.layers))
+      .catch(console.error);
+  }, []);
+
 
   const config = LAYERS.find(l => l.id === layerAtiva)!;
 
