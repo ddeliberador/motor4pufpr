@@ -143,7 +143,16 @@ export async function runChartQuery(
 
   const all: Record<string, unknown>[] = [];
   for (let from = 0; from < MAX_ROWS; from += PAGE) {
-    let q = supabase.from(ds.table as never).select([...cols].join(","));
+    type Filtro = {
+      not: (c: string, o: string, v: null) => Filtro;
+      ilike: (c: string, v: string) => Filtro;
+      eq: (c: string, v: string) => Filtro;
+      neq: (c: string, v: string) => Filtro;
+      gte: (c: string, v: string) => Filtro;
+      lte: (c: string, v: string) => Filtro;
+      range: (a: number, b: number) => Promise<{ data: unknown; error: { message: string } | null }>;
+    };
+    let q = supabase.from(ds.table as never).select([...cols].join(",")) as unknown as Filtro;
     for (const f of spec.filters) {
       if (!f.column) continue;
       if (f.op === "notnull") q = q.not(f.column, "is", null);
