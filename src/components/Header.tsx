@@ -51,6 +51,13 @@ const Header = () => {
           {/* Nav Links + CTA */}
           <div className="hidden md:flex items-center gap-4 lg:gap-6 flex-shrink-0">
             <Link
+              to="/analise"
+              className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${isActive('/analise') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <span className="material-symbols-outlined text-base leading-none" style={{ fontVariationSettings: '"FILL" 1' }}>bar_chart</span>
+              Análise
+            </Link>
+            <Link
               to="/mapa"
               className={`text-sm font-medium transition-colors ${isActive('/mapa') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
             >
@@ -94,6 +101,14 @@ const Header = () => {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-border">
             <div className="flex flex-col gap-2">
+              <Link
+                to="/analise"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${isActive('/analise') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+              >
+                <span className="material-symbols-outlined text-base leading-none" style={{ fontVariationSettings: '"FILL" 1' }}>bar_chart</span>
+                Análise
+              </Link>
               <Link
                 to="/mapa"
                 onClick={() => setMobileMenuOpen(false)}
