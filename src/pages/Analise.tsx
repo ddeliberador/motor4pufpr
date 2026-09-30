@@ -234,6 +234,7 @@ export default function Analise() {
       <p className="text-center text-[11px] text-muted-foreground pb-4">
         Fonte: Motor da Inovação · OpenAlex · ABStartups · EMBRAPII · OTD/CGEE · FORMICT · SINAPAD · UFPR/PPGPP · {new Date().getFullYear()}
       </p>
+      </div>
     </div>
   );
 }
