@@ -78,7 +78,7 @@ export const DATASETS: DatasetDef[] = [
   },
   {
     key: "conectividade_municipios",
-    table: "infra_backhaul_municipio",
+    table: "",
     label: "Conectividade dos municípios (Anatel)",
     descricao: "Backhaul por município, base usada na camada de infraestrutura do Mapa.",
     columns: [
@@ -88,24 +88,7 @@ export const DATASETS: DatasetDef[] = [
       d("tem_backhaul", "tem_backhaul"),
       d("ano", "ano"),
     ],
-  },
-  {
-    key: "buscas_motor",
-    table: "search_snapshots",
-    label: "Buscas do Motor (índices)",
-    descricao: "Cada busca do Motor com os índices GT, CD, AUE, EI e TRL calculados.",
-    columns: [
-      d("tema_normalizado", "tema"),
-      d("uf", "uf"),
-      m("gt", "gt"),
-      m("cd", "cd"),
-      m("aue", "aue"),
-      m("ei", "ei"),
-      m("trl", "trl"),
-      m("total_papers", "total_papers"),
-      m("total_contracts", "total_contracts"),
-      m("source_count", "source_count"),
-    ],
+    load: async () => (await basesCruzadas()).backhaul,
   },
   {
     key: "cruzado_municipios",
@@ -128,7 +111,7 @@ export const DATASETS: DatasetDef[] = [
     key: "cruzado_uf",
     table: "",
     cruzado: true,
-    label: "Cruzamento: estados (atores, conectividade, institutos, buscas)",
+    label: "Cruzamento: estados (atores, conectividade, institutos)",
     descricao: "Uma linha por UF reunindo as bases do Mapa e do Motor.",
     columns: [
       d("uf", "uf"),
@@ -137,7 +120,6 @@ export const DATASETS: DatasetDef[] = [
       m("municipios_com_ator", "municipios_com_ator"),
       m("pct_municipios_backhaul", "pct_municipios_backhaul"),
       m("institutos_regionais", "institutos_regionais"),
-      m("buscas_motor", "buscas_motor"),
     ],
     load: carregarCruzadoUf,
   },
@@ -160,11 +142,24 @@ async function lerTudo(table: string, cols: string): Promise<Linha[]> {
 const chaveMun = (m: unknown, uf: unknown) =>
   `${String(m ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()}|${String(uf ?? "").toUpperCase()}`;
 
+/** Conectividade vem pela função do Mapa (map-infrastructure), a camada de consumo — a tabela não é lida direto. */
+async function lerBackhaulPelaFuncao(): Promise<Linha[]> {
+  const { data, error } = await supabase.functions.invoke("map-infrastructure", { body: { layer: "backhaul" } });
+  if (error) throw new Error(`Conectividade (Anatel): ${error.message}`);
+  const p = data as { data?: Linha[]; ano?: string; indisponivel?: boolean; failures?: unknown[] } | null;
+  if (!p || p.indisponivel || !Array.isArray(p.data) || p.data.length === 0)
+    throw new Error(`Conectividade (Anatel) indisponível: ${JSON.stringify(p?.failures ?? [])}`);
+  return p.data.map((b) => ({
+    uf: b.uf, municipio: b.municipio, tipo: b.tipo,
+    tem_backhaul: b.temBackhaul ? "sim" : "não", ano: p.ano ?? null,
+  }));
+}
+
 let cacheCruz: Promise<{ atores: Linha[]; backhaul: Linha[] }> | null = null;
 function basesCruzadas() {
   cacheCruz ??= Promise.all([
     lerTudo("research_locations", "uf,municipio,quality_score"),
-    lerTudo("infra_backhaul_municipio", "uf,municipio,tipo,tem_backhaul"),
+    lerBackhaulPelaFuncao(),
   ]).then(([atores, backhaul]) => ({ atores, backhaul })).catch((e) => { cacheCruz = null; throw e; });
   return cacheCruz;
 }
@@ -183,7 +178,7 @@ async function carregarCruzadoMunicipios(): Promise<Linha[]> {
     const g = agg.get(chaveMun(b.municipio, b.uf));
     return {
       uf: b.uf, municipio: b.municipio, tipo_backhaul: b.tipo,
-      tem_backhaul: b.tem_backhaul ? "sim" : "não",
+      tem_backhaul: b.tem_backhaul,
       tem_ator_sni: g ? "sim" : "não",
       atores_sni: g?.n ?? 0,
       qualidade_media: g && g.qn ? Math.round(g.q / g.qn) : null,
@@ -192,10 +187,9 @@ async function carregarCruzadoMunicipios(): Promise<Linha[]> {
 }
 
 async function carregarCruzadoUf(): Promise<Linha[]> {
-  const [{ atores, backhaul }, inst, buscas] = await Promise.all([
+  const [{ atores, backhaul }, inst] = await Promise.all([
     basesCruzadas(),
     lerTudo("regional_institutes", "uf"),
-    lerTudo("search_snapshots", "uf"),
   ]);
   const ufs = new Map<string, { a: number; mun: number; bh: number; mc: Set<string>; i: number; s: number }>();
   const get = (uf: unknown) => {
@@ -204,14 +198,13 @@ async function carregarCruzadoUf(): Promise<Linha[]> {
     if (!ufs.has(k)) ufs.set(k, { a: 0, mun: 0, bh: 0, mc: new Set(), i: 0, s: 0 });
     return ufs.get(k)!;
   };
-  for (const b of backhaul) { const g = get(b.uf); if (g) { g.mun++; if (b.tem_backhaul) g.bh++; } }
+  for (const b of backhaul) { const g = get(b.uf); if (g) { g.mun++; if (b.tem_backhaul === "sim") g.bh++; } }
   for (const a of atores) { const g = get(a.uf); if (g) { g.a++; if (a.municipio) g.mc.add(chaveMun(a.municipio, a.uf)); } }
   for (const r of inst) { const g = get(r.uf); if (g) g.i++; }
-  for (const r of buscas) { const g = get(r.uf); if (g) g.s++; }
   return [...ufs.entries()].map(([uf, g]) => ({
     uf, atores_sni: g.a, municipios: g.mun, municipios_com_ator: g.mc.size,
     pct_municipios_backhaul: g.mun ? Math.round((g.bh / g.mun) * 1000) / 10 : null,
-    institutos_regionais: g.i, buscas_motor: g.s,
+    institutos_regionais: g.i,
   }));
 }
 
