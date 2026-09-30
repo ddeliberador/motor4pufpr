@@ -12,7 +12,8 @@ import { Drawer, Spinner, TOOLTIP_STYLE } from "./Drawer";
 interface LayerScore { layer: string; nome: string; score: number | null; formula: string; cor: string; evidencias: string[] }
 
 async function contar<T>(p: Promise<T[]>): Promise<number | string> {
-  try { return (await p).length; } catch (e) { return `falha: ${(e as Error).message}`; }
+  const limite = new Promise<never>((_, rej) => setTimeout(() => rej(new Error("sem resposta em 15 s")), 15000));
+  try { return (await Promise.race([p, limite])).length; } catch (e) { return `falha: ${(e as Error).message}`; }
 }
 const fmt = (v: number | string) => typeof v === "number" ? v.toLocaleString("pt-BR") : v;
 
