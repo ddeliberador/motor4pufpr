@@ -1,4 +1,6 @@
+import { useMemo } from "react";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
+import { carregarCatalogo, useCatalogo, detalhesDe, type CatalogoBase } from "@/lib/catalogo";
 import { buscarModelosHF, buscarContratosIA } from "@/utils/cruzarLayers";
 
 export type ColumnKind = "dimension" | "metric";
@@ -18,13 +20,15 @@ export type DatasetDef = {
   /** Bases cruzadas: montadas no cliente juntando outras tabelas. */
   cruzado?: boolean;
   camada?: boolean;
+  semConector?: boolean;
   load?: () => Promise<Record<string, unknown>[]>;
 };
 
 const d = (name: string, label: string): DatasetColumn => ({ name, label, kind: "dimension" });
 const m = (name: string, label: string): DatasetColumn => ({ name, label, kind: "metric" });
 
-export const DATASETS: DatasetDef[] = [
+/** Conectores em código (como ler cada base). Quais aparecem, nome, descrição e colunas vêm do catálogo. */
+const CONECTORES: DatasetDef[] = [
   {
     key: "atores_sni",
     table: "research_locations",
@@ -334,7 +338,41 @@ function filtrarLocal(rows: Linha[], filters: ChartFilter[], uf?: string | null)
   });
 }
 
-export const getDataset = (key: string) => DATASETS.find((x) => x.key === key);
+let registro: DatasetDef[] = [];
+let inativas = new Set<string>();
+
+/** Monta as bases do construtor a partir do catálogo (fonte da verdade). */
+export function datasetsDoCatalogo(bases: CatalogoBase[]): DatasetDef[] {
+  inativas = new Set();
+  const out: DatasetDef[] = [];
+  for (const b of bases) {
+    if (!b.usos.includes("bi")) continue;
+    const key = detalhesDe(b).bi?.key ?? b.chave;
+    if (!b.ativa) { inativas.add(key); continue; }
+    const con = CONECTORES.find((c) => c.key === key);
+    const colunas = (Array.isArray(b.colunas) ? b.colunas : []) as DatasetColumn[];
+    const table = con?.table || (b.caminho_consumo === "gold_tabela" && b.alvo && b.alvo !== "cruzamento" ? b.alvo : "");
+    out.push({
+      ...(con ?? {}),
+      key, table, label: b.nome, descricao: b.uso ?? "",
+      columns: colunas.length ? colunas : con?.columns ?? [],
+      semConector: !con?.load && !table,
+    });
+  }
+  registro = out;
+  return out;
+}
+
+export async function carregarDatasets(): Promise<DatasetDef[]> {
+  return datasetsDoCatalogo(await carregarCatalogo());
+}
+
+export function useDatasets() {
+  const { bases, erro } = useCatalogo();
+  return { datasets: useMemo(() => (bases ? datasetsDoCatalogo(bases) : null), [bases]), erro };
+}
+
+export const getDataset = (key: string) => registro.find((x) => x.key === key);
 
 export type ChartType = "bar_vertical" | "bar_horizontal" | "line" | "area" | "pie";
 
@@ -382,8 +420,11 @@ export async function runChartQuery(
   spec: ChartSpec,
   extra?: { uf?: string | null },
 ): Promise<{ rows: ChartRow[]; amostra: Record<string, unknown>[]; totalLinhas: number }> {
+  await carregarDatasets();
+  if (inativas.has(spec.dataset_key)) throw new Error("Base desativada no catálogo.");
   const ds = getDataset(spec.dataset_key);
-  if (!ds) throw new Error(`Base desconhecida: ${spec.dataset_key}`);
+  if (!ds) throw new Error(`Base fora do catálogo: ${spec.dataset_key}`);
+  if (ds.semConector) throw new Error(`Base "${ds.label}" está no catálogo, mas ainda não tem conector no construtor.`);
 
   const cols = new Set<string>([spec.x_column]);
   if (spec.metric_column) cols.add(spec.metric_column);

@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ChartRenderer } from "./ChartRenderer";
 import {
-  DATASETS, CHART_TYPES, METRIC_AGGS, getDataset, runChartQuery, metricLabel,
+  useDatasets, CHART_TYPES, METRIC_AGGS, getDataset, runChartQuery, metricLabel,
   type ChartSpec, type ChartRow, type ChartType, type MetricAgg, type ChartFilter,
 } from "@/lib/bi/datasets";
 
@@ -27,8 +27,9 @@ const OPS: { value: ChartFilter["op"]; label: string }[] = [
 ];
 
 export function ChartBuilder({ userId, onSaved }: { userId: string; onSaved?: () => void }) {
-  const [datasetKey, setDatasetKey] = useState(DATASETS[0].key);
-  const ds = getDataset(datasetKey)!;
+  const { datasets, erro: erroCatalogo } = useDatasets();
+  const [datasetKey, setDatasetKey] = useState("atores_sni");
+  const ds = datasets?.find((x) => x.key === datasetKey) ?? datasets?.[0] ?? getDataset(datasetKey);
 
   const [chartType, setChartType] = useState<ChartType>("bar_vertical");
   const [xColumn, setXColumn] = useState<string>("uf");
@@ -114,7 +115,7 @@ export function ChartBuilder({ userId, onSaved }: { userId: string; onSaved?: ()
           <Select value={datasetKey} onValueChange={setDatasetKey}>
             <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {DATASETS.map((x) => <SelectItem key={x.key} value={x.key}>{x.label}</SelectItem>)}
+              {(datasets ?? []).map((x) => <SelectItem key={x.key} value={x.key}>{x.label}</SelectItem>)}
             </SelectContent>
           </Select>
           <p className="text-[11px] text-muted-foreground mt-2 leading-snug">{ds.descricao}</p>
