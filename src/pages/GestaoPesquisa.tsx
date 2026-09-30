@@ -82,15 +82,20 @@ export default function GestaoPesquisa() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [areaFilter, setAreaFilter] = useState<string>("all");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isColab, setIsColab] = useState(false);
 
   useEffect(() => {
     let active = true;
-    if (!user) { setIsAdmin(false); return; }
+    if (!user) { setIsAdmin(false); setIsColab(false); return; }
     (async () => {
       const { data, error } = await supabase.rpc("is_admin");
       if (!active) return;
-      if (error) { console.warn("is_admin:", error.message); setIsAdmin(false); return; }
-      setIsAdmin(data === true);
+      if (error) { console.warn("is_admin:", error.message); setIsAdmin(false); }
+      else setIsAdmin(data === true);
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+      if (!active) return;
+      const rs = (roles ?? []).map((r: { role: string }) => r.role);
+      setIsColab(rs.includes("colab") && !rs.includes("admin"));
     })();
     return () => { active = false; };
   }, [user]);
@@ -236,20 +241,22 @@ export default function GestaoPesquisa() {
           </div>
         </div>
 
-        <Tabs defaultValue="authors">
+        <Tabs key={isColab ? "colab" : "full"} defaultValue={isColab ? "fontes" : "authors"}>
           <TabsList>
+            {!isColab && <>
             <TabsTrigger value="authors"><BookOpen className="w-4 h-4 mr-1" /> Autores</TabsTrigger>
             <TabsTrigger value="themes"><Lightbulb className="w-4 h-4 mr-1" /> Temas</TabsTrigger>
             <TabsTrigger value="articles"><FileText className="w-4 h-4 mr-1" /> Artigos</TabsTrigger>
             <TabsTrigger value="buildlog"><NotebookPen className="w-4 h-4 mr-1" /> Diário de Construção</TabsTrigger>
+            </>}
             <TabsTrigger value="fontes"><Database className="w-4 h-4 mr-1" /> Catálogo de Fontes</TabsTrigger>
             <TabsTrigger value="bi"><BarChart3 className="w-4 h-4 mr-1" /> Painéis e Gráficos</TabsTrigger>
-            <TabsTrigger value="feedback">
+            {!isColab && <TabsTrigger value="feedback">
               <MessageSquare className="w-4 h-4 mr-1" /> Sugestões
               {newFeedbackCount > 0 && (
                 <span className="ml-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5 py-0.5 leading-none">{newFeedbackCount}</span>
               )}
-            </TabsTrigger>
+            </TabsTrigger>}
           </TabsList>
 
           {/* AUTHORS */}

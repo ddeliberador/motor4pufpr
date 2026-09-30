@@ -99,6 +99,13 @@
       "when": 1790775996302,
       "tag": "0013_create_bi_charts_dashboards",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790777088312,
+      "tag": "0014_add_colab_role",
+      "breakpoints": true
     }
   ]
 }
