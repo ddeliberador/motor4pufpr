@@ -1,4 +1,5 @@
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
+import { buscarModelosHF, buscarContratosIA } from "@/utils/cruzarLayers";
 
 export type ColumnKind = "dimension" | "metric";
 
@@ -16,6 +17,7 @@ export type DatasetDef = {
   columns: DatasetColumn[];
   /** Bases cruzadas: montadas no cliente juntando outras tabelas. */
   cruzado?: boolean;
+  camada?: boolean;
   load?: () => Promise<Record<string, unknown>[]>;
 };
 
@@ -90,6 +92,63 @@ export const DATASETS: DatasetDef[] = [
     ],
     load: async () => (await basesCruzadas()).backhaul,
   },
+  // ── Camadas do Mapa (mesmas fontes e caminhos de consumo que o /mapa usa) ──
+  {
+    key: "l1_usinas", table: "", camada: true,
+    label: "Mapa · L1 Energia — usinas (ANEEL SIGA)",
+    descricao: "Usinas georreferenciadas da ANEEL, via função do Mapa.",
+    columns: [d("uf", "uf"), d("municipio", "municipio"), d("tipo", "tipo"), d("combustivel", "combustivel"), d("situacao", "situacao"), m("potencia_kw", "potencia_kw")],
+    load: carregarUsinas,
+  },
+  {
+    key: "l2_cabos", table: "", camada: true,
+    label: "Mapa · L2 Cabos submarinos (TeleGeography)",
+    descricao: "Cabos com aterragem confirmada no Brasil (snapshot do Mapa).",
+    columns: [d("cabo", "cabo"), d("aterragem_br", "aterragem_br"), m("aterragens_total", "aterragens_total"), m("aterragens_br", "aterragens_br")],
+    load: carregarCabos,
+  },
+  {
+    key: "l2_antenas", table: "", camada: true,
+    label: "Mapa · L2 Antenas — ERBs licenciadas (ANATEL)",
+    descricao: "Estações rádio base por município e operadora (snapshot do Mapa).",
+    columns: [d("uf", "uf"), d("municipio", "municipio"), d("operadora", "operadora"), m("estacoes", "estacoes")],
+    load: carregarAntenas,
+  },
+  {
+    key: "l3_datacenters", table: "", camada: true,
+    label: "Mapa · L3 Datacenters (PeeringDB)",
+    descricao: "Datacenters no Brasil; ao vivo pela função do Mapa, snapshot se o PeeringDB falhar.",
+    columns: [d("uf", "uf"), d("cidade", "cidade"), d("org", "org"), d("nome", "nome"), m("redes", "redes")],
+    load: carregarDatacenters,
+  },
+  {
+    key: "l4_modelos", table: "", camada: true,
+    label: "Mapa · L4 Modelos de IA (Hugging Face)",
+    descricao: "Modelos ligados ao Brasil no Hugging Face (mesma consulta da Layer 4).",
+    columns: [d("autor", "autor"), d("tarefa", "tarefa"), d("modelo", "modelo"), m("downloads", "downloads"), m("likes", "likes")],
+    load: async () => (await buscarModelosHF()).map((x) => ({ autor: x.author, tarefa: x.tarefa || null, modelo: x.id, downloads: x.downloads, likes: x.likes })),
+  },
+  {
+    key: "l5_contratos_ia", table: "", camada: true,
+    label: "Mapa · L5 Contratos de IA (PNCP)",
+    descricao: "Contratos públicos com \"inteligência artificial\" (mesma consulta da Layer 5).",
+    columns: [d("orgao", "orgao"), d("ano_fim_vigencia", "ano_fim_vigencia"), m("valor", "valor")],
+    load: async () => (await buscarContratosIA()).map((c) => ({ orgao: c.fornecedor, ano_fim_vigencia: c.dataVigencia?.slice(0, 4) ?? null, valor: c.valor })),
+  },
+  {
+    key: "l6_producao", table: "", camada: true,
+    label: "Mapa · L6 Produção científica dos atores (OpenAlex)",
+    descricao: "Artigos e citações gravados nos atores do SNI (mesma regra da Layer 6).",
+    columns: [d("uf", "uf"), d("tipo", "tipo"), d("municipio", "municipio"), d("nome", "nome"), m("artigos", "artigos"), m("citacoes", "citacoes")],
+    load: carregarProducao,
+  },
+  {
+    key: "l7_politicas", table: "", camada: true,
+    label: "Mapa · L1–L7 Políticas públicas (curadoria)",
+    descricao: "Políticas vinculadas às camadas no painel de Políticas do Mapa.",
+    columns: [d("layer", "layer"), d("camada", "camada"), d("orgao", "orgao"), d("status", "status"), d("ano", "ano"), d("politica", "politica"), m("investimento_publico_brl", "investimento_publico_brl")],
+    load: carregarPoliticas,
+  },
   {
     key: "cruzado_municipios",
     table: "",
@@ -153,6 +212,55 @@ async function lerBackhaulPelaFuncao(): Promise<Linha[]> {
     uf: b.uf, municipio: b.municipio, tipo: b.tipo,
     tem_backhaul: b.temBackhaul ? "sim" : "não", ano: p.ano ?? null,
   }));
+}
+
+async function jsonPublico<T>(url: string): Promise<T> {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
+  return (await r.json()) as T;
+}
+
+async function carregarUsinas(): Promise<Linha[]> {
+  const { data, error } = await supabase.functions.invoke("map-infrastructure", { body: { layer: "energy" } });
+  if (error) throw new Error(`ANEEL: ${error.message}`);
+  const p = data as { data?: Linha[]; failures?: { error: string }[] } | null;
+  if (!p?.data?.length) throw new Error(`ANEEL indisponível: ${(p?.failures ?? []).map((f) => f.error).join("; ") || "sem dados"}`);
+  return p.data.map((u) => ({ uf: u.uf || null, municipio: u.municipio || null, tipo: u.tipo, combustivel: u.combustivel || null, situacao: u.situacao || null, potencia_kw: u.potencia_kw ?? null }));
+}
+
+async function carregarCabos(): Promise<Linha[]> {
+  const d = await jsonPublico<{ cables: { name: string; landing_point_ids?: string[] }[] }>("/submarine-cablemap/data.json");
+  return d.cables.flatMap((c) => {
+    const ids = c.landing_point_ids ?? [];
+    const br = ids.filter((i) => /-brazil$/.test(i)).length;
+    if (!br) return [];
+    return [{ cabo: c.name, aterragem_br: "sim", aterragens_total: ids.length, aterragens_br: br }];
+  });
+}
+
+async function carregarAntenas(): Promise<Linha[]> {
+  const d = await jsonPublico<{ municipios: { municipio: string; uf: string; estacoes: number; operadoras: Record<string, number> }[] }>("/anatel-erb-br.json");
+  return d.municipios.flatMap((mu) => Object.entries(mu.operadoras).map(([op, n]) => ({ uf: mu.uf, municipio: mu.municipio, operadora: op, estacoes: n })));
+}
+
+async function carregarDatacenters(): Promise<Linha[]> {
+  const { data, error } = await supabase.functions.invoke("map-infrastructure", { body: { layer: "datacenters" } });
+  let lista = (data as { data?: Linha[] } | null)?.data;
+  if (error || !lista?.length) lista = (await jsonPublico<{ data: Linha[] }>("/peeringdb-br.json")).data;
+  return lista.map((x) => ({ uf: x.uf ?? null, cidade: x.cidade ?? null, org: x.org ?? null, nome: x.nome, redes: x.redes ?? null }));
+}
+
+async function carregarProducao(): Promise<Linha[]> {
+  const rows = await lerTudo("research_locations", "nome,uf,tipo,municipio,artigos:raw_metadata->works_count,citacoes:raw_metadata->cited_by_count");
+  return rows.filter((r) => Number(r.artigos) > 0).map((r) => ({ ...r, artigos: Number(r.artigos), citacoes: Number(r.citacoes ?? 0) }));
+}
+
+async function carregarPoliticas(): Promise<Linha[]> {
+  const d = await jsonPublico<{ layers: { layer: string; nome: string; politicas: Record<string, unknown>[] }[] }>("/politicas-layers.json");
+  return d.layers.flatMap((l) => l.politicas.map((p) => ({
+    layer: l.layer, camada: l.nome, orgao: p.orgao ?? null, status: p.status ?? null, ano: p.ano ?? null,
+    politica: p.nome, investimento_publico_brl: typeof p.investimento_publico_brl === "number" ? p.investimento_publico_brl : null,
+  })));
 }
 
 let cacheCruz: Promise<{ atores: Linha[]; backhaul: Linha[] }> | null = null;
@@ -263,6 +371,9 @@ export type ChartSpec = {
 
 export type ChartRow = { label: string; valor: number };
 
+/** Cache por sessão das bases carregadas no cliente; falhas não ficam em cache. */
+const cacheLoad = new Map<string, Promise<Record<string, unknown>[]>>();
+
 const PAGE = 1000;
 const MAX_ROWS = 12000;
 
@@ -281,7 +392,10 @@ export async function runChartQuery(
   if (temUf) cols.add("uf");
 
   const all: Record<string, unknown>[] = [];
-  if (ds.load) all.push(...filtrarLocal(await ds.load(), spec.filters, extra?.uf));
+  if (ds.load) {
+    if (!cacheLoad.has(ds.key)) cacheLoad.set(ds.key, ds.load().catch((e) => { cacheLoad.delete(ds.key); throw e; }));
+    all.push(...filtrarLocal(await cacheLoad.get(ds.key)!, spec.filters, extra?.uf));
+  }
   else for (let from = 0; from < MAX_ROWS; from += PAGE) {
     type Filtro = {
       not: (c: string, o: string, v: null) => Filtro;

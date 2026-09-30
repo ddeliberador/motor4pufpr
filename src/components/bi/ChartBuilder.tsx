@@ -271,7 +271,7 @@ export function ChartBuilder({ userId, onSaved }: { userId: string; onSaved?: ()
         </div>
 
         <div className="px-3 pt-3 flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
-          <Badge variant="outline" className="font-mono text-[10px]">{ds.cruzado ? "cruzamento" : ds.table}</Badge>
+          <Badge variant="outline" className="font-mono text-[10px]">{ds.cruzado ? "cruzamento" : ds.camada ? "camada do Mapa" : ds.table || "função do Mapa"}</Badge>
           <Badge variant="outline" className="font-mono text-[10px]">{spec.x_column}</Badge>
           <Badge variant="outline" className="font-mono text-[10px]">{metricLabel(spec)}</Badge>
           {total > 0 && <span>{total} categorias{rowLimit > 0 && total > rowLimit ? ` · exibindo ${rowLimit}` : ""}</span>}
