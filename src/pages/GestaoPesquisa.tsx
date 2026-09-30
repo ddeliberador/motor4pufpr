@@ -381,7 +381,7 @@ export default function GestaoPesquisa() {
           <TabsContent value="feedback" className="mt-4">
             <FeedbackTab onNewCountChange={setNewFeedbackCount} />
           </TabsContent>
-        </Tabs>
+        </Tabs>}
       </main>
     </div>
   );
