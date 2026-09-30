@@ -371,6 +371,9 @@ export type ChartSpec = {
 
 export type ChartRow = { label: string; valor: number };
 
+/** Cache por sessão das bases carregadas no cliente; falhas não ficam em cache. */
+const cacheLoad = new Map<string, Promise<Record<string, unknown>[]>>();
+
 const PAGE = 1000;
 const MAX_ROWS = 12000;
 
@@ -389,7 +392,10 @@ export async function runChartQuery(
   if (temUf) cols.add("uf");
 
   const all: Record<string, unknown>[] = [];
-  if (ds.load) all.push(...filtrarLocal(await ds.load(), spec.filters, extra?.uf));
+  if (ds.load) {
+    if (!cacheLoad.has(ds.key)) cacheLoad.set(ds.key, ds.load().catch((e) => { cacheLoad.delete(ds.key); throw e; }));
+    all.push(...filtrarLocal(await cacheLoad.get(ds.key)!, spec.filters, extra?.uf));
+  }
   else for (let from = 0; from < MAX_ROWS; from += PAGE) {
     type Filtro = {
       not: (c: string, o: string, v: null) => Filtro;
