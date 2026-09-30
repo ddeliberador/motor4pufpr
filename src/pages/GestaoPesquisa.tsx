@@ -362,6 +362,11 @@ export default function GestaoPesquisa() {
             <CatalogoFontesTab canEdit={isAdmin} />
           </TabsContent>
 
+          {/* BI — CONSTRUTOR DE GRÁFICOS E PAINÉIS */}
+          <TabsContent value="bi" className="mt-4">
+            <BiStudioTab userId={user.id} />
+          </TabsContent>
+
           {/* FEEDBACK */}
           <TabsContent value="feedback" className="mt-4">
             <FeedbackTab onNewCountChange={setNewFeedbackCount} />
