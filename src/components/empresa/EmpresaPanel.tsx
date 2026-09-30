@@ -1,3 +1,4 @@
+import { CatalogoAvisoMotor } from "@/components/shared/CatalogoAvisoMotor";
 import AiAnalysisTab from "@/components/shared/AiAnalysisTab";
 import RegionalTab from "@/components/shared/RegionalTab";
 import { useState, useEffect } from "react";
@@ -182,6 +183,7 @@ const EmpresaPanel = () => {
 
         <div className="panel-container py-6 space-y-4">
           <LocalContextBadge persona="empresa" />
+          <CatalogoAvisoMotor data={data} />
 
           <MuralOportunidades
             query={data.query}
