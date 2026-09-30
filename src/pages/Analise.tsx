@@ -232,6 +232,9 @@ export default function Analise() {
         </div>
       </div>
 
+      {/* Construtor de Gráficos por Layer */}
+      <LayerChartBuilder filtroUF={filtroUF} />
+
       {/* Painéis montados no construtor e publicados */}
       <PaineisPublicados />
 
