@@ -114,7 +114,7 @@ function ChartBuilderInner({ userId, onSaved, datasets }: { userId: string; onSa
   const mets = ds.columns.filter((c) => c.kind === "metric");
 
   return (
-    <div className="grid lg:grid-cols-[230px_280px_1fr] gap-4">
+    <div className="grid lg:grid-cols-[260px_300px_minmax(0,1fr)] gap-4">
       {/* COLUNA 1 — bases e dicionário de colunas */}
       <div className="rounded-lg border border-border bg-card p-3 space-y-3">
         <div>
@@ -299,11 +299,11 @@ function ChartBuilderInner({ userId, onSaved, datasets }: { userId: string; onSa
           </TabsList>
           <TabsContent value="grafico" className="mt-3">
             {carregando
-              ? <div className="h-[340px] flex items-center justify-center text-sm text-muted-foreground">Consultando a base…</div>
-              : <ChartRenderer tipo={chartType} dados={rows} metricName={metricLabel(spec)} altura={340} />}
+              ? <div className="h-[520px] flex items-center justify-center text-sm text-muted-foreground">Consultando a base…</div>
+              : <ChartRenderer tipo={chartType} dados={rows} metricName={metricLabel(spec)} altura={520} />}
           </TabsContent>
           <TabsContent value="resultados" className="mt-3">
-            <div className="max-h-[340px] overflow-auto rounded border border-border">
+            <div className="max-h-[520px] overflow-auto rounded border border-border">
               <table className="w-full text-xs">
                 <thead className="bg-muted sticky top-0">
                   <tr><th className="text-left p-2 font-mono">{spec.x_column}</th><th className="text-right p-2 font-mono">{metricLabel(spec)}</th></tr>
@@ -320,7 +320,7 @@ function ChartBuilderInner({ userId, onSaved, datasets }: { userId: string; onSa
             </div>
           </TabsContent>
           <TabsContent value="amostra" className="mt-3">
-            <div className="max-h-[340px] overflow-auto rounded border border-border">
+            <div className="max-h-[520px] overflow-auto rounded border border-border">
               <table className="w-full text-xs">
                 <thead className="bg-muted sticky top-0">
                   <tr>{Object.keys(amostra[0] ?? {}).map((k) => <th key={k} className="text-left p-2 font-mono">{k}</th>)}</tr>

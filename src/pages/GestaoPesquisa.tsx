@@ -220,7 +220,7 @@ export default function GestaoPesquisa() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container-wide pt-24 pb-16 max-w-6xl mx-auto px-4">
+      <main className="w-full pt-24 pb-16 px-4 lg:px-6">
         {/* Section header */}
         <div className="border border-border rounded-lg p-6 mb-6 bg-card">
           <div className="flex items-start justify-between gap-4 flex-wrap">
