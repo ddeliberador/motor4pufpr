@@ -115,7 +115,41 @@ async function fetchOntologyMapping(query: string): Promise<OntologyMapping | nu
   }
 }
 
+// ===== Catálogo de Bases (fonte da verdade) =====
+// Camadas que dependem de uma única base do catálogo: se a base estiver
+// desativada lá, a camada não é consultada e a resposta registra o motivo.
+const CAMADA_POR_BASE: Record<string, string> = {
+  "layer-knowledge": "openalex",
+  "layer-patents": "epo_ops",
+  "layer-sidra": "ibge",
+  "layer-cnpq": "cnpq",
+};
+let desativadasCatalogo: { chave: string; nome: string }[] = [];
+const camadasPuladas: { camada: string; base: string }[] = [];
+
+async function carregarDesativadas(): Promise<void> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/catalogo_bases?ativa=eq.false&select=chave,nome`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    desativadasCatalogo = await res.json();
+  } catch (e) {
+    // Sem catálogo, o Motor segue com todas as fontes e registra a falha.
+    console.error("catalogo_bases indisponível:", e);
+    desativadasCatalogo = [];
+  }
+}
+
 async function invokeLayer(name: string, body: Record<string, any>): Promise<any> {
+  const base = CAMADA_POR_BASE[name];
+  const off = base && desativadasCatalogo.find((d) => d.chave === base);
+  if (off) {
+    camadasPuladas.push({ camada: name, base: off.nome });
+    return null;
+  }
+  body = { ...body, fontes_desativadas: desativadasCatalogo.map((d) => d.chave) };
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 45000);
   try {
@@ -695,6 +729,9 @@ Deno.serve(async (req) => {
       ? selectedCnaes
       : (ontology?.cnae_codes || []).map((c) => c.code);
     const cboCodes = ontology?.cbo_codes || [];
+
+    camadasPuladas.length = 0;
+    await carregarDesativadas();
 
     // STEP 1: Knowledge layer first (other layers depend on it)
     const knowledge = await invokeLayer("layer-knowledge", { query, search_terms: searchTerms, location });
