@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import Header from "@/components/Header";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -108,7 +109,9 @@ export default function Analise() {
   );
 
   return (
-    <div className="min-h-full bg-background p-6 space-y-8">
+    <div className="min-h-full bg-background pt-24 pb-8">
+      <Header />
+      <div className="p-6 space-y-8">
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
