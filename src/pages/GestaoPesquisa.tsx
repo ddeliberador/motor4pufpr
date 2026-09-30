@@ -17,7 +17,8 @@ import {
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
-import { Plus, Trash2, LogOut, BookOpen, Lightbulb, FileText, MessageSquare, NotebookPen, Database } from "lucide-react";
+import { Plus, Trash2, LogOut, BookOpen, Lightbulb, FileText, MessageSquare, NotebookPen, Database, BarChart3 } from "lucide-react";
+import { BiStudioTab } from "@/components/bi/BiStudioTab";
 import { FeedbackTab } from "@/components/research/FeedbackTab";
 import { BuildLogTab } from "@/components/research/BuildLogTab";
 import { CatalogoFontesTab } from "@/components/research/CatalogoFontesTab";
