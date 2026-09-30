@@ -243,6 +243,7 @@ export default function GestaoPesquisa() {
             <TabsTrigger value="articles"><FileText className="w-4 h-4 mr-1" /> Artigos</TabsTrigger>
             <TabsTrigger value="buildlog"><NotebookPen className="w-4 h-4 mr-1" /> Diário de Construção</TabsTrigger>
             <TabsTrigger value="fontes"><Database className="w-4 h-4 mr-1" /> Catálogo de Fontes</TabsTrigger>
+            <TabsTrigger value="bi"><BarChart3 className="w-4 h-4 mr-1" /> Painéis e Gráficos</TabsTrigger>
             <TabsTrigger value="feedback">
               <MessageSquare className="w-4 h-4 mr-1" /> Sugestões
               {newFeedbackCount > 0 && (
