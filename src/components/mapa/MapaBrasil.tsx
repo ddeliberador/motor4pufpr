@@ -227,6 +227,11 @@ interface Props {
   layer5Ativa?: boolean;
   layer6Ativa?: boolean;
   enriquecimentoLayers?: EnriquecimentoLayers;
+  /** Layer 7 / PBIA — infraestruturas âncora georreferenciadas. */
+  ancorasPbia?: AncoraPbia[] | null;
+  /** Cor do eixo PBIA ativo (aplicada aos anéis da Layer 7). */
+  corEixoPbia?: string | null;
+  onSelecionarAncora?: (a: AncoraPbia) => void;
 }
 
 export default function MapaBrasil({
