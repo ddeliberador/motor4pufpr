@@ -169,7 +169,7 @@
       "latitude": -15.7975,
       "longitude": -47.8919,
       "grupo": "datacenter_publico",
-      "icone": "server",
+      "icone": "dns",
       "eixo": 3,
       "layers": ["L5", "L7"],
       "acoes": ["e3-a33", "e3-a37", "e3-a38"],
