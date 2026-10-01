@@ -540,7 +540,6 @@ export default function ListaFiltrados({
                         {/* Badge PBIA — eixos relevantes para o tipo do ator */}
                         {pbiaEixos.length > 0 && (() => {
                           const tipo = l.tipo || "";
-                          const layer = (l.raw_metadata as Record<string, unknown> | null)?.layer_principal || "";
                           const eixosRel = pbiaEixos.filter((e) => {
                             if (/Universidade|ICT|Instituto/i.test(tipo)) return [2, 3].includes(e.numero);
                             if (/Startup/i.test(tipo)) return [4].includes(e.numero);
