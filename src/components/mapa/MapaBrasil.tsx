@@ -23,6 +23,25 @@ export interface Ponto {
   categoria: CategoriaKey;
 }
 
+export interface AncoraPbia {
+  id: string;
+  nome: string;
+  entidade?: string;
+  municipio?: string;
+  uf?: string;
+  latitude: number;
+  longitude: number;
+  grupo?: string;
+  icone?: string;
+  eixo: number;
+  layers?: string[];
+  acoes?: string[];
+  acoes_nomes?: string[];
+  status?: string;
+  entrega_2026?: string;
+  url?: string;
+}
+
 interface Feature {
   properties: { sigla: string };
   geometry: { type: string; coordinates: number[][][] | number[][][][] };
