@@ -1861,8 +1861,16 @@ export default function Mapa() {
                           ))}
                         </div>
                       )}
+                      {ancoraSel.descricao && (
+                        <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{ancoraSel.descricao}</p>
+                      )}
                       <div className="mt-3 space-y-1 text-xs">
                         {ancoraSel.status && <p><strong>Status da ação:</strong> {ancoraSel.status}</p>}
+                        {ancoraSel.capacidade && <p><strong>Capacidade / infraestrutura:</strong> {ancoraSel.capacidade}</p>}
+                        {typeof ancoraSel.recurso_brl === "number" && (
+                          <p><strong>Recurso vinculado:</strong> {(ancoraSel.recurso_brl / 1_000_000_000).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} bi</p>
+                        )}
+                        {ancoraSel.recurso_detalhe && <p><strong>Financiamento:</strong> {ancoraSel.recurso_detalhe}</p>}
                         {ancoraSel.entrega_2026 && <p><strong>Entrega prevista 2026:</strong> {ancoraSel.entrega_2026}</p>}
                       </div>
                       {ancoraSel.acoes_nomes && ancoraSel.acoes_nomes.length > 0 && (
