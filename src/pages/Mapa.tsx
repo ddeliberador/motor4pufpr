@@ -190,6 +190,7 @@ export default function Mapa() {
   const [tiposSel, setTiposSel] = useState<Set<string>>(new Set());
   const [segmentosSel, setSegmentosSel] = useState<Set<string>>(new Set());
   const [soEmbrapii, setSoEmbrapii] = useState(false);
+  const [soPbia, setSoPbia] = useState(false);
   const [granular, setGranular] = useState<SelecaoFiltros>({});
   const [modo, setModo] = useState<"bases" | "lake">("bases");
   const [lakeSel, setLakeSel] = useState<SelecaoLake>({});
@@ -879,6 +880,7 @@ export default function Mapa() {
     setTiposSel(new Set());
     setSegmentosSel(new Set());
     setSoEmbrapii(false);
+    setSoPbia(false);
     setGranular({});
     setLakeSel({});
     setSelecao(null);
@@ -1600,6 +1602,36 @@ export default function Mapa() {
                 <span className="flex-1">Somente unidades EMBRAPII</span>
                 <span className="font-mono text-muted-foreground">
                   {totalEmbrapii.toLocaleString("pt-BR")}
+                </span>
+              </button>
+
+              {/* Infraestruturas âncora do PBIA (atalho) */}
+              <button
+                onClick={() => {
+                  if (soPbia) {
+                    setSoPbia(false);
+                    setLayer7Ativa(false);
+                    setPbiaEixo(null);
+                    setPbiaCor(null);
+                    setPbiaDestacar(false);
+                    setAncoraSel(null);
+                    setCamadas(new Set(CATEGORIAS.map((c) => c.key)));
+                  } else {
+                    limpar();
+                    setSoPbia(true);
+                    setLayer7Ativa(true);
+                    setPbiaAncorasAtivas(true);
+                  }
+                }}
+                className={`flex w-full items-center gap-2 rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-colors ${
+                  soPbia
+                    ? "border-violet-500 bg-violet-500/15"
+                    : "border-border bg-card hover:bg-muted"
+                }`}
+              >
+                <span className="flex-1">Somente PBIA</span>
+                <span className="font-mono text-muted-foreground">
+                  {(pbiaAncoras?.length ?? 0).toLocaleString("pt-BR")}
                 </span>
               </button>
 
