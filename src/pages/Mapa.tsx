@@ -1897,13 +1897,20 @@ export default function Mapa() {
                 </div>
                 {listaAberta && (
                   <ListaFiltrados
-                     itens={(grupoIds ? selecionadosOrdenados.filter((l) => grupoIds.has(l.id)) : selecionadosOrdenados).filter((l) => !catsEixoPbia || catsEixoPbia.has(l.categoria))}
+                     itens={[...((grupoIds ? selecionadosOrdenados.filter((l) => grupoIds.has(l.id)) : selecionadosOrdenados).filter((l) => !catsEixoPbia || catsEixoPbia.has(l.categoria))), ...pbiaItens]}
                      filtrosAtivos={filtrosAtivos}
                      total={totalLocais}
                      aberto={listaAberta}
                      onFechar={() => setListaAberta(false)}
                      pontoSelecionadoId={pontoSelecionadoId}
-                     onSelecionarPonto={setPontoSelecionadoId}
+                     onSelecionarPonto={(id) => {
+                       if (id && id.startsWith("ancora-")) {
+                         const a = (pbiaAncoras ?? []).find((x) => x.id === id);
+                         if (a) setAncoraSel(a);
+                         return;
+                       }
+                       setPontoSelecionadoId(id);
+                     }}
                      grupoTotal={selecao?.total ?? null}
                      onLimparGrupo={() => setSelecao(null)}
                      enriquecimentoLayers={enriquecimentoLayers}
