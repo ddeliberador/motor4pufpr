@@ -860,7 +860,7 @@ export default function MapaBrasil({
                 if (!v) return null;
                 const [x, y] = projetar(p.longitude, p.latitude);
                 const aneis: string[] = [];
-                if (layer7Ativa && v.l7) aneis.push("#a78bfa");
+                if (layer7Ativa && v.l7) aneis.push(corEixoPbia || "#a78bfa");
                 if (layer6Ativa && v.l6) aneis.push("#22d3ee");
                 if (layer5Ativa && v.l5) aneis.push("#2dd4bf");
                 if (layer4Ativa && v.l4) aneis.push("#4ade80");
