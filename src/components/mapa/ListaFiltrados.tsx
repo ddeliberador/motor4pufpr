@@ -11,6 +11,8 @@ import type { EnriquecimentoLayers } from "@/components/mapa/caboSubmarino";
 
 type Item = ResearchLocation & { categoria: CategoriaKey };
 
+interface PBIAEixoSimples { numero: number; nome: string; cor: string; layers: string[] }
+
 const PAGINA = 50;
 
 const REGIAO_POR_UF: Record<string, string> = {
@@ -113,6 +115,14 @@ export default function ListaFiltrados({
   const [limite, setLimite] = useState(PAGINA);
   const [expandido, setExpandido] = useState<string | null>(null);
   const [gerando, setGerando] = useState(false);
+  const [pbiaEixos, setPbiaEixos] = useState<PBIAEixoSimples[]>([]);
+
+  useEffect(() => {
+    fetch("/pbia-acoes.json")
+      .then((r) => r.json())
+      .then((d: { eixos?: PBIAEixoSimples[] }) => setPbiaEixos(d.eixos || []))
+      .catch(() => {});
+  }, []);
 
   const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -523,6 +533,43 @@ export default function ListaFiltrados({
                                   </div>
                                 </div>
                               )}
+                            </div>
+                          );
+                        })()}
+
+                        {/* Badge PBIA — eixos relevantes para o tipo do ator */}
+                        {pbiaEixos.length > 0 && (() => {
+                          const tipo = l.tipo || "";
+                          const eixosRel = pbiaEixos.filter((e) => {
+                            if (/Universidade|ICT|Instituto/i.test(tipo)) return [2, 3].includes(e.numero);
+                            if (/Startup/i.test(tipo)) return [4].includes(e.numero);
+                            if (/Embrapii/i.test(tipo)) return [4].includes(e.numero);
+                            if (/Supercomput/i.test(tipo)) return [1].includes(e.numero);
+                            if (/Datacenter/i.test(tipo)) return [1, 4].includes(e.numero);
+                            if (/Laborat/i.test(tipo)) return [2, 4].includes(e.numero);
+                            return false;
+                          });
+                          if (eixosRel.length === 0) return null;
+                          return (
+                            <div className="border-b border-border/40 px-3 py-2">
+                              <div className="rounded-lg border border-violet-500/30 bg-violet-500/10 p-2.5 space-y-1.5">
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-violet-400">PBIA — eixos relacionados</p>
+                                {eixosRel.map((e) => (
+                                  <div key={e.numero} className="flex items-center gap-2">
+                                    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[8px] font-bold text-white" style={{ backgroundColor: e.cor }}>
+                                      {e.numero}
+                                    </span>
+                                    <span className="text-[10px] text-foreground flex-1 leading-tight">{e.nome}</span>
+                                    <div className="flex gap-0.5">
+                                      {e.layers.map((lay) => (
+                                        <span key={lay} className="rounded border px-0.5 text-[8px] font-bold uppercase"
+                                          style={{ background: e.cor + "20", color: e.cor, borderColor: e.cor + "40" }}>{lay}</span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                                <a href="/analise" className="text-[10px] text-primary hover:underline">Ver Cenário 3 — Governança →</a>
+                              </div>
                             </div>
                           );
                         })()}
