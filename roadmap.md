@@ -4,3 +4,4 @@
 - [x] 3. Construtor lendo bases e colunas do catálogo
 - [x] 4. Mapa e Motor respeitando ativa/desativada
 - [x] 5. Teste no navegador (admin e Colab)
+- [x] 6. Conector PBIA/CGEE integrado — validado antes por extração manual (25 com entregas / 19 iniciada / 10 não iniciada, medido 01/10/2026)
