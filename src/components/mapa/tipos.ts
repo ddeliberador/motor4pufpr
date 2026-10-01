@@ -18,6 +18,7 @@ export type CategoriaKey =
   | "datacenter"
   | "backhaul"
   | "cabo"
+  | "pbia"
   | "outro";
 
 export interface Categoria {
@@ -44,10 +45,15 @@ export const CATEGORIAS: Categoria[] = [
   { key: "outro", label: "Não classificado", icon: "place", cor: "text-muted-foreground" },
 ];
 
-export const CATEGORIA_MAP: Record<CategoriaKey, Categoria> = CATEGORIAS.reduce(
-  (acc, c) => ({ ...acc, [c.key]: c }),
-  {} as Record<CategoriaKey, Categoria>,
-);
+export const CATEGORIA_MAP: Record<CategoriaKey, Categoria> = {
+  ...CATEGORIAS.reduce(
+    (acc, c) => ({ ...acc, [c.key]: c }),
+    {} as Record<CategoriaKey, Categoria>,
+  ),
+  // Âncoras PBIA entram na listagem filtrada, mas não viram caixa de seleção
+  // em "Camadas no mapa" (são controladas pela Layer 7).
+  pbia: { key: "pbia", label: "Infraestrutura âncora PBIA", icon: "flag", cor: "text-violet-400" },
+};
 
 const norm = (s: string) =>
   s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -78,6 +84,7 @@ export const FONTE_CURTA: Record<string, string> = {
   inep_censo_superior: "INEP — Censo Superior",
   mcti_formict: "MCTI / FORMICT",
   sinapad: "SINAPAD",
+  pbia_cgee: "PBIA (painel CGEE)",
   lisp_brasil_mapeamento: "LISP Brasil",
   abstartups_2025: "StartupBase / ABStartups",
   otd_cgee: "Observatório CGEE/MCTI",

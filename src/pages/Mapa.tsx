@@ -718,6 +718,41 @@ export default function Mapa() {
     [selecionados, catsEixoPbia],
   );
 
+  // Âncoras PBIA visíveis no mapa entram na listagem como registros próprios,
+  // para a lista sempre espelhar o que está plotado (mesmo com o SNI desligado).
+  const pbiaItens = useMemo(() => {
+    if (!layer7Ativa) return [];
+    const visiveis = pbiaEixo
+      ? (pbiaAncoras ?? []).filter((a) => a.eixo === pbiaEixo)
+      : pbiaAncorasAtivas
+        ? (pbiaAncoras ?? [])
+        : [];
+    return visiveis.map((a) => ({
+      id: a.id,
+      nome: a.nome,
+      tipo: "Infraestrutura âncora PBIA",
+      uf: a.uf ?? null,
+      municipio: a.municipio ?? null,
+      latitude: a.latitude,
+      longitude: a.longitude,
+      fonte: "pbia_cgee",
+      fonte_url: a.url ?? "",
+      cnpj: null,
+      data_coleta: "",
+      categoria: "pbia" as CategoriaKey,
+      raw_metadata: {
+        eixo_pbia: `Eixo ${a.eixo}`,
+        entidade: a.entidade,
+        status: a.status,
+        entrega_2026: a.entrega_2026,
+        descricao: a.descricao,
+        capacidade: a.capacidade,
+        recurso: a.recurso_detalhe,
+        camadas_ia: a.layers?.join(", "),
+      },
+    }));
+  }, [layer7Ativa, pbiaEixo, pbiaAncoras, pbiaAncorasAtivas]);
+
   const contagemPorUf = useMemo(() => {
     const c: Record<string, number> = {};
     for (const l of selecionados) if (l.uf) c[l.uf] = (c[l.uf] || 0) + 1;
@@ -757,6 +792,7 @@ export default function Mapa() {
   const CATEGORIAS_INFRA: CategoriaKey[] = ["energia", "datacenter", "backhaul", "cabo"];
   const semLayer = { layer: "", layerAtiva: false, setLayerAtiva: () => {} };
   const INFRA_LAYER_MAP: Record<CategoriaKey, { layer: string; layerAtiva: boolean; setLayerAtiva: (v: boolean) => void }> = {
+    pbia: { layer: "L7", layerAtiva: layer7Ativa, setLayerAtiva: setLayer7Ativa },
     energia: { layer: "L1", layerAtiva: layer1Ativa, setLayerAtiva: setLayer1Ativa },
     datacenter: { layer: "L3", layerAtiva: layer3Ativa, setLayerAtiva: setLayer3Ativa },
     backhaul: {
@@ -1862,13 +1898,20 @@ export default function Mapa() {
                 </div>
                 {listaAberta && (
                   <ListaFiltrados
-                     itens={(grupoIds ? selecionadosOrdenados.filter((l) => grupoIds.has(l.id)) : selecionadosOrdenados).filter((l) => !catsEixoPbia || catsEixoPbia.has(l.categoria))}
+                     itens={[...((grupoIds ? selecionadosOrdenados.filter((l) => grupoIds.has(l.id)) : selecionadosOrdenados).filter((l) => !catsEixoPbia || catsEixoPbia.has(l.categoria))), ...pbiaItens]}
                      filtrosAtivos={filtrosAtivos}
                      total={totalLocais}
                      aberto={listaAberta}
                      onFechar={() => setListaAberta(false)}
                      pontoSelecionadoId={pontoSelecionadoId}
-                     onSelecionarPonto={setPontoSelecionadoId}
+                     onSelecionarPonto={(id) => {
+                       if (id && id.startsWith("ancora-")) {
+                         const a = (pbiaAncoras ?? []).find((x) => x.id === id);
+                         if (a) setAncoraSel(a);
+                         return;
+                       }
+                       setPontoSelecionadoId(id);
+                     }}
                      grupoTotal={selecao?.total ?? null}
                      onLimparGrupo={() => setSelecao(null)}
                      enriquecimentoLayers={enriquecimentoLayers}
