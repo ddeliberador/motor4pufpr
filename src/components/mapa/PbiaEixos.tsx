@@ -41,7 +41,7 @@ const bi = (v?: number) =>
 
 interface Props {
   eixoSelecionado: number | null;
-  onSelecionarEixo: (n: number | null) => void;
+  onSelecionarEixo: (n: number | null, cor?: string | null) => void;
   destacarAtores: boolean;
   onDestacarAtores: (v: boolean) => void;
   mostrarAncoras: boolean;
@@ -96,7 +96,7 @@ export default function PbiaEixos({
               key={e.id}
               type="button"
               aria-pressed={ativo}
-              onClick={() => onSelecionarEixo(ativo ? null : e.numero)}
+              onClick={() => onSelecionarEixo(ativo ? null : e.numero, e.cor ?? null)}
               className={`w-full rounded-md px-2 py-1.5 text-left text-[11px] transition-colors ${ativo ? "bg-violet-500/15 ring-1 ring-violet-500/40" : "bg-card hover:bg-muted"}`}
             >
               <div className="flex items-center gap-1.5">
