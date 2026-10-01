@@ -980,14 +980,13 @@ export default function Mapa() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {temFiltro ? (
-                    <button
-                      onClick={limpar}
-                      className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      <X className="h-3 w-3" /> limpar filtros
-                    </button>
-                  ) : null}
+                  <button
+                    onClick={limpar}
+                    className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                    title="Limpar todos os filtros, camadas de IA e o PBIA"
+                  >
+                    <X className="h-3 w-3" /> limpar tudo
+                  </button>
                   <Button
                     type="button"
                     variant="ghost"
