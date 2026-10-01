@@ -1,4 +1,4 @@
-import PbiaEixos from "@/components/mapa/PbiaEixos";
+import PbiaEixos, { CATEGORIAS_POR_EIXO } from "@/components/mapa/PbiaEixos";
 // /mapa — Mapa da Inovação: leitura direta da base de locais de pesquisa,
 // sem lista congelada em arquivo. Mapa sóbrio (contorno + UFs), coluna lateral
 // com filtros funcionais e lista exportável dos registros filtrados.
@@ -12,7 +12,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import Header from "@/components/Header";
-import MapaBrasil, { type Ponto } from "@/components/mapa/MapaBrasil";
+import MapaBrasil, { type AncoraPbia, type Ponto } from "@/components/mapa/MapaBrasil";
 
 import ListaFiltrados from "@/components/mapa/ListaFiltrados";
 import FiltrosPorBase from "@/components/mapa/FiltrosPorBase";
@@ -230,6 +230,22 @@ export default function Mapa() {
   const [erroLayer3, setErroLayer3] = useState<string | null>(null);
   // Layer 7 — Governança: sem fetch externo por ora; controla apenas visibilidade.
   const [layer7Ativa, setLayer7Ativa] = useState(false);
+  // PBIA ancorado na Layer 7: eixo ativo, destaque de atores e âncoras georreferenciadas.
+  const [pbiaEixo, setPbiaEixo] = useState<number | null>(null);
+  const [pbiaCor, setPbiaCor] = useState<string | null>(null);
+  const [pbiaDestacar, setPbiaDestacar] = useState(false);
+  const [pbiaAncorasAtivas, setPbiaAncorasAtivas] = useState(false);
+  const [pbiaAncoras, setPbiaAncoras] = useState<AncoraPbia[] | null>(null);
+  const [ancoraSel, setAncoraSel] = useState<AncoraPbia | null>(null);
+
+  useEffect(() => {
+    if (!pbiaAncorasAtivas || pbiaAncoras) return;
+    fetch("/pbia-ancoras.json")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((d) => setPbiaAncoras(d.ancoras ?? []))
+      .catch(() => setPbiaAncoras([]));
+  }, [pbiaAncorasAtivas, pbiaAncoras]);
+
   // Catálogo de bases = fonte da verdade: camada desativada lá não carrega nem aparece aqui.
   const { bases: catalogo } = useCatalogo();
   const offCat = useCallback((k: string) => inativaNoCatalogo(catalogo, k), [catalogo]);
@@ -675,10 +691,23 @@ export default function Mapa() {
     });
   }, [filtrados, camadas, layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa, enriquecimentoLayers]);
 
+  // Destaque PBIA: com um eixo ativo, restringe os pontos às categorias de atores
+  // associadas àquele eixo (curadoria Motor 4P).
+  const catsEixoPbia = useMemo(
+    () => (layer7Ativa && pbiaDestacar && pbiaEixo ? new Set(CATEGORIAS_POR_EIXO[pbiaEixo] ?? []) : null),
+    [layer7Ativa, pbiaDestacar, pbiaEixo],
+  );
+
+  const pbiaEixoLabel = useMemo(
+    () => (layer7Ativa && pbiaDestacar && pbiaEixo ? `PBIA Eixo ${pbiaEixo}` : null),
+    [layer7Ativa, pbiaDestacar, pbiaEixo],
+  );
+
   const pontos: Ponto[] = useMemo(
     () =>
       selecionados
         .filter((l) => l.latitude != null && l.longitude != null)
+        .filter((l) => !catsEixoPbia || catsEixoPbia.has(l.categoria))
         .map((l) => ({
           id: l.id,
           nome: l.nome,
@@ -686,7 +715,7 @@ export default function Mapa() {
           longitude: Number(l.longitude),
           categoria: l.categoria,
         })),
-    [selecionados],
+    [selecionados, catsEixoPbia],
   );
 
   const contagemPorUf = useMemo(() => {
@@ -847,8 +876,9 @@ export default function Mapa() {
     if (fontesSel.size)
       f.push(`base de origem: ${[...fontesSel].map(fonteLabel).join(", ")}`);
     f.push(...resumoFiltros(granular));
+    if (pbiaEixoLabel) f.push(pbiaEixoLabel);
     return f;
-  }, [busca, regioesSel, ufsSel, catsSel, tiposSel, segmentosSel, soEmbrapii, fontesSel, granular, modo, lakeSel]);
+  }, [busca, regioesSel, ufsSel, catsSel, tiposSel, segmentosSel, soEmbrapii, fontesSel, granular, modo, lakeSel, pbiaEixoLabel]);
 
   useEffect(() => {
     setSelecao(null);
@@ -1078,7 +1108,6 @@ export default function Mapa() {
                 </p>
               </div>
 
-              <PbiaEixos />
 
               {/* Camadas de IA */}
               <div>
@@ -1342,6 +1371,18 @@ export default function Mapa() {
                       <span className="text-[10px] text-muted-foreground">{contagemEnr.l7.toLocaleString("pt-BR")} atores</span>
                     )}
                   </label>
+                  {layer7Ativa && (
+                    <PbiaEixos
+                      eixoSelecionado={pbiaEixo}
+                      onSelecionarEixo={(n, cor) => { setPbiaEixo(n); setPbiaCor(cor ?? null); if (n === null) setPbiaDestacar(false); }}
+                      destacarAtores={pbiaDestacar}
+                      onDestacarAtores={setPbiaDestacar}
+                      mostrarAncoras={pbiaAncorasAtivas}
+                      onMostrarAncoras={setPbiaAncorasAtivas}
+                      onAbrirPoliticas={() => setPainelPoliticasAberto(true)}
+                      atoresDoEixo={pontos.length}
+                    />
+                  )}
                   {erroLayersEnr && (layer4Ativa || layer5Ativa || layer6Ativa || layer7Ativa) && (
                     <p className="px-2 text-[10px] text-destructive">Cruzamento: {erroLayersEnr}</p>
                   )}
@@ -1770,6 +1811,9 @@ export default function Mapa() {
                     layer5Ativa={layer5Ativa}
                     layer6Ativa={layer6Ativa}
                     enriquecimentoLayers={enriquecimentoLayers}
+                    ancorasPbia={layer7Ativa && pbiaAncorasAtivas ? (pbiaEixo ? (pbiaAncoras ?? []).filter((a) => a.eixo === pbiaEixo) : pbiaAncoras) : null}
+                    corEixoPbia={layer7Ativa ? pbiaCor : null}
+                    onSelecionarAncora={setAncoraSel}
                   />
                   <p className="pointer-events-none absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-center text-[11px] text-muted-foreground sm:block">
                     <MapPin className="mr-1 inline h-3 w-3" />
@@ -1779,7 +1823,7 @@ export default function Mapa() {
                 </div>
                 {listaAberta && (
                   <ListaFiltrados
-                     itens={grupoIds ? selecionadosOrdenados.filter((l) => grupoIds.has(l.id)) : selecionadosOrdenados}
+                     itens={(grupoIds ? selecionadosOrdenados.filter((l) => grupoIds.has(l.id)) : selecionadosOrdenados).filter((l) => !catsEixoPbia || catsEixoPbia.has(l.categoria))}
                      filtrosAtivos={filtrosAtivos}
                      total={totalLocais}
                      aberto={listaAberta}
@@ -1795,6 +1839,48 @@ export default function Mapa() {
                      layer7Ativa={layer7Ativa}
                      ufSelecionada={ufsSel.size === 1 ? [...ufsSel][0] : null}
                     />
+                )}
+                {ancoraSel && (
+                  <div className="absolute inset-0 z-30 flex" role="dialog" aria-label="Infraestrutura âncora PBIA">
+                    <div className="flex-1 bg-black/40" onClick={() => setAncoraSel(null)} />
+                    <aside className="w-full max-w-sm overflow-y-auto border-l border-border bg-background p-4 shadow-xl">
+                      <div className="mb-3 flex items-start justify-between gap-2">
+                        <span className="rounded border border-violet-500/40 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-violet-400">
+                          Âncora PBIA · Eixo {ancoraSel.eixo}
+                        </span>
+                        <button onClick={() => setAncoraSel(null)} className="text-xs text-muted-foreground hover:text-foreground">fechar</button>
+                      </div>
+                      <h3 className="text-sm font-semibold">{ancoraSel.nome}</h3>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {[ancoraSel.entidade, [ancoraSel.municipio, ancoraSel.uf].filter(Boolean).join("/")].filter(Boolean).join(" · ")}
+                      </p>
+                      {ancoraSel.layers && ancoraSel.layers.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {ancoraSel.layers.map((l) => (
+                            <span key={l} className="rounded border border-violet-500/40 px-1 text-[10px] font-bold text-violet-300">{l}</span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="mt-3 space-y-1 text-xs">
+                        {ancoraSel.status && <p><strong>Status da ação:</strong> {ancoraSel.status}</p>}
+                        {ancoraSel.entrega_2026 && <p><strong>Entrega prevista 2026:</strong> {ancoraSel.entrega_2026}</p>}
+                      </div>
+                      {ancoraSel.acoes_nomes && ancoraSel.acoes_nomes.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Ações vinculadas</p>
+                          <ul className="mt-1 space-y-1 text-xs">
+                            {ancoraSel.acoes_nomes.map((a) => <li key={a}>• {a}</li>)}
+                          </ul>
+                        </div>
+                      )}
+                      <div className="mt-4 space-y-1 text-[11px]">
+                        <a href="/analise?cenario=3" className="block text-primary hover:underline">Ver Cenário 3 — Governança e Investimento</a>
+                        <a href="https://pbia.cgee.org.br/resultados" target="_blank" rel="noreferrer" className="block text-primary hover:underline">Painel PBIA (CGEE)</a>
+                        {ancoraSel.url && <a href={ancoraSel.url} target="_blank" rel="noreferrer" className="block text-primary hover:underline">Site da instituição</a>}
+                        <p className="pt-1 text-muted-foreground">Vínculo ação × instalação: curadoria Motor 4P (UFPR/PPGPP).</p>
+                      </div>
+                    </aside>
+                  </div>
                 )}
                 {layersIaAtivas.length > 0 && painelPoliticasAberto && (
                   <PainelPoliticas

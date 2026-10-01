@@ -23,6 +23,25 @@ export interface Ponto {
   categoria: CategoriaKey;
 }
 
+export interface AncoraPbia {
+  id: string;
+  nome: string;
+  entidade?: string;
+  municipio?: string;
+  uf?: string;
+  latitude: number;
+  longitude: number;
+  grupo?: string;
+  icone?: string;
+  eixo: number;
+  layers?: string[];
+  acoes?: string[];
+  acoes_nomes?: string[];
+  status?: string;
+  entrega_2026?: string;
+  url?: string;
+}
+
 interface Feature {
   properties: { sigla: string };
   geometry: { type: string; coordinates: number[][][] | number[][][][] };
@@ -227,6 +246,11 @@ interface Props {
   layer5Ativa?: boolean;
   layer6Ativa?: boolean;
   enriquecimentoLayers?: EnriquecimentoLayers;
+  /** Layer 7 / PBIA — infraestruturas âncora georreferenciadas. */
+  ancorasPbia?: AncoraPbia[] | null;
+  /** Cor do eixo PBIA ativo (aplicada aos anéis da Layer 7). */
+  corEixoPbia?: string | null;
+  onSelecionarAncora?: (a: AncoraPbia) => void;
 }
 
 export default function MapaBrasil({
@@ -257,6 +281,9 @@ export default function MapaBrasil({
   layer5Ativa,
   layer6Ativa,
   enriquecimentoLayers,
+  ancorasPbia,
+  corEixoPbia,
+  onSelecionarAncora,
 }: Props) {
   const [features, setFeatures] = useState<Feature[] | null>(null);
   const [erroMalha, setErroMalha] = useState<string | null>(null);
@@ -833,7 +860,7 @@ export default function MapaBrasil({
                 if (!v) return null;
                 const [x, y] = projetar(p.longitude, p.latitude);
                 const aneis: string[] = [];
-                if (layer7Ativa && v.l7) aneis.push("#a78bfa");
+                if (layer7Ativa && v.l7) aneis.push(corEixoPbia || "#a78bfa");
                 if (layer6Ativa && v.l6) aneis.push("#22d3ee");
                 if (layer5Ativa && v.l5) aneis.push("#2dd4bf");
                 if (layer4Ativa && v.l4) aneis.push("#4ade80");
@@ -860,6 +887,48 @@ export default function MapaBrasil({
               })}
           </g>
         )}
+
+        {/* PBIA — infraestruturas âncora (Layer 7), acima de tudo. */}
+        {ancorasPbia && ancorasPbia.length > 0 && (
+          <g clipPath="url(#brasil-contorno)">
+            {ancorasPbia.map((a) => {
+              if (!Number.isFinite(a.latitude) || !Number.isFinite(a.longitude)) return null;
+              if (!pontoNaSelecaoGeografica(a.latitude, a.longitude, a.uf ?? null)) return null;
+              const [x, y] = projetar(a.longitude, a.latitude);
+              const cor = corEixoPbia || "#a78bfa";
+              const local = [a.municipio, a.uf].filter(Boolean).join("/");
+              return (
+                <g
+                  key={a.id}
+                  className={arrastando ? "cursor-grabbing" : "cursor-pointer"}
+                  style={{ pointerEvents: arrastando ? "none" : "auto" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (movidoRef.current) return;
+                    onSelecionarAncora?.(a);
+                  }}
+                >
+                  <circle cx={x} cy={y} r={tam * 1.05} fill={cor} fillOpacity={0.14} stroke={cor} strokeWidth={tam * 0.08} strokeOpacity={0.85} />
+                  <text
+                    x={x}
+                    y={y}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    className="material-symbols-outlined select-none"
+                    fill={cor}
+                    style={{ fontSize: tam * 0.8, fontVariationSettings: '"FILL" 1' }}
+                    pointerEvents="none"
+                  >
+                    {a.icone || "policy"}
+                  </text>
+                  <title>{`${a.nome}${local ? ` · ${local}` : ""} · PBIA Eixo ${a.eixo}`}</title>
+                </g>
+              );
+            })}
+          </g>
+        )}
+
+
 
         {selecionado && selX != null && selY != null && (
           <g clipPath="url(#brasil-contorno)" pointerEvents="none" style={{ opacity: 0.95 }}>
