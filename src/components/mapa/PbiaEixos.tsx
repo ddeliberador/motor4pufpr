@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { AncoraPbia } from "./MapaBrasil";
 
 export type PbiaAcao = { id: string; nome: string; status: "entregue" | "iniciada" | "nao_iniciada"; layer?: string; curadoria?: string };
 export type PbiaEixo = {
@@ -49,6 +50,8 @@ interface Props {
   onAbrirPoliticas?: () => void;
   /** Quantidade de atores no recorte atual que pertencem ao eixo ativo. */
   atoresDoEixo?: number;
+  ancoras?: AncoraPbia[] | null;
+  onSelecionarAncora?: (a: AncoraPbia) => void;
 }
 
 /** PBIA dentro da Layer 7 — execução real do plano + seletor de eixos que filtra o mapa. */
@@ -61,6 +64,8 @@ export default function PbiaEixos({
   onMostrarAncoras,
   onAbrirPoliticas,
   atoresDoEixo,
+  ancoras,
+  onSelecionarAncora,
 }: Props) {
   const [dados, setDados] = useState<PbiaData | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -110,6 +115,32 @@ export default function PbiaEixos({
               </div>
               {ativo && (
                 <div className="mt-1 space-y-0.5 text-[10px] text-muted-foreground">
+                  {(() => {
+                    const doEixo = (ancoras ?? []).filter((a) => a.eixo === e.numero);
+                    const entregues = doEixo.filter((a) => a.status === "entregue");
+                    const andamento = doEixo.filter((a) => a.status !== "entregue");
+                    if (!ancoras) return <p>carregando infraestruturas…</p>;
+                    if (doEixo.length === 0) return <p>Sem infraestrutura georreferenciada neste eixo.</p>;
+                    const item = (a: AncoraPbia) => (
+                      <li key={a.id}>
+                        <span role="button" tabIndex={0} onClick={(ev) => { ev.stopPropagation(); onSelecionarAncora?.(a); }}
+                          onKeyDown={(ev) => { if (ev.key === "Enter") { ev.stopPropagation(); onSelecionarAncora?.(a); } }}
+                          className="block truncate text-foreground hover:underline">
+                          {a.nome} <span className="text-muted-foreground">· {[a.municipio, a.uf].filter(Boolean).join("/")}</span>
+                        </span>
+                      </li>
+                    );
+                    return (
+                      <div className="mb-1 space-y-1 border-b border-border pb-1">
+                        <p className="font-semibold text-emerald-500">Entregues no mapa ({entregues.length})</p>
+                        <ul className="space-y-0.5">{entregues.map(item)}</ul>
+                        {andamento.length > 0 && <>
+                          <p className="font-semibold text-amber-500">Em execução ({andamento.length})</p>
+                          <ul className="space-y-0.5">{andamento.map(item)}</ul>
+                        </>}
+                      </div>
+                    );
+                  })()}
                   <p>{e.entregues} entregues · {e.iniciadas} iniciadas · {e.nao_iniciadas} não iniciadas</p>
                   <p>{bi(e.recurso_utilizado_brl)} de {bi(e.recurso_previsto_brl)}</p>
                   {e.layers && e.layers.length > 0 && (
@@ -148,7 +179,7 @@ export default function PbiaEixos({
           onChange={() => onMostrarAncoras(!mostrarAncoras)}
           className="h-3.5 w-3.5 shrink-0 accent-violet-500"
         />
-        <span className="flex-1 truncate">Infraestruturas âncora PBIA</span>
+        <span className="flex-1 truncate">Mostrar todas as infraestruturas</span>
       </label>
 
       <div className="flex flex-wrap gap-2 px-2 text-[10px] text-muted-foreground">

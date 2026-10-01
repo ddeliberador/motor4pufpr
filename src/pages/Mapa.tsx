@@ -239,12 +239,12 @@ export default function Mapa() {
   const [ancoraSel, setAncoraSel] = useState<AncoraPbia | null>(null);
 
   useEffect(() => {
-    if (!pbiaAncorasAtivas || pbiaAncoras) return;
+    if (!layer7Ativa || pbiaAncoras) return;
     fetch("/pbia-ancoras.json")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((d) => setPbiaAncoras(d.ancoras ?? []))
       .catch(() => setPbiaAncoras([]));
-  }, [pbiaAncorasAtivas, pbiaAncoras]);
+  }, [layer7Ativa, pbiaAncoras]);
 
   // Catálogo de bases = fonte da verdade: camada desativada lá não carrega nem aparece aqui.
   const { bases: catalogo } = useCatalogo();
@@ -1381,6 +1381,8 @@ export default function Mapa() {
                       onMostrarAncoras={setPbiaAncorasAtivas}
                       onAbrirPoliticas={() => setPainelPoliticasAberto(true)}
                       atoresDoEixo={pontos.length}
+                      ancoras={pbiaAncoras}
+                      onSelecionarAncora={setAncoraSel}
                     />
                   )}
                   {erroLayersEnr && (layer4Ativa || layer5Ativa || layer6Ativa || layer7Ativa) && (
@@ -1811,7 +1813,7 @@ export default function Mapa() {
                     layer5Ativa={layer5Ativa}
                     layer6Ativa={layer6Ativa}
                     enriquecimentoLayers={enriquecimentoLayers}
-                    ancorasPbia={layer7Ativa && pbiaAncorasAtivas ? (pbiaEixo ? (pbiaAncoras ?? []).filter((a) => a.eixo === pbiaEixo) : pbiaAncoras) : null}
+                    ancorasPbia={layer7Ativa ? (pbiaEixo ? (pbiaAncoras ?? []).filter((a) => a.eixo === pbiaEixo) : pbiaAncorasAtivas ? pbiaAncoras : null) : null}
                     corEixoPbia={layer7Ativa ? pbiaCor : null}
                     onSelecionarAncora={setAncoraSel}
                   />
