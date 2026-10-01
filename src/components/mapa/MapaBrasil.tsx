@@ -281,6 +281,9 @@ export default function MapaBrasil({
   layer5Ativa,
   layer6Ativa,
   enriquecimentoLayers,
+  ancorasPbia,
+  corEixoPbia,
+  onSelecionarAncora,
 }: Props) {
   const [features, setFeatures] = useState<Feature[] | null>(null);
   const [erroMalha, setErroMalha] = useState<string | null>(null);
