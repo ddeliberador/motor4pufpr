@@ -1594,6 +1594,31 @@ export default function Mapa() {
                         </button>
                       );
                     })}
+                  {([
+                    { k: "aneel", label: "ANEEL — Usinas (Layer 1)", n: dadosUsinas?.length, ativo: layer1Ativa, on: () => setLayer1Ativa((v) => !v) },
+                    { k: "cabos", label: "Submarine Cable Map — Pontos de ancoragem (Layer 2)", n: dadosCabos?.points?.length, ativo: layer2Ativa && l2Cabos, on: () => { if (layer2Ativa && l2Cabos) setL2Cabos(false); else { setLayer2Ativa(true); setL2Cabos(true); } } },
+                    { k: "anatel", label: "Anatel — Antenas ERB (Layer 2)", n: dadosAntenas?.length, ativo: layer2Ativa && l2Antenas, on: () => { if (layer2Ativa && l2Antenas) setL2Antenas(false); else { setLayer2Ativa(true); setL2Antenas(true); } } },
+                    { k: "backhaul", label: "Anatel — Backhaul por município (Layer 2)", n: dadosBackhaul?.length, ativo: layer2Ativa && l2Backhaul, on: () => { if (layer2Ativa && l2Backhaul) setL2Backhaul(false); else { setLayer2Ativa(true); setL2Backhaul(true); } } },
+                    { k: "dcs", label: "PeeringDB — Datacenters (Layer 3)", n: dadosDCs?.length, ativo: layer3Ativa, on: () => setLayer3Ativa((v) => !v) },
+                    { k: "pbia", label: "PBIA (CGEE) — Infraestruturas âncora (Layer 7)", n: pbiaAncoras?.length, ativo: layer7Ativa, on: () => setLayer7Ativa((v) => !v) },
+                  ] as const).map((c) => (
+                    <button
+                      key={c.k}
+                      onClick={c.on}
+                      title={c.ativo ? "Ocultar camada no mapa" : "Exibir camada no mapa"}
+                      className={`flex w-full items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted ${
+                        c.ativo ? "border-primary bg-primary/15" : "border-transparent bg-card"
+                      }`}
+                    >
+                      <span className="flex-1 truncate">{c.label}</span>
+                      <span className="font-mono text-muted-foreground">
+                        {c.n != null ? c.n.toLocaleString("pt-BR") : "—"}
+                      </span>
+                    </button>
+                  ))}
+                  <p className="pt-1 text-[10px] text-muted-foreground">
+                    "—" = camada ainda não carregada; clique para exibi-la no mapa e ver a contagem.
+                  </p>
                 </div>
               </div>
               </>)}
