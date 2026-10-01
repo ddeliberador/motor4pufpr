@@ -1617,7 +1617,7 @@ export default function Mapa() {
                     setAncoraSel(null);
                     setCamadas(new Set(CATEGORIAS.map((c) => c.key)));
                   } else {
-                    limparTudo();
+                    limpar();
                     setSoPbia(true);
                     setLayer7Ativa(true);
                     setPbiaAncorasAtivas(true);
