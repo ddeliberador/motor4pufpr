@@ -39,6 +39,10 @@ export interface AncoraPbia {
   acoes_nomes?: string[];
   status?: string;
   entrega_2026?: string;
+  descricao?: string;
+  capacidade?: string;
+  recurso_brl?: number;
+  recurso_detalhe?: string;
   url?: string;
 }
 
