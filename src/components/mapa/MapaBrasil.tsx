@@ -888,6 +888,48 @@ export default function MapaBrasil({
           </g>
         )}
 
+        {/* PBIA — infraestruturas âncora (Layer 7), acima de tudo. */}
+        {ancorasPbia && ancorasPbia.length > 0 && (
+          <g clipPath="url(#brasil-contorno)">
+            {ancorasPbia.map((a) => {
+              if (!Number.isFinite(a.latitude) || !Number.isFinite(a.longitude)) return null;
+              if (!pontoNaSelecaoGeografica(a.latitude, a.longitude, a.uf ?? null)) return null;
+              const [x, y] = projetar(a.longitude, a.latitude);
+              const cor = corEixoPbia || "#a78bfa";
+              const local = [a.municipio, a.uf].filter(Boolean).join("/");
+              return (
+                <g
+                  key={a.id}
+                  className={arrastando ? "cursor-grabbing" : "cursor-pointer"}
+                  style={{ pointerEvents: arrastando ? "none" : "auto" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (movidoRef.current) return;
+                    onSelecionarAncora?.(a);
+                  }}
+                >
+                  <circle cx={x} cy={y} r={tam * 1.05} fill={cor} fillOpacity={0.14} stroke={cor} strokeWidth={tam * 0.08} strokeOpacity={0.85} />
+                  <text
+                    x={x}
+                    y={y}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    className="material-symbols-outlined select-none"
+                    fill={cor}
+                    style={{ fontSize: tam * 0.8, fontVariationSettings: '"FILL" 1' }}
+                    pointerEvents="none"
+                  >
+                    {a.icone || "policy"}
+                  </text>
+                  <title>{`${a.nome}${local ? ` · ${local}` : ""} · PBIA Eixo ${a.eixo}`}</title>
+                </g>
+              );
+            })}
+          </g>
+        )}
+
+
+
         {selecionado && selX != null && selY != null && (
           <g clipPath="url(#brasil-contorno)" pointerEvents="none" style={{ opacity: 0.95 }}>
             <circle
