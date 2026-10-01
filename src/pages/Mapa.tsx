@@ -859,7 +859,12 @@ export default function Mapa() {
     setPbiaCor(null);
     setPbiaDestacar(false);
     setAncoraSel(null);
-    setCamadas(new Set(CATEGORIAS.map((c) => c.key)));
+    setL2Antenas(false);
+    setL2Backhaul(false);
+    setListaAberta(false);
+    setPainelPoliticasAberto(false);
+    // Mapa totalmente vazio: nenhuma camada de pontos visível.
+    setCamadas(new Set());
   };
 
   const granularAtivo = Object.values(granular).some((s) => s.size > 0);
