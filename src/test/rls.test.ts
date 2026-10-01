@@ -69,7 +69,7 @@ const TABELAS: Record<string, { insert: Record<string, unknown>; update: Record<
   mapa_inovacao_fontes: {
     insert: { pilar: MARCA, fonte: MARCA },
     update: { fonte: MARCA },
-    leituraPublica: false, // SELECT só para authenticated
+    leituraPublica: true, // migration 0017: leitura pública do catálogo (anon)
   },
 };
 const NOMES = Object.keys(TABELAS);
