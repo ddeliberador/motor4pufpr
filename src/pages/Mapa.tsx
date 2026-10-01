@@ -1936,6 +1936,15 @@ export default function Mapa() {
           </section>
         </div>
 
+        {/* Botão sempre visível — flutua sobre o mapa e acompanha a rolagem. */}
+        <button
+          onClick={limpar}
+          className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full border border-border bg-background/95 px-4 py-2.5 text-sm font-medium shadow-lg backdrop-blur transition-colors hover:bg-accent"
+          title="Limpar todos os filtros, camadas de IA e o PBIA"
+        >
+          <X className="h-4 w-4" /> limpar tudo
+        </button>
+
       </main>
     </div>
   );
