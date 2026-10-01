@@ -698,6 +698,11 @@ export default function Mapa() {
     [layer7Ativa, pbiaDestacar, pbiaEixo],
   );
 
+  const pbiaEixoLabel = useMemo(
+    () => (layer7Ativa && pbiaDestacar && pbiaEixo ? `PBIA Eixo ${pbiaEixo}` : null),
+    [layer7Ativa, pbiaDestacar, pbiaEixo],
+  );
+
   const pontos: Ponto[] = useMemo(
     () =>
       selecionados
