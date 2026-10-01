@@ -1,3 +1,4 @@
+import PbiaEixos from "@/components/mapa/PbiaEixos";
 // /mapa — Mapa da Inovação: leitura direta da base de locais de pesquisa,
 // sem lista congelada em arquivo. Mapa sóbrio (contorno + UFs), coluna lateral
 // com filtros funcionais e lista exportável dos registros filtrados.
@@ -1076,6 +1077,8 @@ export default function Mapa() {
                   Marcar liga a layer de IA correspondente.
                 </p>
               </div>
+
+              <PbiaEixos />
 
               {/* Camadas de IA */}
               <div>
