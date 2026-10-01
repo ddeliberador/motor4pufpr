@@ -725,7 +725,7 @@ export default function Mapa() {
     const visiveis = pbiaEixo
       ? (pbiaAncoras ?? []).filter((a) => a.eixo === pbiaEixo)
       : pbiaAncorasAtivas
-        ? pbiaAncoras
+        ? (pbiaAncoras ?? [])
         : [];
     return visiveis.map((a) => ({
       id: a.id,
