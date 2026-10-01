@@ -27,6 +27,13 @@ interface PoliticasResponse {
   layers?: LayerPoliticas[];
 }
 
+interface PBIAEixo {
+  id: string; nome: string; numero: number; cor: string; layers: string[];
+  total_acoes: number; entregues: number; iniciadas: number; nao_iniciadas: number;
+  recurso_utilizado_brl: number; recurso_previsto_brl: number;
+}
+interface PBIAData { eixos: PBIAEixo[]; total_acoes: number; total_entregues: number; fonte: string }
+
 interface Props {
   layersAtivas: string[];
   onFechar: () => void;
@@ -74,10 +81,19 @@ export default function PainelPoliticas({ layersAtivas, onFechar, ufSelecionada,
       ? [ufSelecionada]
       : [];
   const [dados, setDados] = useState<LayerPoliticas[]>([]);
+  const [pbia, setPbia] = useState<PBIAData | null>(null);
+  const [pbiaExpandido, setPbiaExpandido] = useState(false);
   const [expandido, setExpandido] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/pbia-acoes.json")
+      .then((r) => r.json())
+      .then(setPbia)
+      .catch(console.error);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -261,6 +277,75 @@ export default function PainelPoliticas({ layersAtivas, onFechar, ufSelecionada,
             <div className="px-3 py-2 text-center text-[9px] text-muted-foreground/60">
               Curadoria: Motor da Inovação · UFPR/PPGPP · 2026
             </div>
+          )}
+
+          {/* ── Seção PBIA ── */}
+          {pbia && layersAtivas.length > 0 && (
+            <section className="border-t border-border/50">
+              {/* Header clicável */}
+              <button
+                onClick={() => setPbiaExpandido((v) => !v)}
+                className="flex w-full items-center gap-2 px-3 py-2 hover:bg-muted/40 transition-colors"
+              >
+                <span className="rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider border-violet-500/30 bg-violet-500/15 text-violet-400">
+                  PBIA
+                </span>
+                <span className="text-[11px] font-medium text-foreground flex-1 text-left">
+                  Plano Brasileiro de IA — 5 eixos
+                </span>
+                <span className="text-[10px] text-green-400 font-semibold">
+                  {pbia.total_entregues}/{pbia.total_acoes} entregas
+                </span>
+                {pbiaExpandido ? <ChevronUp className="h-3 w-3 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />}
+              </button>
+
+              {pbiaExpandido && (
+                <div className="px-3 pb-3 space-y-2">
+                  <p className="text-[10px] text-muted-foreground italic">{pbia.fonte}</p>
+                  {pbia.eixos.map((e) => {
+                    const pctUtil = e.recurso_previsto_brl > 0
+                      ? Math.round(100 * e.recurso_utilizado_brl / e.recurso_previsto_brl)
+                      : 0;
+                    const fmt = (v: number) => v >= 1e9 ? `R$ ${(v / 1e9).toFixed(1)} bi` : v >= 1e6 ? `R$ ${(v / 1e6).toFixed(0)} mi` : `R$ ${(v / 1e3).toFixed(0)} mil`;
+                    return (
+                      <div key={e.id} className="rounded-lg border border-border bg-muted/20 p-2.5 space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white" style={{ backgroundColor: e.cor }}>
+                            {e.numero}
+                          </span>
+                          <span className="text-[10px] font-medium text-foreground leading-tight flex-1">{e.nome}</span>
+                        </div>
+                        {/* Barra tricolor */}
+                        <div className="flex h-1.5 w-full rounded-full overflow-hidden">
+                          <div className="bg-green-400" style={{ width: `${(e.entregues / e.total_acoes) * 100}%` }} />
+                          <div className="bg-yellow-400" style={{ width: `${(e.iniciadas / e.total_acoes) * 100}%` }} />
+                          <div className="bg-muted flex-1" />
+                        </div>
+                        <div className="flex items-center gap-2 text-[9px] flex-wrap">
+                          <span className="text-green-400">{e.entregues} entregas</span>
+                          <span className="text-yellow-400">{e.iniciadas} iniciadas</span>
+                          <span className="text-muted-foreground ml-auto">{fmt(e.recurso_utilizado_brl)}/{fmt(e.recurso_previsto_brl)} ({pctUtil}%)</span>
+                        </div>
+                        {/* Layers */}
+                        <div className="flex gap-1 flex-wrap">
+                          {e.layers.map((l) => (
+                            <span key={l} className="rounded border px-1 py-0.5 text-[8px] font-bold uppercase"
+                              style={{ background: e.cor + "20", color: e.cor, borderColor: e.cor + "40" }}>{l}</span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <a href="/analise" className="flex items-center gap-1 text-[10px] font-medium text-primary hover:underline mt-1">
+                    <ExternalLink className="h-2.5 w-2.5" />
+                    Ver análise completa → Cenário 3
+                  </a>
+                  <p className="text-[9px] text-muted-foreground/60 italic">
+                    Classificação layer × eixo: curadoria Motor da Inovação / UFPR-PPGPP
+                  </p>
+                </div>
+              )}
+            </section>
           )}
         </div>
         </>
