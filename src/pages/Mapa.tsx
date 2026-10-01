@@ -832,6 +832,7 @@ export default function Mapa() {
     return d.length ? new Date(d[d.length - 1]).toLocaleDateString("pt-BR") : null;
   }, [locais]);
 
+  // "Limpar tudo": zera filtros, seleções, camadas de IA e o PBIA de uma vez.
   const limpar = () => {
     setBusca("");
     setFontesSel(new Set());
@@ -845,6 +846,20 @@ export default function Mapa() {
     setGranular({});
     setLakeSel({});
     setSelecao(null);
+    setPontoSelecionadoId(null);
+    setTiposUsina(new Set());
+    setLayer1Ativa(false);
+    setLayer2Ativa(false);
+    setLayer3Ativa(false);
+    setLayer4Ativa(false);
+    setLayer5Ativa(false);
+    setLayer6Ativa(false);
+    setLayer7Ativa(false);
+    setPbiaEixo(null);
+    setPbiaCor(null);
+    setPbiaDestacar(false);
+    setAncoraSel(null);
+    setCamadas(new Set(CATEGORIAS.map((c) => c.key)));
   };
 
   const granularAtivo = Object.values(granular).some((s) => s.size > 0);
