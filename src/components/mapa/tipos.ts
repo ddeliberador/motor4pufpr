@@ -84,6 +84,7 @@ export const FONTE_CURTA: Record<string, string> = {
   inep_censo_superior: "INEP — Censo Superior",
   mcti_formict: "MCTI / FORMICT",
   sinapad: "SINAPAD",
+  pbia_cgee: "PBIA (painel CGEE)",
   lisp_brasil_mapeamento: "LISP Brasil",
   abstartups_2025: "StartupBase / ABStartups",
   otd_cgee: "Observatório CGEE/MCTI",

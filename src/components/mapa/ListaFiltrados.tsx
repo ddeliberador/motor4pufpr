@@ -53,6 +53,12 @@ const META_LABEL: Record<string, string> = {
   cabos: "Cabos conectados",
   potencia_kw: "Potência (kW)",
   tem_backhaul: "Tem backhaul por fibra",
+  eixo_pbia: "Eixo do PBIA",
+  entidade: "Entidade responsável",
+  entrega_2026: "Entrega prevista",
+  capacidade: "Capacidade",
+  recurso: "Recurso vinculado",
+  camadas_ia: "Camadas de IA relacionadas",
 };
 
 const OCULTOS = new Set([

@@ -718,6 +718,41 @@ export default function Mapa() {
     [selecionados, catsEixoPbia],
   );
 
+  // Âncoras PBIA visíveis no mapa entram na listagem como registros próprios,
+  // para a lista sempre espelhar o que está plotado (mesmo com o SNI desligado).
+  const pbiaItens = useMemo(() => {
+    if (!layer7Ativa) return [];
+    const visiveis = pbiaEixo
+      ? (pbiaAncoras ?? []).filter((a) => a.eixo === pbiaEixo)
+      : pbiaAncorasAtivas
+        ? pbiaAncoras
+        : [];
+    return visiveis.map((a) => ({
+      id: a.id,
+      nome: a.nome,
+      tipo: "Infraestrutura âncora PBIA",
+      uf: a.uf ?? null,
+      municipio: a.municipio ?? null,
+      latitude: a.latitude,
+      longitude: a.longitude,
+      fonte: "pbia_cgee",
+      fonte_url: a.url ?? "",
+      cnpj: null,
+      data_coleta: "",
+      categoria: "pbia" as CategoriaKey,
+      raw_metadata: {
+        eixo_pbia: `Eixo ${a.eixo}`,
+        entidade: a.entidade,
+        status: a.status,
+        entrega_2026: a.entrega_2026,
+        descricao: a.descricao,
+        capacidade: a.capacidade,
+        recurso: a.recurso_detalhe,
+        camadas_ia: a.layers?.join(", "),
+      },
+    }));
+  }, [layer7Ativa, pbiaEixo, pbiaAncoras, pbiaAncorasAtivas]);
+
   const contagemPorUf = useMemo(() => {
     const c: Record<string, number> = {};
     for (const l of selecionados) if (l.uf) c[l.uf] = (c[l.uf] || 0) + 1;
