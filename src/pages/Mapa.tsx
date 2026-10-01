@@ -1,4 +1,4 @@
-import PbiaEixos from "@/components/mapa/PbiaEixos";
+import PbiaEixos, { CATEGORIAS_POR_EIXO } from "@/components/mapa/PbiaEixos";
 // /mapa — Mapa da Inovação: leitura direta da base de locais de pesquisa,
 // sem lista congelada em arquivo. Mapa sóbrio (contorno + UFs), coluna lateral
 // com filtros funcionais e lista exportável dos registros filtrados.
@@ -230,6 +230,22 @@ export default function Mapa() {
   const [erroLayer3, setErroLayer3] = useState<string | null>(null);
   // Layer 7 — Governança: sem fetch externo por ora; controla apenas visibilidade.
   const [layer7Ativa, setLayer7Ativa] = useState(false);
+  // PBIA ancorado na Layer 7: eixo ativo, destaque de atores e âncoras georreferenciadas.
+  const [pbiaEixo, setPbiaEixo] = useState<number | null>(null);
+  const [pbiaCor, setPbiaCor] = useState<string | null>(null);
+  const [pbiaDestacar, setPbiaDestacar] = useState(false);
+  const [pbiaAncorasAtivas, setPbiaAncorasAtivas] = useState(false);
+  const [pbiaAncoras, setPbiaAncoras] = useState<AncoraPbia[] | null>(null);
+  const [ancoraSel, setAncoraSel] = useState<AncoraPbia | null>(null);
+
+  useEffect(() => {
+    if (!pbiaAncorasAtivas || pbiaAncoras) return;
+    fetch("/pbia-ancoras.json")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((d) => setPbiaAncoras(d.ancoras ?? []))
+      .catch(() => setPbiaAncoras([]));
+  }, [pbiaAncorasAtivas, pbiaAncoras]);
+
   // Catálogo de bases = fonte da verdade: camada desativada lá não carrega nem aparece aqui.
   const { bases: catalogo } = useCatalogo();
   const offCat = useCallback((k: string) => inativaNoCatalogo(catalogo, k), [catalogo]);
@@ -1078,7 +1094,6 @@ export default function Mapa() {
                 </p>
               </div>
 
-              <PbiaEixos />
 
               {/* Camadas de IA */}
               <div>
