@@ -234,7 +234,7 @@ export default function Mapa() {
   const [pbiaEixo, setPbiaEixo] = useState<number | null>(null);
   const [pbiaCor, setPbiaCor] = useState<string | null>(null);
   const [pbiaDestacar, setPbiaDestacar] = useState(false);
-  const [pbiaAncorasAtivas, setPbiaAncorasAtivas] = useState(false);
+  const [pbiaAncorasAtivas, setPbiaAncorasAtivas] = useState(true);
   const [pbiaAncoras, setPbiaAncoras] = useState<AncoraPbia[] | null>(null);
   const [ancoraSel, setAncoraSel] = useState<AncoraPbia | null>(null);
 
