@@ -12,7 +12,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import Header from "@/components/Header";
-import MapaBrasil, { type Ponto } from "@/components/mapa/MapaBrasil";
+import MapaBrasil, { type AncoraPbia, type Ponto } from "@/components/mapa/MapaBrasil";
 
 import ListaFiltrados from "@/components/mapa/ListaFiltrados";
 import FiltrosPorBase from "@/components/mapa/FiltrosPorBase";
@@ -691,10 +691,18 @@ export default function Mapa() {
     });
   }, [filtrados, camadas, layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa, enriquecimentoLayers]);
 
+  // Destaque PBIA: com um eixo ativo, restringe os pontos às categorias de atores
+  // associadas àquele eixo (curadoria Motor 4P).
+  const catsEixoPbia = useMemo(
+    () => (layer7Ativa && pbiaDestacar && pbiaEixo ? new Set(CATEGORIAS_POR_EIXO[pbiaEixo] ?? []) : null),
+    [layer7Ativa, pbiaDestacar, pbiaEixo],
+  );
+
   const pontos: Ponto[] = useMemo(
     () =>
       selecionados
         .filter((l) => l.latitude != null && l.longitude != null)
+        .filter((l) => !catsEixoPbia || catsEixoPbia.has(l.categoria))
         .map((l) => ({
           id: l.id,
           nome: l.nome,
@@ -702,7 +710,7 @@ export default function Mapa() {
           longitude: Number(l.longitude),
           categoria: l.categoria,
         })),
-    [selecionados],
+    [selecionados, catsEixoPbia],
   );
 
   const contagemPorUf = useMemo(() => {
@@ -1357,6 +1365,18 @@ export default function Mapa() {
                       <span className="text-[10px] text-muted-foreground">{contagemEnr.l7.toLocaleString("pt-BR")} atores</span>
                     )}
                   </label>
+                  {layer7Ativa && (
+                    <PbiaEixos
+                      eixoSelecionado={pbiaEixo}
+                      onSelecionarEixo={(n, cor) => { setPbiaEixo(n); setPbiaCor(cor ?? null); if (n === null) setPbiaDestacar(false); }}
+                      destacarAtores={pbiaDestacar}
+                      onDestacarAtores={setPbiaDestacar}
+                      mostrarAncoras={pbiaAncorasAtivas}
+                      onMostrarAncoras={setPbiaAncorasAtivas}
+                      onAbrirPoliticas={() => setPainelPoliticasAberto(true)}
+                      atoresDoEixo={pontos.length}
+                    />
+                  )}
                   {erroLayersEnr && (layer4Ativa || layer5Ativa || layer6Ativa || layer7Ativa) && (
                     <p className="px-2 text-[10px] text-destructive">Cruzamento: {erroLayersEnr}</p>
                   )}
@@ -1785,6 +1805,9 @@ export default function Mapa() {
                     layer5Ativa={layer5Ativa}
                     layer6Ativa={layer6Ativa}
                     enriquecimentoLayers={enriquecimentoLayers}
+                    ancorasPbia={layer7Ativa && pbiaAncorasAtivas ? (pbiaEixo ? (pbiaAncoras ?? []).filter((a) => a.eixo === pbiaEixo) : pbiaAncoras) : null}
+                    corEixoPbia={layer7Ativa ? pbiaCor : null}
+                    onSelecionarAncora={setAncoraSel}
                   />
                   <p className="pointer-events-none absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-center text-[11px] text-muted-foreground sm:block">
                     <MapPin className="mr-1 inline h-3 w-3" />
