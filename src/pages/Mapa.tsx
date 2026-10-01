@@ -792,6 +792,7 @@ export default function Mapa() {
   const CATEGORIAS_INFRA: CategoriaKey[] = ["energia", "datacenter", "backhaul", "cabo"];
   const semLayer = { layer: "", layerAtiva: false, setLayerAtiva: () => {} };
   const INFRA_LAYER_MAP: Record<CategoriaKey, { layer: string; layerAtiva: boolean; setLayerAtiva: (v: boolean) => void }> = {
+    pbia: { layer: "L7", layerAtiva: layer7Ativa, setLayerAtiva: setLayer7Ativa },
     energia: { layer: "L1", layerAtiva: layer1Ativa, setLayerAtiva: setLayer1Ativa },
     datacenter: { layer: "L3", layerAtiva: layer3Ativa, setLayerAtiva: setLayer3Ativa },
     backhaul: {
