@@ -273,6 +273,7 @@ export default function MapaBrasil({
   layer1Ativa,
   dadosUsinas,
   tiposUsina,
+  usinaDestaque,
   layer2Ativa,
   dadosCabos,
   l2Cabos,
@@ -736,6 +737,39 @@ export default function MapaBrasil({
             })}
           </g>
         )}
+
+        {/* Destaque da usina buscada pelo nome (ex.: Itaipu). */}
+        {layer1Ativa && usinaDestaque &&
+          Number.isFinite(usinaDestaque.latitude) &&
+          Number.isFinite(usinaDestaque.longitude) &&
+          (() => {
+            const [x, y] = projetar(usinaDestaque.longitude, usinaDestaque.latitude);
+            return (
+              <g pointerEvents="none">
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={tam * 1.1}
+                  fill="none"
+                  stroke="#ec4899"
+                  strokeWidth={2.5}
+                  opacity={0.9}
+                >
+                  <animate attributeName="r" values={`${tam * 0.8};${tam * 1.4};${tam * 0.8}`} dur="2s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0.9;0.3;0.9" dur="2s" repeatCount="indefinite" />
+                </circle>
+                <text
+                  x={x}
+                  y={y - tam * 1.6}
+                  textAnchor="middle"
+                  className="select-none fill-pink-500"
+                  style={{ fontSize: tam * 0.75, fontWeight: 700 }}
+                >
+                  {usinaDestaque.nome}
+                </text>
+              </g>
+            );
+          })()}
 
         {/* Layer 3 — Datacenters (PeeringDB), abaixo dos marcadores SNI. */}
         {layer3Ativa && dadosDCs && (
