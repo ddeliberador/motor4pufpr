@@ -49,16 +49,16 @@ const REGIAO_POR_UF: Record<string, string> = {
 };
 const REGIOES = ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"];
 
-// Subtipos de geração da ANEEL (SIGA), conforme SigTipoGeracao.
-const TIPOS_USINA = [
-  { key: "UHE", label: "Hidrelétrica (UHE)" },
-  { key: "PCH", label: "Pequena central hidrelétrica (PCH)" },
-  { key: "CGH", label: "Micro-hidrelétrica (CGH)" },
-  { key: "EOL", label: "Eólica (EOL)" },
-  { key: "UFV", label: "Solar fotovoltaica (UFV)" },
-  { key: "UTE", label: "Termelétrica (UTE)" },
-  { key: "UTN", label: "Nuclear (UTN)" },
+// Subtipos de geração da ANEEL (SIGA), conforme SigTipoGeracao,
+// agrupados por fonte de geração para o filtro da Layer 1.
+const GRUPOS_USINA = [
+  { key: "hidreletrica", label: "Hidrelétrica", tipos: ["UHE", "PCH", "CGH"] },
+  { key: "solar", label: "Solar", tipos: ["UFV"] },
+  { key: "eolica", label: "Eólica", tipos: ["EOL"] },
+  { key: "termica", label: "Térmica", tipos: ["UTE"] },
+  { key: "nuclear", label: "Nuclear", tipos: ["UTN"] },
 ];
+const TODOS_TIPOS_USINA = GRUPOS_USINA.flatMap((g) => g.tipos);
 
 /** Facetas de tipo: "ICT; Unidade Embrapii" vira ["ICT", "Unidade Embrapii"]. */
 const facetasTipo = (tipo: string) =>
@@ -211,6 +211,9 @@ export default function Mapa() {
   const [dadosUsinas, setDadosUsinas] = useState<UsinaAneel[] | null>(null);
   // Subtipos de usina selecionados (vazio = todos os tipos).
   const [tiposUsina, setTiposUsina] = useState<Set<string>>(new Set());
+  // Busca de usina pelo nome (ex.: Itaipu) e usina destacada no mapa.
+  const [buscaUsina, setBuscaUsina] = useState("");
+  const [usinaSel, setUsinaSel] = useState<UsinaAneel | null>(null);
   const [erroLayer1, setErroLayer1] = useState<string | null>(null);
   const [layer2Ativa, setLayer2Ativa] = useState(false);
   const [layer2Carregando, setLayer2Carregando] = useState(false);
