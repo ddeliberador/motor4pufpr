@@ -33,7 +33,7 @@ const techStack = [
 
 const edgeFunctions = [
   { name: "motor-search", desc: "Orquestra a busca inicial: traduz CNAE → objeto tecnológico e dispara chamadas paralelas às 4 camadas" },
-  { name: "motor-analysis", desc: "IA generativa (Gemini/GPT) que sintetiza os dados brutos em diagnóstico estrutural personalizado por persona" },
+  { name: "motor-analysis", desc: "IA generativa em modelo aberto brasileiro (Tucano 2), auto-hospedado — sintetiza os dados brutos em diagnóstico estrutural personalizado por persona" },
   { name: "layer-knowledge", desc: "Consulta OpenAlex, CAPES, CNPq — calcula densidade científica e concentração institucional" },
   { name: "layer-technology", desc: "Consulta INPI, RAIS/CAGED, GitHub — estima TRL e maturidade tecnológica" },
   { name: "layer-policy", desc: "Consulta PNCP, Transparência, SICONFI — avalia intensidade instrumental e capacidade fiscal" },
@@ -255,11 +255,17 @@ const Documentacao = () => {
             <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold mb-4 text-center">
               Metodologia dos Índices Estratégicos
             </motion.h2>
-            <motion.p variants={fadeUp} custom={1} className="text-muted-foreground text-center mb-8 max-w-2xl mx-auto">
+            <motion.p variants={fadeUp} custom={1} className="text-muted-foreground text-center mb-4 max-w-2xl mx-auto">
               Cada busca calcula quatro índices a partir dos dados brutos retornados pelas camadas analíticas.
               No painel de resultados, clique em qualquer card de índice para ver a fórmula e os números exatos
               usados naquele cálculo específico, além do nível de confiança (alta, média ou baixa) conforme a
               disponibilidade de dados.
+            </motion.p>
+
+            <motion.p variants={fadeUp} custom={2} className="text-muted-foreground text-center mb-8 max-w-2xl mx-auto">
+              Os quatro índices abaixo foram auditados quanto à fundamentação em literatura da área.
+              Nem todos têm precedente direto: onde isso ocorre, o índice é tratado explicitamente como contribuição
+              metodológica original desta pesquisa de doutorado, não como aplicação de método já publicado.
             </motion.p>
 
             <div className="space-y-4">
