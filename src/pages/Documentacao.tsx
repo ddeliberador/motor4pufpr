@@ -306,6 +306,10 @@ const Documentacao = () => {
                     {m.formula}
                   </code>
                   <p className="text-sm text-muted-foreground leading-relaxed">{m.desc}</p>
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-foreground/80 mb-1.5">Base na literatura</h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{m.lit}</p>
+                  </div>
                 </motion.div>
               ))}
             </div>
