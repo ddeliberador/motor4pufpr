@@ -41,6 +41,11 @@ const PIPELINE = [
 
 /** Extrai nomes na ordem em que a planilha os lista (ordem = relevância declarada pela curadoria). */
 function empresas(txt: string): { nome: string; det?: string }[] {
+  // Frase descritiva com lista entre parênteses ("... (Voith, Andritz, GE)") → usa a lista
+  const par = txt.match(/\(([^()]*,[^()]*)\)/);
+  if (par && txt.split(/ — |\. /)[0].length > 60) {
+    return par[1].split(",").map(s => ({ nome: s.trim() })).filter(e => e.nome).slice(0, 5);
+  }
   const base = txt.split(/ — |\. /)[0];
   return base
     .split(/,(?![^()]*\))|;| \+ /)
