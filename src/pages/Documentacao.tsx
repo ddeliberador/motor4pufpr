@@ -33,7 +33,7 @@ const techStack = [
 
 const edgeFunctions = [
   { name: "motor-search", desc: "Orquestra a busca inicial: traduz CNAE → objeto tecnológico e dispara chamadas paralelas às 4 camadas" },
-  { name: "motor-analysis", desc: "IA generativa (Gemini/GPT) que sintetiza os dados brutos em diagnóstico estrutural personalizado por persona" },
+  { name: "motor-analysis", desc: "IA generativa em modelo aberto brasileiro (Tucano 2), auto-hospedado — sintetiza os dados brutos em diagnóstico estrutural personalizado por persona" },
   { name: "layer-knowledge", desc: "Consulta OpenAlex, CAPES, CNPq — calcula densidade científica e concentração institucional" },
   { name: "layer-technology", desc: "Consulta INPI, RAIS/CAGED, GitHub — estima TRL e maturidade tecnológica" },
   { name: "layer-policy", desc: "Consulta PNCP, Transparência, SICONFI — avalia intensidade instrumental e capacidade fiscal" },
@@ -255,11 +255,17 @@ const Documentacao = () => {
             <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold mb-4 text-center">
               Metodologia dos Índices Estratégicos
             </motion.h2>
-            <motion.p variants={fadeUp} custom={1} className="text-muted-foreground text-center mb-8 max-w-2xl mx-auto">
+            <motion.p variants={fadeUp} custom={1} className="text-muted-foreground text-center mb-4 max-w-2xl mx-auto">
               Cada busca calcula quatro índices a partir dos dados brutos retornados pelas camadas analíticas.
               No painel de resultados, clique em qualquer card de índice para ver a fórmula e os números exatos
               usados naquele cálculo específico, além do nível de confiança (alta, média ou baixa) conforme a
               disponibilidade de dados.
+            </motion.p>
+
+            <motion.p variants={fadeUp} custom={2} className="text-muted-foreground text-center mb-8 max-w-2xl mx-auto">
+              Os quatro índices abaixo foram auditados quanto à fundamentação em literatura da área.
+              Nem todos têm precedente direto: onde isso ocorre, o índice é tratado explicitamente como contribuição
+              metodológica original desta pesquisa de doutorado, não como aplicação de método já publicado.
             </motion.p>
 
             <div className="space-y-4">
@@ -268,21 +274,25 @@ const Documentacao = () => {
                   sigla: "GT — Gargalo de Tradução",
                   formula: "GT = min(100, (papers_BR / sinais_aplicação) × fator_log)",
                   desc: "Compara o volume de publicações científicas brasileiras com sinais de aplicação prática (contratos públicos, patentes, empresas ativas, empregos). Escala logarítmica evita distorções em campos muito grandes. Valores altos indicam produção científica que não está virando produto ou serviço. Confiança alta quando há dados de aplicação; média/baixa quando estimado por proxies.",
+                  lit: "Índice original desta pesquisa. Conceitualmente relacionado à tradição de ligação ciência-tecnologia via citação de artigo em patente (Narin, 1997), mas a fórmula não replica esse método — é uma operacionalização própria, adaptada aos dados abertos brasileiros disponíveis.",
                 },
                 {
                   sigla: "CD — Concentração de Dependência",
-                  formula: "CD = (papers_com_coautoria_internacional / papers_BR) × 100",
-                  desc: "Percentual de papers brasileiros escritos em coautoria com pesquisadores estrangeiros, conforme metadados do OpenAlex. Dependência alta pode indicar fragilidade da capacidade científica nacional no tema. Confiança alta quando há coautorias de mais de 3 países distintos.",
+                  formula: "CD = ((coautorias_internacionais_totais − coautorias_BR) / coautorias_internacionais_totais) × 100",
+                  desc: "Percentual de participações estrangeiras dentro do conjunto de papers já internacionalizados do tema, conforme metadados do OpenAlex. Dependência alta pode indicar fragilidade da capacidade científica nacional no tema. Confiança alta quando há coautorias de mais de 3 países distintos.",
+                  lit: "Mede a proporção de participações estrangeiras dentro do conjunto de papers já internacionalizados do tema, não a fração do total de papers. Inspirado na literatura sobre coautoria internacional como marcador de relações centro-periferia em ciência (Kim, 2006, Scientometrics) e na família de indicadores do Leiden Ranking sobre proporção de publicações internacionais colaborativas.",
                 },
                 {
                   sigla: "AUE — Articulação Universidade-Empresa",
                   formula: "AUE = min(100, Σ sinais de articulação × peso)",
                   desc: "Soma ponderada de sinais de conexão entre pesquisa e setor produtivo: contratos e convênios públicos, repositórios de código aberto, redes internacionais e financiamento empresarial de pesquisa (grants). Confiança alta quando há instrumentos públicos identificados; baixa quando apenas sinais alternativos.",
+                  lit: "Os cinco sinais somados (base científica, instrumentos públicos, código aberto, rede internacional, financiamento empresarial) seguem a lógica de múltiplos canais de engajamento acadêmico descrita em Perkmann et al. (2013), revisão de literatura sobre engajamento acadêmico e comercialização publicada na Research Policy. Os pesos específicos de cada sinal (20/25/20/20/15) são escolha original desta pesquisa, não derivados dessa fonte.",
                 },
                 {
                   sigla: "EI — Efetividade Instrumental",
                   formula: "EI = min(100, TRL_normalizado × cobertura_instrumentos)",
                   desc: "Cruza o nível de maturidade tecnológica (TRL 1–9) com a cobertura de instrumentos públicos disponíveis (editais, convênios, contratos, programas). Valores baixos indicam que as políticas existentes não estão alcançando o potencial do campo. Confiança varia conforme a disponibilidade de dados de instrumentos e de maturidade.",
+                  lit: "TRL (Nível de Maturidade Tecnológica) tem base consolidada, com origem na NASA e padronização internacional pela ISO 16290:2013. O fator de alinhamento aplicado quando o TRL está distante de 5 é uma heurística desta pesquisa, sem fonte na literatura — é o componente mais frágil dos quatro índices nesse quesito.",
                 },
               ].map((m, i) => (
                 <motion.div
@@ -296,6 +306,10 @@ const Documentacao = () => {
                     {m.formula}
                   </code>
                   <p className="text-sm text-muted-foreground leading-relaxed">{m.desc}</p>
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-foreground/80 mb-1.5">Base na literatura</h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{m.lit}</p>
+                  </div>
                 </motion.div>
               ))}
             </div>
