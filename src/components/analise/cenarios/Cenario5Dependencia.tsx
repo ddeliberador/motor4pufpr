@@ -172,32 +172,11 @@ export default function Cenario5Dependencia() {
   if (erro) return <Erro msg={erro} />;
   if (!dados) return <Spinner />;
 
-  const total = dados.setores.length;
-  const verificados = dados.setores.filter(s => s.verificado).length;
-  const oficiais = dados.setores.filter(s => s.badge === "confirmado").length;
-  const comNumero = Object.keys(DEP_NUM).length;
-  const altas = Object.values(DEP_NUM).filter(d => d.pct >= 60).length;
-
   return (
     <div className="w-full space-y-8">
-      {/* Resumo */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { v: `${verificados}`, s: `de ${total}`, l: "setores com fonte verificada", c: "text-foreground" },
-          { v: `${oficiais}`, l: "com percentual de dado oficial (ANEEL / ANATEL)", c: "text-emerald-500" },
-          { v: `${altas} de ${comNumero}`, l: "setores com métrica de mercado mostram dependência estrangeira ≥ 60%", c: "text-destructive" },
-          { v: `${total - comNumero}`, l: "sem métrica de mercado — não estimados", c: "text-yellow-600" },
-        ].map((k, i) => (
-          <div key={i} className="rounded-2xl border border-border bg-card p-5">
-            <p className={`text-3xl font-bold ${k.c}`}>{k.v} {k.s && <span className="text-base font-normal text-muted-foreground">{k.s}</span>}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{k.l}</p>
-          </div>
-        ))}
-      </div>
       <div className="flex flex-wrap items-center gap-4 text-[11px] text-muted-foreground">
         <span className="flex items-center gap-1"><span className="h-2 w-4 rounded bg-emerald-500" /> nacional</span>
         <span className="flex items-center gap-1"><span className="h-2 w-4 rounded bg-destructive" /> estrangeiro</span>
-        <span className="flex items-center gap-1"><span className="h-2 w-4 rounded" style={{ background: "repeating-linear-gradient(45deg, hsl(var(--muted)) 0 3px, hsl(var(--border)) 3px 6px)" }} /> sem número público</span>
         <span>Ranking = ordem de relevância registrada na planilha auditada (não é market share).</span>
         <Hint text={`${dados.aviso} Fonte: ${dados.fonte}. Versão ${dados.versao}.`} />
       </div>
@@ -206,11 +185,11 @@ export default function Cenario5Dependencia() {
         const setores = porLayer[l.id] || [];
         if (!setores.length) return null;
         return (
-          <section key={l.id} className="space-y-3">
-            <div className="flex items-center gap-3 border-b pb-2" style={{ borderColor: l.cor + "60" }}>
-              <span className="rounded-md px-2 py-0.5 text-xs font-bold" style={{ color: l.cor, background: l.cor + "1f" }}>{l.id}</span>
-              <h3 className="text-base font-bold text-foreground">{l.nome}</h3>
-              <span className="text-xs text-muted-foreground">{setores.length} setor{setores.length !== 1 ? "es" : ""}</span>
+          <section key={l.id} className="space-y-4 border-t-4 pt-5" style={{ borderColor: l.cor }}>
+            <div className="flex items-center gap-4">
+              <span className="rounded-md px-3 py-1 text-base font-bold" style={{ color: l.cor, background: l.cor + "1f" }}>{l.id}</span>
+              <h3 className="text-2xl font-bold text-foreground">{l.nome}</h3>
+              <span className="text-sm font-medium text-muted-foreground">{setores.length} setor{setores.length !== 1 ? "es" : ""}</span>
             </div>
 
             {l.id === "L4" && (
