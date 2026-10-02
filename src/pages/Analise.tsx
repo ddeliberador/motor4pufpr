@@ -4,6 +4,7 @@ import Cenario1Infraestrutura from "@/components/analise/cenarios/Cenario1Infrae
 import Cenario2Capacidade from "@/components/analise/cenarios/Cenario2Capacidade";
 import Cenario3Governanca from "@/components/analise/cenarios/Cenario3Governanca";
 import Cenario4Maturidade from "@/components/analise/cenarios/Cenario4Maturidade";
+import Cenario5Dependencia from "@/components/analise/cenarios/Cenario5Dependencia";
 
 const CENARIOS = [
   { id: 1, titulo: "Infraestrutura de IA", subtitulo: "O Brasil tem a base física para sustentar IA?", icone: "bolt", cor: "#f472b6",
@@ -14,9 +15,11 @@ const CENARIOS = [
     descricao: "R$ 374 bilhões em 17 políticas públicas mapeadas. Este cenário mostra quem investiu, em quê, e se o investimento chegou onde havia demanda real." },
   { id: 4, titulo: "Diagnóstico de Maturidade", subtitulo: "Em que nível está o Brasil nas 7 Camadas de IA?", icone: "radar", cor: "#facc15",
     descricao: "A síntese. Com base nos dados dos três cenários anteriores, este cenário pontua a maturidade do SNI brasileiro layer por layer, usando o framework OECD.AI Index." },
+  { id: 5, titulo: "Dependência Tecnológica", subtitulo: "Quem controla cada camada da IA no Brasil?", icone: "hub", cor: "#38bdf8",
+    descricao: "Setor por setor, quem são os atores internacionais e nacionais em cada uma das 7 camadas — com percentual só onde há dado oficial." },
 ] as const;
 
-type CenarioId = 1 | 2 | 3 | 4;
+type CenarioId = 1 | 2 | 3 | 4 | 5;
 
 export default function Analise() {
   const [cenarioAtivo, setCenarioAtivo] = useState<CenarioId>(1);
@@ -52,7 +55,7 @@ export default function Analise() {
             <span className="material-symbols-outlined text-xl leading-none" style={{ fontVariationSettings: '"FILL" 1', color: cfg.cor }}>{cfg.icone}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: cfg.cor }}>Cenário {cenarioAtivo} de 4</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: cfg.cor }}>Cenário {cenarioAtivo} de 5</p>
             <h1 className="text-xl font-bold text-foreground mt-0.5">{cfg.titulo}</h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">{cfg.descricao}</p>
           </div>
@@ -63,7 +66,7 @@ export default function Analise() {
                 <span className="material-symbols-outlined text-sm leading-none">arrow_back</span> Anterior
               </button>
             )}
-            {cenarioAtivo < 4 && (
+            {cenarioAtivo < 5 && (
               <button onClick={() => setCenarioAtivo((cenarioAtivo + 1) as CenarioId)}
                 className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-colors"
                 style={{ backgroundColor: cfg.cor }}>
@@ -80,6 +83,7 @@ export default function Analise() {
         {cenarioAtivo === 2 && <Cenario2Capacidade />}
         {cenarioAtivo === 3 && <Cenario3Governanca />}
         {cenarioAtivo === 4 && <Cenario4Maturidade />}
+        {cenarioAtivo === 5 && <Cenario5Dependencia />}
       </div>
     </div>
   );
