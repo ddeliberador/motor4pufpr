@@ -49,16 +49,16 @@ const REGIAO_POR_UF: Record<string, string> = {
 };
 const REGIOES = ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"];
 
-// Subtipos de geração da ANEEL (SIGA), conforme SigTipoGeracao.
-const TIPOS_USINA = [
-  { key: "UHE", label: "Hidrelétrica (UHE)" },
-  { key: "PCH", label: "Pequena central hidrelétrica (PCH)" },
-  { key: "CGH", label: "Micro-hidrelétrica (CGH)" },
-  { key: "EOL", label: "Eólica (EOL)" },
-  { key: "UFV", label: "Solar fotovoltaica (UFV)" },
-  { key: "UTE", label: "Termelétrica (UTE)" },
-  { key: "UTN", label: "Nuclear (UTN)" },
+// Subtipos de geração da ANEEL (SIGA), conforme SigTipoGeracao,
+// agrupados por fonte de geração para o filtro da Layer 1.
+const GRUPOS_USINA = [
+  { key: "hidreletrica", label: "Hidrelétrica", tipos: ["UHE", "PCH", "CGH"] },
+  { key: "solar", label: "Solar", tipos: ["UFV"] },
+  { key: "eolica", label: "Eólica", tipos: ["EOL"] },
+  { key: "termica", label: "Térmica", tipos: ["UTE"] },
+  { key: "nuclear", label: "Nuclear", tipos: ["UTN"] },
 ];
+const TODOS_TIPOS_USINA = GRUPOS_USINA.flatMap((g) => g.tipos);
 
 /** Facetas de tipo: "ICT; Unidade Embrapii" vira ["ICT", "Unidade Embrapii"]. */
 const facetasTipo = (tipo: string) =>
@@ -211,6 +211,9 @@ export default function Mapa() {
   const [dadosUsinas, setDadosUsinas] = useState<UsinaAneel[] | null>(null);
   // Subtipos de usina selecionados (vazio = todos os tipos).
   const [tiposUsina, setTiposUsina] = useState<Set<string>>(new Set());
+  // Busca de usina pelo nome (ex.: Itaipu) e usina destacada no mapa.
+  const [buscaUsina, setBuscaUsina] = useState("");
+  const [usinaSel, setUsinaSel] = useState<UsinaAneel | null>(null);
   const [erroLayer1, setErroLayer1] = useState<string | null>(null);
   const [layer2Ativa, setLayer2Ativa] = useState(false);
   const [layer2Carregando, setLayer2Carregando] = useState(false);
@@ -886,6 +889,8 @@ export default function Mapa() {
     setSelecao(null);
     setPontoSelecionadoId(null);
     setTiposUsina(new Set());
+    setBuscaUsina("");
+    setUsinaSel(null);
     setLayer1Ativa(false);
     setLayer2Ativa(false);
     setLayer3Ativa(false);
@@ -1199,7 +1204,7 @@ export default function Mapa() {
                     <div className="ml-6 space-y-0.5 border-l border-border pl-2">
                       <div className="flex items-center justify-between pr-1">
                         <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                          Tipo de usina
+                          Tipo de geração
                         </span>
                         {tiposUsina.size > 0 && (
                           <button
@@ -1210,35 +1215,125 @@ export default function Mapa() {
                           </button>
                         )}
                       </div>
-                      {TIPOS_USINA.filter((t) => contagemTipoUsina[t.key]).map((t) => (
-                        <label
-                          key={t.key}
-                          className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-[11px] hover:bg-muted"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={tiposUsina.size === 0 || tiposUsina.has(t.key)}
-                            onChange={() =>
-                              setTiposUsina((atual) => {
-                                // Conjunto vazio = todos marcados. O clique remove o tipo clicado.
-                                const novo = atual.size === 0 ? new Set(TIPOS_USINA.map((u) => u.key)) : new Set(atual);
-                                if (novo.has(t.key)) novo.delete(t.key);
-                                else novo.add(t.key);
-                                // Se todos voltaram a ficar marcados, volta ao estado "todos" (vazio).
-                                if (novo.size === TIPOS_USINA.length) return new Set();
-                                // Se nenhum ficou marcado, sentinela para não confundir com "todos".
-                                if (novo.size === 0) return new Set(["__nenhum__"]);
-                                return novo;
-                              })
-                            }
-                            className="h-3 w-3 shrink-0 accent-pink-500"
-                          />
-                          <span className="flex-1 truncate">{t.label}</span>
-                          <span className="text-[10px] text-muted-foreground">
-                            {contagemTipoUsina[t.key].toLocaleString("pt-BR")}
-                          </span>
-                        </label>
-                      ))}
+                      {GRUPOS_USINA.map((g) => {
+                        const n = g.tipos.reduce((s, t) => s + (contagemTipoUsina[t] || 0), 0);
+                        if (!n) return null;
+                        const marcado =
+                          tiposUsina.size === 0 || g.tipos.every((t) => tiposUsina.has(t));
+                        return (
+                          <label
+                            key={g.key}
+                            className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-[11px] hover:bg-muted"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={marcado}
+                              onChange={() =>
+                                setTiposUsina((atual) => {
+                                  // Conjunto vazio = todos marcados.
+                                  const novo =
+                                    atual.size === 0 ? new Set(TODOS_TIPOS_USINA) : new Set(atual);
+                                  if (marcado) g.tipos.forEach((t) => novo.delete(t));
+                                  else g.tipos.forEach((t) => novo.add(t));
+                                  // Se todos voltaram a ficar marcados, volta ao estado "todos" (vazio).
+                                  if (novo.size === TODOS_TIPOS_USINA.length) return new Set();
+                                  // Se nenhum ficou marcado, sentinela para não confundir com "todos".
+                                  if (novo.size === 0) return new Set(["__nenhum__"]);
+                                  return novo;
+                                })
+                              }
+                              className="h-3 w-3 shrink-0 accent-pink-500"
+                            />
+                            <span className="flex-1 truncate">{g.label}</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {n.toLocaleString("pt-BR")}
+                            </span>
+                          </label>
+                        );
+                      })}
+                      {/* Busca de usina pelo nome (ex.: Itaipu) — destaca no mapa. */}
+                      <div className="pt-1.5">
+                        <input
+                          value={buscaUsina}
+                          onChange={(e) => setBuscaUsina(e.target.value)}
+                          placeholder="buscar usina pelo nome…"
+                          className="w-full rounded-md border border-border bg-background px-2 py-1 text-[11px] outline-none focus:border-pink-500"
+                        />
+                        {buscaUsina.trim() && (
+                          <div className="mt-1 max-h-40 space-y-0.5 overflow-y-auto">
+                            {dadosUsinas
+                              .filter((u) =>
+                                u.nome
+                                  .normalize("NFD")
+                                  .replace(/[\u0300-\u036f]/g, "")
+                                  .toLowerCase()
+                                  .includes(
+                                    buscaUsina
+                                      .trim()
+                                      .normalize("NFD")
+                                      .replace(/[\u0300-\u036f]/g, "")
+                                      .toLowerCase(),
+                                  ),
+                              )
+                              .slice(0, 8)
+                              .map((u) => (
+                                <button
+                                  key={u.id}
+                                  onClick={() => {
+                                    setUsinaSel(u);
+                                    // Garante que o tipo da usina está visível no mapa.
+                                    setTiposUsina((atual) => {
+                                      if (atual.size === 0 || atual.has(u.tipo)) return atual;
+                                      const novo = new Set(atual);
+                                      novo.delete("__nenhum__");
+                                      novo.add(u.tipo);
+                                      return novo;
+                                    });
+                                  }}
+                                  className={`flex w-full items-center gap-1.5 rounded px-1 py-0.5 text-left text-[11px] hover:bg-muted ${
+                                    usinaSel?.id === u.id ? "bg-pink-500/15" : ""
+                                  }`}
+                                >
+                                  <span className="flex-1 truncate">{u.nome}</span>
+                                  <span className="shrink-0 text-[10px] text-muted-foreground">
+                                    {u.tipo}
+                                    {u.uf ? ` · ${u.uf}` : ""}
+                                  </span>
+                                </button>
+                              ))}
+                            {!dadosUsinas.some((u) =>
+                              u.nome
+                                .normalize("NFD")
+                                .replace(/[\u0300-\u036f]/g, "")
+                                .toLowerCase()
+                                .includes(
+                                  buscaUsina
+                                    .trim()
+                                    .normalize("NFD")
+                                    .replace(/[\u0300-\u036f]/g, "")
+                                    .toLowerCase(),
+                                ),
+                            ) && (
+                              <p className="px-1 py-1 text-[10px] text-muted-foreground">
+                                nenhuma usina encontrada
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        {usinaSel && (
+                          <div className="mt-1 flex items-center gap-1.5 rounded-md border border-pink-500/40 bg-pink-500/10 px-1.5 py-1 text-[10px]">
+                            <span className="flex-1 truncate">
+                              destacada: <strong>{usinaSel.nome}</strong>
+                            </span>
+                            <button
+                              onClick={() => setUsinaSel(null)}
+                              className="shrink-0 text-primary hover:underline"
+                            >
+                              limpar
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                   {/* Layer 2 — Infraestrutura Física, com sub-camadas */}
@@ -1904,6 +1999,7 @@ export default function Mapa() {
                     layer1Ativa={layer1Ativa}
                     dadosUsinas={dadosUsinas}
                     tiposUsina={tiposUsina}
+                    usinaDestaque={usinaSel}
                     layer2Ativa={layer2Ativa}
                     dadosCabos={dadosCabos}
                     l2Cabos={l2Cabos}
