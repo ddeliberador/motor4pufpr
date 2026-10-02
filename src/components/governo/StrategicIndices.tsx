@@ -1,5 +1,6 @@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Info } from "lucide-react";
+import DependencyThermometer from "@/components/shared/DependencyThermometer";
 
 interface IndexData {
   value: number;
@@ -46,7 +47,7 @@ const indexConfig = [
     pergunta: "O quanto a pesquisa nacional depende de parceiros estrangeiros",
     boa: "Produção nacional forte",
     ruim: "Muito dependente do exterior",
-    limiarAlerta: 60,
+    limiarAlerta: 50,
     invertido: false,
     explica: "Mede a proporção de papers científicos que foram escritos em coautoria com pesquisadores estrangeiros. Alta dependência pode indicar fragilidade na capacidade científica própria do país no tema.",
   },
@@ -125,12 +126,16 @@ export default function StrategicIndices({ indices }: StrategicIndicesProps) {
 
                   <p className={`text-sm font-medium mt-1 ${statusColor}`}>{statusLabel}</p>
 
-                  <div className="mt-3 h-2 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${barColor}`}
-                      style={{ width: `${Math.min(100, idx.value)}%` }}
-                    />
-                  </div>
+                  {key === "cd" ? (
+                    <DependencyThermometer value={idx.value} compact className="mt-3" title="Grau de dependência" />
+                  ) : (
+                    <div className="mt-3 h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${barColor}`}
+                        style={{ width: `${Math.min(100, idx.value)}%` }}
+                      />
+                    </div>
+                  )}
                 </button>
               </PopoverTrigger>
               <PopoverContent side="bottom" className="w-80 text-xs leading-relaxed space-y-3">

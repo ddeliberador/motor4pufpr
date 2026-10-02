@@ -1,4 +1,5 @@
 import { AlertTriangle, ExternalLink, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import DependencyThermometer from "@/components/shared/DependencyThermometer";
 
 interface PatentsTabProps {
   patents: any;
@@ -70,6 +71,14 @@ export default function PatentsTab({ patents, persona }: PatentsTabProps) {
           </div>
         ))}
       </div>
+
+      {typeof br?.dependencia_externa_pct === "number" && (
+        <DependencyThermometer
+          value={br.dependencia_externa_pct}
+          title={persona === "governo" ? "Termômetro de dependência tecnológica" : "Termômetro de risco concorrencial externo"}
+          detail="Grau calculado pela participação de patentes estrangeiras no total identificado para o campo."
+        />
+      )}
 
       {/* Alerta de soberania / risco */}
       {isHighDependency && (

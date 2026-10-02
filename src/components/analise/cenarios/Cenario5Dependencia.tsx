@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { forwardRef, useEffect, useMemo, useState } from "react";
 import { Spinner, Erro } from "./Drawer";
+import DependencyThermometer from "@/components/shared/DependencyThermometer";
 
 type Badge = "confirmado" | "achado" | "pendente" | "nao_se_aplica";
 interface Setor {
@@ -26,8 +27,7 @@ const BADGE: Record<Badge, { label: string; cls: string }> = {
   nao_se_aplica: { label: "Não se aplica", cls: "bg-sky-500/10 text-sky-500 border-sky-500/30" },
 };
 
-// Percentual de dependência estrangeira somente quando a planilha traz número de mercado/importação
-// (s7 importação de painéis, s9 market share móvel, s14 estimativa qualitativa explícita).
+// Percentual vindo de fonte numérica ou estimativa explicitamente registrada na base.
 const DEP_NUM: Record<string, { pct: number; estimativa?: boolean }> = {
   s7: { pct: 99 }, s9: { pct: 93.5 }, s14: { pct: 100, estimativa: true },
 };
@@ -40,6 +40,7 @@ const PIPELINE = [
 ];
 
 type Empresa = { nome: string; det?: string };
+type GrauDependencia = { pct: number; estimativa?: boolean; inferido?: boolean };
 
 // Nomes identificados explicitamente na base auditada. A lista deliberadamente não
 // tenta extrair empresas de frases, evitando transformar atividades e notas em nomes.
@@ -67,16 +68,16 @@ const EMPRESAS: Record<string, { internacionais: Empresa[]; nacionais: Empresa[]
   s21: { internacionais: [], nacionais: [] },
 };
 
-function Hint({ text }: { text: string }) {
+const Hint = forwardRef<HTMLSpanElement, { text: string }>(function Hint({ text }, ref) {
   return (
-    <span className="group relative inline-flex cursor-help align-middle">
+    <span ref={ref} className="group relative inline-flex cursor-help align-middle">
       <span className="material-symbols-outlined text-[14px] text-muted-foreground">info</span>
       <span className="pointer-events-none absolute right-0 top-5 z-20 hidden w-72 rounded-lg border border-border bg-popover p-3 text-[11px] leading-relaxed text-popover-foreground shadow-lg group-hover:block">
         {text}
       </span>
     </span>
   );
-}
+});
 
 function Ranking({ lista, tom }: { lista: Empresa[]; tom: "int" | "nac" }) {
   if (!lista.length) return <p className="text-xs italic text-muted-foreground">Nenhuma empresa identificada</p>;
@@ -94,14 +95,26 @@ function Ranking({ lista, tom }: { lista: Empresa[]; tom: "int" | "nac" }) {
   );
 }
 
-function BarraForca({ s }: { s: Setor }) {
-  const num = DEP_NUM[s.id];
-  if (!num) return null;
-  const nac = 100 - num.pct;
+function grauDependencia(s: Setor, internacionais: Empresa[], nacionais: Empresa[]): GrauDependencia | null {
+  const medido = DEP_NUM[s.id];
+  if (medido) return medido;
+  if (internacionais.length > 0 && nacionais.length === 0) return { pct: 100, inferido: true };
+  if (nacionais.length > 0 && internacionais.length === 0) return { pct: 0, inferido: true };
+  return null;
+}
+
+function BarraForca({ pct }: { pct: number }) {
+  const nac = 100 - pct;
   return (
-    <div className="flex h-2.5 overflow-hidden rounded-full bg-muted">
-      <div className="bg-emerald-500" style={{ width: `${nac}%` }} />
-      <div className="bg-destructive" style={{ width: `${num.pct}%` }} />
+    <div>
+      <div className="mb-1 flex justify-between text-[10px]">
+        <span className="text-emerald-500">{nac.toLocaleString("pt-BR")}% nacional</span>
+        <span className="text-destructive">{pct.toLocaleString("pt-BR")}% estrangeiro</span>
+      </div>
+      <div className="flex h-2.5 overflow-hidden rounded-full bg-muted" aria-label={`Força nacional ${nac}%, internacional ${pct}%`}>
+        <div className="bg-emerald-500" style={{ width: `${nac}%` }} />
+        <div className="bg-destructive" style={{ width: `${pct}%` }} />
+      </div>
     </div>
   );
 }
@@ -109,8 +122,7 @@ function BarraForca({ s }: { s: Setor }) {
 function CardSetor({ s, cor }: { s: Setor; cor: string }) {
   const int = EMPRESAS[s.id]?.internacionais || [];
   const nac = EMPRESAS[s.id]?.nacionais || [];
-  const num = DEP_NUM[s.id];
-  const veredito = num?.pct >= 60 ? { t: "Dependência alta", c: "text-destructive" } : { t: "Equilibrado", c: "text-amber-500" };
+  const grau = grauDependencia(s, int, nac);
   return (
     <div className={`flex flex-col rounded-2xl border bg-card p-4 ${s.badge === "achado" ? "border-amber-400/60" : "border-border"}`}>
       <div className="flex items-start justify-between gap-2">
@@ -136,13 +148,20 @@ function CardSetor({ s, cor }: { s: Setor; cor: string }) {
       </div>
 
       <div className="mt-auto pt-3">
-        {num && <>
-          <div className="mb-1 flex items-center justify-between text-[10px]">
-            <span className="text-emerald-500">{`${(100 - num.pct).toLocaleString("pt-BR")}% nacional`}</span>
-            <span className={`font-bold ${veredito.c}`}>{veredito.t}{num.estimativa && " (estimativa)"}</span>
-            <span className="text-destructive">{`${num.pct.toLocaleString("pt-BR")}% estrangeiro`}</span>
-          </div>
-          <BarraForca s={s} />
+        {grau && <>
+          <BarraForca pct={grau.pct} />
+          <DependencyThermometer
+            value={grau.pct}
+            compact
+            className="mt-3"
+            detail={grau.inferido
+              ? grau.pct === 100
+                ? "100% porque a base identificou somente empresas estrangeiras."
+                : "0% porque a base identificou somente empresas nacionais."
+              : grau.estimativa
+                ? "Estimativa qualitativa registrada na base auditada."
+                : "Calculado com o percentual de mercado ou importação da fonte auditada."}
+          />
         </>}
         {!/^(Não calculável|Pendente)/i.test(s.dependencia) && (
           <p className="mt-1.5 flex items-start gap-1 text-[10px] text-muted-foreground">
