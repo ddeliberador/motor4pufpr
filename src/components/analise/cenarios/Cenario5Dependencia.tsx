@@ -40,6 +40,7 @@ const PIPELINE = [
 ];
 
 type Empresa = { nome: string; det?: string };
+type GrauDependencia = { pct: number; estimativa?: boolean; inferido?: boolean };
 
 // Nomes identificados explicitamente na base auditada. A lista deliberadamente não
 // tenta extrair empresas de frases, evitando transformar atividades e notas em nomes.
@@ -94,7 +95,7 @@ function Ranking({ lista, tom }: { lista: Empresa[]; tom: "int" | "nac" }) {
   );
 }
 
-function grauDependencia(s: Setor, internacionais: Empresa[], nacionais: Empresa[]) {
+function grauDependencia(s: Setor, internacionais: Empresa[], nacionais: Empresa[]): GrauDependencia | null {
   const medido = DEP_NUM[s.id];
   if (medido) return medido;
   if (internacionais.length > 0 && nacionais.length === 0) return { pct: 100, inferido: true };
@@ -153,7 +154,7 @@ function CardSetor({ s, cor }: { s: Setor; cor: string }) {
             value={grau.pct}
             compact
             className="mt-3"
-            detail={"inferido" in grau && grau.inferido
+            detail={grau.inferido
               ? grau.pct === 100
                 ? "100% porque a base identificou somente empresas estrangeiras."
                 : "0% porque a base identificou somente empresas nacionais."

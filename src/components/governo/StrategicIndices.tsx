@@ -47,7 +47,7 @@ const indexConfig = [
     pergunta: "O quanto a pesquisa nacional depende de parceiros estrangeiros",
     boa: "Produção nacional forte",
     ruim: "Muito dependente do exterior",
-    limiarAlerta: 60,
+    limiarAlerta: 50,
     invertido: false,
     explica: "Mede a proporção de papers científicos que foram escritos em coautoria com pesquisadores estrangeiros. Alta dependência pode indicar fragilidade na capacidade científica própria do país no tema.",
   },
