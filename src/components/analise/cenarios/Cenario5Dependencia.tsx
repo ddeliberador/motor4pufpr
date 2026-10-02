@@ -144,10 +144,12 @@ function CardSetor({ s, cor }: { s: Setor; cor: string }) {
           </div>
           <BarraForca s={s} />
         </>}
-        <p className="mt-1.5 flex items-start gap-1 text-[10px] text-muted-foreground">
-          <span className="line-clamp-2 flex-1">{s.dependencia}</span>
-          <Hint text={`Internacional: ${s.internacionais}\n\nNacional: ${s.nacionais}`} />
-        </p>
+        {!/^(Não calculável|Pendente)/i.test(s.dependencia) && (
+          <p className="mt-1.5 flex items-start gap-1 text-[10px] text-muted-foreground">
+            <span className="line-clamp-2 flex-1">{s.dependencia}</span>
+            <Hint text={`Internacional: ${s.internacionais}\n\nNacional: ${s.nacionais}`} />
+          </p>
+        )}
       </div>
       <span className="sr-only">{cor}</span>
     </div>
