@@ -1,4 +1,5 @@
 import { AlertTriangle } from "lucide-react";
+import DependencyThermometer from "@/components/shared/DependencyThermometer";
 
 interface PatentsPanelProps {
   patents: any;
@@ -32,6 +33,14 @@ const PatentsPanel = ({ patents }: PatentsPanelProps) => {
           </div>
         ))}
       </div>
+
+      {typeof patents.br_share?.dependencia_externa_pct === "number" && (
+        <DependencyThermometer
+          value={patents.br_share.dependencia_externa_pct}
+          title="Termômetro de dependência tecnológica"
+          detail="Grau calculado pela participação de patentes estrangeiras no total identificado para o campo."
+        />
+      )}
 
       {/* Alerta de soberania */}
       {patents.br_share?.dependencia_externa_pct > 70 && (
