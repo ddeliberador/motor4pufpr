@@ -1999,6 +1999,7 @@ export default function Mapa() {
                     layer1Ativa={layer1Ativa}
                     dadosUsinas={dadosUsinas}
                     tiposUsina={tiposUsina}
+                    usinaDestaque={usinaSel}
                     layer2Ativa={layer2Ativa}
                     dadosCabos={dadosCabos}
                     l2Cabos={l2Cabos}

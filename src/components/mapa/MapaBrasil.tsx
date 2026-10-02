@@ -231,6 +231,8 @@ interface Props {
   dadosUsinas?: UsinaAneel[] | null;
   /** Subtipos de usina selecionados (vazio = todos). */
   tiposUsina?: Set<string>;
+  /** Usina destacada pela busca por nome (anel de destaque no mapa). */
+  usinaDestaque?: UsinaAneel | null;
   /** Layer 2 — Infraestrutura Física: cabos submarinos (TeleGeography). */
   layer2Ativa?: boolean;
   dadosCabos?: DadosCabos | null;
