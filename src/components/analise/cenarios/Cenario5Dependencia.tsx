@@ -243,7 +243,7 @@ export default function Cenario5Dependencia() {
         </div>
         <div className="mt-4 h-56 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={resumoLayers} margin={{ top: 24, right: 8, left: -16, bottom: 0 }}>
+            <BarChart data={resumoLayers} margin={{ top: 24, right: 8, left: 4, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-muted-foreground/20" />
               <XAxis dataKey="id" tick={{ fontSize: 12, fill: "currentColor" }} tickLine={false} axisLine={{ stroke: "currentColor", strokeOpacity: 0.2 }} />
               <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: "currentColor" }} tickLine={false} axisLine={false} width={44} />
