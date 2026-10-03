@@ -120,6 +120,21 @@ function BarraForca({ pct }: { pct: number }) {
   );
 }
 
+function TooltipResumo({ active, payload }: { active?: boolean; payload?: { payload: (typeof LAYERS)[number] & { total: number; comMetrica: number; media: number | null } }[] }) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0].payload;
+  return (
+    <div className="max-w-64 rounded-lg border border-border bg-popover px-3 py-2 text-xs shadow-lg">
+      <p className="font-semibold text-foreground">{d.id} — {d.nome}</p>
+      <p className="mt-0.5 text-muted-foreground">
+        {d.media !== null
+          ? <>Média de <span className="font-semibold tabular-nums text-foreground">{d.media.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%</span> em {d.comMetrica} de {d.total} setor{d.total !== 1 ? "es" : ""} com percentual mensurável.</>
+          : <>Nenhum dos {d.total} setor{d.total !== 1 ? "es" : ""} tem percentual calculável.</>}
+      </p>
+    </div>
+  );
+}
+
 function CardSetor({ s, cor }: { s: Setor; cor: string }) {
   const int = EMPRESAS[s.id]?.internacionais || [];
   const nac = EMPRESAS[s.id]?.nacionais || [];
