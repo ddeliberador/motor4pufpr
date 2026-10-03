@@ -191,6 +191,19 @@ export default function Cenario5Dependencia() {
     return m;
   }, [dados]);
 
+  // Média do grau de dependência por camada — só setores com percentual mensurável.
+  const resumoLayers = useMemo(() => LAYERS.map(l => {
+    const setores = porLayer[l.id] || [];
+    const graus = setores
+      .map(s => grauDependencia(s, EMPRESAS[s.id]?.internacionais || [], EMPRESAS[s.id]?.nacionais || []))
+      .filter((g): g is GrauDependencia => g !== null);
+    const media = graus.length ? graus.reduce((a, g) => a + g.pct, 0) / graus.length : null;
+    return {
+      id: l.id, nome: l.nome, cor: l.cor, total: setores.length, comMetrica: graus.length,
+      media, label: media !== null ? `${media.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%` : "—",
+    };
+  }), [porLayer]);
+
   if (erro) return <Erro msg={erro} />;
   if (!dados) return <Spinner />;
 
