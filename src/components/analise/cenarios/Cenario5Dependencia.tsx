@@ -216,6 +216,34 @@ export default function Cenario5Dependencia() {
         <Hint text={`${dados.aviso} Fonte: ${dados.fonte}. Versão ${dados.versao}.`} />
       </div>
 
+      <section className="rounded-2xl border border-border bg-card p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-xl font-bold text-foreground">Grau de dependência por camada</h3>
+            <p className="mt-0.5 max-w-3xl text-xs text-muted-foreground">
+              Média dos setores da camada que têm percentual mensurável (dado oficial, estimativa registrada na base ou inferido por exclusividade). Faixas de alerta do índice CD do Motor: ≤50 baixa · 50–70 moderada · &gt;70 crítica.
+            </p>
+          </div>
+          <Hint text={`Média simples do grau de dependência dos setores mensuráveis de cada camada (L1–L7). Camadas sem barra não têm nenhum percentual calculável — nada foi estimado. Contagens: ${resumoLayers.map(r => `${r.id} ${r.comMetrica}/${r.total}`).join(" · ")}.`} />
+        </div>
+        <div className="mt-4 h-56 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={resumoLayers} margin={{ top: 24, right: 8, left: -16, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-muted-foreground/20" />
+              <XAxis dataKey="id" tick={{ fontSize: 12, fill: "currentColor" }} tickLine={false} axisLine={{ stroke: "currentColor", strokeOpacity: 0.2 }} />
+              <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: "currentColor" }} tickLine={false} axisLine={false} width={44} />
+              <Tooltip content={<TooltipResumo />} cursor={{ fill: "currentColor", fillOpacity: 0.05 }} />
+              <ReferenceLine y={70} stroke="currentColor" strokeOpacity={0.35} strokeDasharray="4 4" label={{ value: "crítico >70%", position: "insideTopRight", fontSize: 10, fill: "currentColor" }} />
+              <Bar dataKey="media" maxBarSize={72} radius={[4, 4, 0, 0]}>
+                {resumoLayers.map(r => <Cell key={r.id} fill={r.cor} fillOpacity={r.media === null ? 0.18 : 0.85} />)}
+                <LabelList dataKey="label" position="top" style={{ fontSize: 11, fontWeight: 700, fill: "currentColor" }} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+
       {LAYERS.map(l => {
         const setores = porLayer[l.id] || [];
         if (!setores.length) return null;
