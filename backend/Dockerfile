@@ -27,24 +27,37 @@ ARG OLLAMA_VERSION=0.34.0
 RUN curl -fsSL "https://ollama.com/install.sh" | OLLAMA_VERSION=${OLLAMA_VERSION} sh \
     && ollama --version
 
-# Modelo Tucano 2 (2b4-Instruct, quantização Q3_K_M por tensorblock), baixado no
-# build da imagem porque o Railway encerra requisições longas em runtime.
-#   Fonte: https://huggingface.co/tensorblock/Tucano-2b4-Instruct-GGUF
-#   SHA-256 do GGUF, conforme publicado pelo Hugging Face (LFS oid):
-#     https://huggingface.co/api/models/tensorblock/Tucano-2b4-Instruct-GGUF/tree/main
-# O Ollama guarda cada blob como sha256-<hash>; se o arquivo baixado não tiver
-# exatamente o hash esperado, o blob não existe e o build falha aqui.
-ARG TUCANO_MODEL=hf.co/tensorblock/Tucano-2b4-Instruct-GGUF:Q3_K_M
-ARG TUCANO_GGUF_SHA256=ee4d1d3c2eaf7845c4a057fe3594bf3058029e73a836c799503d69f987322415
-ENV TUCANO_MODEL=${TUCANO_MODEL}
+# Modelo Tucano 2 (2b4-Instruct, quantização Q4_K_M), montado no build da
+# imagem porque o Railway encerra requisições longas em runtime.
+#   Fonte: https://huggingface.co/GuilhermeAumo/Tucano-2b4-Instruct-Q4_K_M-GGUF
+#   (gerado pelo gguf-my-repo a partir de TucanoBR/Tucano-2b4-Instruct),
+#   fixado pelo commit do repositório e pelo SHA-256 publicado (LFS oid).
+# O GGUF publicado registra `</instruction>` como token especial, que o modelo
+# nunca viu no treino, e a saída vira lixo (issue #19). ollama/fix_tucano_gguf.py
+# corrige só o vocabulário; o resultado é determinístico e também tem o
+# SHA-256 conferido. No fim, o build pergunta a capital do RS e falha se a
+# resposta não trouxer "Porto Alegre".
+ARG TUCANO_GGUF_URL=https://huggingface.co/GuilhermeAumo/Tucano-2b4-Instruct-Q4_K_M-GGUF/resolve/c4fa9890bceb71946545997d093f09f89c825edb/tucano-2b4-instruct-q4_k_m.gguf
+ARG TUCANO_GGUF_SHA256=c9ae932e0b53ce44fdeb9eb31d5aa16bf1012067a8d7a091c9d8e8ea7e1b9a35
+ARG TUCANO_FIXED_SHA256=e6b47941f18412174e4ee01085f34fc5c613313de4e079e7ce6be273ba79c40e
+ENV TUCANO_MODEL=tucano-2b4-instruct:q4_k_m
 ENV OLLAMA_MODELS=/app/.ollama/models
-RUN mkdir -p "$OLLAMA_MODELS" \
+COPY ollama/ /tmp/tucano/
+RUN set -e; mkdir -p "$OLLAMA_MODELS"; cd /tmp/tucano \
+    && curl -fsSL -o original.gguf "$TUCANO_GGUF_URL" \
+    && echo "$TUCANO_GGUF_SHA256  original.gguf" | sha256sum -c - \
+    && python -m venv /tmp/gguf-venv \
+    && /tmp/gguf-venv/bin/pip install --no-cache-dir -q gguf==0.19.0 \
+    && /tmp/gguf-venv/bin/python fix_tucano_gguf.py original.gguf tucano.gguf \
+    && echo "$TUCANO_FIXED_SHA256  tucano.gguf" | sha256sum -c - \
     && (ollama serve > /tmp/ollama-build.log 2>&1 &) \
     && for i in $(seq 1 30); do curl -sf http://127.0.0.1:11434/api/version && break; sleep 1; done \
-    && ollama pull "$TUCANO_MODEL" \
-    && (pkill -f "ollama serve" || true)
-RUN test -f "$OLLAMA_MODELS/blobs/sha256-$TUCANO_GGUF_SHA256" \
-    || { echo "ERRO: GGUF baixado não confere com o SHA-256 esperado ($TUCANO_GGUF_SHA256)"; ls -la "$OLLAMA_MODELS/blobs"; exit 1; }
+    && ollama create "$TUCANO_MODEL" -f Tucano.Modelfile \
+    && resposta=$(curl -sf http://127.0.0.1:11434/api/chat -d "{\"model\":\"$TUCANO_MODEL\",\"stream\":false,\"messages\":[{\"role\":\"user\",\"content\":\"Qual cidade é a capital do estado do Rio Grande do Sul?\"}],\"options\":{\"temperature\":0,\"num_predict\":40}}") \
+    && echo "$resposta" \
+    && if ! echo "$resposta" | grep -q "Porto Alegre"; then echo "ERRO: o Tucano não respondeu Porto Alegre"; exit 1; fi \
+    && (pkill -f "ollama serve" || true) \
+    && rm -rf /tmp/tucano /tmp/gguf-venv
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \

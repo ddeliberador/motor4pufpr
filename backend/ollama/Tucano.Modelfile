@@ -1,0 +1,11 @@
+# Tucano-2b4-Instruct para o Ollama (issue #19).
+# O template precisa ser explícito: num GGUF local o Ollama não deriva o
+# template do model card e cai num formato [INST] que o Tucano não conhece.
+# Parâmetros padrão conforme generation_config.json do TucanoBR; a temperatura
+# vem de cada chamada em local_llm.py.
+FROM ./tucano.gguf
+TEMPLATE """{{- range .Messages }}{{- if eq .Role "user" }}<instruction>{{ .Content }}</instruction>{{- else if eq .Role "assistant" }}{{ .Content }}</s>{{- end }}{{- end }}"""
+PARAMETER stop "<instruction>"
+PARAMETER stop "</s>"
+PARAMETER repeat_penalty 1.2
+PARAMETER top_k 50

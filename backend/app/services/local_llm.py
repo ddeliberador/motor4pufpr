@@ -22,15 +22,10 @@ logger = logging.getLogger(__name__)
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
 
-# Ollama puxa GGUF direto do Hugging Face com o formato
-#   hf.co/<usuario>/<repo>:<QUANT>
-# O repositório tensorblock/Tucano-2b4-Instruct-GGUF publica hoje apenas
-# Q2_K e Q3_K_M (não há Q4_K_M). Usamos Q3_K_M (melhor qualidade disponível)
-# e permitimos sobrescrever por variável de ambiente.
-MODEL = os.environ.get(
-    "TUCANO_MODEL",
-    "hf.co/tensorblock/Tucano-2b4-Instruct-GGUF:Q3_K_M",
-)
+# Modelo criado no build da imagem a partir do GGUF Q4_K_M com o vocabulário
+# corrigido (ver backend/Dockerfile e backend/ollama/, issue #19). Pode ser
+# sobrescrito por variável de ambiente.
+MODEL = os.environ.get("TUCANO_MODEL", "tucano-2b4-instruct:q4_k_m")
 
 # O proxy do Railway encerra requisições em ~300s. O chat precisa caber nesse
 # teto; o timeout local fica um pouco abaixo para devolver erro limpo em vez
