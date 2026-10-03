@@ -37,6 +37,7 @@ jobs:
       # Ignorada até tailwindcss publicar fix. Ver: https://github.com/advisories/GHSA-vfj7-8cjw-p6xm
       - run: npm audit --omit=dev --audit-level=high || npm audit --omit=dev --audit-level=high --json | node -e "
           const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+          if (d.error) { console.error('Audit indisponível (registry):', d.error); process.exit(1); }
           const skip = ['braces','chokidar','micromatch','fast-glob','tailwindcss','tailwindcss-animate'];
           const vulns = Object.entries(d.vulnerabilities || {})
             .filter(([name, v]) => !skip.includes(name) && (v.severity === 'high' || v.severity === 'critical'));
