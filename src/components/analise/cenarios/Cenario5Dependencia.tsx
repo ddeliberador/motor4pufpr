@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useMemo, useState } from "react";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Spinner, Erro } from "./Drawer";
 import DependencyThermometer from "@/components/shared/DependencyThermometer";
 
@@ -119,6 +120,21 @@ function BarraForca({ pct }: { pct: number }) {
   );
 }
 
+function TooltipResumo({ active, payload }: { active?: boolean; payload?: { payload: (typeof LAYERS)[number] & { total: number; comMetrica: number; media: number | null } }[] }) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0].payload;
+  return (
+    <div className="max-w-64 rounded-lg border border-border bg-popover px-3 py-2 text-xs shadow-lg">
+      <p className="font-semibold text-foreground">{d.id} — {d.nome}</p>
+      <p className="mt-0.5 text-muted-foreground">
+        {d.media !== null
+          ? <>Média de <span className="font-semibold tabular-nums text-foreground">{d.media.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%</span> em {d.comMetrica} de {d.total} setor{d.total !== 1 ? "es" : ""} com percentual mensurável.</>
+          : <>Nenhum dos {d.total} setor{d.total !== 1 ? "es" : ""} tem percentual calculável.</>}
+      </p>
+    </div>
+  );
+}
+
 function CardSetor({ s, cor }: { s: Setor; cor: string }) {
   const int = EMPRESAS[s.id]?.internacionais || [];
   const nac = EMPRESAS[s.id]?.nacionais || [];
@@ -190,6 +206,19 @@ export default function Cenario5Dependencia() {
     return m;
   }, [dados]);
 
+  // Média do grau de dependência por camada — só setores com percentual mensurável.
+  const resumoLayers = useMemo(() => LAYERS.map(l => {
+    const setores = porLayer[l.id] || [];
+    const graus = setores
+      .map(s => grauDependencia(s, EMPRESAS[s.id]?.internacionais || [], EMPRESAS[s.id]?.nacionais || []))
+      .filter((g): g is GrauDependencia => g !== null);
+    const media = graus.length ? graus.reduce((a, g) => a + g.pct, 0) / graus.length : null;
+    return {
+      id: l.id, nome: l.nome, cor: l.cor, total: setores.length, comMetrica: graus.length,
+      media, label: media !== null ? `${media.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%` : "—",
+    };
+  }), [porLayer]);
+
   if (erro) return <Erro msg={erro} />;
   if (!dados) return <Spinner />;
 
@@ -201,6 +230,34 @@ export default function Cenario5Dependencia() {
         <span>Ranking = ordem de relevância registrada na planilha auditada (não é market share).</span>
         <Hint text={`${dados.aviso} Fonte: ${dados.fonte}. Versão ${dados.versao}.`} />
       </div>
+
+      <section className="rounded-2xl border border-border bg-card p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-xl font-bold text-foreground">Grau de dependência por camada</h3>
+            <p className="mt-0.5 max-w-3xl text-xs text-muted-foreground">
+              Média dos setores da camada que têm percentual mensurável (dado oficial, estimativa registrada na base ou inferido por exclusividade). Faixas de alerta do índice CD do Motor: ≤50 baixa · 50–70 moderada · &gt;70 crítica.
+            </p>
+          </div>
+          <Hint text={`Média simples do grau de dependência dos setores mensuráveis de cada camada (L1–L7). Camadas sem barra não têm nenhum percentual calculável — nada foi estimado. Contagens: ${resumoLayers.map(r => `${r.id} ${r.comMetrica}/${r.total}`).join(" · ")}.`} />
+        </div>
+        <div className="mt-4 h-56 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={resumoLayers} margin={{ top: 24, right: 8, left: 4, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-muted-foreground/20" />
+              <XAxis dataKey="id" tick={{ fontSize: 12, fill: "currentColor" }} tickLine={false} axisLine={{ stroke: "currentColor", strokeOpacity: 0.2 }} />
+              <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: "currentColor" }} tickLine={false} axisLine={false} width={44} />
+              <Tooltip content={<TooltipResumo />} cursor={{ fill: "currentColor", fillOpacity: 0.05 }} />
+              <ReferenceLine y={70} stroke="currentColor" strokeOpacity={0.35} strokeDasharray="4 4" label={{ value: "crítico >70%", position: "insideTopRight", fontSize: 10, fill: "currentColor" }} />
+              <Bar dataKey="media" maxBarSize={72} radius={[4, 4, 0, 0]}>
+                {resumoLayers.map(r => <Cell key={r.id} fill={r.cor} fillOpacity={r.media === null ? 0.18 : 0.85} />)}
+                <LabelList dataKey="label" position="top" style={{ fontSize: 11, fontWeight: 700, fill: "currentColor" }} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
 
       {LAYERS.map(l => {
         const setores = porLayer[l.id] || [];
