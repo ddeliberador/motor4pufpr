@@ -125,7 +125,6 @@ export default function Cenario2Capacidade() {
               <Tooltip content={<GapTooltip />} />
               <Legend
                 wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-                formatter={(value: string) => value === "ict" ? "ICTs/Universidades" : "Startups"}
               />
               <Bar dataKey="ict" name="ICTs/Universidades" fill="#34d399" radius={[3,3,0,0]} cursor="pointer" opacity={0.9} />
               <Bar dataKey="startups" name="Startups" fill="#f472b6" radius={[3,3,0,0]} cursor="pointer" opacity={0.9} />
