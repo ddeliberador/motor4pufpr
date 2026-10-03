@@ -78,7 +78,7 @@ export default function Analise() {
       </div>
 
       {/* Conteúdo */}
-      <div className={`${cenarioAtivo === 5 ? "max-w-none px-6" : "max-w-7xl px-4"} mx-auto py-8`}>
+      <div className="max-w-7xl px-4 mx-auto py-8">
         {cenarioAtivo === 1 && <Cenario1Infraestrutura />}
         {cenarioAtivo === 2 && <Cenario2Capacidade />}
         {cenarioAtivo === 3 && <Cenario3Governanca />}

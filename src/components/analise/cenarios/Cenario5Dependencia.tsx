@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useMemo, useState } from "react";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Spinner, Erro } from "./Drawer";
 import DependencyThermometer from "@/components/shared/DependencyThermometer";
 
