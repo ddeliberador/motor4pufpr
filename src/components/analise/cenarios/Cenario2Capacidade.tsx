@@ -5,6 +5,13 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 interface UFPonto { uf: string; ict: number; startups: number }
 interface Ator { id: string; nome: string; tipo: string; municipio: string; uf: string }
 
+interface GapTooltipItem {
+  dataKey?: string;
+  value?: number;
+  color?: string;
+  payload?: UFPonto;
+}
+
 const CORES_TIPO: Record<string, string> = {
   "Startup": "#f472b6", "ICT": "#60a5fa", "Universidade": "#34d399",
   "Instituto de Pesquisa": "#a78bfa", "Unidade Embrapii": "#fb923c",
@@ -12,6 +19,20 @@ const CORES_TIPO: Record<string, string> = {
 };
 
 const CORES_PIE = ["#f472b6","#60a5fa","#34d399","#a78bfa","#fb923c","#facc15","#2dd4bf","#818cf8"];
+
+function GapTooltip({ active, payload, label }: { active?: boolean; payload?: GapTooltipItem[]; label?: string }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-lg">
+      <p className="mb-1 font-medium text-foreground">{label} — clique para ver os atores</p>
+      {payload.map(item => (
+        <p key={item.dataKey} className="font-medium" style={{ color: item.color }}>
+          {item.dataKey === "ict" ? "ICTs/Universidades" : "Startups"}: {Number(item.value || 0).toLocaleString("pt-BR")}
+        </p>
+      ))}
+    </div>
+  );
+}
 
 export default function Cenario2Capacidade() {
   const [porTipo, setPorTipo] = useState<{ tipo: string; total: number }[]>([]);
@@ -101,10 +122,10 @@ export default function Cenario2Capacidade() {
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="uf" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
               <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-              <Tooltip
-                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
-                formatter={(v: number, name: string) => [v.toLocaleString("pt-BR"), name === "ict" ? "ICTs/Universidades" : "Startups"]}
-                labelFormatter={l => `${l} — clique para ver os atores`}
+              <Tooltip content={<GapTooltip />} />
+              <Legend
+                wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+                formatter={(value: string) => value === "ict" ? "ICTs/Universidades" : "Startups"}
               />
               <Bar dataKey="ict" name="ICTs/Universidades" fill="#34d399" radius={[3,3,0,0]} cursor="pointer" opacity={0.9} />
               <Bar dataKey="startups" name="Startups" fill="#f472b6" radius={[3,3,0,0]} cursor="pointer" opacity={0.9} />
