@@ -125,7 +125,7 @@ function TooltipResumo({ active, payload }: { active?: boolean; payload?: { payl
   const d = payload[0].payload;
   return (
     <div className="max-w-64 rounded-lg border border-border bg-popover px-3 py-2 text-xs shadow-lg">
-      <p className="font-semibold text-foreground">{d.id} — {d.nome}</p>
+      <p className="font-semibold text-foreground">Camada de IA {d.id} — {d.nome}</p>
       <p className="mt-0.5 text-muted-foreground">
         {d.media !== null
           ? <>Média de <span className="font-semibold tabular-nums text-foreground">{d.media.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%</span> em {d.comMetrica} de {d.total} setor{d.total !== 1 ? "es" : ""} com percentual mensurável.</>
@@ -234,12 +234,12 @@ export default function Cenario5Dependencia() {
       <section className="rounded-2xl border border-border bg-card p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-xl font-bold text-foreground">Grau de dependência por camada</h3>
+            <h3 className="text-xl font-bold text-foreground">Grau de dependência por camada de IA (L1–L7)</h3>
             <p className="mt-0.5 max-w-3xl text-xs text-muted-foreground">
-              Média dos setores da camada que têm percentual mensurável (dado oficial, estimativa registrada na base ou inferido por exclusividade). Faixas de alerta do índice CD do Motor: ≤50 baixa · 50–70 moderada · &gt;70 crítica.
+              Média dos setores de cada camada de IA que têm percentual mensurável (dado oficial, estimativa registrada na base ou inferido por exclusividade). Faixas de alerta do índice CD do Motor: ≤50 baixa · 50–70 moderada · &gt;70 crítica.
             </p>
           </div>
-          <Hint text={`Média simples do grau de dependência dos setores mensuráveis de cada camada (L1–L7). Camadas sem barra não têm nenhum percentual calculável — nada foi estimado. Contagens: ${resumoLayers.map(r => `${r.id} ${r.comMetrica}/${r.total}`).join(" · ")}.`} />
+          <Hint text={`Média simples do grau de dependência dos setores mensuráveis de cada camada de IA (L1–L7). Camadas sem barra não têm nenhum percentual calculável — nada foi estimado. Contagens: ${resumoLayers.map(r => `${r.id} ${r.comMetrica}/${r.total}`).join(" · ")}.`} />
         </div>
         <div className="mt-4 h-56 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -266,7 +266,7 @@ export default function Cenario5Dependencia() {
           <section key={l.id} className="space-y-4 border-t-4 pt-5" style={{ borderColor: l.cor }}>
             <div className="flex items-center gap-4">
               <span className="rounded-md px-3 py-1 text-base font-bold" style={{ color: l.cor, background: l.cor + "1f" }}>{l.id}</span>
-              <h3 className="text-2xl font-bold text-foreground">{l.nome}</h3>
+              <h3 className="text-2xl font-bold text-foreground">Camada de IA {l.id} — {l.nome}</h3>
               <span className="text-sm font-medium text-muted-foreground">{setores.length} setor{setores.length !== 1 ? "es" : ""}</span>
             </div>
 
