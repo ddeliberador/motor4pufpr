@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { guardRequest } from "../_shared/guard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -166,7 +167,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { query, cnpjs } = await req.json();
+    const guard = await guardRequest<{ query?: string; cnpjs?: string[] }>(req, "competitor-search", corsHeaders, { limit: 30 });
+    if (!guard.ok) return guard.response;
+    const { query, cnpjs } = guard.body;
     if (!query) {
       return new Response(JSON.stringify({ error: "query is required" }), {
         status: 400,

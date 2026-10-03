@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { guardRequest } from "../_shared/guard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -702,7 +703,14 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { query, selectedCnaes, persona = "pesquisador", uf, uf_nome, municipio, municipio_ibge } = await req.json();
+    // Cada busca dispara o Railway e todas as camadas: limite por IP e,
+    // se o limite não puder ser verificado, recusa em vez de liberar.
+    const guard = await guardRequest<{
+      query?: string; selectedCnaes?: string[]; persona?: string;
+      uf?: string; uf_nome?: string; municipio?: string; municipio_ibge?: string;
+    }>(req, "motor-search", corsHeaders, { limit: 20, failClosed: true });
+    if (!guard.ok) return guard.response;
+    const { query, selectedCnaes, persona = "pesquisador", uf, uf_nome, municipio, municipio_ibge } = guard.body;
     const location = { uf: uf || "", uf_nome: uf_nome || "", municipio: municipio || "", municipio_ibge: municipio_ibge || "" };
     const hasLocation = !!uf;
     console.log(`Localização: ${hasLocation ? `${municipio || uf}` : "nacional"}`);

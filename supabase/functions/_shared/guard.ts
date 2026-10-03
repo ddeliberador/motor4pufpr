@@ -27,17 +27,21 @@ export function isShortString(v: unknown, max: number): boolean {
 
 /**
  * Rate limit por IP com janela deslizante, persistido em public.ai_rate_limits.
- * Falha aberta (permite) se não houver service role — não bloqueia o fluxo atual.
+ * Por padrão falha aberta (permite) se não houver service role ou se a tabela
+ * não responder. Com failClosed, essas situações devolvem unavailable: true.
  */
 export async function checkRateLimit(
   fn: string,
   ip: string,
   limit = 20,
   windowSeconds = 300,
-): Promise<{ allowed: boolean; retryAfter: number }> {
+  failClosed = false,
+): Promise<{ allowed: boolean; retryAfter: number; unavailable?: boolean }> {
+  const open = { allowed: true, retryAfter: 0 };
+  const unavailable = { allowed: false, retryAfter: 0, unavailable: true };
   const url = Deno.env.get("SUPABASE_URL");
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!url || !key) return { allowed: true, retryAfter: 0 };
+  if (!url || !key) return failClosed ? unavailable : open;
 
   const headers = { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
   const since = new Date(Date.now() - windowSeconds * 1000).toISOString();
@@ -47,37 +51,41 @@ export async function checkRateLimit(
       `${url}/rest/v1/ai_rate_limits?select=id&fn=eq.${encodeURIComponent(fn)}&ip=eq.${encodeURIComponent(ip)}&created_at=gte.${since}`,
       { headers: { ...headers, Prefer: "count=exact", Range: "0-0" }, signal: AbortSignal.timeout(4000) },
     );
+    if (failClosed && !res.ok) return unavailable;
     const range = res.headers.get("content-range") || "";
     const count = Number(range.split("/")[1] || 0);
     if (Number.isFinite(count) && count >= limit) {
       return { allowed: false, retryAfter: windowSeconds };
     }
     // Registra a chamada atual e limpa registros antigos (sem bloquear a resposta).
-    await fetch(`${url}/rest/v1/ai_rate_limits`, {
+    const ins = await fetch(`${url}/rest/v1/ai_rate_limits`, {
       method: "POST",
       headers: { ...headers, Prefer: "return=minimal" },
       body: JSON.stringify({ fn, ip }),
       signal: AbortSignal.timeout(4000),
     });
+    // Sem o registro, o contador não acumula e o limite deixa de valer.
+    if (failClosed && !ins.ok) return unavailable;
     fetch(`${url}/rest/v1/ai_rate_limits?created_at=lt.${new Date(Date.now() - 86_400_000).toISOString()}`, {
       method: "DELETE",
       headers: { ...headers, Prefer: "return=minimal" },
     }).catch(() => {});
-    return { allowed: true, retryAfter: 0 };
+    return open;
   } catch (_e) {
-    return { allowed: true, retryAfter: 0 };
+    return failClosed ? unavailable : open;
   }
 }
 
 /**
  * Lê e valida o corpo da requisição: rejeita >64 KB (413), JSON inválido (400)
- * e aplica rate limit por IP (429).
+ * e aplica rate limit por IP (429). Com failClosed, devolve 503 se o rate limit
+ * não puder ser verificado.
  */
 export async function guardRequest<T = Record<string, unknown>>(
   req: Request,
   fn: string,
   corsHeaders: Record<string, string>,
-  opts: { limit?: number; windowSeconds?: number } = {},
+  opts: { limit?: number; windowSeconds?: number; failClosed?: boolean } = {},
 ): Promise<GuardResult<T>> {
   const declared = Number(req.headers.get("content-length") || 0);
   if (declared > MAX_BODY_BYTES) {
@@ -117,7 +125,13 @@ export async function guardRequest<T = Record<string, unknown>>(
   }
 
   const ip = clientIp(req);
-  const rl = await checkRateLimit(fn, ip, opts.limit ?? 20, opts.windowSeconds ?? 300);
+  const rl = await checkRateLimit(fn, ip, opts.limit ?? 20, opts.windowSeconds ?? 300, opts.failClosed ?? false);
+  if (rl.unavailable) {
+    return {
+      ok: false,
+      response: json({ error: "Serviço temporariamente indisponível. Tente novamente em instantes." }, 503, corsHeaders),
+    };
+  }
   if (!rl.allowed) {
     return {
       ok: false,
