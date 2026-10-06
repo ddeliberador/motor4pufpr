@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import AtoresDrawer from "./AtoresDrawer";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
@@ -33,13 +34,7 @@ export default function Cenario1Infraestrutura() {
       });
   }, []);
 
-  function abrirDrawer(uf: string) {
-    setDrawerUF(uf);
-    setCarregandoDrawer(true);
-    supabase.from("research_locations").select("id, nome, tipo, municipio, uf")
-      .eq("uf", uf).not("nome", "is", null).limit(50)
-      .then(({ data }) => { setAtoresDrawer(data || []); setCarregandoDrawer(false); });
-  }
+  function abrirDrawer(uf: string) { setDrawerUF(uf); }
 
   const semFibra = backhaul.filter(b => b.pct < 70);
   const totalSem = backhaul.reduce((s, b) => s + b.sem, 0);
@@ -118,43 +113,10 @@ export default function Cenario1Infraestrutura() {
         </div>
       )}
 
-      {/* Drawer */}
       {drawerUF && (
-        <div className="fixed inset-0 z-50 flex" onClick={() => setDrawerUF(null)}>
-          <div className="flex-1 bg-black/40" />
-          <div className="w-full max-w-sm bg-card border-l border-border flex flex-col h-full" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-border px-4 py-3 shrink-0">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Atores SNI</p>
-                <h3 className="text-base font-bold text-foreground">{drawerUF}</h3>
-                <p className="text-xs text-muted-foreground">{backhaul.find(b => b.uf === drawerUF)?.pct}% de cobertura de backhaul</p>
-              </div>
-              <button onClick={() => setDrawerUF(null)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted">
-                <span className="material-symbols-outlined text-lg leading-none">close</span>
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {carregandoDrawer ? (
-                <div className="flex h-32 items-center justify-center">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                </div>
-              ) : atoresDrawer.map(a => (
-                <div key={a.id} className="rounded-lg border border-border bg-muted/30 p-3">
-                  <p className="text-xs font-semibold text-foreground leading-tight">{a.nome}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">{a.tipo}</span>
-                    <span className="text-[10px] text-muted-foreground">{a.municipio}</span>
-                  </div>
-                </div>
-              ))}
-              {!carregandoDrawer && (
-                <p className="text-center text-[10px] text-muted-foreground pt-2">
-                  {atoresDrawer.length} atores · <a href="/mapa" className="text-primary hover:underline">ver no Mapa</a>
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
+        <AtoresDrawer uf={drawerUF} titulo={drawerUF} cor="#fb923c"
+          subtitulo={`${backhaul.find(b => b.uf === drawerUF)?.pct}% dos municípios com backhaul de fibra`}
+          onClose={() => setDrawerUF(null)} />
       )}
     </div>
   );
