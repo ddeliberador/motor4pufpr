@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { buscarContratosPNCP } from "../_shared/pncp.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,79 +22,23 @@ async function safeFetch(url: string, options?: RequestInit, timeoutMs = 20000):
   }
 }
 
-function pncpDate(d: Date) {
-  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
-}
-
-async function searchPNCP(query: string, searchTerms: string[], cnaeCodes: string[], uf = "") {
-  // Tenta múltiplos termos de busca e agrega resultados únicos
-  const allResults: any[] = [];
-  const seenIds = new Set<string>();
-
-  // A API do PNCP exige dataInicial e dataFinal (AAAAMMDD). Sem elas retorna HTTP 400.
-  // Janela de 180 dias: o ano inteiro combinado com o parâmetro q derruba a API (504).
-  const hoje = new Date();
-  const dataFinal = pncpDate(hoje);
-  const inicio = new Date(hoje.getTime() - 180 * 24 * 60 * 60 * 1000);
-  const anoAtual = new Date(hoje.getFullYear(), 0, 1);
-  const dataInicial = pncpDate(inicio > anoAtual ? inicio : anoAtual);
-
-  // Busca com cada termo expandido (máx 2 para não estourar o tempo da API do PNCP)
-  const termsToTry = [query, ...searchTerms.filter((t) => t !== query)].slice(0, 2);
-
-
-  for (const term of termsToTry) {
-    const params = new URLSearchParams({
-      tamanhoPagina: "10",
-      pagina: "1",
-      q: term,
-      dataInicial,
-      dataFinal,
-    });
-    if (uf) params.set("uf", uf);
-    const data = await safeFetch(
-      `https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?${params.toString()}`
-    );
-    const items = Array.isArray(data) ? data : (data?.data || data?.content || data?.items || []);
-
-    for (const item of items) {
-      const id = item.id || item.numeroCompra || JSON.stringify(item).slice(0, 40);
-      if (!seenIds.has(id)) {
-        seenIds.add(id);
-        allResults.push({
-          object: item.objetoCompra || item.objeto || "",
-          organ: item.orgaoEntidade?.razaoSocial || item.nomeOrgao || "",
-          modality: item.modalidadeNome || item.modalidade || "",
-          value: item.valorTotalEstimado || item.valorTotal || 0,
-          status: item.situacaoCompra || item.situacao || "",
-          date: item.dataPublicacao || item.dataCadastramento || "",
-          uf: item.unidadeOrgao?.ufSigla || item.uf || "",
-          url: item.linkSistemaOrigem || item.linkPublicacao || `https://pncp.gov.br/app/editais?q=${encodeURIComponent(term)}`,
-          search_term_used: term,
-        });
-      }
-    }
-  }
-
-  // Fallback se nenhum resultado
-  if (allResults.length === 0) {
-    const fallback = await safeFetch(
-      `https://dados.gov.br/api/3/action/package_search?q=${encodeURIComponent(query + " licitação contrato compras públicas ciência tecnologia")}&rows=5`
-    );
-    return (fallback?.result?.results || []).map((pkg: any) => ({
-      object: pkg.title || "",
-      organ: pkg.organization?.title || "",
-      modality: "Dataset",
-      value: 0,
-      status: "dataset",
-      date: "",
-      uf: "",
-      url: `https://dados.gov.br/dados/conjuntos-dados/${pkg.name}`,
-      search_term_used: query,
-    }));
-  }
-
-  return allResults.slice(0, 15);
+// Contratos do PNCP no formato de `contracts`. Sem resultado, devolve vazio:
+// a resposta não pode trazer outra coisa (datasets, por exemplo) como contrato.
+async function searchPNCP(query: string, searchTerms: string[], uf = "") {
+  // Máx. 2 termos × 2 tentativas × 10 s (+ pausa): cabe nos 45 s da camada no motor-search.
+  const termos = [query, ...searchTerms.filter((t) => t !== query)].slice(0, 2);
+  const contratos = await buscarContratosPNCP(termos, { uf, porTermo: 10, timeoutMs: 10000 });
+  return contratos.slice(0, 15).map((c) => ({
+    object: c.objeto,
+    organ: c.orgao,
+    modality: c.modalidade,
+    value: c.valor,
+    status: c.situacao,
+    date: c.data,
+    uf: c.uf,
+    url: c.url,
+    search_term_used: c.termo,
+  }));
 }
 
 async function searchTransparencia(query: string, searchTerms: string[]) {
@@ -382,7 +327,7 @@ Deno.serve(async (req) => {
     const start = Date.now();
 
     const [pncp, transparencia, siconfi, gazettes, funding, tcu, tse, siop, datajud, ibama] = await Promise.all([
-      searchPNCP(query, searchTerms, cnaeCodes, uf), searchTransparencia(query, searchTerms), searchSICONFI(), searchQueridoDiario(query),
+      searchPNCP(query, searchTerms, uf), searchTransparencia(query, searchTerms), searchSICONFI(), searchQueridoDiario(query),
       searchFundingDatasets(query), searchTCU(query), searchTSE(query), searchSIOP(query), searchDataJud(query), searchIBAMA(query),
     ]);
 
