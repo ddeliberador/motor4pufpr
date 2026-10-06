@@ -246,7 +246,7 @@ export default function Cenario5Dependencia() {
               <Tooltip content={<TooltipResumo />} cursor={{ fill: "currentColor", fillOpacity: 0.05 }} />
               <ReferenceLine y={70} stroke="currentColor" strokeOpacity={0.35} strokeDasharray="4 4" label={{ value: "crítico >70%", position: "insideTopRight", fontSize: 10, fill: "currentColor" }} />
               <Bar dataKey="media" maxBarSize={72} radius={[4, 4, 0, 0]}>
-                {resumoLayers.map(r => <Cell key={r.id} fill={r.cor} fillOpacity={r.media === null ? 0.18 : 0.85} />)}
+                {resumoLayers.map(r => <Cell key={r.id} fill={r.cor} fillOpacity={r.media === null ? 0.18 : r.proxy ? 0.45 : 0.9} />)}
                 <LabelList dataKey="label" position="top" style={{ fontSize: 11, fontWeight: 700, fill: "currentColor" }} />
               </Bar>
             </BarChart>

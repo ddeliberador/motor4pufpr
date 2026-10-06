@@ -26,35 +26,39 @@ export default function Analise() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Abas de navegação */}
+      {/* Menu de cenários em botões */}
       <div className="pt-20 border-b border-border bg-background/95 backdrop-blur sticky top-0 z-40">
-        <div className="px-4 max-w-7xl mx-auto flex gap-1 overflow-x-auto">
-          {CENARIOS.map(c => (
-            <button key={c.id} onClick={() => setCenarioAtivo(c.id as CenarioId)}
-              className={`flex shrink-0 items-center gap-2 px-4 py-3 text-xs font-medium border-b-2 transition-all ${
-                cenarioAtivo === c.id
-                  ? "border-current text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-              style={cenarioAtivo === c.id ? { borderColor: c.cor, color: c.cor } : {}}>
-              <span className="material-symbols-outlined text-base leading-none" style={{ fontVariationSettings: '"FILL" 1', color: c.cor }}>{c.icone}</span>
-              <span className="hidden sm:inline">C{c.id} — {c.titulo}</span>
-              <span className="sm:hidden">C{c.id}</span>
-            </button>
-          ))}
+        <div className="px-4 py-3 max-w-7xl mx-auto grid grid-cols-2 gap-2 lg:grid-cols-4">
+          {CENARIOS.map(c => {
+            const ativo = cenarioAtivo === c.id;
+            return (
+              <button key={c.id} onClick={() => setCenarioAtivo(c.id as CenarioId)}
+                className={`flex items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-md ${
+                  ativo ? "shadow-md" : "border-border bg-card"}`}
+                style={ativo ? { borderColor: c.cor, background: c.cor + "1a" } : {}}>
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ background: c.cor + (ativo ? "40" : "20") }}>
+                  <span className="material-symbols-outlined text-xl leading-none" style={{ fontVariationSettings: '"FILL" 1', color: c.cor }}>{c.icone}</span>
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[10px] font-bold uppercase tracking-widest" style={{ color: c.cor }}>Cenário {c.id}</span>
+                  <span className={`block truncate text-sm font-bold ${ativo ? "text-foreground" : "text-muted-foreground"}`}>{c.titulo}</span>
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Hero narrativo */}
+      {/* Hero narrativo: pergunta + resposta curta */}
       <div className="border-b border-border bg-card">
-        <div className="max-w-7xl mx-auto px-4 py-5 flex items-start gap-4 flex-wrap">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: cfg.cor + "20" }}>
-            <span className="material-symbols-outlined text-xl leading-none" style={{ fontVariationSettings: '"FILL" 1', color: cfg.cor }}>{cfg.icone}</span>
+        <div className="max-w-7xl mx-auto px-4 py-6 flex items-start gap-4 flex-wrap">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl" style={{ background: cfg.cor + "20" }}>
+            <span className="material-symbols-outlined text-2xl leading-none" style={{ fontVariationSettings: '"FILL" 1', color: cfg.cor }}>{cfg.icone}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: cfg.cor }}>Cenário {cenarioAtivo} de 4</p>
-            <h1 className="text-xl font-bold text-foreground mt-0.5">{cfg.titulo}</h1>
-            <p className="text-sm text-muted-foreground mt-1 max-w-2xl">{cfg.descricao}</p>
+            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: cfg.cor }}>Cenário {cenarioAtivo} de 4 · {cfg.titulo}</p>
+            <h1 className="text-3xl font-extrabold text-foreground mt-1">{cfg.subtitulo}</h1>
+            <p className="text-base text-muted-foreground mt-2 max-w-3xl">{cfg.descricao}</p>
           </div>
           <div className="flex gap-2 shrink-0 self-center">
             {cenarioAtivo > 1 && (
