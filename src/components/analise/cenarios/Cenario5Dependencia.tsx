@@ -113,16 +113,16 @@ function proxyPresenca(setores: Setor[]): number | null {
   return i + n ? (100 * i) / (i + n) : null;
 }
 
-function TooltipResumo({ active, payload }: { active?: boolean; payload?: { payload: (typeof LAYERS)[number] & { total: number; comMetrica: number; media: number | null } }[] }) {
+function TooltipResumo({ active, payload }: { active?: boolean; payload?: { payload: (typeof LAYERS)[number] & { total: number; comMetrica: number; media: number | null; proxy: boolean } }[] }) {
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
   return (
     <div className="max-w-64 rounded-lg border border-border bg-popover px-3 py-2 text-xs shadow-lg">
       <p className="font-semibold text-foreground">Camada de IA {d.id} — {d.nome}</p>
       <p className="mt-0.5 text-muted-foreground">
-        {d.media !== null
-          ? <>Média de <span className="font-semibold tabular-nums text-foreground">{d.media.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%</span> em {d.comMetrica} de {d.total} setor{d.total !== 1 ? "es" : ""} com percentual mensurável.</>
-          : <>Nenhum dos {d.total} setor{d.total !== 1 ? "es" : ""} tem percentual calculável.</>}
+        {d.media === null ? <>Nenhuma empresa ou percentual identificado.</>
+          : d.proxy ? <><span className="font-semibold text-foreground">{d.media.toFixed(0)}%</span> das empresas identificadas são estrangeiras (sem percentual oficial de mercado).</>
+          : <>Média de <span className="font-semibold tabular-nums text-foreground">{d.media.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%</span> em {d.comMetrica} de {d.total} setor{d.total !== 1 ? "es" : ""}.</>}
       </p>
     </div>
   );
@@ -158,12 +158,18 @@ function CardSetor({ s, cor }: { s: Setor; cor: string }) {
 
       <div className="mt-auto pt-3">
         {grau && <>
-          <BarraForca pct={grau.pct} />
+          <p className="text-xs text-muted-foreground">
+            <span className="font-semibold text-emerald-500">{(100 - grau.pct).toLocaleString("pt-BR")}% nacional</span>
+            {" · "}
+            <span className="font-semibold text-destructive">{grau.pct.toLocaleString("pt-BR")}% estrangeiro</span>
+          </p>
           <DependencyThermometer
             value={grau.pct}
             compact
-            className="mt-3"
-            detail={grau.estimativa
+            className="mt-2"
+            detail={grau.inferido
+              ? (grau.pct === 100 ? "Só há empresas estrangeiras identificadas: dependência total." : "Só há empresas nacionais identificadas: autonomia.")
+              : grau.estimativa
               ? "Estimativa qualitativa registrada na base auditada."
               : "Calculado com o percentual de mercado ou importação da fonte auditada."}
           />
@@ -195,16 +201,18 @@ export default function Cenario5Dependencia() {
     return m;
   }, [dados]);
 
-  // Média do grau de dependência por camada — só setores com percentual mensurável.
+  // Média dos setores com grau; sem nenhum, usa a presença de empresas estrangeiras (proxy).
   const resumoLayers = useMemo(() => LAYERS.map(l => {
     const setores = porLayer[l.id] || [];
     const graus = setores
       .map(grauDependencia)
       .filter((g): g is GrauDependencia => g !== null);
-    const media = graus.length ? graus.reduce((a, g) => a + g.pct, 0) / graus.length : null;
+    const mediaReal = graus.length ? graus.reduce((a, g) => a + g.pct, 0) / graus.length : null;
+    const proxy = mediaReal === null ? proxyPresenca(setores) : null;
+    const media = mediaReal ?? proxy;
     return {
-      id: l.id, nome: l.nome, cor: l.cor, total: setores.length, comMetrica: graus.length,
-      media, label: media !== null ? `${media.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%` : "—",
+      id: l.id, nome: l.nome, cor: l.cor, total: setores.length, comMetrica: graus.length, proxy: proxy !== null,
+      media, label: media !== null ? `${media.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}%${proxy !== null ? "*" : ""}` : "—",
     };
   }), [porLayer]);
 
@@ -213,9 +221,7 @@ export default function Cenario5Dependencia() {
 
   return (
     <div className="w-full space-y-8">
-      <div className="flex flex-wrap items-center gap-4 text-[11px] text-muted-foreground">
-        <span className="flex items-center gap-1"><span className="h-2 w-4 rounded bg-emerald-500" /> nacional</span>
-        <span className="flex items-center gap-1"><span className="h-2 w-4 rounded bg-destructive" /> estrangeiro</span>
+      <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
         <span>Ranking = ordem de relevância registrada na planilha auditada (não é market share).</span>
         <Hint text={`${dados.aviso} Fonte: ${dados.fonte}. Versão ${dados.versao}.`} />
       </div>
@@ -223,12 +229,13 @@ export default function Cenario5Dependencia() {
       <section className="rounded-2xl border border-border bg-card p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-xl font-bold text-foreground">Grau de dependência por camada de IA (L1–L7)</h3>
-            <p className="mt-0.5 max-w-3xl text-xs text-muted-foreground">
-              Média dos setores de cada camada de IA que têm percentual mensurável (dado oficial ou estimativa registrada na base). Faixas de alerta do índice CD do Motor: ≤50 baixa · 50–70 moderada · &gt;70 crítica.
+            <h3 className="text-2xl font-bold text-foreground">Grau de dependência por camada de IA (L1–L7)</h3>
+            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+              Quanto maior a barra, mais a camada depende de empresas estrangeiras. Acima de 70% é dependência crítica.
+              <span className="block text-xs">* sem percentual oficial: participação de empresas estrangeiras entre as identificadas na base (barra mais clara).</span>
             </p>
           </div>
-          <Hint text={`Média simples do grau de dependência dos setores mensuráveis de cada camada de IA (L1–L7). Camadas sem barra não têm nenhum percentual calculável — nada foi estimado. Contagens: ${resumoLayers.map(r => `${r.id} ${r.comMetrica}/${r.total}`).join(" · ")}.`} />
+          <Hint text={`Média do grau dos setores com percentual (oficial, estimativa ou só estrangeiras/só nacionais). Camadas com * usam a proporção de empresas estrangeiras listadas — indicador de presença, não de fatia de mercado. Setores com grau: ${resumoLayers.map(r => `${r.id} ${r.comMetrica}/${r.total}`).join(" · ")}.`} />
         </div>
         <div className="mt-4 h-56 w-full">
           <ResponsiveContainer width="100%" height="100%">
