@@ -127,6 +127,13 @@
       "when": 1790797494745,
       "tag": "0017_gold_public_read",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791256406332,
+      "tag": "0018_nota_capacidade_uf",
+      "breakpoints": true
     }
   ]
 }
