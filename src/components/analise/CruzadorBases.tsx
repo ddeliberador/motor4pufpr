@@ -1,3 +1,4 @@
+import { fetchAll } from "@/lib/fetchAll";
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -402,7 +403,7 @@ async function buscarBase(
     };
     let q = supabase.from("research_locations").select("uf, tipo").not("uf", "is", null);
     if (filtroUF) q = q.eq("uf", filtroUF);
-    const { data } = await q;
+    const data = await fetchAll<any>(q);
     const ft = filtroTipo[baseId];
     const cont: Record<string, number> = {};
     (data || []).forEach(r => {
@@ -417,7 +418,7 @@ async function buscarBase(
   if (baseId === "backhaul") {
     let q = supabase.from("infra_backhaul_municipio").select("uf, tem_backhaul").not("uf", "is", null);
     if (filtroUF) q = q.eq("uf", filtroUF);
-    const { data } = await q;
+    const data = await fetchAll<any>(q);
     const agg: Record<string, { com: number; sem: number; total: number }> = {};
     (data || []).forEach(r => {
       if (!r.uf) return;

@@ -1,3 +1,4 @@
+import { fetchAll } from "@/lib/fetchAll";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from "recharts";
@@ -44,8 +45,8 @@ export default function Cenario2Capacidade() {
   const [carregandoDrawer, setCarregandoDrawer] = useState(false);
 
   useEffect(() => {
-    supabase.from("research_locations").select("uf, tipo").not("uf", "is", null)
-      .then(({ data }) => {
+    fetchAll<{ uf: string | null; tipo: string | null }>(supabase.from("research_locations").select("uf, tipo").not("uf", "is", null))
+      .then(data => {
         const rows = data || [];
         const ct: Record<string, number> = {};
         rows.forEach(r => { if (r.tipo) ct[r.tipo] = (ct[r.tipo] || 0) + 1; });
