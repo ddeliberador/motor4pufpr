@@ -41,7 +41,7 @@ const PIPELINE = [
 ];
 
 type Empresa = { nome: string; det?: string };
-type GrauDependencia = { pct: number; estimativa?: boolean; inferido?: boolean };
+type GrauDependencia = { pct: number; estimativa?: boolean };
 
 // Nomes identificados explicitamente na base auditada. A lista deliberadamente não
 // tenta extrair empresas de frases, evitando transformar atividades e notas em nomes.
@@ -96,12 +96,10 @@ function Ranking({ lista, tom }: { lista: Empresa[]; tom: "int" | "nac" }) {
   );
 }
 
-function grauDependencia(s: Setor, internacionais: Empresa[], nacionais: Empresa[]): GrauDependencia | null {
-  const medido = DEP_NUM[s.id];
-  if (medido) return medido;
-  if (internacionais.length > 0 && nacionais.length === 0) return { pct: 100, inferido: true };
-  if (nacionais.length > 0 && internacionais.length === 0) return { pct: 0, inferido: true };
-  return null;
+// Só setores com percentual na base. A lista de empresas não mede participação de
+// mercado, então não serve para deduzir grau de dependência.
+function grauDependencia(s: Setor): GrauDependencia | null {
+  return DEP_NUM[s.id] ?? null;
 }
 
 function BarraForca({ pct }: { pct: number }) {
@@ -138,7 +136,7 @@ function TooltipResumo({ active, payload }: { active?: boolean; payload?: { payl
 function CardSetor({ s, cor }: { s: Setor; cor: string }) {
   const int = EMPRESAS[s.id]?.internacionais || [];
   const nac = EMPRESAS[s.id]?.nacionais || [];
-  const grau = grauDependencia(s, int, nac);
+  const grau = grauDependencia(s);
   return (
     <div className={`flex flex-col rounded-2xl border bg-card p-4 ${s.badge === "achado" ? "border-amber-400/60" : "border-border"}`}>
       <div className="flex items-start justify-between gap-2">
@@ -170,13 +168,9 @@ function CardSetor({ s, cor }: { s: Setor; cor: string }) {
             value={grau.pct}
             compact
             className="mt-3"
-            detail={grau.inferido
-              ? grau.pct === 100
-                ? "100% porque a base identificou somente empresas estrangeiras."
-                : "0% porque a base identificou somente empresas nacionais."
-              : grau.estimativa
-                ? "Estimativa qualitativa registrada na base auditada."
-                : "Calculado com o percentual de mercado ou importação da fonte auditada."}
+            detail={grau.estimativa
+              ? "Estimativa qualitativa registrada na base auditada."
+              : "Calculado com o percentual de mercado ou importação da fonte auditada."}
           />
         </>}
         {!/^(Não calculável|Pendente)/i.test(s.dependencia) && (
@@ -210,7 +204,7 @@ export default function Cenario5Dependencia() {
   const resumoLayers = useMemo(() => LAYERS.map(l => {
     const setores = porLayer[l.id] || [];
     const graus = setores
-      .map(s => grauDependencia(s, EMPRESAS[s.id]?.internacionais || [], EMPRESAS[s.id]?.nacionais || []))
+      .map(grauDependencia)
       .filter((g): g is GrauDependencia => g !== null);
     const media = graus.length ? graus.reduce((a, g) => a + g.pct, 0) / graus.length : null;
     return {
@@ -236,7 +230,7 @@ export default function Cenario5Dependencia() {
           <div>
             <h3 className="text-xl font-bold text-foreground">Grau de dependência por camada de IA (L1–L7)</h3>
             <p className="mt-0.5 max-w-3xl text-xs text-muted-foreground">
-              Média dos setores de cada camada de IA que têm percentual mensurável (dado oficial, estimativa registrada na base ou inferido por exclusividade). Faixas de alerta do índice CD do Motor: ≤50 baixa · 50–70 moderada · &gt;70 crítica.
+              Média dos setores de cada camada de IA que têm percentual mensurável (dado oficial ou estimativa registrada na base). Faixas de alerta do índice CD do Motor: ≤50 baixa · 50–70 moderada · &gt;70 crítica.
             </p>
           </div>
           <Hint text={`Média simples do grau de dependência dos setores mensuráveis de cada camada de IA (L1–L7). Camadas sem barra não têm nenhum percentual calculável — nada foi estimado. Contagens: ${resumoLayers.map(r => `${r.id} ${r.comMetrica}/${r.total}`).join(" · ")}.`} />
