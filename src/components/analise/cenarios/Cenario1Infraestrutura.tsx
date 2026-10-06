@@ -13,8 +13,12 @@ export default function Cenario1Infraestrutura() {
   const [carregandoDrawer, setCarregandoDrawer] = useState(false);
 
   useEffect(() => {
-    supabase.from("infra_backhaul_municipio").select("uf, tem_backhaul").not("uf", "is", null)
-      .then(({ data }) => {
+    // A API devolve no máximo 1.000 linhas por chamada: busca os 5.570 municípios em blocos paralelos.
+    Promise.all([0, 1, 2, 3, 4, 5, 6].map(i =>
+      supabase.from("infra_backhaul_municipio").select("uf, tem_backhaul").not("uf", "is", null)
+        .order("codigo_ibge").range(i * 1000, i * 1000 + 999)))
+      .then(res => {
+        const data = res.flatMap(r => r.data || []);
         const agg: Record<string, { com: number; sem: number }> = {};
         (data || []).forEach(r => {
           if (!agg[r.uf]) agg[r.uf] = { com: 0, sem: 0 };
@@ -68,7 +72,7 @@ export default function Cenario1Infraestrutura() {
       {/* Gráfico — clicável */}
       <div className="rounded-xl border border-border bg-card p-5">
         <div className="mb-3">
-          <h2 className="text-sm font-semibold text-foreground">Cobertura de backhaul por estado (%)</h2>
+          <h2 className="text-xl font-bold text-foreground">Cobertura de backhaul por estado (%)</h2>
           <p className="text-xs text-muted-foreground mt-0.5">Fonte: ANATEL 2025 · <strong className="text-foreground">clique numa barra para ver os atores SNI do estado</strong></p>
         </div>
         {carregando ? (
