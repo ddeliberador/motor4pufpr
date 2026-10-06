@@ -1,5 +1,6 @@
 import { fetchAll } from "@/lib/fetchAll";
 import { useState, useEffect } from "react";
+import AtoresDrawer, { categoriaDe } from "./AtoresDrawer";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from "recharts";
 
@@ -40,7 +41,7 @@ export default function Cenario2Capacidade() {
   const [gaps, setGaps] = useState<UFPonto[]>([]);
   const [totais, setTotais] = useState({ atores: 0, ict: 0, startups: 0, embrapii: 0 });
   const [carregando, setCarregando] = useState(true);
-  const [drawerInfo, setDrawerInfo] = useState<{ uf: string; filtro: string; titulo: string } | null>(null);
+  const [drawerInfo, setDrawerInfo] = useState<{ uf: string; filtro: string; titulo: string; cat: string } | null>(null);
   const [atoresDrawer, setAtoresDrawer] = useState<Ator[]>([]);
   const [carregandoDrawer, setCarregandoDrawer] = useState(false);
 
@@ -69,14 +70,8 @@ export default function Cenario2Capacidade() {
       });
   }, []);
 
-  function abrirDrawer(uf: string, filtro: string, titulo: string) {
-    setDrawerInfo({ uf, filtro, titulo });
-    setCarregandoDrawer(true);
-    let q = supabase.from("research_locations").select("id, nome, tipo, municipio, uf").limit(60);
-    if (uf) q = q.eq("uf", uf);
-    if (filtro === "ict") q = q.or("tipo.ilike.%ICT%,tipo.ilike.%Universidade%,tipo.ilike.%Instituto%");
-    if (filtro === "startup") q = q.ilike("tipo", "%Startup%");
-    q.then(({ data }) => { setAtoresDrawer(data || []); setCarregandoDrawer(false); });
+  function abrirDrawer(uf: string, filtro: string, titulo: string, tipo?: string) {
+    setDrawerInfo({ uf, filtro, titulo, cat: tipo ? categoriaDe(tipo) : filtro === "startup" ? "startup" : "todos" });
   }
 
   return (
@@ -118,7 +113,7 @@ export default function Cenario2Capacidade() {
                 if (!d?.activePayload?.[0]) return;
                 const uf = d.activePayload[0].payload.uf;
                 const key = d.activePayload[0].dataKey as string;
-                abrirDrawer(uf, key === "ict" ? "ict" : "startup", `${key === "ict" ? "ICTs/Universidades" : "Startups"} — ${uf}`);
+                abrirDrawer(uf, key === "ict" ? "ict" : "startup", uf);
               }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="uf" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
@@ -143,7 +138,7 @@ export default function Cenario2Capacidade() {
             <Pie data={porTipo} dataKey="total" nameKey="tipo" cx="50%" cy="50%" outerRadius={90}
               label={({ tipo, percent }: any) => percent > 0.04 ? `${String(tipo).split(" ")[0]} ${(percent*100).toFixed(0)}%` : ""}
               labelLine={false} cursor="pointer"
-              onClick={(d: any) => abrirDrawer("", d.tipo.toLowerCase().includes("startup") ? "startup" : "ict", d.tipo)}>
+              onClick={(d: any) => abrirDrawer("", d.tipo.toLowerCase().includes("startup") ? "startup" : "ict", "Brasil — " + d.tipo, d.tipo)}>
               {porTipo.map((_, i) => <Cell key={i} fill={CORES_PIE[i % CORES_PIE.length]} />)}
             </Pie>
             <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
@@ -167,45 +162,9 @@ export default function Cenario2Capacidade() {
         </div>
       </div>
 
-      {/* Drawer */}
       {drawerInfo && (
-        <div className="fixed inset-0 z-50 flex" onClick={() => setDrawerInfo(null)}>
-          <div className="flex-1 bg-black/40" />
-          <div className="w-full max-w-sm bg-card border-l border-border flex flex-col h-full" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-border px-4 py-3 shrink-0">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Atores</p>
-                <h3 className="text-sm font-bold text-foreground leading-tight">{drawerInfo.titulo}</h3>
-              </div>
-              <button onClick={() => setDrawerInfo(null)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted">
-                <span className="material-symbols-outlined text-lg leading-none">close</span>
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {carregandoDrawer ? (
-                <div className="flex h-32 items-center justify-center">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                </div>
-              ) : atoresDrawer.map(a => (
-                <div key={a.id} className="rounded-lg border border-border bg-muted/30 p-3">
-                  <p className="text-xs font-semibold text-foreground leading-tight">{a.nome}</p>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <span className="rounded px-1.5 py-0.5 text-[10px]"
-                      style={{ background: (CORES_TIPO[a.tipo] || "#94a3b8") + "20", color: CORES_TIPO[a.tipo] || "#94a3b8" }}>
-                      {a.tipo}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">{a.municipio} · {a.uf}</span>
-                  </div>
-                </div>
-              ))}
-              {!carregandoDrawer && (
-                <p className="text-center text-[10px] text-muted-foreground pt-2">
-                  {atoresDrawer.length} atores · <a href="/mapa" className="text-primary hover:underline">ver no Mapa</a>
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
+        <AtoresDrawer uf={drawerInfo.uf || undefined} titulo={drawerInfo.titulo} cor={drawerInfo.filtro === "startup" ? "#f472b6" : "#34d399"}
+          categoriaInicial={drawerInfo.cat} onClose={() => setDrawerInfo(null)} />
       )}
     </div>
   );
