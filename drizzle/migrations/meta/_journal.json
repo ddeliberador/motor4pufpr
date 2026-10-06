@@ -134,6 +134,20 @@
       "when": 1791256406332,
       "tag": "0018_nota_capacidade_uf",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791257221768,
+      "tag": "0019_ingestao_patentes_residentes_uf",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791257398999,
+      "tag": "0020_ingestao_titulados_mestrado_doutorado_uf",
+      "breakpoints": true
     }
   ]
 }

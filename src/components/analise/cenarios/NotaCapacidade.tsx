@@ -241,6 +241,7 @@ export default function NotaCapacidade() {
           <li>Os pesos são <strong className="text-foreground">hipótese de trabalho</strong>: blocos iguais como ponto de partida, sem validação empírica. Método segue as etapas do OECD/JRC Handbook on Constructing Composite Indicators.</li>
           <li>Cada indicador é convertido na posição da UF entre os estados (0 = menor, 1 = maior), para que as startups, cerca de 72% dos registros, não dominem a nota.</li>
           <li>A nota mede <strong className="text-foreground">escala</strong>: estados grandes têm mais de tudo. Ela <strong className="text-foreground">não</strong> está dividida por população.</li>
+          <li>Fontes: mestres e doutores titulados = MCTI, Tabelas 3.3.3 e 3.3.4 (dados da CAPES); patentes = MCTI, Tabela 6.1.2 (pedidos de residentes no INPI). Usa-se a média de 2022–2024. Na tabela oficial de titulados, os rótulos Amapá e Amazonas vêm trocados; os valores foram atribuídos à UF correta.</li>
           <li>Indicadores sem dado ficam fora da nota (não contam como zero).</li>
           <li>Limites: startups vêm do mapeamento ABStartups 2025, sem CNPJ e geocodificadas pelo centro do município; unidades EMBRAPII se sobrepõem a registros OTD/CGEE; as categorias são derivadas de texto livre do tipo de ator.</li>
         </ul>
