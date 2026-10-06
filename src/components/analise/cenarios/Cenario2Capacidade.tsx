@@ -103,7 +103,7 @@ export default function Cenario2Capacidade() {
       {/* Gap de Tradução — barras agrupadas por UF */}
       <div className="rounded-xl border border-border bg-card p-5">
         <div className="mb-3">
-          <h2 className="text-sm font-semibold text-foreground">ICTs vs. Startups por Estado — Gap de Tradução</h2>
+          <h2 className="text-xl font-bold text-foreground">ICTs vs. Startups por Estado — Gap de Tradução</h2>
           <p className="text-xs text-muted-foreground mt-0.5">A diferença entre as barras é o gap · <strong className="text-foreground">clique numa barra para ver os atores</strong></p>
         </div>
         {carregando ? (
@@ -135,7 +135,7 @@ export default function Cenario2Capacidade() {
 
       {/* Pie — composição */}
       <div className="rounded-xl border border-border bg-card p-5">
-        <h2 className="text-sm font-semibold text-foreground mb-1">Composição do SNI por tipo</h2>
+        <h2 className="text-xl font-bold text-foreground mb-1">Composição do SNI por tipo</h2>
         <p className="text-xs text-muted-foreground mb-4">Clique numa fatia para ver os atores daquele tipo</p>
         <ResponsiveContainer width="100%" height={260}>
           <PieChart>

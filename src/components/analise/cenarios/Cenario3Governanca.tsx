@@ -140,7 +140,7 @@ export default function Cenario3Governanca() {
 
       {/* Lista de ações */}
       <div className="rounded-xl border border-border bg-card p-5">
-        <h2 className="text-sm font-semibold text-foreground mb-4">
+        <h2 className="text-xl font-bold text-foreground mb-4">
           {eixoSel
             ? `Ações — Eixo ${pbia.eixos.find(e => e.id === eixoSel)?.numero}: ${pbia.eixos.find(e => e.id === eixoSel)?.nome}`
             : "Todas as 54 ações do PBIA"} · {todasAcoes.length}

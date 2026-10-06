@@ -41,7 +41,7 @@ const PIPELINE = [
 ];
 
 type Empresa = { nome: string; det?: string };
-type GrauDependencia = { pct: number; estimativa?: boolean };
+type GrauDependencia = { pct: number; estimativa?: boolean; inferido?: boolean };
 
 // Nomes identificados explicitamente na base auditada. A lista deliberadamente não
 // tenta extrair empresas de frases, evitando transformar atividades e notas em nomes.
@@ -96,26 +96,21 @@ function Ranking({ lista, tom }: { lista: Empresa[]; tom: "int" | "nac" }) {
   );
 }
 
-// Só setores com percentual na base. A lista de empresas não mede participação de
-// mercado, então não serve para deduzir grau de dependência.
+// Percentual da base; sem ele, só infere nos extremos (só estrangeiras = 100, só nacionais = 0).
 function grauDependencia(s: Setor): GrauDependencia | null {
-  return DEP_NUM[s.id] ?? null;
+  if (DEP_NUM[s.id]) return DEP_NUM[s.id];
+  const e = EMPRESAS[s.id];
+  if (!e) return null;
+  if (e.internacionais.length && !e.nacionais.length) return { pct: 100, inferido: true };
+  if (e.nacionais.length && !e.internacionais.length) return { pct: 0, inferido: true };
+  return null;
 }
 
-function BarraForca({ pct }: { pct: number }) {
-  const nac = 100 - pct;
-  return (
-    <div>
-      <div className="mb-1 flex justify-between text-[10px]">
-        <span className="text-emerald-500">{nac.toLocaleString("pt-BR")}% nacional</span>
-        <span className="text-destructive">{pct.toLocaleString("pt-BR")}% estrangeiro</span>
-      </div>
-      <div className="flex h-2.5 overflow-hidden rounded-full bg-muted" aria-label={`Força nacional ${nac}%, internacional ${pct}%`}>
-        <div className="bg-emerald-500" style={{ width: `${nac}%` }} />
-        <div className="bg-destructive" style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
+// Proxy da camada: participação de empresas estrangeiras entre as identificadas.
+function proxyPresenca(setores: Setor[]): number | null {
+  let i = 0, n = 0;
+  setores.forEach(s => { i += EMPRESAS[s.id]?.internacionais.length || 0; n += EMPRESAS[s.id]?.nacionais.length || 0; });
+  return i + n ? (100 * i) / (i + n) : null;
 }
 
 function TooltipResumo({ active, payload }: { active?: boolean; payload?: { payload: (typeof LAYERS)[number] & { total: number; comMetrica: number; media: number | null } }[] }) {
@@ -141,7 +136,7 @@ function CardSetor({ s, cor }: { s: Setor; cor: string }) {
     <div className={`flex flex-col rounded-2xl border bg-card p-4 ${s.badge === "achado" ? "border-amber-400/60" : "border-border"}`}>
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-sm font-semibold text-foreground">{s.setor}</p>
+          <p className="text-base font-bold text-foreground">{s.setor}</p>
           <div className="mt-1 flex flex-wrap gap-1">
             <span className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">CNAE {s.cnae}</span>
             {BADGE[s.badge].label && <span className={`rounded border px-1.5 py-0.5 text-[10px] font-medium ${BADGE[s.badge].cls}`}>{BADGE[s.badge].label}</span>}
