@@ -1,3 +1,4 @@
+import NotaCapacidade from "./NotaCapacidade";
 import { fetchAll } from "@/lib/fetchAll";
 import { useState, useEffect } from "react";
 import AtoresDrawer, { categoriaDe } from "./AtoresDrawer";
@@ -95,6 +96,8 @@ export default function Cenario2Capacidade() {
           </div>
         ))}
       </div>
+
+      <NotaCapacidade />
 
       {/* Gap de Tradução — barras agrupadas por UF */}
       <div className="rounded-xl border border-border bg-card p-5">

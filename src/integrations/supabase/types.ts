@@ -83,6 +83,45 @@ export type Database = {
         }
         Relationships: []
       }
+      capacidade_pesos: {
+        Row: {
+          ativo: boolean
+          bloco: string
+          indicador: string
+          justificativa: string | null
+          origem: string
+          peso: number
+          peso_bloco: number
+          rotulo: string
+          updated_at: string
+          versao: number | null
+        }
+        Insert: {
+          ativo?: boolean
+          bloco: string
+          indicador: string
+          justificativa?: string | null
+          origem: string
+          peso: number
+          peso_bloco: number
+          rotulo: string
+          updated_at?: string
+          versao?: number | null
+        }
+        Update: {
+          ativo?: boolean
+          bloco?: string
+          indicador?: string
+          justificativa?: string | null
+          origem?: string
+          peso?: number
+          peso_bloco?: number
+          rotulo?: string
+          updated_at?: string
+          versao?: number | null
+        }
+        Relationships: []
+      }
       catalogo_bases: {
         Row: {
           alvo: string | null
@@ -380,6 +419,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      indicadores_uf: {
+        Row: {
+          ano: number
+          coletado_em: string | null
+          fonte: string
+          fonte_url: string | null
+          id: string
+          indicador: string
+          metodo: string | null
+          uf: string
+          unidade: string | null
+          valor: number
+        }
+        Insert: {
+          ano: number
+          coletado_em?: string | null
+          fonte: string
+          fonte_url?: string | null
+          id?: string
+          indicador: string
+          metodo?: string | null
+          uf: string
+          unidade?: string | null
+          valor: number
+        }
+        Update: {
+          ano?: number
+          coletado_em?: string | null
+          fonte?: string
+          fonte_url?: string | null
+          id?: string
+          indicador?: string
+          metodo?: string | null
+          uf?: string
+          unidade?: string | null
+          valor?: number
+        }
+        Relationships: []
       }
       infra_backhaul_municipio: {
         Row: {
@@ -1130,6 +1208,18 @@ export type Database = {
           faq_question?: string | null
           id?: string | null
           type?: string | null
+        }
+        Relationships: []
+      }
+      v_capacidade_uf_contagens: {
+        Row: {
+          embrapii: number | null
+          habitats: number | null
+          institutos_ict: number | null
+          startups: number | null
+          total: number | null
+          uf: string | null
+          universidades: number | null
         }
         Relationships: []
       }
