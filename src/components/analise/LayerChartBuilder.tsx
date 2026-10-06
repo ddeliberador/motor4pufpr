@@ -1,3 +1,4 @@
+import { fetchAll } from "@/lib/fetchAll";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -481,7 +482,7 @@ async function carregar(
   if (layerId === "sni-tipo") {
     let q = supabase.from("research_locations").select("tipo").not("tipo", "is", null);
     if (uf) q = q.eq("uf", uf);
-    const { data } = await q;
+    const data = await fetchAll<any>(q);
     const cont: Record<string, number> = {};
     (data || []).forEach(r => { cont[r.tipo!] = (cont[r.tipo!] || 0) + 1; });
     return Object.entries(cont).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
@@ -490,7 +491,7 @@ async function carregar(
   if (layerId === "sni-fonte") {
     let q = supabase.from("research_locations").select("fonte").not("fonte", "is", null);
     if (uf) q = q.eq("uf", uf);
-    const { data } = await q;
+    const data = await fetchAll<any>(q);
     const cont: Record<string, number> = {};
     (data || []).forEach(r => { cont[r.fonte!] = (cont[r.fonte!] || 0) + 1; });
     return Object.entries(cont).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
@@ -499,7 +500,7 @@ async function carregar(
   if (layerId === "sni-uf") {
     let q = supabase.from("research_locations").select("uf").not("uf", "is", null);
     if (uf) q = q.eq("uf", uf);
-    const { data } = await q;
+    const data = await fetchAll<any>(q);
     const cont: Record<string, number> = {};
     (data || []).forEach(r => { cont[r.uf!] = (cont[r.uf!] || 0) + 1; });
     return Object.entries(cont).map(([name, value]) => ({ name, value })).sort((a, b) => a.name.localeCompare(b.name));
@@ -508,7 +509,7 @@ async function carregar(
   if (layerId === "backhaul-uf") {
     let q = supabase.from("infra_backhaul_municipio").select("uf, tem_backhaul").not("uf", "is", null);
     if (uf) q = q.eq("uf", uf);
-    const { data } = await q;
+    const data = await fetchAll<any>(q);
     const cont: Record<string, { com: number; sem: number }> = {};
     (data || []).forEach(r => {
       if (!cont[r.uf]) cont[r.uf] = { com: 0, sem: 0 };
