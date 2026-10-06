@@ -110,9 +110,8 @@ export default function Cenario3Governanca() {
             const pctEnt = Math.round(100 * e.entregues / e.total_acoes);
             return (
               <button key={e.id} onClick={() => setEixoSel(isAtivo ? null : e.id)}
-                className={`relative overflow-hidden rounded-xl border bg-card p-5 text-left transition-all hover:shadow-lg ${isAtivo ? "border-foreground/25 ring-1 ring-foreground/15 shadow-lg" : "border-border hover:border-muted-foreground/30"}`}>
-                {/* faixa de cor no topo */}
-                <div className="absolute inset-x-0 top-0 h-1" style={{ backgroundColor: e.cor }} />
+                className={`rounded-xl border bg-card p-5 text-left transition-all hover:shadow-lg ${isAtivo ? "border-foreground/25 ring-1 ring-foreground/15 shadow-lg" : "border-border hover:border-muted-foreground/30"}`}>
+
 
                 <div className="flex items-start gap-3 mt-1">
                   <span className="shrink-0 flex h-11 w-11 items-center justify-center rounded-xl text-base font-bold text-white shadow"
