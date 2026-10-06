@@ -5,3 +5,4 @@
 - Bases do construtor de BI leem pela mesma camada de consumo do `/mapa` (Gold, função `map-infrastructure`, snapshots em `public/`), nunca abrindo tabelas fechadas — um só caminho de dados por base.
 - Exiba todo grau de dependência em uma escala compartilhada de 0–100, com as mesmas faixas do índice CD do Motor, por meio do termômetro reutilizável.
 - Mantenha a relação entre eixos do PBIA e camadas de IA em um único cenário analítico, evitando painéis narrativos duplicados.
+- A "Nota de capacidade" (Cenário 2) é calculada no cliente a partir de `capacidade_pesos`, `v_capacidade_uf_contagens` e `indicadores_uf`; indicador sem linhas fica indisponível (fora da nota), nunca zero.
