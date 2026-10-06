@@ -77,7 +77,7 @@ export default function Cenario3Governanca() {
       <div className="rounded-xl border border-border bg-card p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-foreground">PBIA — Progresso por eixo</h2>
+            <h2 className="text-xl font-bold text-foreground">PBIA — Progresso por eixo</h2>
             <p className="text-xs text-muted-foreground mt-0.5">Fonte: {pbia.fonte} · <strong className="text-foreground">clique para filtrar as ações</strong></p>
           </div>
           {eixoSel && (
