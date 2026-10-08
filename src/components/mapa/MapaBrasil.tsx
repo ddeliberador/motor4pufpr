@@ -1,3 +1,4 @@
+import type React from "react";
 // Mapa sóbrio do Brasil: apenas contorno + divisões dos 27 estados (malha IBGE),
 // com marcadores por categoria (ícone próprio, nunca bolinhas iguais).
 // Sem tiles, sem camadas de satélite. Zoom por roda/pinça e botões + / −,
@@ -257,6 +258,8 @@ interface Props {
   /** Cor do eixo PBIA ativo (aplicada aos anéis da Layer 7). */
   corEixoPbia?: string | null;
   onSelecionarAncora?: (a: AncoraPbia) => void;
+  /** Camadas temáticas extras desenhadas sobre o mapa (ex.: cooperação EMBRAPII). */
+  sobreposicao?: (ctx: { tam: number; escala: number; bloqueado: () => boolean }) => React.ReactNode;
 }
 
 export default function MapaBrasil({
@@ -291,6 +294,7 @@ export default function MapaBrasil({
   ancorasPbia,
   corEixoPbia,
   onSelecionarAncora,
+  sobreposicao,
 }: Props) {
   const [features, setFeatures] = useState<Feature[] | null>(null);
   const [erroMalha, setErroMalha] = useState<string | null>(null);
@@ -925,6 +929,12 @@ export default function MapaBrasil({
                   </g>
                 );
               })}
+          </g>
+        )}
+
+        {sobreposicao && (
+          <g clipPath="url(#brasil-contorno)" style={{ pointerEvents: arrastando ? "none" : "auto" }}>
+            {sobreposicao({ tam, escala, bloqueado: () => movidoRef.current })}
           </g>
         )}
 
