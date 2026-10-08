@@ -420,6 +420,295 @@ export type Database = {
           },
         ]
       }
+      embrapii_extracoes: {
+        Row: {
+          extraido_em: string
+          fonte: string
+          id: number
+          linhas: Json
+          metodo: string
+          observacoes: string | null
+        }
+        Insert: {
+          extraido_em: string
+          fonte: string
+          id?: never
+          linhas: Json
+          metodo: string
+          observacoes?: string | null
+        }
+        Update: {
+          extraido_em?: string
+          fonte?: string
+          id?: never
+          linhas?: Json
+          metodo?: string
+          observacoes?: string | null
+        }
+        Relationships: []
+      }
+      embrapii_pedidos_pi: {
+        Row: {
+          atualizado_em: string
+          cod_projeto: string | null
+          dat_pedido: string | null
+          id_pedido: number
+          pais_emissor: string | null
+          percentual_direito_ue: number | null
+          proj_status: string | null
+          tipo_pedido: string | null
+          ue_codigo: number | null
+          ue_uf: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          cod_projeto?: string | null
+          dat_pedido?: string | null
+          id_pedido: number
+          pais_emissor?: string | null
+          percentual_direito_ue?: number | null
+          proj_status?: string | null
+          tipo_pedido?: string | null
+          ue_codigo?: number | null
+          ue_uf?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          cod_projeto?: string | null
+          dat_pedido?: string | null
+          id_pedido?: number
+          pais_emissor?: string | null
+          percentual_direito_ue?: number | null
+          proj_status?: string | null
+          tipo_pedido?: string | null
+          ue_codigo?: number | null
+          ue_uf?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "embrapii_pedidos_pi_cod_projeto_fkey"
+            columns: ["cod_projeto"]
+            isOneToOne: false
+            referencedRelation: "embrapii_projetos"
+            referencedColumns: ["cod_projeto"]
+          },
+        ]
+      }
+      embrapii_projeto_empresa: {
+        Row: {
+          atualizado_em: string
+          cod_projeto: string
+          empresa_cnae: string | null
+          empresa_cnae_descricao: string | null
+          empresa_cnpj: string
+          empresa_data_abertura: string | null
+          empresa_municipio: string | null
+          empresa_n_projetos_contratados: number | null
+          empresa_nome: string | null
+          empresa_porte: string | null
+          empresa_primeiro_contrato: string | null
+          empresa_regiao: string | null
+          empresa_uf: string | null
+          pk_cod_id: number
+        }
+        Insert: {
+          atualizado_em?: string
+          cod_projeto: string
+          empresa_cnae?: string | null
+          empresa_cnae_descricao?: string | null
+          empresa_cnpj: string
+          empresa_data_abertura?: string | null
+          empresa_municipio?: string | null
+          empresa_n_projetos_contratados?: number | null
+          empresa_nome?: string | null
+          empresa_porte?: string | null
+          empresa_primeiro_contrato?: string | null
+          empresa_regiao?: string | null
+          empresa_uf?: string | null
+          pk_cod_id: number
+        }
+        Update: {
+          atualizado_em?: string
+          cod_projeto?: string
+          empresa_cnae?: string | null
+          empresa_cnae_descricao?: string | null
+          empresa_cnpj?: string
+          empresa_data_abertura?: string | null
+          empresa_municipio?: string | null
+          empresa_n_projetos_contratados?: number | null
+          empresa_nome?: string | null
+          empresa_porte?: string | null
+          empresa_primeiro_contrato?: string | null
+          empresa_regiao?: string | null
+          empresa_uf?: string | null
+          pk_cod_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "embrapii_projeto_empresa_cod_projeto_fkey"
+            columns: ["cod_projeto"]
+            isOneToOne: false
+            referencedRelation: "embrapii_projetos"
+            referencedColumns: ["cod_projeto"]
+          },
+        ]
+      }
+      embrapii_projetos: {
+        Row: {
+          ano_contrato: number | null
+          atualizado_em: string
+          cl_areaaplic_n1: string | null
+          cl_nib_n1: string | null
+          cl_techab_n1: string | null
+          cl_techab_n2: string | null
+          cl_tipo_projeto: string | null
+          cl_trl_final: number | null
+          cl_trl_inicial: number | null
+          cod_projeto: string
+          dt_contrato: string | null
+          dt_inicio: string | null
+          dt_termino: string | null
+          empresas_n_empresas: number | null
+          fin_modalidade_financiamento: string | null
+          fin_parceiro: string | null
+          fin_sebrae: string | null
+          log_data_extracao_dados: string | null
+          me_n: number | null
+          me_n_aceitas: number | null
+          pi_n: number | null
+          proj_status: string | null
+          proj_titulo_publico: string | null
+          ue_codigo: number | null
+          ue_sigla: string | null
+          ue_tipo_instituicao: string | null
+          ue_uf: string | null
+          vlr_ipca_embrapii: number | null
+          vlr_ipca_empresa: number | null
+          vlr_ipca_sebrae: number | null
+          vlr_ipca_total: number | null
+          vlr_ipca_ue: number | null
+        }
+        Insert: {
+          ano_contrato?: number | null
+          atualizado_em?: string
+          cl_areaaplic_n1?: string | null
+          cl_nib_n1?: string | null
+          cl_techab_n1?: string | null
+          cl_techab_n2?: string | null
+          cl_tipo_projeto?: string | null
+          cl_trl_final?: number | null
+          cl_trl_inicial?: number | null
+          cod_projeto: string
+          dt_contrato?: string | null
+          dt_inicio?: string | null
+          dt_termino?: string | null
+          empresas_n_empresas?: number | null
+          fin_modalidade_financiamento?: string | null
+          fin_parceiro?: string | null
+          fin_sebrae?: string | null
+          log_data_extracao_dados?: string | null
+          me_n?: number | null
+          me_n_aceitas?: number | null
+          pi_n?: number | null
+          proj_status?: string | null
+          proj_titulo_publico?: string | null
+          ue_codigo?: number | null
+          ue_sigla?: string | null
+          ue_tipo_instituicao?: string | null
+          ue_uf?: string | null
+          vlr_ipca_embrapii?: number | null
+          vlr_ipca_empresa?: number | null
+          vlr_ipca_sebrae?: number | null
+          vlr_ipca_total?: number | null
+          vlr_ipca_ue?: number | null
+        }
+        Update: {
+          ano_contrato?: number | null
+          atualizado_em?: string
+          cl_areaaplic_n1?: string | null
+          cl_nib_n1?: string | null
+          cl_techab_n1?: string | null
+          cl_techab_n2?: string | null
+          cl_tipo_projeto?: string | null
+          cl_trl_final?: number | null
+          cl_trl_inicial?: number | null
+          cod_projeto?: string
+          dt_contrato?: string | null
+          dt_inicio?: string | null
+          dt_termino?: string | null
+          empresas_n_empresas?: number | null
+          fin_modalidade_financiamento?: string | null
+          fin_parceiro?: string | null
+          fin_sebrae?: string | null
+          log_data_extracao_dados?: string | null
+          me_n?: number | null
+          me_n_aceitas?: number | null
+          pi_n?: number | null
+          proj_status?: string | null
+          proj_titulo_publico?: string | null
+          ue_codigo?: number | null
+          ue_sigla?: string | null
+          ue_tipo_instituicao?: string | null
+          ue_uf?: string | null
+          vlr_ipca_embrapii?: number | null
+          vlr_ipca_empresa?: number | null
+          vlr_ipca_sebrae?: number | null
+          vlr_ipca_total?: number | null
+          vlr_ipca_ue?: number | null
+        }
+        Relationships: []
+      }
+      embrapii_unidades: {
+        Row: {
+          atualizado_em: string
+          cidade: string | null
+          co_unidade: number
+          competencia_tecnica: string | null
+          data_assinatura_plano_acao: string | null
+          data_descredenciamento: string | null
+          latitude: number | null
+          longitude: number | null
+          sigla: string | null
+          status_credenciamento: string | null
+          tipo_instituicao: string | null
+          uf: string | null
+          unidade_embrapii: string | null
+          vertical: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          cidade?: string | null
+          co_unidade: number
+          competencia_tecnica?: string | null
+          data_assinatura_plano_acao?: string | null
+          data_descredenciamento?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          sigla?: string | null
+          status_credenciamento?: string | null
+          tipo_instituicao?: string | null
+          uf?: string | null
+          unidade_embrapii?: string | null
+          vertical?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          cidade?: string | null
+          co_unidade?: number
+          competencia_tecnica?: string | null
+          data_assinatura_plano_acao?: string | null
+          data_descredenciamento?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          sigla?: string | null
+          status_credenciamento?: string | null
+          tipo_instituicao?: string | null
+          uf?: string | null
+          unidade_embrapii?: string | null
+          vertical?: string | null
+        }
+        Relationships: []
+      }
       indicadores_uf: {
         Row: {
           ano: number
@@ -573,6 +862,123 @@ export type Database = {
           job_id?: string
           ok?: boolean
           started_at?: string
+        }
+        Relationships: []
+      }
+      interacao_metricas_rede: {
+        Row: {
+          ano_fim: number
+          ano_inicio: number
+          arestas: number | null
+          calculado_em: string
+          componentes: number | null
+          densidade: number | null
+          fonte: string
+          hhi_origem: number | null
+          maior_componente_pct: number | null
+          nos: number | null
+          recorte: string
+          tipo: string
+        }
+        Insert: {
+          ano_fim: number
+          ano_inicio: number
+          arestas?: number | null
+          calculado_em?: string
+          componentes?: number | null
+          densidade?: number | null
+          fonte: string
+          hhi_origem?: number | null
+          maior_componente_pct?: number | null
+          nos?: number | null
+          recorte?: string
+          tipo: string
+        }
+        Update: {
+          ano_fim?: number
+          ano_inicio?: number
+          arestas?: number | null
+          calculado_em?: string
+          componentes?: number | null
+          densidade?: number | null
+          fonte?: string
+          hhi_origem?: number | null
+          maior_componente_pct?: number | null
+          nos?: number | null
+          recorte?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
+      interacoes: {
+        Row: {
+          ano: number | null
+          atualizado_em: string
+          data_evento: string | null
+          destino_helice: string
+          destino_id: string
+          destino_nome: string | null
+          destino_subtipo: string | null
+          destino_uf: string | null
+          dimensao: string
+          fonte: string
+          id: string
+          metadados: Json
+          origem_helice: string
+          origem_id: string
+          origem_nome: string | null
+          origem_subtipo: string | null
+          origem_uf: string | null
+          referencia: string | null
+          tecnologia: string | null
+          tipo: string
+          valor: number | null
+        }
+        Insert: {
+          ano?: number | null
+          atualizado_em?: string
+          data_evento?: string | null
+          destino_helice: string
+          destino_id: string
+          destino_nome?: string | null
+          destino_subtipo?: string | null
+          destino_uf?: string | null
+          dimensao: string
+          fonte: string
+          id: string
+          metadados?: Json
+          origem_helice: string
+          origem_id: string
+          origem_nome?: string | null
+          origem_subtipo?: string | null
+          origem_uf?: string | null
+          referencia?: string | null
+          tecnologia?: string | null
+          tipo: string
+          valor?: number | null
+        }
+        Update: {
+          ano?: number | null
+          atualizado_em?: string
+          data_evento?: string | null
+          destino_helice?: string
+          destino_id?: string
+          destino_nome?: string | null
+          destino_subtipo?: string | null
+          destino_uf?: string | null
+          dimensao?: string
+          fonte?: string
+          id?: string
+          metadados?: Json
+          origem_helice?: string
+          origem_id?: string
+          origem_nome?: string | null
+          origem_subtipo?: string | null
+          origem_uf?: string | null
+          referencia?: string | null
+          tecnologia?: string | null
+          tipo?: string
+          valor?: number | null
         }
         Relationships: []
       }
@@ -1164,6 +1570,27 @@ export type Database = {
         }
         Relationships: []
       }
+      uf_centroides: {
+        Row: {
+          capital: string
+          lat: number
+          lon: number
+          uf: string
+        }
+        Insert: {
+          capital: string
+          lat: number
+          lon: number
+          uf: string
+        }
+        Update: {
+          capital?: string
+          lat?: number
+          lon?: number
+          uf?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1223,6 +1650,127 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_embrapii_pi_ano: {
+        Row: {
+          ano: number | null
+          cotitularidade: number | null
+          pedidos: number | null
+          sem_direito_ue: number | null
+          so_ue: number | null
+          tecnologia: string | null
+          tipo_pedido: string | null
+        }
+        Relationships: []
+      }
+      vw_embrapii_recursos_ano: {
+        Row: {
+          ano: number | null
+          fin_parceiro: string | null
+          projetos: number | null
+          tecnologia: string | null
+          valor_embrapii: number | null
+          valor_empresas: number | null
+          valor_sebrae: number | null
+          valor_total: number | null
+          valor_unidades: number | null
+        }
+        Relationships: []
+      }
+      vw_embrapii_resultados_coorte: {
+        Row: {
+          ano: number | null
+          concluidos: number | null
+          concluidos_com_pi: number | null
+          ganho_trl_medio_2022mais: number | null
+          pedidos_pi: number | null
+          tecnologia: string | null
+        }
+        Relationships: []
+      }
+      vw_embrapii_unidades_mapa: {
+        Row: {
+          cidade: string | null
+          co_unidade: number | null
+          competencia_tecnica: string | null
+          coordenada_aproximada: boolean | null
+          empresas: number | null
+          lat: number | null
+          lon: number | null
+          projetos: number | null
+          sigla: string | null
+          status_credenciamento: string | null
+          tipo_instituicao: string | null
+          uf: string | null
+          ufs_alcancadas: number | null
+          unidade_embrapii: string | null
+          valor_total_ipca: number | null
+          vertical: string | null
+        }
+        Relationships: []
+      }
+      vw_interacao_fluxo_uf: {
+        Row: {
+          ano: number | null
+          destino_lat: number | null
+          destino_lon: number | null
+          destino_uf: string | null
+          destinos: number | null
+          fonte: string | null
+          lacos: number | null
+          origem_lat: number | null
+          origem_lon: number | null
+          origem_uf: string | null
+          projetos: number | null
+          tecnologia: string | null
+          tipo: string | null
+          valor_rateado: number | null
+        }
+        Relationships: []
+      }
+      vw_interacao_indicadores_ano: {
+        Row: {
+          ano: number | null
+          destinos: number | null
+          fonte: string | null
+          lacos: number | null
+          lacos_destino_novo: number | null
+          lacos_interestaduais: number | null
+          lacos_par_repetido: number | null
+          origens: number | null
+          tecnologia: string | null
+          tipo: string | null
+        }
+        Relationships: []
+      }
+      vw_interacao_lacos: {
+        Row: {
+          ano: number | null
+          atualizado_em: string | null
+          data_evento: string | null
+          destino_helice: string | null
+          destino_id: string | null
+          destino_nome: string | null
+          destino_primeira_vez: boolean | null
+          destino_subtipo: string | null
+          destino_uf: string | null
+          dimensao: string | null
+          fonte: string | null
+          id: string | null
+          interestadual: boolean | null
+          metadados: Json | null
+          origem_helice: string | null
+          origem_id: string | null
+          origem_nome: string | null
+          origem_subtipo: string | null
+          origem_uf: string | null
+          par_repetido: boolean | null
+          referencia: string | null
+          tecnologia: string | null
+          tipo: string | null
+          valor: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       calc_quality_score: {
@@ -1241,6 +1789,7 @@ export type Database = {
         Args: { p_nome: string; p_raw_payload?: Json; p_tipo_raw: string }
         Returns: string
       }
+      embrapii_derivar_interacoes: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
