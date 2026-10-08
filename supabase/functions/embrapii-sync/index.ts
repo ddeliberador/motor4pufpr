@@ -255,7 +255,10 @@ export function metricasRede(
 
 Deno.serve(async (req) => {
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  if (req.headers.get("Authorization") !== `Bearer ${serviceKey}`) {
+  const syncKey = Deno.env.get("EMBRAPII_SYNC_KEY") || "";
+  const okSync = syncKey !== "" && req.headers.get("x-sync-key") === syncKey;
+  const okService = req.headers.get("Authorization") === `Bearer ${serviceKey}`;
+  if (!okSync && !okService) {
     return new Response(JSON.stringify({ erro: "não autorizado" }), { status: 401 });
   }
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, serviceKey, { auth: { persistSession: false } });
