@@ -1,1 +1,4 @@
 project_id = "jtoeinerhvxxgoeicrif"
+
+[functions.embrapii-sync]
+verify_jwt = false
