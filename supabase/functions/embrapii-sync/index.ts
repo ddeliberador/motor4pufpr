@@ -136,7 +136,10 @@ export function decodeDsr(resp: any, names: string[]): Row[] {
 
 // ------------------------------------------------------------------ limpeza de valores
 
-const vazio = (v: unknown) => v === null || v === undefined || (typeof v === "number" && Number.isNaN(v));
+const vazio = (v: unknown) =>
+  v === null || v === undefined ||
+  (typeof v === "number" && Number.isNaN(v)) ||
+  (typeof v === "string" && v.trim() === "");
 const txt = (v: unknown) => (vazio(v) ? null : String(v).trim() || null);
 const int = (v: unknown) => (vazio(v) ? null : Math.round(Number(v)));
 const num = (v: unknown) => (vazio(v) ? null : Math.round(Number(v) * 100) / 100);
