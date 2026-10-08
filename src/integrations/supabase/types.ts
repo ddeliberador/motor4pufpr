@@ -1809,6 +1809,11 @@ export type Database = {
         Args: { p_fonte: string; p_snapshot_at?: string }
         Returns: number
       }
+      vault_read_secret_by_name: { Args: { nome: string }; Returns: string }
+      vault_store_secret: {
+        Args: { nome: string; segredo: string }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "colab"
