@@ -327,7 +327,7 @@ export default function CenarioInteracao() {
 
       <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
         <p className="mb-1 font-semibold text-foreground">Notas metodológicas</p>
-        Fonte: EMBRAPII, painel público de dados (base SRInfo), extraído em {dataTxt}. Valores corrigidos pelo IPCA. Os dados cobrem a cooperação mediada pela EMBRAPII, um canal específico do SNI, e não o sistema inteiro. O ano corrente está incompleto e projetos recentes ainda não tiveram tempo de gerar PI. O ganho de TRL só é comparável a partir de 2022, por mudança na forma de registro.
+        Fonte: EMBRAPII, painel público de dados (base SRInfo), extraído em {dataTxt}, com atualização mensal automática. Valores corrigidos pelo IPCA. Os dados cobrem a cooperação mediada pela EMBRAPII, um canal específico do SNI, e não o sistema inteiro. O ano corrente está incompleto e projetos recentes ainda não tiveram tempo de gerar PI. O ganho de TRL só é comparável a partir de 2022, por mudança na forma de registro.
       </div>
     </div>
   );
