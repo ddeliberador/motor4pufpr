@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { BarChart, Bar, Cell, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Sankey } from "recharts";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { fetchAll } from "@/lib/fetchAll";
 import { agruparValores, carregarEstado, CATEGORIAS_ESTADUAIS, corPerfil, ESTADOS, fmtMilhoes, fmtNumero, fmtPct, montarSankey, totalAtores, UF_INICIAL, type DadosEstado, type ViewRow } from "@/lib/sistemasEstaduais";
 import MapaSistemasEstaduais from "./MapaSistemasEstaduais";
-import AtoresEstaduaisDialog from "./AtoresEstaduaisDialog";
+import { ListaAtores, ListaRelacoes, type FiltroRelacoes } from "./ListasSistemasEstaduais";
 
 type Camada = Database["public"]["Tables"]["camadas_ia"]["Row"];
 type Regra = Database["public"]["Tables"]["camada_regras"]["Row"];
@@ -17,17 +17,18 @@ const tooltipStyle = { background: "hsl(var(--card))", border: "1px solid hsl(va
 function Secao({ titulo, sub, children }: { titulo: string; sub?: string; children: ReactNode }) {
   return <section className="border-t border-border pt-6"><h2 className="text-2xl font-bold">{titulo}</h2>{sub && <p className="mt-1 text-sm text-muted-foreground">{sub}</p>}<div className="mt-5">{children}</div></section>;
 }
-function Metrica({ titulo, valor, children }: { titulo: string; valor: string; children?: ReactNode }) {
+function Metrica({ titulo, valor, children, onClick }: { titulo: string; valor: string; children?: ReactNode; onClick?: () => void }) {
+  if (onClick) return <button type="button" onClick={onClick} className="min-w-0 rounded-lg border border-border bg-card p-4 text-left transition-colors hover:bg-muted/40"><p className="text-sm text-muted-foreground">{titulo}</p><p className="mt-2 break-words text-2xl font-extrabold tabular-nums underline-offset-4 hover:underline">{valor}</p><p className="mt-2 text-xs text-muted-foreground">Ver lista</p></button>;
   return <div className="min-w-0 rounded-lg border border-border bg-card p-4"><p className="text-sm text-muted-foreground">{titulo}</p><p className="mt-2 break-words text-2xl font-extrabold tabular-nums">{valor}</p>{children && <div className="mt-2 text-sm text-muted-foreground">{children}</div>}</div>;
 }
-function Barras({ dados, uf, dinheiro = false }: { dados: { nome: string; valor: number }[]; uf: string; dinheiro?: boolean }) {
+function Barras({ dados, uf, dinheiro = false, onBarra }: { dados: { nome: string; valor: number }[]; uf: string; dinheiro?: boolean; onBarra?: (nome: string) => void }) {
   if (!dados.length) return <p className="py-12 text-sm text-muted-foreground">Sem relações registradas neste recorte.</p>;
   return <ResponsiveContainer width="100%" height={Math.max(220, dados.length * 25 + 40)}><BarChart data={dados} layout="vertical" margin={{ left: 0, right: 20, top: 5, bottom: 5 }}>
     <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" horizontal={false} />
     <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={v => fmtNumero(v)} />
     <YAxis type="category" dataKey="nome" width={90} tick={{ fontSize: 12, fill: "hsl(var(--foreground))" }} interval={0} />
     <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [dinheiro ? fmtMilhoes(v) : fmtNumero(v), dinheiro ? "Investimento" : "Relações"]} />
-    <Bar dataKey="valor" name={dinheiro ? "R$ milhões" : "Relações"} radius={[0, 3, 3, 0]}>{dados.map(r => <Cell key={r.nome} fill={r.nome === uf ? localCor : fluxoCor} />)}</Bar>
+    <Bar dataKey="valor" name={dinheiro ? "R$ milhões" : "Relações"} radius={[0, 3, 3, 0]} cursor={onBarra ? "pointer" : undefined} onClick={onBarra ? (d: { nome?: string; payload?: { nome: string } }) => { const n = d?.payload?.nome ?? d?.nome; if (n) onBarra(n); } : undefined}>{dados.map(r => <Cell key={r.nome} fill={r.nome === uf ? localCor : fluxoCor} />)}</Bar>
   </BarChart></ResponsiveContainer>;
 }
 
@@ -41,7 +42,9 @@ export default function Cenario6SistemasEstaduais() {
   const [erro, setErro] = useState<string | null>(null);
   const [erroGeral, setErroGeral] = useState<string | null>(null);
   const [classificacaoAberta, setClassificacaoAberta] = useState(false);
-  const [celula, setCelula] = useState<{ categoria: string; camada: string; nome: string } | null>(null);
+  const [filtroRel, setFiltroRel] = useState<FiltroRelacoes>({ aba: "empresas" });
+  const relRef = useRef<HTMLDivElement>(null);
+  const abrirRelacoes = (f: FiltroRelacoes) => { setFiltroRel(f); setTimeout(() => relRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); };
   useEffect(() => {
     let ativo = true;
     (async () => {
@@ -60,7 +63,7 @@ export default function Cenario6SistemasEstaduais() {
   }, []);
   useEffect(() => {
     let ativo = true;
-    setDados(null); setErro(null); setCelula(null);
+    setDados(null); setErro(null); setFiltroRel({ aba: "empresas" });
     carregarEstado(uf).then(d => { if (ativo) setDados(d); }).catch(e => { if (ativo) setErro(e.message); });
     return () => { ativo = false; };
   }, [uf]);
@@ -68,8 +71,6 @@ export default function Cenario6SistemasEstaduais() {
   const saida = useMemo(() => agruparValores(dados?.saida ?? [], r => r.destino_uf, r => r.lacos), [dados]);
   const saidaPrivada = useMemo(() => agruparValores(dados?.fomentoSaida ?? [], r => r.uf_unidade, r => r.valor_empresas, 1e6), [dados]);
   const sankey = useMemo(() => montarSankey(dados?.fomentoEntrada ?? [], uf), [dados, uf]);
-  const maxCelula = Math.max(1, ...(dados?.composicao ?? []).map(r => r.atores ?? 0));
-  const colunas = [...camadas.map(c => ({ codigo: c.codigo, nome: c.nome })), { codigo: "—", nome: "Sem camada" }];
   const p = dados?.perfil;
   const f = dados?.fomento;
   const b = dados?.conversao;
@@ -90,24 +91,20 @@ export default function Cenario6SistemasEstaduais() {
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Metrica titulo="Atores mapeados" valor={fmtNumero(totalAtores(dados.resumo))} />
           <Metrica titulo="Unidades EMBRAPII ativas" valor={fmtNumero(p?.unidades_ativas)} />
-          <Metrica titulo="Relações das empresas locais" valor={fmtNumero(p?.lacos_empresas_locais)} />
-          <Metrica titulo="Relações das unidades locais" valor={fmtNumero(p?.lacos_unidades_locais)} />
+          <Metrica titulo="Relações das empresas locais" valor={fmtNumero(p?.lacos_empresas_locais)} onClick={() => abrirRelacoes({ aba: "empresas" })} />
+          <Metrica titulo="Relações das unidades locais" valor={fmtNumero(p?.lacos_unidades_locais)} onClick={() => abrirRelacoes({ aba: "instituicoes" })} />
         </div>
       </section>
-      <Secao titulo="Quem forma o sistema" sub="Atores por categoria e camada de IA (Inteligência Artificial)">
-        <div className="overflow-x-auto"><table className="w-full min-w-[880px] border-collapse text-sm"><thead><tr><th className="p-2 text-left">Categoria</th>{colunas.map(c => <th key={c.codigo} className="w-[9%] p-2 text-center"><span className="block font-bold">{c.codigo === "—" ? "" : c.codigo}</span><span className="text-xs font-medium text-muted-foreground">{c.nome}</span></th>)}<th className="p-2 text-right">Total único</th></tr></thead>
-          <tbody>{CATEGORIAS_ESTADUAIS.map(cat => <tr key={cat.id} className="border-t border-border"><th className="p-2 text-left font-semibold">{cat.nome}</th>{colunas.map(c => {
-            const valor = dados.composicao.find(r => r.categoria === cat.id && r.camada === c.codigo)?.atores ?? 0;
-            const intensidade = valor === 0 ? "bg-muted/20" : valor / maxCelula > .65 ? "sistema-celula-forte" : valor / maxCelula > .2 ? "sistema-celula-media" : "sistema-celula-leve";
-            return <td key={c.codigo} className="p-1"><Button variant="ghost" className={`h-12 w-full rounded-sm font-bold tabular-nums hover:bg-accent/20 ${intensidade}`} aria-label={`${cat.nome}, ${c.nome}: ${valor} atores`} onClick={() => setCelula({ categoria: cat.id, camada: c.codigo, nome: c.nome })}>{valor === 0 ? <span className="text-muted-foreground">—</span> : fmtNumero(valor)}</Button></td>;
-          })}<td className="p-2 text-right font-bold tabular-nums">{fmtNumero(dados.resumo.find(r => r.categoria === cat.id)?.atores ?? 0)}</td></tr>)}</tbody>
-        </table></div>
-        <p className="mt-3 text-xs text-muted-foreground">Totais por categoria vêm do resumo de atores únicos, não da soma das células: um ator pode pertencer a mais de uma camada. “—” indica célula sem atores. UF inferida em {fmtNumero(dados.resumo.reduce((s, r) => s + (r.atores_uf_inferida ?? 0), 0))} atores.</p>
+      <Secao titulo="Quem forma o sistema do estado" sub="Atores ordenados pelo número de relações de cooperação. Clique num ator com relações para ver a lista dele.">
+        <ListaAtores uf={uf} camadas={camadas} onAtor={a => abrirRelacoes({ aba: a.categoria === "ict" ? "instituicoes" : "empresas", atorId: a.ator_id ?? undefined, rotulo: a.nome ?? "ator" })} />
       </Secao>
       <Secao titulo="Como se relaciona" sub="Relações somadas em todos os anos e tecnologias disponíveis. Verde identifica a própria UF.">
-        <div className="grid gap-6 lg:grid-cols-2"><div className="min-w-0"><h3 className="mb-3 text-lg font-bold">De onde vêm as unidades que atendem as empresas do estado</h3><Barras dados={entrada} uf={uf} /></div><div className="min-w-0"><h3 className="mb-3 text-lg font-bold">Para onde vão os serviços das unidades do estado</h3><Barras dados={saida} uf={uf} /></div></div>
-        <p className="mt-4 border-t border-border pt-3 text-sm"><span className="text-muted-foreground">Unidade principal: </span><strong>{p?.unidade_principal ?? "Sem unidade com relações registradas"}</strong>{p?.pct_unidade_principal != null && <> · concentra <strong>{fmtPct(p.pct_unidade_principal)}</strong> das relações das unidades locais</>}</p>
+        <div className="grid gap-6 lg:grid-cols-2"><div className="min-w-0"><h3 className="mb-3 text-lg font-bold">De onde vêm as unidades que atendem as empresas do estado</h3><Barras dados={entrada} uf={uf} onBarra={o => abrirRelacoes({ aba: "empresas", outraUf: o, rotulo: `Unidades de ${o}` })} /></div><div className="min-w-0"><h3 className="mb-3 text-lg font-bold">Para onde vão os serviços das unidades do estado</h3><Barras dados={saida} uf={uf} onBarra={d => abrirRelacoes({ aba: "instituicoes", outraUf: d, rotulo: `Empresas de ${d}` })} /></div></div>
+        <p className="mt-4 border-t border-border pt-3 text-sm"><span className="text-muted-foreground">Unidade principal: </span>{p?.unidade_principal ? <button type="button" className="font-bold underline underline-offset-2" onClick={() => abrirRelacoes({ aba: "instituicoes", instituicao: p.unidade_principal!, rotulo: p.unidade_principal! })}>{p.unidade_principal}</button> : <strong>Sem unidade com relações registradas</strong>}{p?.pct_unidade_principal != null && <> · concentra <strong>{fmtPct(p.pct_unidade_principal)}</strong> das relações das unidades locais</>}</p>
       </Secao>
+      <div ref={relRef} className="scroll-mt-24"><Secao titulo="Relações de cooperação" sub="Cada linha é um par instituição–empresa num projeto EMBRAPII. Valores rateados entre as empresas do projeto.">
+        <ListaRelacoes uf={uf} filtro={filtroRel} onFiltro={setFiltroRel} totais={{ empresas: p?.lacos_empresas_locais ?? null, instituicoes: p?.lacos_unidades_locais ?? null }} />
+      </Secao></div>
       <Secao titulo="Por onde passa o fomento" sub="P&D cooperativo via EMBRAPII · valores corrigidos pelo IPCA">
         <div className="grid gap-3 md:grid-cols-3">
           <Metrica titulo="Fomento público recebido pelas unidades" valor={fmtMilhoes(f?.publico_recebido_unidades_mi)}>Principal financiador: <strong>{f?.principal_financiador ?? "Não informado"}</strong></Metrica>
@@ -134,6 +131,5 @@ export default function Cenario6SistemasEstaduais() {
       {classificacaoAberta && <div id="sistemas-classificacao" className="mt-4 space-y-5"><dl className="grid gap-4 md:grid-cols-2">{camadas.map(c => <div key={c.codigo}><dt className="font-bold">{c.codigo} · {c.nome}</dt><dd className="mt-1 text-sm text-muted-foreground">{c.descricao ?? "Descrição não informada"}</dd></div>)}</dl><div className="overflow-x-auto"><table className="w-full min-w-[900px] text-left text-sm"><thead><tr>{["Regra", "Alvo", "Condição", "Camada", "Confiança", "Justificativa"].map(t => <th key={t} className="p-2">{t}</th>)}</tr></thead><tbody>{regras.map(r => <tr key={r.regra_id} className="border-t border-border">{[r.regra_id, r.alvo, r.condicao, r.camada, r.confianca, r.justificativa].map((v, i) => <td key={i} className="p-2 align-top">{v}</td>)}</tr>)}</tbody></table></div></div>}
     </section>
     <footer className="border-t border-border bg-muted/40 p-4 text-sm leading-relaxed text-muted-foreground"><h3 className="mb-2 font-semibold text-foreground">Notas metodológicas</h3>Atores: OpenAlex, ABStartups, Observatório CGEE, FORMICT/MCTI, SINAPAD, mapeamento LISP e EMBRAPII. Parte dos atores teve a UF inferida a partir do município e das coordenadas, e isso é indicado em cada ator. Um ator pode pertencer a mais de uma camada; a classificação segue regras explícitas, listadas em Como classificamos. As camadas de Energia e de Infraestrutura aparecem com poucos atores porque, no Mapa, estão representadas como ativos (usinas, cabos, pontos de troca de tráfego), e não como organizações. Relações e fomento cobrem apenas o canal EMBRAPII, com valores corrigidos pelo IPCA e rateados entre as empresas de cada projeto; não incluem FAPs, Finep, CNPq ou BNDES fora desse canal. A mesma instituição pode aparecer em mais de uma base. Dados EMBRAPII extraídos em {extraido ? new Date(extraido).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "data indisponível"}.</footer>
-    {celula && <AtoresEstaduaisDialog key={`${uf}-${celula.categoria}-${celula.camada}`} uf={uf} categoria={celula.categoria} camada={celula.camada} camadaNome={celula.nome} onClose={() => setCelula(null)} />}
   </div>;
 }
