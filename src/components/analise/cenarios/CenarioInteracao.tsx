@@ -4,7 +4,7 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAll } from "@/lib/fetchAll";
-import { ANO_MIN, ANO_MAX, TEC_IA, razao, ultimoAnoCompleto, fraseCrescimento } from "@/lib/interacao";
+import { ANO_MIN, ANO_MAX, TEC_IA, razao, ultimoAnoCompleto, fraseCrescimento, primeiroAnoComVolume } from "@/lib/interacao";
 
 type Ind = { ano: number | null; tecnologia: string | null; lacos: number | null; lacos_destino_novo: number | null; lacos_par_repetido: number | null; lacos_interestaduais: number | null };
 type Met = { recorte: string; ano_inicio: number; ano_fim: number; nos: number | null; componentes: number | null; maior_componente_pct: number | null; hhi_origem: number | null };
@@ -190,7 +190,7 @@ export default function CenarioInteracao() {
     const u = v.find((x) => x.ano === ult)!.repetido!;
     const um = u > 0 ? `, cerca de 1 em cada ${umEm(u)}` : "";
     const base = `Em ${ult}, ${pc1(u)}% das parcerias eram repetidas${um}.`;
-    const p0 = v.find((x) => x.lacos >= 50 && x.ano !== 2014);
+    const p0 = primeiroAnoComVolume(v, (x) => x.lacos, 50, 2014, (x) => x.ano);
     if (!p0) return { texto: base, comp: false };
     return { texto: `${base} Em ${p0.ano} eram ${pc1(p0.repetido!)}%.`, comp: true };
   })();
