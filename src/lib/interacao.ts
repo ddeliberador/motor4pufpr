@@ -1,5 +1,5 @@
 // Regras compartilhadas da camada de interação (EMBRAPII).
-export const ANO_MIN = 2015;
+export const ANO_MIN = 2014;
 export const ANO_MAX = 2026;
 export const TEC_IA = "Inteligência artificial";
 
@@ -11,4 +11,19 @@ export function razaoDeSomas<T>(linhas: T[], num: (r: T) => number, den: (r: T) 
   let a = 0, b = 0;
   for (const r of linhas) { a += num(r); b += den(r); }
   return razao(a, b);
+}
+
+/** Último ano completo entre os anos com dado: o ano corrente nunca entra na comparação. */
+export function ultimoAnoCompleto(anos: number[], anoCorrente: number): number | null {
+  const completos = anos.filter((a) => a < anoCorrente);
+  return completos.length ? Math.max(...completos) : null;
+}
+
+/** "{x} vezes" com uma casa; abaixo de 1 vira "menos que em". */
+export function fraseCrescimento(ultimo: number, n: number, primeiro: number, n0: number): string {
+  const nf = n.toLocaleString("pt-BR");
+  if (n0 <= 0) return `Em ${ultimo} foram ${nf} projetos.`;
+  const x = n / n0;
+  if (x < 1) return `Em ${ultimo} foram ${nf} projetos, menos que em ${primeiro} (${n0.toLocaleString("pt-BR")}).`;
+  return `Em ${ultimo} foram ${nf} projetos, ${x.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} vezes o número de ${primeiro}.`;
 }
