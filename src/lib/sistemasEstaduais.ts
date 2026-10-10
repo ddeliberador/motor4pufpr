@@ -40,9 +40,10 @@ export function montarSankey(linhas: ViewRow<"vw_uf_fomento_fluxo">[], uf: strin
 }
 
 async function lerUma<K extends keyof Database["public"]["Views"]>(view: K, uf: string): Promise<ViewRow<K> | null> {
-  const { data, error } = await supabase.from(view).select("*").eq("uf", uf).maybeSingle();
+  // Generic view names defeat PostgREST column inference; all views read here expose `uf`.
+  const { data, error } = await (supabase.from(view as "vw_uf_relacoes_perfil").select("*").eq("uf", uf).maybeSingle());
   if (error) throw error;
-  return data as ViewRow<K> | null;
+  return data as unknown as ViewRow<K> | null;
 }
 export async function carregarEstado(uf: string) {
   const [perfil, resumo, composicao, entrada, saida, fomentoEntrada, fomentoSaida, fomento, conversao, limitacoes] = await Promise.all([
