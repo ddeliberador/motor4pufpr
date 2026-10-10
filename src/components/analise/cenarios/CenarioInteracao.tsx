@@ -256,7 +256,8 @@ export default function CenarioInteracao() {
       </section>
 
       <Card titulo="1. A cooperação está crescendo?" sub="Projetos contratados por ano.">
-        {fraseB1 && <Conclusao>{fraseB1}</Conclusao>}
+        {fraseB1 && <Conclusao>{fraseB1.texto}</Conclusao>}
+        {fraseB1?.comp && <p className="mt-1 text-xs text-muted-foreground">Comparação com o primeiro ano com volume suficiente de dados (50 ou mais).</p>}
         {projetosAno.length === 0 ? <SemDado /> : (<>
           <ResponsiveContainer width="100%" height={280} className="mt-4">
             <BarChart data={projetosAno}>
@@ -274,7 +275,8 @@ export default function CenarioInteracao() {
       </Card>
 
       <Card titulo="2. As empresas voltam a cooperar?" sub="Parte das parcerias do ano que repetem uma dupla instituição–empresa que já tinha trabalhado junta.">
-        {fraseB2 && <Conclusao>{fraseB2}</Conclusao>}
+        {fraseB2 && <Conclusao>{fraseB2.texto}</Conclusao>}
+        {fraseB2?.comp && <p className="mt-1 text-xs text-muted-foreground">Comparação com o primeiro ano com volume suficiente de dados (50 ou mais).</p>}
         {acoes.length === 0 ? <SemDado /> : (<>
           <ResponsiveContainer width="100%" height={260} className="mt-4">
             <LineChart data={acoes}>
