@@ -96,7 +96,7 @@ export default function Cenario6SistemasEstaduais() {
         </div>
       </section>
       <Secao titulo="Quem forma o sistema do estado" sub="Atores ordenados pelo número de relações de cooperação. Clique num ator com relações para ver a lista dele.">
-        <ListaAtores uf={uf} camadas={camadas} onAtor={a => abrirRelacoes({ aba: a.uf === uf && a.categoria === "ict" ? "instituicoes" : (a.relacoes ?? 0) > 0 && a.categoria !== "ict" ? "empresas" : "instituicoes", atorId: a.ator_id ?? undefined, rotulo: a.nome ?? "ator" })} />
+        <ListaAtores uf={uf} camadas={camadas} onAtor={a => abrirRelacoes({ aba: a.categoria === "ict" ? "instituicoes" : "empresas", atorId: a.ator_id ?? undefined, rotulo: a.nome ?? "ator" })} />
       </Secao>
       <Secao titulo="Como se relaciona" sub="Relações somadas em todos os anos e tecnologias disponíveis. Verde identifica a própria UF.">
         <div className="grid gap-6 lg:grid-cols-2"><div className="min-w-0"><h3 className="mb-3 text-lg font-bold">De onde vêm as unidades que atendem as empresas do estado</h3><Barras dados={entrada} uf={uf} onBarra={o => abrirRelacoes({ aba: "empresas", outraUf: o, rotulo: `Unidades de ${o}` })} /></div><div className="min-w-0"><h3 className="mb-3 text-lg font-bold">Para onde vão os serviços das unidades do estado</h3><Barras dados={saida} uf={uf} onBarra={d => abrirRelacoes({ aba: "instituicoes", outraUf: d, rotulo: `Empresas de ${d}` })} /></div></div>
