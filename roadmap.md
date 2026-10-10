@@ -1,4 +1,7 @@
 # Roadmap — Catálogo de Bases como fonte da verdade
+- [ ] Cenário 6 Sistemas Estaduais: leituras, painel e lista paginada de atores
+- [ ] Entrada Painel Sistemas Estaduais no Diário de Construção
+- [ ] Testes e navegador com PR, SP, PB e MA
 - [x] 1. Tabela `catalogo_bases` + carga das três listas
 - [x] 2. Página Bases e aba Catálogo de Fontes lendo/editando o catálogo
 - [x] 3. Construtor lendo bases e colunas do catálogo
