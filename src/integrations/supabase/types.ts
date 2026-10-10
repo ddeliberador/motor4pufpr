@@ -1777,6 +1777,23 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_atores_sni_lista: {
+        Row: {
+          ator_id: string | null
+          camadas: string[] | null
+          camadas_cod: string[] | null
+          categoria: string | null
+          fonte: string | null
+          municipio: string | null
+          nome: string | null
+          relacoes: number | null
+          status: string | null
+          tipo: string | null
+          uf: string | null
+          uf_origem: string | null
+        }
+        Relationships: []
+      }
       vw_embrapii_pi_ano: {
         Row: {
           ano: number | null
@@ -1895,6 +1912,30 @@ export type Database = {
           tecnologia: string | null
           tipo: string | null
           valor: number | null
+        }
+        Relationships: []
+      }
+      vw_relacoes_cooperacao: {
+        Row: {
+          ano: number | null
+          area_aplicacao: string | null
+          cod_projeto: string | null
+          data_contrato: string | null
+          empresa: string | null
+          empresa_id: string | null
+          empresa_porte: string | null
+          empresa_uf: string | null
+          financiador: string | null
+          instituicao: string | null
+          instituicao_id: string | null
+          instituicao_tipo: string | null
+          instituicao_uf: string | null
+          mesmo_estado: boolean | null
+          projeto: string | null
+          relacao_id: string | null
+          status: string | null
+          tecnologia: string | null
+          valor_rateado: number | null
         }
         Relationships: []
       }
