@@ -35,6 +35,36 @@ export type Database = {
         }
         Relationships: []
       }
+      ator_uf_resolvida: {
+        Row: {
+          confianca: string
+          detalhe: string | null
+          metodo: string
+          nome: string | null
+          research_location_id: string
+          resolvido_em: string
+          uf: string
+        }
+        Insert: {
+          confianca: string
+          detalhe?: string | null
+          metodo: string
+          nome?: string | null
+          research_location_id: string
+          resolvido_em?: string
+          uf: string
+        }
+        Update: {
+          confianca?: string
+          detalhe?: string | null
+          metodo?: string
+          nome?: string | null
+          research_location_id?: string
+          resolvido_em?: string
+          uf?: string
+        }
+        Relationships: []
+      }
       build_log: {
         Row: {
           anexo_texto: string | null
@@ -80,6 +110,65 @@ export type Database = {
           nota_desenvolvimento?: string | null
           resolucao?: string | null
           titulo?: string
+        }
+        Relationships: []
+      }
+      camada_regras: {
+        Row: {
+          alvo: string
+          atualizado_em: string
+          camada: string
+          condicao: string
+          confianca: string
+          justificativa: string
+          regra_id: string
+        }
+        Insert: {
+          alvo: string
+          atualizado_em?: string
+          camada: string
+          condicao: string
+          confianca: string
+          justificativa: string
+          regra_id: string
+        }
+        Update: {
+          alvo?: string
+          atualizado_em?: string
+          camada?: string
+          condicao?: string
+          confianca?: string
+          justificativa?: string
+          regra_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camada_regras_camada_fkey"
+            columns: ["camada"]
+            isOneToOne: false
+            referencedRelation: "camadas_ia"
+            referencedColumns: ["codigo"]
+          },
+        ]
+      }
+      camadas_ia: {
+        Row: {
+          codigo: string
+          descricao: string | null
+          nome: string
+          ordem: number
+        }
+        Insert: {
+          codigo: string
+          descricao?: string | null
+          nome: string
+          ordem: number
+        }
+        Update: {
+          codigo?: string
+          descricao?: string | null
+          nome?: string
+          ordem?: number
         }
         Relationships: []
       }
@@ -1650,6 +1739,44 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_ator_camada: {
+        Row: {
+          ator_id: string | null
+          camada: string | null
+          camada_nome: string | null
+          camada_ordem: number | null
+          confianca: string | null
+          evidencia: string | null
+          regra_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camada_regras_camada_fkey"
+            columns: ["camada"]
+            isOneToOne: false
+            referencedRelation: "camadas_ia"
+            referencedColumns: ["codigo"]
+          },
+        ]
+      }
+      vw_atores_sni: {
+        Row: {
+          ator_id: string | null
+          categoria: string | null
+          cnae: string | null
+          cnpj: string | null
+          fonte: string | null
+          lat: number | null
+          lon: number | null
+          municipio: string | null
+          nome: string | null
+          status: string | null
+          tipo: string | null
+          uf: string | null
+          uf_origem: string | null
+        }
+        Relationships: []
+      }
       vw_embrapii_pi_ano: {
         Row: {
           ano: number | null
@@ -1771,6 +1898,107 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_uf_atores_resumo: {
+        Row: {
+          atores: number | null
+          atores_uf_inferida: number | null
+          categoria: string | null
+          uf: string | null
+        }
+        Relationships: []
+      }
+      vw_uf_base_conversao: {
+        Row: {
+          doutores_titulados_2020_2024: number | null
+          icts_mapeadas: number | null
+          lacos_embrapii_2020_2024: number | null
+          lacos_por_100_doutores: number | null
+          lacos_por_100_doutores_brasil: number | null
+          mestres_titulados_2020_2024: number | null
+          patentes_por_100_doutores: number | null
+          patentes_por_100_doutores_brasil: number | null
+          patentes_residentes_2020_2024: number | null
+          pct_concluidos_com_pi: number | null
+          pct_concluidos_com_pi_brasil: number | null
+          projetos_concluidos_unidades_locais: number | null
+          startups_mapeadas: number | null
+          uf: string | null
+        }
+        Relationships: []
+      }
+      vw_uf_composicao: {
+        Row: {
+          atores: number | null
+          camada: string | null
+          camada_nome: string | null
+          camada_ordem: number | null
+          categoria: string | null
+          uf: string | null
+        }
+        Relationships: []
+      }
+      vw_uf_fomento_fluxo: {
+        Row: {
+          ano: number | null
+          financiador: string | null
+          projetos: number | null
+          tecnologia: string | null
+          uf_empresa: string | null
+          uf_unidade: string | null
+          valor_empresas: number | null
+          valor_publico: number | null
+          valor_sebrae: number | null
+          valor_unidades: number | null
+          vinculos: number | null
+        }
+        Relationships: []
+      }
+      vw_uf_fomento_resumo: {
+        Row: {
+          pct_privado_investido_fora: number | null
+          principal_financiador: string | null
+          privado_entrante_de_outros_estados_mi: number | null
+          privado_investido_empresas_locais_mi: number | null
+          privado_investido_fora_mi: number | null
+          privado_recebido_unidades_mi: number | null
+          publico_em_projetos_de_empresas_locais_mi: number | null
+          publico_recebido_unidades_mi: number | null
+          uf: string | null
+        }
+        Relationships: []
+      }
+      vw_uf_limitacoes: {
+        Row: {
+          codigo: string | null
+          ordem: number | null
+          referencia: number | null
+          severidade: string | null
+          texto: string | null
+          titulo: string | null
+          uf: string | null
+          valor: number | null
+        }
+        Relationships: []
+      }
+      vw_uf_relacoes_perfil: {
+        Row: {
+          lacos_empresas_com_unidades_de_fora: number | null
+          lacos_empresas_locais: number | null
+          lacos_internos: number | null
+          lacos_unidades_com_empresas_de_fora: number | null
+          lacos_unidades_locais: number | null
+          pct_empresas_buscam_fora: number | null
+          pct_unidade_principal: number | null
+          pct_unidades_atendem_fora: number | null
+          perfil: string | null
+          uf: string | null
+          uf_principal_origem_externa: string | null
+          unidade_principal: string | null
+          unidades_ativas: number | null
+          unidades_total: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       calc_quality_score: {
@@ -1790,6 +2018,7 @@ export type Database = {
         Returns: string
       }
       embrapii_derivar_interacoes: { Args: never; Returns: number }
+      fmt_br: { Args: { casas?: number; v: number }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1805,6 +2034,7 @@ export type Database = {
           skipped: number
         }[]
       }
+      resolver_uf_atores: { Args: never; Returns: number }
       rollback_fonte: {
         Args: { p_fonte: string; p_snapshot_at?: string }
         Returns: number
