@@ -41,6 +41,16 @@
 
     --radius: 0.75rem;
 
+    --sistema-perfil-1: 164 48% 38%;
+    --sistema-perfil-2: 24 70% 48%;
+    --sistema-perfil-3: 205 48% 46%;
+    --sistema-perfil-4: 285 30% 49%;
+    --sistema-perfil-5: 44 65% 45%;
+    --sistema-perfil-6: 215 10% 58%;
+    --sistema-local: 164 48% 38%;
+    --sistema-fluxo: 205 48% 46%;
+    --sistema-matriz: 164 48% 38%;
+
     /* Custom design tokens - Estilo moderno e limpo */
     --hero-gradient: linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(215 25% 20%) 50%, hsl(220 14% 35%) 100%);
     --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
@@ -81,6 +91,16 @@
     --border: 222 30% 18%;
     --input: 222 30% 18%;
     --ring: 215 30% 60%;
+
+    --sistema-perfil-1: 164 48% 54%;
+    --sistema-perfil-2: 24 70% 62%;
+    --sistema-perfil-3: 205 48% 62%;
+    --sistema-perfil-4: 285 30% 65%;
+    --sistema-perfil-5: 44 65% 60%;
+    --sistema-perfil-6: 215 10% 65%;
+    --sistema-local: 164 48% 54%;
+    --sistema-fluxo: 205 48% 62%;
+    --sistema-matriz: 164 48% 54%;
 
     --glass-bg: rgba(30, 41, 59, 0.8);
     --glass-border: rgba(51, 65, 85, 0.3);
