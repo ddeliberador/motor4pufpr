@@ -178,7 +178,7 @@ export default function CenarioInteracao() {
     const comDado = projetosAno.filter((x) => x.projetos > 0);
     const ult = ultimoAnoCompleto(comDado.map((x) => x.ano), ANO_CORRENTE);
     if (ult == null || !comDado.length) return null;
-    const pri = comDado.find((x) => x.projetos >= 50);
+    const pri = primeiroAnoComVolume(comDado, (x) => x.projetos, 50);
     const u = comDado.find((x) => x.ano === ult)!;
     if (!pri) return { texto: `Em ${ult} foram ${u.projetos.toLocaleString("pt-BR")} projetos.`, comp: false };
     return { texto: fraseCrescimento(ult, u.projetos, pri.ano, pri.projetos), comp: true };

@@ -19,6 +19,15 @@ export function ultimoAnoCompleto(anos: number[], anoCorrente: number): number |
   return completos.length ? Math.max(...completos) : null;
 }
 
+/** Primeiro ano da série com volume mínimo de dados; opcionalmente exclui um ano (ex.: 2014, início da série). */
+export function primeiroAnoComVolume<T>(serie: T[], valor: (r: T) => number, minimo: number, excluirAno?: number, ano?: (r: T) => number): T | null {
+  for (const r of serie) {
+    if (excluirAno != null && ano && ano(r) === excluirAno) continue;
+    if (valor(r) >= minimo) return r;
+  }
+  return null;
+}
+
 /** "{x} vezes" com uma casa; abaixo de 1 vira "menos que em". */
 export function fraseCrescimento(ultimo: number, n: number, primeiro: number, n0: number): string {
   const nf = n.toLocaleString("pt-BR");
