@@ -178,18 +178,21 @@ export default function CenarioInteracao() {
     const comDado = projetosAno.filter((x) => x.projetos > 0);
     const ult = ultimoAnoCompleto(comDado.map((x) => x.ano), ANO_CORRENTE);
     if (ult == null || !comDado.length) return null;
-    const pri = comDado[0];
+    const pri = comDado.find((x) => x.projetos >= 50);
     const u = comDado.find((x) => x.ano === ult)!;
-    return fraseCrescimento(ult, u.projetos, pri.ano, pri.projetos);
+    if (!pri) return { texto: `Em ${ult} foram ${u.projetos.toLocaleString("pt-BR")} projetos.`, comp: false };
+    return { texto: fraseCrescimento(ult, u.projetos, pri.ano, pri.projetos), comp: true };
   })();
   const fraseB2 = (() => {
     const v = acoes.filter((x) => x.repetido != null);
     const ult = ultimoAnoCompleto(v.map((x) => x.ano), ANO_CORRENTE);
     if (ult == null) return null;
     const u = v.find((x) => x.ano === ult)!.repetido!;
-    const p0 = v[0];
     const um = u > 0 ? `, cerca de 1 em cada ${umEm(u)}` : "";
-    return `Em ${ult}, ${pc1(u)}% das parcerias eram repetidas${um}. Em ${p0.ano} eram ${pc1(p0.repetido!)}%.`;
+    const base = `Em ${ult}, ${pc1(u)}% das parcerias eram repetidas${um}.`;
+    const p0 = v.find((x) => x.lacos >= 50 && x.ano !== 2014);
+    if (!p0) return { texto: base, comp: false };
+    return { texto: `${base} Em ${p0.ano} eram ${pc1(p0.repetido!)}%.`, comp: true };
   })();
   const fraseB3 = (() => {
     const v = janelas.filter((j) => j.m?.maior_componente_pct != null);
