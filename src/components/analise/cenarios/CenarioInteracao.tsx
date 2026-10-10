@@ -4,7 +4,7 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAll } from "@/lib/fetchAll";
-import { ANO_MIN, ANO_MAX, TEC_IA, razao, ultimoAnoCompleto, fraseCrescimento } from "@/lib/interacao";
+import { ANO_MIN, ANO_MAX, TEC_IA, razao, ultimoAnoCompleto, fraseCrescimento, primeiroAnoComVolume } from "@/lib/interacao";
 
 type Ind = { ano: number | null; tecnologia: string | null; lacos: number | null; lacos_destino_novo: number | null; lacos_par_repetido: number | null; lacos_interestaduais: number | null };
 type Met = { recorte: string; ano_inicio: number; ano_fim: number; nos: number | null; componentes: number | null; maior_componente_pct: number | null; hhi_origem: number | null };
@@ -178,18 +178,21 @@ export default function CenarioInteracao() {
     const comDado = projetosAno.filter((x) => x.projetos > 0);
     const ult = ultimoAnoCompleto(comDado.map((x) => x.ano), ANO_CORRENTE);
     if (ult == null || !comDado.length) return null;
-    const pri = comDado[0];
+    const pri = primeiroAnoComVolume(comDado, (x) => x.projetos, 50);
     const u = comDado.find((x) => x.ano === ult)!;
-    return fraseCrescimento(ult, u.projetos, pri.ano, pri.projetos);
+    if (!pri) return { texto: `Em ${ult} foram ${u.projetos.toLocaleString("pt-BR")} projetos.`, comp: false };
+    return { texto: fraseCrescimento(ult, u.projetos, pri.ano, pri.projetos), comp: true };
   })();
   const fraseB2 = (() => {
     const v = acoes.filter((x) => x.repetido != null);
     const ult = ultimoAnoCompleto(v.map((x) => x.ano), ANO_CORRENTE);
     if (ult == null) return null;
     const u = v.find((x) => x.ano === ult)!.repetido!;
-    const p0 = v[0];
     const um = u > 0 ? `, cerca de 1 em cada ${umEm(u)}` : "";
-    return `Em ${ult}, ${pc1(u)}% das parcerias eram repetidas${um}. Em ${p0.ano} eram ${pc1(p0.repetido!)}%.`;
+    const base = `Em ${ult}, ${pc1(u)}% das parcerias eram repetidas${um}.`;
+    const p0 = primeiroAnoComVolume(v, (x) => x.lacos, 50, 2014, (x) => x.ano);
+    if (!p0) return { texto: base, comp: false };
+    return { texto: `${base} Em ${p0.ano} eram ${pc1(p0.repetido!)}%.`, comp: true };
   })();
   const fraseB3 = (() => {
     const v = janelas.filter((j) => j.m?.maior_componente_pct != null);
@@ -253,7 +256,8 @@ export default function CenarioInteracao() {
       </section>
 
       <Card titulo="1. A cooperação está crescendo?" sub="Projetos contratados por ano.">
-        {fraseB1 && <Conclusao>{fraseB1}</Conclusao>}
+        {fraseB1 && <Conclusao>{fraseB1.texto}</Conclusao>}
+        {fraseB1?.comp && <p className="mt-1 text-xs text-muted-foreground">Comparação com o primeiro ano com volume suficiente de dados (50 ou mais).</p>}
         {projetosAno.length === 0 ? <SemDado /> : (<>
           <ResponsiveContainer width="100%" height={280} className="mt-4">
             <BarChart data={projetosAno}>
@@ -271,7 +275,8 @@ export default function CenarioInteracao() {
       </Card>
 
       <Card titulo="2. As empresas voltam a cooperar?" sub="Parte das parcerias do ano que repetem uma dupla instituição–empresa que já tinha trabalhado junta.">
-        {fraseB2 && <Conclusao>{fraseB2}</Conclusao>}
+        {fraseB2 && <Conclusao>{fraseB2.texto}</Conclusao>}
+        {fraseB2?.comp && <p className="mt-1 text-xs text-muted-foreground">Comparação com o primeiro ano com volume suficiente de dados (50 ou mais).</p>}
         {acoes.length === 0 ? <SemDado /> : (<>
           <ResponsiveContainer width="100%" height={260} className="mt-4">
             <LineChart data={acoes}>
