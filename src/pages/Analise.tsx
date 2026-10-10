@@ -5,6 +5,8 @@ import Cenario2Capacidade from "@/components/analise/cenarios/Cenario2Capacidade
 import Cenario3Governanca from "@/components/analise/cenarios/Cenario3Governanca";
 import Cenario5Dependencia from "@/components/analise/cenarios/Cenario5Dependencia";
 import CenarioInteracao from "@/components/analise/cenarios/CenarioInteracao";
+import Cenario6SistemasEstaduais from "@/components/analise/cenarios/Cenario6SistemasEstaduais";
+import { Button } from "@/components/ui/button";
 
 const CENARIOS = [
   { id: 1, titulo: "Infraestrutura de IA", subtitulo: "O Brasil tem a base física para sustentar IA?", icone: "bolt", cor: "#f472b6",
@@ -17,13 +19,16 @@ const CENARIOS = [
     descricao: "Setor por setor, quem são os atores internacionais e nacionais em cada uma das 7 camadas — com percentual só onde há dado oficial." },
   { id: 5, titulo: "Interação", subtitulo: "Como universidades, institutos e empresas cooperam?", icone: "share", cor: "#f59e0b",
     descricao: "Laços de cooperação ICT–empresa mediados pela EMBRAPII: quem coopera, com quem, com que dinheiro e com que resultado." },
+  { id: 6, titulo: "Sistemas Estaduais", subtitulo: "Como se forma e se conecta o sistema de inovação de cada estado?", icone: "map", cor: "hsl(var(--sistema-local))",
+    descricao: "Atores nas sete camadas de IA, relações entre estados, caminhos do fomento e limitações dos sistemas estaduais de inovação." },
 ] as const;
 
-type CenarioId = 1 | 2 | 3 | 4 | 5;
+type CenarioId = 1 | 2 | 3 | 4 | 5 | 6;
 
 export default function Analise() {
   const [cenarioAtivo, setCenarioAtivo] = useState<CenarioId>(1);
-  const cfg = CENARIOS.find(c => c.id === cenarioAtivo)!;
+  const cfg = CENARIOS.find(c => c.id === cenarioAtivo) ?? CENARIOS[0];
+  const corFundo = (cor: string, alpha: string) => cor.startsWith("hsl") ? `hsl(var(--sistema-local) / ${parseInt(alpha, 16) / 255})` : cor + alpha;
 
   return (
     <div className="min-h-screen bg-background">
@@ -31,22 +36,22 @@ export default function Analise() {
 
       {/* Menu de cenários em botões */}
       <div className="pt-20 border-b border-border bg-background/95 backdrop-blur sticky top-0 z-40">
-        <div className="px-4 py-3 max-w-7xl mx-auto grid grid-cols-2 gap-2 lg:grid-cols-5">
+        <div className="px-4 py-3 max-w-7xl mx-auto grid grid-cols-2 gap-2 lg:grid-cols-6">
           {CENARIOS.map(c => {
             const ativo = cenarioAtivo === c.id;
             return (
-              <button key={c.id} onClick={() => setCenarioAtivo(c.id as CenarioId)}
-                className={`flex items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-md ${
+              <Button variant="ghost" key={c.id} onClick={() => setCenarioAtivo(c.id as CenarioId)}
+                className={`flex h-auto whitespace-normal items-center justify-start gap-2 rounded-xl border-2 px-2 py-2.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-md ${
                   ativo ? "shadow-md" : "border-border bg-card"}`}
-                style={ativo ? { borderColor: c.cor, background: c.cor + "1a" } : {}}>
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ background: c.cor + (ativo ? "40" : "20") }}>
+                style={ativo ? { borderColor: c.cor, background: corFundo(c.cor, "1a") } : {}}>
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ background: corFundo(c.cor, ativo ? "40" : "20") }}>
                   <span className="material-symbols-outlined text-xl leading-none" style={{ fontVariationSettings: '"FILL" 1', color: c.cor }}>{c.icone}</span>
                 </span>
                 <span className="min-w-0">
                   <span className="block text-[10px] font-bold uppercase tracking-widest" style={{ color: c.cor }}>Cenário {c.id}</span>
-                  <span className={`block truncate text-sm font-bold ${ativo ? "text-foreground" : "text-muted-foreground"}`}>{c.titulo}</span>
+                  <span className={`block text-sm font-bold leading-tight ${ativo ? "text-foreground" : "text-muted-foreground"}`}>{c.titulo}</span>
                 </span>
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -55,7 +60,7 @@ export default function Analise() {
       {/* Hero narrativo: pergunta + resposta curta */}
       <div className="border-b border-border bg-card">
         <div className="max-w-7xl mx-auto px-4 py-6 flex items-start gap-4 flex-wrap">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl" style={{ background: cfg.cor + "20" }}>
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl" style={{ background: corFundo(cfg.cor, "20") }}>
             <span className="material-symbols-outlined text-2xl leading-none" style={{ fontVariationSettings: '"FILL" 1', color: cfg.cor }}>{cfg.icone}</span>
           </div>
           <div className="flex-1 min-w-0">
@@ -88,6 +93,7 @@ export default function Analise() {
         {cenarioAtivo === 3 && <Cenario3Governanca />}
         {cenarioAtivo === 4 && <Cenario5Dependencia />}
         {cenarioAtivo === 5 && <CenarioInteracao />}
+        {cenarioAtivo === 6 && <Cenario6SistemasEstaduais />}
       </div>
     </div>
   );
