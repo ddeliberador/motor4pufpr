@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { ESTADOS, PERFIS, corPerfil, type ViewRow } from "@/lib/sistemasEstaduais";
 
 type Feature = { properties: { sigla: string }; geometry: { type: string; coordinates: number[][][] | number[][][][] } };
@@ -33,7 +32,6 @@ export default function MapaSistemasEstaduais({ perfis, uf, onChange }: { perfis
         </select>
       </div>
       <ul className="space-y-2.5 text-sm">{PERFIS.map(p => <li key={p} className="flex items-center gap-2"><svg width="12" height="12" aria-hidden="true"><rect width="12" height="12" rx="2" fill={corPerfil(p)} /></svg>{p}</li>)}</ul>
-      <div className="flex flex-wrap gap-1">{["PR", "SP", "PB", "MA"].map(s => <Button key={s} variant={uf === s ? "secondary" : "ghost"} size="sm" onClick={() => onChange(s)} aria-label={`Ver ${ESTADOS[s]}`}>{s}</Button>)}</div>
     </div>
   </div>;
 }
