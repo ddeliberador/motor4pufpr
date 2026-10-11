@@ -1,4 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// As funções testadas são puras; o cliente do Supabase não é usado aqui.
+// Sem este mock, importar o módulo cria o cliente e a CI falha por não ter VITE_SUPABASE_URL.
+vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
+
 import { agruparValores, montarSankey, totalAtores, UF_INICIAL } from "@/lib/sistemasEstaduais";
 
 describe("Sistemas estaduais", () => {
