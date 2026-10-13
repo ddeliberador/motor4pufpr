@@ -219,7 +219,7 @@ export default function Cenario1Infraestrutura() {
       </Bloco>
 
       {/* 2b. Balanço energético (EPE) */}
-      <BalancoEnergia dcPorUF={dcs.status === "ok" ? Object.fromEntries(dcUF.map(x => [x.uf, x.n])) : null} />
+      <BalancoEnergia dcStatus={dcs.status} dcPorUF={dcs.status === "ok" ? Object.fromEntries(dcUF.map(x => [x.uf, x.n])) : null} />
 
       {/* 3. Cabos internacionais + infovias + backhaul */}
       <Bloco titulo="Por onde o Brasil se conecta ao mundo?"

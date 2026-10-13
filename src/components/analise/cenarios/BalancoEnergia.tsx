@@ -35,7 +35,7 @@ function BarraClasses({ titulo, itens }: { titulo: string; itens: { rotulo: stri
   );
 }
 
-export default function BalancoEnergia({ dcPorUF }: { dcPorUF: Record<string, number> | null }) {
+export default function BalancoEnergia({ dcPorUF, dcStatus }: { dcPorUF: Record<string, number> | null; dcStatus: "carregando" | "erro" | "ok" }) {
   const [uf, setUf] = useState("PR");
   const [carga, setCarga] = useState<Carga>({ status: "carregando" });
   const [features, setFeatures] = useState<Feature[]>([]);
@@ -116,7 +116,7 @@ export default function BalancoEnergia({ dcPorUF }: { dcPorUF: Record<string, nu
                 <p className="text-xs text-muted-foreground">O Brasil passa de 100% porque a geração inclui perdas na transmissão, autoprodução e geração distribuída, que não entram no consumo da rede. Por isso cada estado é comparado com a média do país, não com 100%.</p>
 
                 <div className="rounded-lg border border-border p-4">
-                  <p className="text-sm font-semibold">{nome} {d.situacao === "Exporta energia" ? "exporta energia" : d.situacao === "Perto do equilíbrio" ? "está perto do equilíbrio" : "depende de energia de outros estados"} e {dc == null ? "o número de datacenters está indisponível no momento" : `${d.situacao === "Exporta energia" ? "tem" : "concentra"} ${dc} ${dc === 1 ? "datacenter" : "datacenters"}`}.</p>
+                  <p className="text-sm font-semibold">{nome} {d.situacao === "Exporta energia" ? "exporta energia" : d.situacao === "Perto do equilíbrio" ? "está perto do equilíbrio" : "depende de energia de outros estados"} e {dc == null ? (dcStatus === "carregando" ? "a contagem de datacenters ainda está carregando" : "o número de datacenters está indisponível no momento") : `${d.situacao === "Exporta energia" ? "tem" : "concentra"} ${dc} ${dc === 1 ? "datacenter" : "datacenters"}`}.</p>
                   <p className="mt-1 text-xs text-muted-foreground">Situação energética (EPE) ao lado da infraestrutura de dados (PeeringDB, camada L3): mostra onde há energia sobrando e onde está o processamento.</p>
                 </div>
               </div>
