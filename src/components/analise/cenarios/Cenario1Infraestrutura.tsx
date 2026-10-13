@@ -3,10 +3,8 @@ import AtoresDrawer from "./AtoresDrawer";
 import { supabase } from "@/integrations/supabase/client";
 import { carregarDatacenters } from "@/lib/bi/datasets";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
-import {
-  TIPOS_USINA, RENOVAVEIS, agregarEnergia, featuresDoGeojson, aterragensBrasil,
-  fmtMw, fmtGw, fmtPct, listaPt, type Usina, type Aterragem,
-} from "@/lib/infraEstados";
+import { TIPOS_USINA, fmtMw, fmtGw, fmtPct, listaPt } from "@/lib/infraEstados";
+import { fetchAll } from "@/lib/fetchAll";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
 
@@ -14,8 +12,11 @@ interface BHPonto { uf: string; com: number; sem: number; pct: number }
 interface Datacenter { nome: string; cidade: string; org: string; uf: string }
 type Estado<T> = { status: "carregando" } | { status: "erro"; erro: string } | { status: "ok"; dados: T; data?: string };
 
-/** Limite de registros da função map-infrastructure (layer "energy"). */
-const LIMITE_ANEEL = 6000;
+interface EnergiaUF { uf: string; usinas: number; mw_operacao: number; pct_renovavel: number; fonte_principal: string | null; maior_usina: string | null; pct_brasil: number; data_aneel: string | null }
+interface EnergiaTipo { uf: string; tipo: string; renovavel: boolean; mw: number }
+interface CaboUF { uf: string; cabos_internacionais: number; cabos_fluviais: number; nomes_internacionais: string | null; nomes_fluviais: string | null }
+interface Aterragem { ponto_id: string; nome: string; uf: string; cabos_internacionais: number }
+interface Usina { nome: string; tipo: string; municipio: string | null; potencia_kw: number }
 const nomeUF = (uf: string) => ESTADOS[uf] ?? uf;
 const tipoNome = (s: string) => { const t = TIPOS_USINA.find((x) => x.sigla === s); return t ? `${t.nome} (${t.sigla})` : s; };
 const tooltipStyle = { background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 };
@@ -43,8 +44,9 @@ export default function Cenario1Infraestrutura() {
   const [carregando, setCarregando] = useState(true);
   const [erroBH, setErroBH] = useState<string | null>(null);
   const [drawerUF, setDrawerUF] = useState<string | null>(null);
-  const [energia, setEnergia] = useState<Estado<Usina[]>>({ status: "carregando" });
-  const [cabos, setCabos] = useState<Estado<Aterragem[]>>({ status: "carregando" });
+  const [energia, setEnergia] = useState<Estado<{ uf: EnergiaUF[]; tipo: EnergiaTipo[] }>>({ status: "carregando" });
+  const [cabos, setCabos] = useState<Estado<{ uf: CaboUF[]; pontos: Aterragem[] }>>({ status: "carregando" });
+  const [usinasDaUF, setUsinasDaUF] = useState<Usina[] | null>(null);
   const [dcs, setDcs] = useState<Estado<Datacenter[]>>({ status: "carregando" });
   const [listaUsinasUF, setListaUsinasUF] = useState<string | null>(null);
   const [listaDcUF, setListaDcUF] = useState<string | null>(null);
@@ -73,23 +75,23 @@ export default function Cenario1Infraestrutura() {
       .catch(e => setErroBH(String(e?.message ?? e)))
       .finally(() => setCarregando(false));
 
-    // L1 · mesma função do Mapa e do BI (layer "energy"); nome da usina é necessário para a lista.
-    supabase.functions.invoke("map-infrastructure", { body: { layer: "energy" } }).then(({ data, error }) => {
-      const p = data as { data?: Record<string, unknown>[]; failures?: { error: string }[] } | null;
-      if (error || !p?.data?.length) {
-        setEnergia({ status: "erro", erro: error?.message || (p?.failures ?? []).map(f => f.error).join("; ") || "sem dados" });
-        return;
-      }
-      setEnergia({ status: "ok", data: new Date().toLocaleDateString("pt-BR"), dados: p.data.map(u => ({
-        nome: String(u.nome ?? ""), tipo: String(u.tipo ?? ""), uf: String(u.uf ?? ""),
-        municipio: String(u.municipio ?? ""), potencia_kw: Number(u.potencia_kw ?? 0),
-      })) });
+    // L1 · vw_energia_uf / vw_energia_uf_tipo, derivadas de aneel_usinas (a mesma tabela que a função do Mapa serve).
+    Promise.all([
+      fetchAll<EnergiaUF>(supabase.from("vw_energia_uf").select("uf,usinas,mw_operacao,pct_renovavel,fonte_principal,maior_usina,pct_brasil,data_aneel").order("uf")),
+      fetchAll<EnergiaTipo>(supabase.from("vw_energia_uf_tipo").select("uf,tipo,renovavel,mw").order("uf").order("tipo")),
+    ]).then(([uf, tipo]) => {
+      if (!uf.length) throw new Error("sem dados");
+      setEnergia({ status: "ok", dados: { uf: uf.map(e => ({ ...e, mw_operacao: Number(e.mw_operacao), pct_renovavel: Number(e.pct_renovavel), pct_brasil: Number(e.pct_brasil) })), tipo: tipo.map(t => ({ ...t, mw: Number(t.mw) })) }, data: uf[0].data_aneel ?? undefined });
     }).catch(e => setEnergia({ status: "erro", erro: String(e?.message ?? e) }));
 
-    // L2 · snapshot TeleGeography + UF pela geometria do IBGE.
-    Promise.all([fetch("/submarine-cablemap/data.json").then(r => r.json()), fetch("/br-uf.geojson").then(r => r.json())])
-      .then(([d, g]) => setCabos({ status: "ok", dados: aterragensBrasil(d, featuresDoGeojson(g)), data: String(d.generated_at ?? "").slice(0, 10) }))
-      .catch(e => setCabos({ status: "erro", erro: String(e?.message ?? e) }));
+    // L2 · cabos classificados (cabos_lista) a partir do mesmo snapshot TeleGeography do Mapa.
+    Promise.all([
+      fetchAll<CaboUF>(supabase.from("vw_cabos_uf").select("uf,cabos_internacionais,cabos_fluviais,nomes_internacionais,nomes_fluviais").order("uf")),
+      fetchAll<Aterragem & { snapshot: string | null }>(supabase.from("vw_cabos_aterragens").select("ponto_id,nome,uf,cabos_internacionais,snapshot").gt("cabos_internacionais", 0).order("ponto_id")),
+    ]).then(([uf, pontos]) => {
+      if (!uf.length) throw new Error("sem dados");
+      setCabos({ status: "ok", dados: { uf, pontos: pontos.sort((x, y) => y.cabos_internacionais - x.cabos_internacionais || x.nome.localeCompare(y.nome)) }, data: pontos[0]?.snapshot ?? undefined });
+    }).catch(e => setCabos({ status: "erro", erro: String(e?.message ?? e) }));
 
     // L3 · função do Mapa, com o snapshot do PeeringDB como reserva.
     carregarDatacenters()
@@ -101,11 +103,17 @@ export default function Cenario1Infraestrutura() {
   const totalSem = backhaul.reduce((s, b) => s + b.sem, 0);
   const totalCom = backhaul.reduce((s, b) => s + b.com, 0);
 
-  const energiaUF = useMemo(() => energia.status === "ok" ? agregarEnergia(energia.dados) : [], [energia]);
-  const totMw = energiaUF.reduce((s, e) => s + e.total_mw, 0);
-  const renMw = energiaUF.reduce((s, e) => s + e.renovavel_mw, 0);
-  const chartEnergia = energiaUF.map(e => ({ uf: e.uf, ...e.por_tipo }));
-  const ufsCabo = useMemo(() => cabos.status === "ok" ? [...new Set(cabos.dados.map(a => a.uf))].sort() : [], [cabos]);
+  const energiaUF = useMemo(() => energia.status === "ok" ? [...energia.dados.uf].sort((a, b) => b.mw_operacao - a.mw_operacao) : [], [energia]);
+  const totMw = energiaUF.reduce((s, e) => s + e.mw_operacao, 0);
+  const renMw = energia.status === "ok" ? energia.dados.tipo.filter(t => t.renovavel).reduce((s, t) => s + t.mw, 0) : 0;
+  const chartEnergia = useMemo(() => energiaUF.map(e => {
+    const linha: Record<string, number | string> = { uf: e.uf };
+    if (energia.status === "ok") energia.dados.tipo.filter(t => t.uf === e.uf).forEach(t => { linha[t.tipo] = t.mw; });
+    return linha;
+  }), [energiaUF, energia]);
+  const cabosInt = useMemo(() => cabos.status === "ok" ? cabos.dados.uf.filter(c => c.cabos_internacionais > 0).sort((a, b) => b.cabos_internacionais - a.cabos_internacionais) : [], [cabos]);
+  const cabosFlu = useMemo(() => cabos.status === "ok" ? cabos.dados.uf.filter(c => c.cabos_fluviais > 0).sort((a, b) => b.cabos_fluviais - a.cabos_fluviais) : [], [cabos]);
+  const ufsCabo = cabosInt.map(c => c.uf);
   const dcUF = useMemo(() => {
     if (dcs.status !== "ok") return [];
     const m: Record<string, number> = {};
@@ -118,7 +126,7 @@ export default function Cenario1Infraestrutura() {
     const e = energiaUF.find(x => x.uf === uf);
     const b = backhaul.find(x => x.uf === uf);
     return {
-      uf, mw: energia.status === "ok" ? e?.total_mw ?? 0 : null,
+      uf, mw: energia.status === "ok" ? e?.mw_operacao ?? 0 : null,
       ren: energia.status === "ok" && e ? e.pct_renovavel : null,
       cabo: cabos.status === "ok" ? (ufsCabo.includes(uf) ? 1 : 0) : null,
       fibra: b ? b.pct : null,
@@ -137,8 +145,13 @@ export default function Cenario1Infraestrutura() {
 
   const topE = energiaUF[0];
   const topDc = dcUF[0];
-  const usinasDaUF = listaUsinasUF && energia.status === "ok"
-    ? energia.dados.filter(u => u.uf === listaUsinasUF).sort((a, b) => b.potencia_kw - a.potencia_kw).slice(0, 30) : [];
+  useEffect(() => {
+    if (!listaUsinasUF) return;
+    setUsinasDaUF(null);
+    supabase.from("aneel_usinas").select("nome,tipo,municipio,potencia_kw").eq("uf", listaUsinasUF)
+      .order("potencia_kw", { ascending: false, nullsFirst: false }).range(0, 29)
+      .then(({ data }) => setUsinasDaUF((data ?? []).map(u => ({ ...u, nome: u.nome ?? "", tipo: u.tipo ?? "", potencia_kw: Number(u.potencia_kw ?? 0) }))));
+  }, [listaUsinasUF]);
   const dcsDaUF = listaDcUF && dcs.status === "ok" ? dcs.dados.filter(d => d.uf === listaDcUF).sort((a, b) => a.nome.localeCompare(b.nome)) : [];
 
   const num = (st: string, v: string) => st === "carregando" ? "…" : st === "erro" ? "—" : v;
