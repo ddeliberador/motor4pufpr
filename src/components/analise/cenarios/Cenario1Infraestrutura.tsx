@@ -205,7 +205,7 @@ export default function Cenario1Infraestrutura() {
               onClick={d => { const uf = d?.activePayload?.[0]?.payload?.uf; if (uf) setListaUsinasUF(uf); }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis type="number" tick={tick} tickFormatter={v => fmtMw(v)} />
-              <YAxis type="category" dataKey="uf" tick={tick} width={32} />
+              <YAxis type="category" dataKey="uf" tick={tick} width={32} interval={0} />
               <Tooltip contentStyle={tooltipStyle} formatter={(v: number, n: string) => [`${fmtMw(v)} MW`, n]} labelFormatter={l => {
                 const e = energiaUF.find(x => x.uf === l);
                 return e ? `${nomeUF(e.uf)} · ${fmtGw(e.mw_operacao)} GW · ${fmtPct(e.pct_renovavel)}% renovável · ${fmtPct(e.pct_brasil)}% do Brasil · maior: ${e.maior_usina ?? "—"} — clique para ver as usinas` : String(l);
@@ -227,7 +227,7 @@ export default function Cenario1Infraestrutura() {
               <BarChart data={cabosInt} layout="vertical" margin={{ top: 4, right: 12, left: 0, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis type="number" tick={tick} allowDecimals={false} />
-                <YAxis type="category" dataKey="uf" tick={tick} width={32} />
+                <YAxis type="category" dataKey="uf" tick={tick} width={32} interval={0} />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [v, "Cabos internacionais"]} labelFormatter={l => { const c = cabosInt.find(x => x.uf === l); return `${nomeUF(String(l))}: ${c?.nomes_internacionais ?? ""}`; }} />
                 <Bar dataKey="cabos_internacionais" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} />
               </BarChart>
@@ -307,7 +307,7 @@ export default function Cenario1Infraestrutura() {
               onClick={d => { const uf = d?.activePayload?.[0]?.payload?.uf; if (uf) setListaDcUF(uf); }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis type="number" tick={tick} allowDecimals={false} />
-              <YAxis type="category" dataKey="uf" tick={tick} width={32} />
+              <YAxis type="category" dataKey="uf" tick={tick} width={32} interval={0} />
               <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [v, "Datacenters"]} labelFormatter={l => `${nomeUF(String(l))} — clique para ver a lista`} />
               <Bar dataKey="n" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} cursor="pointer" />
             </BarChart>
