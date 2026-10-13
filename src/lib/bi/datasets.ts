@@ -153,6 +153,28 @@ const CONECTORES: DatasetDef[] = [
     columns: [d("layer", "layer"), d("camada", "camada"), d("orgao", "orgao"), d("status", "status"), d("ano", "ano"), d("politica", "politica"), m("investimento_publico_brl", "investimento_publico_brl")],
     load: carregarPoliticas,
   },
+  // ── Bases por UF derivadas das mesmas tabelas que a função do Mapa serve ──
+  {
+    key: "energia_uf", table: "", label: "Energia por UF (ANEEL)", descricao: "",
+    columns: [d("uf", "uf"), d("fonte_principal", "fonte_principal"), d("maior_usina", "maior_usina"), m("usinas", "usinas"), m("mw_operacao", "mw_operacao"), m("gw_operacao", "gw_operacao"), m("pct_renovavel", "pct_renovavel"), m("pct_brasil", "pct_brasil")],
+    load: () => lerOrdenado("vw_energia_uf", "uf,fonte_principal,maior_usina,usinas,mw_operacao,gw_operacao,pct_renovavel,pct_brasil", "uf"),
+  },
+  {
+    key: "energia_uf_tipo", table: "", label: "Energia por UF e tipo", descricao: "",
+    columns: [d("uf", "uf"), d("tipo", "tipo"), d("fonte", "fonte"), d("renovavel", "renovavel"), m("usinas", "usinas"), m("mw", "mw")],
+    load: async () => (await lerOrdenado("vw_energia_uf_tipo", "uf,tipo,fonte,renovavel,usinas,mw", "uf,tipo")).map((r) => ({ ...r, renovavel: r.renovavel ? "sim" : "não" })),
+  },
+  {
+    key: "cabos_uf", table: "", label: "Cabos por UF", descricao: "",
+    columns: [d("uf", "uf"), m("pontos", "pontos"), m("pontos_internacionais", "pontos_internacionais"), m("cabos_internacionais", "cabos_internacionais"), m("cabos_costeiros", "cabos_costeiros"), m("cabos_fluviais", "cabos_fluviais")],
+    load: () => lerOrdenado("vw_cabos_uf", "uf,pontos,pontos_internacionais,cabos_internacionais,cabos_costeiros,cabos_fluviais", "uf"),
+  },
+  {
+    key: "entes_estaduais", table: "", label: "Entes estaduais de CT&I e TIC", descricao: "",
+    columns: [d("uf", "uf"), d("tipo", "tipo"), d("rede", "rede"), d("sigla", "sigla"), d("nome", "nome"), d("municipio", "municipio")],
+    load: async () => (await lerOrdenado("research_locations", "id,nome,tipo,uf,municipio,rede:raw_metadata->>rede,sigla:raw_metadata->>sigla", "id", ["fonte", "entes_estaduais"]))
+      .map(({ id: _id, ...r }) => r),
+  },
   {
     key: "cruzado_municipios",
     table: "",
@@ -200,6 +222,21 @@ export async function lerTudo(table: string, cols: string): Promise<Linha[]> {
     if (page.length < 1000) break;
   }
   return out;
+}
+
+/** Leitura paginada de 1.000 em 1.000, sempre ordenada (paginação estável). */
+async function lerOrdenado(table: string, cols: string, ordem: string, eq?: [string, string]): Promise<Linha[]> {
+  const out: Linha[] = [];
+  for (let from = 0; ; from += 1000) {
+    let q = supabase.from(table as never).select(cols) as unknown as { eq: (c: string, v: string) => typeof q; order: (c: string) => typeof q; range: (a: number, b: number) => Promise<{ data: unknown; error: { message: string } | null }> };
+    if (eq) q = q.eq(eq[0], eq[1]);
+    for (const c of ordem.split(",")) q = q.order(c);
+    const { data, error } = await q.range(from, from + 999);
+    if (error) throw new Error(`${table}: ${error.message}`);
+    const page = (data ?? []) as Linha[];
+    out.push(...page);
+    if (page.length < 1000) return out;
+  }
 }
 
 const chaveMun = (m: unknown, uf: unknown) =>
