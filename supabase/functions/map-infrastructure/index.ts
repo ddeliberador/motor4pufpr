@@ -8,31 +8,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Base oficial SIGA (Sistema de Informações de Geração da ANEEL), via CKAN Dados Abertos.
-// O ArcGIS do SIGEL não é acessível a partir do runtime (timeout/geobloqueio).
-const SIGA_RESOURCE = "11ec447d-698d-4ab8-977f-b424d5deee6a";
-const SIGA_BASE = "https://dadosabertos.aneel.gov.br/api/3/action/datastore_search";
 const TIPOS_VALIDOS = new Set(["UHE", "PCH", "EOL", "UFV", "UTE", "CGH", "UTN"]);
-
-function texto(a: Record<string, unknown>, ...chaves: string[]): string {
-  for (const chave of chaves) {
-    const valor = a[chave];
-    if (valor != null && String(valor).trim()) return String(valor).trim();
-  }
-  return "";
-}
-
-/** Converte números no formato brasileiro ("-20,12479858" / "1.400,00"). */
-function numeroBr(valor: unknown): number | undefined {
-  if (valor == null) return undefined;
-  const bruto = String(valor).trim();
-  if (!bruto) return undefined;
-  const normalizado = bruto.includes(",")
-    ? bruto.replace(/\./g, "").replace(",", ".")
-    : bruto;
-  const numero = Number(normalizado);
-  return Number.isFinite(numero) ? numero : undefined;
-}
 
 // Layer 1 — Energia: cópia mensal completa do SIGA (ANEEL) guardada no banco
 // (tabela aneel_usinas, atualizada por rotina no Postgres). Substitui a consulta
