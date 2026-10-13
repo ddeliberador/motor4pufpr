@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import AtoresDrawer from "./AtoresDrawer";
+import BalancoEnergia from "./BalancoEnergia";
 import { supabase } from "@/integrations/supabase/client";
 import { carregarDatacenters } from "@/lib/bi/datasets";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
@@ -216,6 +217,9 @@ export default function Cenario1Infraestrutura() {
           </ResponsiveContainer>
         )}
       </Bloco>
+
+      {/* 2b. Balanço energético (EPE) */}
+      <BalancoEnergia dcPorUF={dcs.status === "ok" ? Object.fromEntries(dcUF.map(x => [x.uf, x.n])) : null} />
 
       {/* 3. Cabos internacionais + infovias + backhaul */}
       <Bloco titulo="Por onde o Brasil se conecta ao mundo?"
