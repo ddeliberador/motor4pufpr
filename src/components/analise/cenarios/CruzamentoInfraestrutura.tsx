@@ -10,6 +10,11 @@ const estilos = [
   "text-[hsl(var(--energia-equilibrio))] border-[hsl(var(--energia-equilibrio)/0.35)]",
   "text-[hsl(var(--energia-depende))] border-[hsl(var(--energia-depende)/0.35)]",
 ];
+const coresCartao = [
+  "border-[hsl(var(--energia-exporta)/0.65)] border-t-4 bg-[hsl(var(--energia-exporta)/0.14)] hover:bg-[hsl(var(--energia-exporta)/0.24)]",
+  "border-[hsl(var(--energia-equilibrio)/0.75)] border-t-4 bg-[hsl(var(--energia-equilibrio)/0.16)] hover:bg-[hsl(var(--energia-equilibrio)/0.28)]",
+  "border-[hsl(var(--energia-depende)/0.65)] border-t-4 bg-[hsl(var(--energia-depende)/0.14)] hover:bg-[hsl(var(--energia-depende)/0.24)]",
+];
 type Coluna = "uf" | "situacao" | "razao" | "brasil" | "cabo" | "fibra" | "dc";
 
 export default function CruzamentoInfraestrutura({ linhas, totalDc, uf, onUfChange, carregando }: {
@@ -28,7 +33,7 @@ export default function CruzamentoInfraestrutura({ linhas, totalDc, uf, onUfChan
   const cartao = (l: EstadoCruzamento) => (
     <Button key={l.uf} variant="outline" aria-label={`Selecionar ${ESTADOS[l.uf]} no cenário`} aria-pressed={uf === l.uf}
       onClick={() => onUfChange(l.uf)} data-uf={l.uf}
-      className={`block h-full min-w-0 w-full whitespace-normal rounded-lg p-3 text-left hover:bg-muted hover:text-foreground ${uf === l.uf ? "ring-1 ring-primary" : ""} ${energiaSemProcessamento(l) ? "border-[hsl(var(--energia-exporta)/0.55)] bg-[hsl(var(--energia-exporta)/0.05)]" : "border-border/60 bg-background"}`}>
+      className={`block h-full min-w-0 w-full whitespace-normal rounded-lg p-3 text-left text-foreground hover:text-foreground ${uf === l.uf ? "ring-2 ring-primary" : ""} ${coresCartao[SITUACOES_ENERGIA.findIndex(s => s === l.situacao)] ?? "border-border bg-background"}`}>
       <div className="flex min-h-10 items-start justify-between gap-1">
         <span className="min-w-0 text-sm font-semibold leading-tight">{ESTADOS[l.uf]}</span>
         <span className="shrink-0 text-[10px] text-muted-foreground">{l.uf}</span>
