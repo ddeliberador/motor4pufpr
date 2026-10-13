@@ -1,4 +1,5 @@
 # Roadmap — Catálogo de Bases como fonte da verdade
+- [ ] Cenário 1: cores destacadas nos cartões e painel estadual com limitações e oportunidades; verificar desktop/celular
 - [x] Cenário 1: cruzamento visual por balanço energético, tabela recolhida e conferência desktop/celular
 - [x] Cenário 6 Sistemas Estaduais: leituras, painel e lista paginada de atores
 - [x] Entrada Painel Sistemas Estaduais no Diário de Construção
