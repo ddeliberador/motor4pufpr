@@ -8,3 +8,4 @@
 - A "Nota de capacidade" (Cenário 2) é calculada no cliente a partir de `capacidade_pesos`, `v_capacidade_uf_contagens` e `indicadores_uf`; indicador sem linhas fica indisponível (fora da nota), nunca zero.
 - Dados de interação (EMBRAPII) são lidos só das views `vw_interacao_*`/`vw_embrapii_*` e de `interacao_metricas_rede`, com paginação; percentuais sempre como razão de somas — evita distorção por média de percentuais.
 - State-system analysis reads existing state views through the frontend client with server-side UF filters and ordered pagination; actor drill-down resolves multi-label classifications in bounded ID batches so no join or schema change is required.
+- Unit tests never reach the database: `src/test/setup.ts` mocks `@/integrations/supabase/client` globally so CI (which has no `VITE_SUPABASE_URL`) can import any module; tests that need a real connection create their own client.
