@@ -14,6 +14,8 @@ interface BHPonto { uf: string; com: number; sem: number; pct: number }
 interface Datacenter { nome: string; cidade: string; org: string; uf: string }
 type Estado<T> = { status: "carregando" } | { status: "erro"; erro: string } | { status: "ok"; dados: T; data?: string };
 
+/** Limite de registros da função map-infrastructure (layer "energy"). */
+const LIMITE_ANEEL = 6000;
 const nomeUF = (uf: string) => ESTADOS[uf] ?? uf;
 const tipoNome = (s: string) => { const t = TIPOS_USINA.find((x) => x.sigla === s); return t ? `${t.nome} (${t.sigla})` : s; };
 const tooltipStyle = { background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 };
@@ -169,6 +171,11 @@ export default function Cenario1Infraestrutura() {
       <Bloco titulo="Quanta energia cada estado gera, e de que fonte?"
         frase={energia.status === "ok" && topE ? `${nomeUF(topE.uf)} tem a maior potência instalada, ${fmtGw(topE.total_mw)} GW, ${fmtPct(topE.pct_renovavel)}% de fonte renovável.` : undefined}
         sub={energia.status === "ok" ? `Usinas em operação na ANEEL (${energia.dados.length.toLocaleString("pt-BR")} carregadas), em MW. Clique num estado para ver as maiores usinas.` : undefined}>
+        {energia.status === "ok" && energia.dados.length >= LIMITE_ANEEL * 0.9 && (
+          <p className="mb-3 rounded-lg border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
+            <strong className="text-foreground">Cobertura parcial:</strong> a consulta à ANEEL traz no máximo {LIMITE_ANEEL.toLocaleString("pt-BR")} registros e foram carregadas {energia.dados.length.toLocaleString("pt-BR")} usinas. A potência dos estados pode estar subestimada.
+          </p>
+        )}
         {energia.status === "carregando" ? <Carregando /> : energia.status === "erro" ? <Indisponivel erro={energia.erro} /> : (
           <ResponsiveContainer width="100%" height={Math.max(420, chartEnergia.length * 22)}>
             <BarChart data={chartEnergia} layout="vertical" margin={{ top: 4, right: 12, left: 0, bottom: 4 }}
