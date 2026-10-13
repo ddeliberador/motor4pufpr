@@ -7,6 +7,7 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Minus, Plus, Maximize2 } from "lucide-react";
 import { CATEGORIA_MAP, type CategoriaKey } from "./tipos";
+import { supabase } from "@/integrations/supabase/client";
 import type { EnriquecimentoLayers } from "./caboSubmarino";
 import {
   type AntenaERB,
@@ -55,6 +56,14 @@ interface Feature {
 const W = 900;
 const H = 950;
 // bbox continental do Brasil
+/** Estilo dos cabos por classificação de `cabos_lista` (tipo + internacional). */
+const ESTILO_CABO = {
+  internacional: { cor: "#f97316", traco: undefined as string | undefined, rotulo: "Cabo submarino internacional" },
+  costeiro: { cor: "#0ea5e9", traco: "6 3", rotulo: "Cabo costeiro doméstico" },
+  fluvial: { cor: "#14b8a6", traco: "2 3", rotulo: "Infovia fluvial (Amazônia)" },
+};
+type ClasseCabo = keyof typeof ESTILO_CABO;
+
 const LON0 = -74.2;
 const LON1 = -33.6;
 const LAT0 = 5.6;
@@ -410,6 +419,17 @@ export default function MapaBrasil({
     return dadosCabos.points.filter((p) => pontoNaSelecaoGeografica(Number(p.latitude), Number(p.longitude)));
   }, [layer2Ativa, dadosCabos, pontoNaSelecaoGeografica]);
 
+  const [tipoCabo, setTipoCabo] = useState<Record<string, ClasseCabo>>({});
+  useEffect(() => {
+    if (!layer2Ativa || l2Cabos === false || Object.keys(tipoCabo).length) return;
+    supabase.from("cabos_lista").select("cabo_id,tipo,internacional").order("cabo_id").range(0, 999).then(({ data, error }) => {
+      if (error) { console.warn("cabos_lista indisponível:", error.message); return; }
+      const m: Record<string, ClasseCabo> = {};
+      for (const c of data ?? []) m[c.cabo_id] = c.tipo === "fluvial" ? "fluvial" : c.internacional ? "internacional" : "costeiro";
+      setTipoCabo(m);
+    });
+  }, [layer2Ativa, l2Cabos, tipoCabo]);
+
   const cabosVisiveis = useMemo(() => {
     if (!layer2Ativa || !dadosCabos) return [];
     if (ufsFiltroAtivas.size === 0) return dadosCabos.cables;
@@ -651,7 +671,8 @@ export default function MapaBrasil({
           <g opacity={1}>
             {/* Traçados dos cabos */}
             {cabosVisiveis.map((cabo) => {
-              const cor = cabo.color || "#f97316";
+              const est = ESTILO_CABO[tipoCabo[cabo.id] ?? "internacional"];
+              const cor = est.cor;
               const linhas = cabo.geometry.coordinates as number[][][];
               return linhas.map((linha, li) => {
                 const pts = linha
@@ -678,6 +699,7 @@ export default function MapaBrasil({
                       d={d}
                       stroke={cor}
                       strokeWidth={2.4}
+                      strokeDasharray={est.traco}
                       fill="none"
                       strokeOpacity={0.95}
                       strokeLinecap="round"
@@ -685,7 +707,7 @@ export default function MapaBrasil({
                       pointerEvents="stroke"
                       style={{ paintOrder: "stroke", strokeLinejoin: "round" }}
                     >
-                      <title>{cabo.name}</title>
+                      <title>{`${cabo.name} · ${est.rotulo}`}</title>
                     </path>
                   </g>
                 );
@@ -1045,12 +1067,7 @@ export default function MapaBrasil({
             }).filter(([tipo]) => !tiposUsina || tiposUsina.size === 0 || tiposUsina.has(tipo))
               .map(([tipo, label]) => (
               <div key={tipo} className="flex items-center gap-1.5">
-                <span
-                  className={`material-symbols-outlined text-[12px] ${COR_CLASSE_USINA[tipo] || "text-gray-400"}`}
-                  style={{ fontVariationSettings: '"FILL" 1' }}
-                >
-                  {ICONE_USINA[tipo] || "electric_bolt"}
-                </span>
+                <span className={`inline-block h-2.5 w-2.5 rounded-full bg-current ${COR_CLASSE_USINA[tipo] || "text-gray-400"}`} />
                 <span className="text-muted-foreground">{label}</span>
               </div>
             ))}
@@ -1059,10 +1076,12 @@ export default function MapaBrasil({
           {layer2Ativa && (<>
             <p className="font-medium text-orange-400">Layer 2 — Infra Física</p>
             {l2Cabos !== false && (<>
-              <div className="flex items-center gap-1.5">
-                <div className="h-0.5 w-5 rounded bg-orange-400" />
-                <span className="text-muted-foreground">Cabo submarino (TeleGeography)</span>
-              </div>
+              {(["internacional", "costeiro", "fluvial"] as const).map((k) => (
+                <div key={k} className="flex items-center gap-1.5">
+                  <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke={ESTILO_CABO[k].cor} strokeWidth="2.4" strokeDasharray={ESTILO_CABO[k].traco} /></svg>
+                  <span className="text-muted-foreground">{ESTILO_CABO[k].rotulo}</span>
+                </div>
+              ))}
               <div className="flex items-center gap-1.5">
                 <span
                   className="material-symbols-outlined text-[12px] text-orange-400"
