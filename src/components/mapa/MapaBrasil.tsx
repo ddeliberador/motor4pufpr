@@ -7,6 +7,7 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Minus, Plus, Maximize2 } from "lucide-react";
 import { CATEGORIA_MAP, type CategoriaKey } from "./tipos";
+import { supabase } from "@/integrations/supabase/client";
 import type { EnriquecimentoLayers } from "./caboSubmarino";
 import {
   type AntenaERB,
@@ -55,6 +56,14 @@ interface Feature {
 const W = 900;
 const H = 950;
 // bbox continental do Brasil
+/** Estilo dos cabos por classificação de `cabos_lista` (tipo + internacional). */
+const ESTILO_CABO = {
+  internacional: { cor: "#f97316", traco: undefined as string | undefined, rotulo: "Cabo submarino internacional" },
+  costeiro: { cor: "#0ea5e9", traco: "6 3", rotulo: "Cabo costeiro doméstico" },
+  fluvial: { cor: "#14b8a6", traco: "2 3", rotulo: "Infovia fluvial (Amazônia)" },
+};
+type ClasseCabo = keyof typeof ESTILO_CABO;
+
 const LON0 = -74.2;
 const LON1 = -33.6;
 const LAT0 = 5.6;
@@ -63,15 +72,6 @@ const LAT1 = -34.0;
 const MIN_W = W / 24; // zoom máximo
 const MAX_W = W; // mapa inteiro
 
-const ICONE_USINA: Record<string, string> = {
-  UHE: "water",
-  PCH: "water",
-  CGH: "water",
-  EOL: "air",
-  UFV: "sunny",
-  UTE: "whatshot",
-  UTN: "bolt",
-};
 
 const COR_CLASSE_USINA: Record<string, string> = {
   UHE: "text-blue-400",
@@ -410,6 +410,17 @@ export default function MapaBrasil({
     return dadosCabos.points.filter((p) => pontoNaSelecaoGeografica(Number(p.latitude), Number(p.longitude)));
   }, [layer2Ativa, dadosCabos, pontoNaSelecaoGeografica]);
 
+  const [tipoCabo, setTipoCabo] = useState<Record<string, ClasseCabo>>({});
+  useEffect(() => {
+    if (!layer2Ativa || l2Cabos === false || Object.keys(tipoCabo).length) return;
+    supabase.from("cabos_lista").select("cabo_id,tipo,internacional").order("cabo_id").range(0, 999).then(({ data, error }) => {
+      if (error) { console.warn("cabos_lista indisponível:", error.message); return; }
+      const m: Record<string, ClasseCabo> = {};
+      for (const c of data ?? []) m[c.cabo_id] = c.tipo === "fluvial" ? "fluvial" : c.internacional ? "internacional" : "costeiro";
+      setTipoCabo(m);
+    });
+  }, [layer2Ativa, l2Cabos, tipoCabo]);
+
   const cabosVisiveis = useMemo(() => {
     if (!layer2Ativa || !dadosCabos) return [];
     if (ufsFiltroAtivas.size === 0) return dadosCabos.cables;
@@ -422,6 +433,26 @@ export default function MapaBrasil({
   // aproximar num estado populoso eles ficam proporcionalmente menores
   // e deixam de se sobrepor. No mapa inteiro (escala 1) ficam em 14px.
   const tam = 14 * Math.sqrt(escala);
+  const usinasPorTipo = useMemo(() => {
+    if (!layer1Ativa || !dadosUsinas) return null;
+    const porTipo = new Map<string, string[]>();
+    // Ordena da maior para a menor potência: as pequenas ficam por cima e continuam visíveis.
+    const ordenadas = [...dadosUsinas].sort((a, b) => (b.potencia_kw ?? 0) - (a.potencia_kw ?? 0));
+    for (const u of ordenadas) {
+      if (!Number.isFinite(u.latitude) || !Number.isFinite(u.longitude)) continue;
+      if (u.longitude < LON0 || u.longitude > LON1 || u.latitude > LAT0 || u.latitude < LAT1) continue;
+      if (tiposUsina && tiposUsina.size > 0 && !tiposUsina.has(u.tipo)) continue;
+      if (!pontoNaSelecaoGeografica(u.latitude, u.longitude, u.uf)) continue;
+      const [x, y] = projetar(u.longitude, u.latitude);
+      const mw = Math.max(0, (u.potencia_kw ?? 0) / 1000);
+      const r = Math.min(tam * 1.2, tam * 0.12 * (1 + Math.sqrt(mw) / 12));
+      const arr = porTipo.get(u.tipo) ?? [];
+      arr.push(`M${(x - r).toFixed(1)} ${y.toFixed(1)}a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(2 * r).toFixed(2)} 0a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(-2 * r).toFixed(2)} 0`);
+      porTipo.set(u.tipo, arr);
+    }
+    return [...porTipo.entries()].map(([t, a]) => [t, a.join("")] as [string, string]);
+  }, [layer1Ativa, dadosUsinas, tiposUsina, pontoNaSelecaoGeografica, tam]);
+
   // O retângulo geográfico aceita áreas de países vizinhos. A malha oficial
   // das UFs é a autoridade final para impedir marcadores fora do Brasil.
   const pontosNoBrasil = useMemo(
@@ -631,7 +662,8 @@ export default function MapaBrasil({
           <g opacity={1}>
             {/* Traçados dos cabos */}
             {cabosVisiveis.map((cabo) => {
-              const cor = cabo.color || "#f97316";
+              const est = ESTILO_CABO[tipoCabo[cabo.id] ?? "internacional"];
+              const cor = est.cor;
               const linhas = cabo.geometry.coordinates as number[][][];
               return linhas.map((linha, li) => {
                 const pts = linha
@@ -658,6 +690,7 @@ export default function MapaBrasil({
                       d={d}
                       stroke={cor}
                       strokeWidth={2.4}
+                      strokeDasharray={est.traco}
                       fill="none"
                       strokeOpacity={0.95}
                       strokeLinecap="round"
@@ -665,7 +698,7 @@ export default function MapaBrasil({
                       pointerEvents="stroke"
                       style={{ paintOrder: "stroke", strokeLinejoin: "round" }}
                     >
-                      <title>{cabo.name}</title>
+                      <title>{`${cabo.name} · ${est.rotulo}`}</title>
                     </path>
                   </g>
                 );
@@ -702,43 +735,14 @@ export default function MapaBrasil({
           </g>
         )}
 
-        {/* Layer 1 — Usinas de Energia (ANEEL), abaixo dos marcadores SNI. */}
-        {layer1Ativa && dadosUsinas && (
+        {/* Layer 1 — Usinas de Energia (ANEEL), abaixo dos marcadores SNI.
+            ~22 mil usinas: um único <path> por tipo (círculos), em vez de um nó por usina,
+            mantém o mapa fluido. Raio cresce com a raiz da potência. */}
+        {layer1Ativa && usinasPorTipo && (
           <g pointerEvents="none" clipPath="url(#brasil-contorno)">
-            {dadosUsinas.map((u) => {
-              if (!Number.isFinite(u.latitude) || !Number.isFinite(u.longitude)) return null;
-              if (!pontoNaSelecaoGeografica(u.latitude, u.longitude, u.uf)) return null;
-              if (u.longitude < LON0 || u.longitude > LON1 || u.latitude > LAT0 || u.latitude < LAT1) return null;
-              if (tiposUsina && tiposUsina.size > 0 && !tiposUsina.has(u.tipo)) return null;
-              const [x, y] = projetar(u.longitude, u.latitude);
-              const icon = ICONE_USINA[u.tipo] || "electric_bolt";
-              const corClass = COR_CLASSE_USINA[u.tipo] || "text-gray-400";
-              const sz = (u.potencia_kw ?? 0) > 100000
-                ? tam * 0.9
-                : (u.potencia_kw ?? 0) > 10000
-                  ? tam * 0.75
-                  : tam * 0.6;
-              const local = [u.municipio, u.uf].filter(Boolean).join("/");
-              return (
-                <text
-                  key={u.id}
-                  x={x}
-                  y={y}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  className={`material-symbols-outlined select-none ${corClass}`}
-                   style={{
-                     fontSize: sz,
-                     opacity: 0.85,
-                     fontVariationSettings: '"FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24',
-                   }}
-                  fill="currentColor"
-                >
-                  {icon}
-                  <title>{`${u.nome} · ${u.tipo}${u.potencia_kw ? ` · ${(u.potencia_kw / 1000).toFixed(0)} MW` : ""}${local ? ` · ${local}` : ""}`}</title>
-                </text>
-              );
-            })}
+            {usinasPorTipo.map(([tipo, d]) => (
+              <path key={tipo} d={d} className={COR_CLASSE_USINA[tipo] || "text-gray-400"} fill="currentColor" fillOpacity={0.55} stroke="currentColor" strokeOpacity={0.9} strokeWidth={0.4} />
+            ))}
           </g>
         )}
 
@@ -1054,12 +1058,7 @@ export default function MapaBrasil({
             }).filter(([tipo]) => !tiposUsina || tiposUsina.size === 0 || tiposUsina.has(tipo))
               .map(([tipo, label]) => (
               <div key={tipo} className="flex items-center gap-1.5">
-                <span
-                  className={`material-symbols-outlined text-[12px] ${COR_CLASSE_USINA[tipo] || "text-gray-400"}`}
-                  style={{ fontVariationSettings: '"FILL" 1' }}
-                >
-                  {ICONE_USINA[tipo] || "electric_bolt"}
-                </span>
+                <span className={`inline-block h-2.5 w-2.5 rounded-full bg-current ${COR_CLASSE_USINA[tipo] || "text-gray-400"}`} />
                 <span className="text-muted-foreground">{label}</span>
               </div>
             ))}
@@ -1068,10 +1067,12 @@ export default function MapaBrasil({
           {layer2Ativa && (<>
             <p className="font-medium text-orange-400">Layer 2 — Infra Física</p>
             {l2Cabos !== false && (<>
-              <div className="flex items-center gap-1.5">
-                <div className="h-0.5 w-5 rounded bg-orange-400" />
-                <span className="text-muted-foreground">Cabo submarino (TeleGeography)</span>
-              </div>
+              {(["internacional", "costeiro", "fluvial"] as const).map((k) => (
+                <div key={k} className="flex items-center gap-1.5">
+                  <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke={ESTILO_CABO[k].cor} strokeWidth="2.4" strokeDasharray={ESTILO_CABO[k].traco} /></svg>
+                  <span className="text-muted-foreground">{ESTILO_CABO[k].rotulo}</span>
+                </div>
+              ))}
               <div className="flex items-center gap-1.5">
                 <span
                   className="material-symbols-outlined text-[12px] text-orange-400"

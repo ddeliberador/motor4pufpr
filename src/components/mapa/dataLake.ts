@@ -241,13 +241,14 @@ const FUNCAO_POR_FONTE: Record<string, string> = {
   sinapad: "infraestrutura",
   otd_cgee: "infraestrutura",
   lisp_brasil_mapeamento: "governanca",
+  entes_estaduais: "governanca",
 };
 
 function naturezaDe(l: ResearchLocation, e: Enriquecimento): string {
   const t = norm(`${l.tipo} ${l.nome}`);
   const nat = norm(String(e.natureza_administrativa || e.tipo_ict || ""));
   if (l.fonte === "abstartups_2025") return "empresa";
-  if (l.fonte === "lisp_brasil_mapeamento") return "governo";
+  if (l.fonte === "lisp_brasil_mapeamento" || l.fonte === "entes_estaduais") return "governo";
   if (l.fonte === "sinapad") return "infra";
   if (/universidade|university|instituto federal|faculdade|ensino|educac|escola|college|school/.test(t))
     return "academia";

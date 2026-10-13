@@ -8,88 +8,51 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Base oficial SIGA (Sistema de Informações de Geração da ANEEL), via CKAN Dados Abertos.
-// O ArcGIS do SIGEL não é acessível a partir do runtime (timeout/geobloqueio).
-const SIGA_RESOURCE = "11ec447d-698d-4ab8-977f-b424d5deee6a";
-const SIGA_BASE = "https://dadosabertos.aneel.gov.br/api/3/action/datastore_search";
 const TIPOS_VALIDOS = new Set(["UHE", "PCH", "EOL", "UFV", "UTE", "CGH", "UTN"]);
-const LIMITE = 6000;
 
-function texto(a: Record<string, unknown>, ...chaves: string[]): string {
-  for (const chave of chaves) {
-    const valor = a[chave];
-    if (valor != null && String(valor).trim()) return String(valor).trim();
-  }
-  return "";
-}
+// Layer 1 — Energia: cópia mensal completa do SIGA (ANEEL) guardada no banco
+// (tabela aneel_usinas, atualizada por rotina no Postgres). Substitui a consulta
+// ao vivo, que parava em 6.000 registros e deixava de fora ~3/4 do parque.
+const ANEEL_TABELA = "aneel_usinas";
+const ANEEL_COLS = "aneel_id,ceg,nome,tipo,fonte_combustivel,potencia_kw,uf,municipio,latitude,longitude,data_conjunto";
 
-/** Converte números no formato brasileiro ("-20,12479858" / "1.400,00"). */
-function numeroBr(valor: unknown): number | undefined {
-  if (valor == null) return undefined;
-  const bruto = String(valor).trim();
-  if (!bruto) return undefined;
-  const normalizado = bruto.includes(",")
-    ? bruto.replace(/\./g, "").replace(",", ".")
-    : bruto;
-  const numero = Number(normalizado);
-  return Number.isFinite(numero) ? numero : undefined;
-}
-
-async function buscarPagina(offset: number, limite: number) {
-  const params = new URLSearchParams({
-    resource_id: SIGA_RESOURCE,
-    filters: JSON.stringify({ DscFaseUsina: "Operação" }),
-    limit: String(limite),
-    offset: String(offset),
-  });
-  const resposta = await fetch(`${SIGA_BASE}?${params}`, {
-    headers: { Accept: "application/json" },
-    signal: AbortSignal.timeout(15_000),
-  });
-  if (!resposta.ok) {
-    const corpo = await resposta.text();
-    throw new Error(`ANEEL SIGA: HTTP ${resposta.status} ${corpo.slice(0, 300)}`);
-  }
-  const payload = await resposta.json();
-  if (payload.success === false) {
-    throw new Error(`ANEEL SIGA: ${JSON.stringify(payload.error).slice(0, 300)}`);
-  }
-  return (payload.result?.records ?? []) as Record<string, unknown>[];
+async function paginaAneel(offset: number) {
+  const res = await restServico(
+    `${ANEEL_TABELA}?select=${ANEEL_COLS}&latitude=not.is.null&longitude=not.is.null&order=aneel_id&limit=${PAGINA_REST}&offset=${offset}`,
+  );
+  if (!res.ok) throw new Error(`${ANEEL_TABELA}: HTTP ${res.status} ${(await res.text()).slice(0, 300)}`);
+  return (await res.json()) as Record<string, unknown>[];
 }
 
 async function carregarEnergia() {
-  const PAGINA = 2000;
   const registros: Record<string, unknown>[] = [];
-  for (let offset = 0; offset < LIMITE; offset += PAGINA) {
-    const pagina = await buscarPagina(offset, Math.min(PAGINA, LIMITE - offset));
-    registros.push(...pagina);
-    if (pagina.length < PAGINA) break;
+  // Lotes paralelos de 6 páginas de 1.000, até uma página vir incompleta.
+  for (let base = 0; ; base += PAGINA_REST * 6) {
+    const paginas = await Promise.all([0, 1, 2, 3, 4, 5].map((i) => paginaAneel(base + i * PAGINA_REST)));
+    for (const p of paginas) registros.push(...p);
+    if (paginas.some((p) => p.length < PAGINA_REST)) break;
   }
-
-  const data = registros.flatMap((r, indice) => {
-    const tipo = texto(r, "SigTipoGeracao").toUpperCase();
+  const data = registros.flatMap((r) => {
+    const tipo = String(r.tipo ?? "").toUpperCase();
     if (!TIPOS_VALIDOS.has(tipo)) return [];
-    const latitude = numeroBr(r.NumCoordNEmpreendimento);
-    const longitude = numeroBr(r.NumCoordEEmpreendimento);
-    if (latitude == null || longitude == null) return [];
-    if (latitude < -35 || latitude > 6 || longitude < -75 || longitude > -33) return [];
-    const municipioUf = texto(r, "DscMuninicpios");
+    const latitude = Number(r.latitude), longitude = Number(r.longitude);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return [];
     return [{
-      id: `${tipo}-${texto(r, "CodCEG") || indice}`,
-      nome: texto(r, "NomEmpreendimento") || `${tipo} sem nome`,
+      id: `${tipo}-${r.ceg || r.aneel_id}`,
+      nome: String(r.nome || `${tipo} sem nome`),
       tipo,
-      combustivel: texto(r, "NomFonteCombustivel"),
-      potencia_kw: numeroBr(r.MdaPotenciaFiscalizadaKw) ?? numeroBr(r.MdaPotenciaOutorgadaKw),
-      situacao: texto(r, "DscFaseUsina"),
-      municipio: municipioUf.split(" - ")[0] ?? "",
-      uf: texto(r, "SigUFPrincipal"),
+      combustivel: String(r.fonte_combustivel ?? ""),
+      potencia_kw: r.potencia_kw == null ? undefined : Number(r.potencia_kw),
+      situacao: "Operação",
+      municipio: String(r.municipio ?? ""),
+      uf: String(r.uf ?? "").trim(),
       longitude,
       latitude,
     }];
   });
-
-  if (data.length === 0) throw new Error("ANEEL SIGA respondeu sem usinas georreferenciadas.");
-  return { data, failures: [], source: `${SIGA_BASE} (resource ${SIGA_RESOURCE})` };
+  if (data.length === 0) throw new Error("Cópia da ANEEL no banco está vazia.");
+  const dataConjunto = registros.map((r) => String(r.data_conjunto ?? "")).filter(Boolean).sort().pop() ?? "?";
+  return { data, failures: [], source: `ANEEL SIGA, cópia mensal no banco (data_conjunto ${dataConjunto})`, data_conjunto: dataConjunto };
 }
 
 async function carregarDatacenters() {
