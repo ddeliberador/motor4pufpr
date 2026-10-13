@@ -802,7 +802,7 @@ export default function Mapa() {
   // Categorias que são atores do SNI (bases de pesquisa)
   const CATEGORIAS_SNI: CategoriaKey[] = [
     "universidade", "instituto", "laboratorio", "startup",
-    "supercomputacao", "embrapii", "habitat", "outro",
+    "supercomputacao", "embrapii", "habitat", "governo", "outro",
   ];
   // Categorias que são infraestrutura das Camadas de IA
   const CATEGORIAS_INFRA: CategoriaKey[] = ["energia", "datacenter", "backhaul", "cabo"];
