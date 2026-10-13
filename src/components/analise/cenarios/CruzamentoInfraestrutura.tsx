@@ -33,7 +33,7 @@ export default function CruzamentoInfraestrutura({ linhas, totalDc, uf, onUfChan
   const cartao = (l: EstadoCruzamento) => (
     <Button key={l.uf} variant="outline" aria-label={`Selecionar ${ESTADOS[l.uf]} no cenário`} aria-pressed={uf === l.uf}
       onClick={() => onUfChange(l.uf)} data-uf={l.uf}
-      className={`block h-full min-w-0 w-full whitespace-normal rounded-lg p-3 text-left text-foreground hover:text-foreground ${uf === l.uf ? "ring-2 ring-primary" : ""} ${coresCartao[SITUACOES_ENERGIA.indexOf(l.situacao ?? "")] ?? "border-border bg-background"}`}>
+      className={`block h-full min-w-0 w-full whitespace-normal rounded-lg p-3 text-left text-foreground hover:text-foreground ${uf === l.uf ? "ring-2 ring-primary" : ""} ${coresCartao[SITUACOES_ENERGIA.findIndex(s => s === l.situacao)] ?? "border-border bg-background"}`}>
       <div className="flex min-h-10 items-start justify-between gap-1">
         <span className="min-w-0 text-sm font-semibold leading-tight">{ESTADOS[l.uf]}</span>
         <span className="shrink-0 text-[10px] text-muted-foreground">{l.uf}</span>
