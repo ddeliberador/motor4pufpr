@@ -410,6 +410,18 @@ export default function MapaBrasil({
     return dadosCabos.points.filter((p) => pontoNaSelecaoGeografica(Number(p.latitude), Number(p.longitude)));
   }, [layer2Ativa, dadosCabos, pontoNaSelecaoGeografica]);
 
+  const cabosVisiveis = useMemo(() => {
+    if (!layer2Ativa || !dadosCabos) return [];
+    if (ufsFiltroAtivas.size === 0) return dadosCabos.cables;
+    const idsVisiveis = new Set(landingPointsVisiveis.map((p) => p.id));
+    return dadosCabos.cables.filter((c) => c.landing_point_ids?.some((id) => idsVisiveis.has(id)));
+  }, [layer2Ativa, dadosCabos, landingPointsVisiveis, ufsFiltroAtivas]);
+
+
+  // Ícones com tamanho amortecido: crescem menos que o zoom, então ao
+  // aproximar num estado populoso eles ficam proporcionalmente menores
+  // e deixam de se sobrepor. No mapa inteiro (escala 1) ficam em 14px.
+  const tam = 14 * Math.sqrt(escala);
   const usinasPorTipo = useMemo(() => {
     if (!layer1Ativa || !dadosUsinas) return null;
     const porTipo = new Map<string, string[]>();
@@ -428,20 +440,8 @@ export default function MapaBrasil({
       porTipo.set(u.tipo, arr);
     }
     return [...porTipo.entries()].map(([t, a]) => [t, a.join("")] as [string, string]);
-  }, [layer1Ativa, dadosUsinas, tiposUsina, pontoNaSelecaoGeografica, projetar, tam]);
+  }, [layer1Ativa, dadosUsinas, tiposUsina, pontoNaSelecaoGeografica, tam]);
 
-  const cabosVisiveis = useMemo(() => {
-    if (!layer2Ativa || !dadosCabos) return [];
-    if (ufsFiltroAtivas.size === 0) return dadosCabos.cables;
-    const idsVisiveis = new Set(landingPointsVisiveis.map((p) => p.id));
-    return dadosCabos.cables.filter((c) => c.landing_point_ids?.some((id) => idsVisiveis.has(id)));
-  }, [layer2Ativa, dadosCabos, landingPointsVisiveis, ufsFiltroAtivas]);
-
-
-  // Ícones com tamanho amortecido: crescem menos que o zoom, então ao
-  // aproximar num estado populoso eles ficam proporcionalmente menores
-  // e deixam de se sobrepor. No mapa inteiro (escala 1) ficam em 14px.
-  const tam = 14 * Math.sqrt(escala);
   // O retângulo geográfico aceita áreas de países vizinhos. A malha oficial
   // das UFs é a autoridade final para impedir marcadores fora do Brasil.
   const pontosNoBrasil = useMemo(
