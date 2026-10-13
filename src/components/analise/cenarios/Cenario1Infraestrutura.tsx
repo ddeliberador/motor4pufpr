@@ -13,10 +13,22 @@ interface Datacenter { nome: string; cidade: string; org: string; uf: string }
 type Estado<T> = { status: "carregando" } | { status: "erro"; erro: string } | { status: "ok"; dados: T; data?: string };
 
 interface EnergiaUF { uf: string; usinas: number; mw_operacao: number; pct_renovavel: number; fonte_principal: string | null; maior_usina: string | null; pct_brasil: number; data_aneel: string | null }
-interface EnergiaTipo { uf: string; tipo: string; renovavel: boolean; mw: number }
+interface EnergiaTipo { uf: string; tipo: string; fonte: string; renovavel: boolean; mw: number }
+/** Rótulos de vw_energia_uf_tipo.fonte, na ordem e cor do gráfico. */
+const FONTES_ENERGIA: { fonte: string; cor: string }[] = [
+  { fonte: "Hídrica (UHE)", cor: "hsl(205 70% 45%)" },
+  { fonte: "Hídrica pequena (PCH)", cor: "hsl(195 60% 60%)" },
+  { fonte: "Micro-hidro (CGH)", cor: "hsl(185 45% 72%)" },
+  { fonte: "Eólica (EOL)", cor: "hsl(150 45% 45%)" },
+  { fonte: "Solar (UFV)", cor: "hsl(45 85% 55%)" },
+  { fonte: "Termelétrica a biomassa (UTE)", cor: "hsl(90 35% 45%)" },
+  { fonte: "Termelétrica fóssil (UTE)", cor: "hsl(15 60% 50%)" },
+  { fonte: "Nuclear (UTN)", cor: "hsl(280 30% 50%)" },
+];
 interface CaboUF { uf: string; cabos_internacionais: number; cabos_fluviais: number; nomes_internacionais: string | null; nomes_fluviais: string | null }
 interface Aterragem { ponto_id: string; nome: string; uf: string; cabos_internacionais: number }
 interface Usina { nome: string; tipo: string; municipio: string | null; potencia_kw: number }
+const fmtData = (d?: string) => d ? d.slice(0, 10).split("-").reverse().join("/") : "data indisponível";
 const nomeUF = (uf: string) => ESTADOS[uf] ?? uf;
 const tipoNome = (s: string) => { const t = TIPOS_USINA.find((x) => x.sigla === s); return t ? `${t.nome} (${t.sigla})` : s; };
 const tooltipStyle = { background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 };
@@ -78,7 +90,7 @@ export default function Cenario1Infraestrutura() {
     // L1 · vw_energia_uf / vw_energia_uf_tipo, derivadas de aneel_usinas (a mesma tabela que a função do Mapa serve).
     Promise.all([
       fetchAll<EnergiaUF>(supabase.from("vw_energia_uf").select("uf,usinas,mw_operacao,pct_renovavel,fonte_principal,maior_usina,pct_brasil,data_aneel").order("uf")),
-      fetchAll<EnergiaTipo>(supabase.from("vw_energia_uf_tipo").select("uf,tipo,renovavel,mw").order("uf").order("tipo")),
+      fetchAll<EnergiaTipo>(supabase.from("vw_energia_uf_tipo").select("uf,tipo,fonte,renovavel,mw").order("uf").order("tipo")),
     ]).then(([uf, tipo]) => {
       if (!uf.length) throw new Error("sem dados");
       setEnergia({ status: "ok", dados: { uf: uf.map(e => ({ ...e, mw_operacao: Number(e.mw_operacao), pct_renovavel: Number(e.pct_renovavel), pct_brasil: Number(e.pct_brasil) })), tipo: tipo.map(t => ({ ...t, mw: Number(t.mw) })) }, data: uf[0].data_aneel ?? undefined });
@@ -108,7 +120,7 @@ export default function Cenario1Infraestrutura() {
   const renMw = energia.status === "ok" ? energia.dados.tipo.filter(t => t.renovavel).reduce((s, t) => s + t.mw, 0) : 0;
   const chartEnergia = useMemo(() => energiaUF.map(e => {
     const linha: Record<string, number | string> = { uf: e.uf };
-    if (energia.status === "ok") energia.dados.tipo.filter(t => t.uf === e.uf).forEach(t => { linha[t.tipo] = t.mw; });
+    if (energia.status === "ok") energia.dados.tipo.filter(t => t.uf === e.uf).forEach(t => { linha[t.fonte] = Number(linha[t.fonte] ?? 0) + t.mw; });
     return linha;
   }), [energiaUF, energia]);
   const cabosInt = useMemo(() => cabos.status === "ok" ? cabos.dados.uf.filter(c => c.cabos_internacionais > 0).sort((a, b) => b.cabos_internacionais - a.cabos_internacionais) : [], [cabos]);
@@ -182,12 +194,10 @@ export default function Cenario1Infraestrutura() {
 
       {/* 2. Energia */}
       <Bloco titulo="Quanta energia cada estado gera, e de que fonte?"
-        frase={energia.status === "ok" && topE ? `${nomeUF(topE.uf)} tem a maior potência instalada, ${fmtGw(topE.total_mw)} GW, ${fmtPct(topE.pct_renovavel)}% de fonte renovável.` : undefined}
-        sub={energia.status === "ok" ? `Usinas em operação na ANEEL (${energia.dados.length.toLocaleString("pt-BR")} carregadas), em MW. Clique num estado para ver as maiores usinas.` : undefined}>
-        {energia.status === "ok" && energia.dados.length >= LIMITE_ANEEL * 0.9 && (
-          <p className="mb-3 rounded-lg border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
-            <strong className="text-foreground">Cobertura parcial:</strong> a consulta à ANEEL traz no máximo {LIMITE_ANEEL.toLocaleString("pt-BR")} registros e foram carregadas {energia.dados.length.toLocaleString("pt-BR")} usinas. A potência dos estados pode estar subestimada.
-          </p>
+        frase={energia.status === "ok" && topE ? `${nomeUF(topE.uf)} tem a maior potência instalada, ${fmtGw(topE.mw_operacao)} GW, ${fmtPct(topE.pct_renovavel)}% de fonte renovável.` : undefined}
+        sub={energia.status === "ok" ? `${energiaUF.reduce((s, e) => s + e.usinas, 0).toLocaleString("pt-BR")} usinas em operação na ANEEL, em MW (base de ${fmtData(energia.data)}). Clique num estado para ver as maiores usinas.` : undefined}>
+        {energia.status === "ok" && topE && (
+          <p className="mb-3 text-xs text-muted-foreground">Em {nomeUF(topE.uf)}, a fonte principal é {topE.fonte_principal ?? "—"}, a maior usina é {topE.maior_usina ?? "—"} e o estado responde por {fmtPct(topE.pct_brasil)}% da potência do Brasil. Passe o mouse sobre as barras para ver os demais estados.</p>
         )}
         {energia.status === "carregando" ? <Carregando /> : energia.status === "erro" ? <Indisponivel erro={energia.erro} /> : (
           <ResponsiveContainer width="100%" height={Math.max(420, chartEnergia.length * 22)}>
@@ -196,27 +206,54 @@ export default function Cenario1Infraestrutura() {
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis type="number" tick={tick} tickFormatter={v => fmtMw(v)} />
               <YAxis type="category" dataKey="uf" tick={tick} width={32} />
-              <Tooltip contentStyle={tooltipStyle} formatter={(v: number, n: string) => [`${fmtMw(v)} MW`, n]} labelFormatter={l => `${nomeUF(String(l))} — clique para ver as usinas`} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(v: number, n: string) => [`${fmtMw(v)} MW`, n]} labelFormatter={l => {
+                const e = energiaUF.find(x => x.uf === l);
+                return e ? `${nomeUF(e.uf)} · ${fmtGw(e.mw_operacao)} GW · ${fmtPct(e.pct_renovavel)}% renovável · ${fmtPct(e.pct_brasil)}% do Brasil · maior: ${e.maior_usina ?? "—"} — clique para ver as usinas` : String(l);
+              }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              {TIPOS_USINA.map(t => <Bar key={t.sigla} dataKey={t.sigla} name={`${t.nome} (${t.sigla})`} stackId="e" fill={t.cor} cursor="pointer" />)}
+              {FONTES_ENERGIA.map(t => <Bar key={t.fonte} dataKey={t.fonte} name={t.fonte} stackId="e" fill={t.cor} cursor="pointer" />)}
             </BarChart>
           </ResponsiveContainer>
         )}
       </Bloco>
 
-      {/* 3. Cabos + backhaul */}
+      {/* 3. Cabos internacionais + infovias + backhaul */}
       <Bloco titulo="Por onde o Brasil se conecta ao mundo?"
-        frase={cabos.status === "ok" ? `Os cabos submarinos chegam em ${ufsCabo.length} estados: ${listaPt(ufsCabo.map(nomeUF))}.` : undefined}
-        sub={cabos.status === "ok" ? "Pontos de aterragem de cabos submarinos no Brasil e quantos cabos chegam em cada um." : undefined}>
+        frase={cabos.status === "ok" ? `Os cabos submarinos internacionais chegam em ${cabosInt.length} estados: ${listaPt(cabosInt.map(c => `${nomeUF(c.uf)} (${c.cabos_internacionais})`))}.` : undefined}
+        sub={cabos.status === "ok" ? "Só cabos que ligam o Brasil a outros países. Entre parênteses, quantos cabos internacionais chegam ao estado." : undefined}>
         {cabos.status === "carregando" ? <Carregando /> : cabos.status === "erro" ? <Indisponivel erro={cabos.erro} /> : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead><tr className="border-b border-border text-left text-xs text-muted-foreground"><th className="py-2 pr-3">Ponto de aterragem</th><th className="py-2 pr-3">Estado</th><th className="py-2 text-right">Cabos</th></tr></thead>
-              <tbody>{cabos.dados.map(a => (
-                <tr key={a.id} className="border-b border-border/50"><td className="py-1.5 pr-3 text-foreground">{a.nome}</td><td className="py-1.5 pr-3 text-muted-foreground">{nomeUF(a.uf)} ({a.uf})</td><td className="py-1.5 text-right font-semibold text-foreground">{a.cabos}</td></tr>
-              ))}</tbody>
-            </table>
+          <div className="grid gap-5 lg:grid-cols-2">
+            <ResponsiveContainer width="100%" height={Math.max(180, cabosInt.length * 30)}>
+              <BarChart data={cabosInt} layout="vertical" margin={{ top: 4, right: 12, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis type="number" tick={tick} allowDecimals={false} />
+                <YAxis type="category" dataKey="uf" tick={tick} width={32} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [v, "Cabos internacionais"]} labelFormatter={l => { const c = cabosInt.find(x => x.uf === l); return `${nomeUF(String(l))}: ${c?.nomes_internacionais ?? ""}`; }} />
+                <Bar dataKey="cabos_internacionais" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead><tr className="border-b border-border text-left text-xs text-muted-foreground"><th className="py-2 pr-3">Ponto de aterragem</th><th className="py-2 pr-3">Estado</th><th className="py-2 text-right">Cabos internacionais</th></tr></thead>
+                <tbody>{cabos.dados.pontos.map(a => (
+                  <tr key={a.ponto_id} className="border-b border-border/50"><td className="py-1.5 pr-3 text-foreground">{a.nome}</td><td className="py-1.5 pr-3 text-muted-foreground">{nomeUF(a.uf)} ({a.uf})</td><td className="py-1.5 text-right font-semibold text-foreground">{a.cabos_internacionais}</td></tr>
+                ))}</tbody>
+              </table>
+            </div>
           </div>
+        )}
+      </Bloco>
+
+      <Bloco titulo="Infovias na Amazônia"
+        frase={cabos.status === "ok" && cabosFlu.length ? `Há infovias fluviais em ${cabosFlu.length} estados: ${listaPt(cabosFlu.map(c => `${nomeUF(c.uf)} (${c.cabos_fluviais})`))}.` : undefined}
+        sub="São cabos de fibra óptica lançados no leito dos rios, para levar conectividade dentro da região. Não são ligações com outros países.">
+        {cabos.status === "carregando" ? <Carregando /> : cabos.status === "erro" ? <Indisponivel erro={cabos.erro} /> : (
+          <table className="w-full text-sm">
+            <thead><tr className="border-b border-border text-left text-xs text-muted-foreground"><th className="py-2 pr-3">Estado</th><th className="py-2 pr-3 text-right">Infovias</th><th className="py-2">Nomes</th></tr></thead>
+            <tbody>{cabosFlu.map(c => (
+              <tr key={c.uf} className="border-b border-border/50 align-top"><td className="py-1.5 pr-3 text-foreground">{nomeUF(c.uf)}</td><td className="py-1.5 pr-3 text-right font-semibold">{c.cabos_fluviais}</td><td className="py-1.5 text-xs text-muted-foreground">{c.nomes_fluviais}</td></tr>
+            ))}</tbody>
+          </table>
         )}
       </Bloco>
 
@@ -313,8 +350,8 @@ export default function Cenario1Infraestrutura() {
       {/* Notas metodológicas */}
       <footer className="rounded-xl border border-border bg-muted/30 p-5 text-xs leading-relaxed text-muted-foreground">
         <p className="mb-1 font-semibold text-foreground">Notas metodológicas</p>
-        <p>Energia (Layer 1): ANEEL SIGA, usinas na fase "Operação" com coordenadas, potência fiscalizada (ou outorgada, na falta dela); consultado ao vivo{energia.status === "ok" ? ` em ${energia.data}` : ""}. Renovável = hidrelétricas (UHE, PCH, CGH), eólica (EOL) e solar (UFV).</p>
-        <p className="mt-1">Cabos submarinos (Layer 2): TeleGeography Submarine Cable Map{cabos.status === "ok" && cabos.data ? `, retrato de ${cabos.data.split("-").reverse().join("/")}` : ""}. Os pontos de aterragem foram atribuídos à UF pela localização dentro da malha estadual do IBGE; pontos sobre a linha da costa, fora do contorno simplificado, ficam com o estado mais próximo.</p>
+        <p>Energia (Layer 1): ANEEL SIGA, todas as usinas em operação, cópia mensal guardada no banco{energia.status === "ok" ? ` (base de ${fmtData(energia.data)})` : ""}. Renovável = hidrelétricas (UHE, PCH, CGH), eólica (EOL), solar (UFV) e termelétricas a biomassa.</p>
+        <p className="mt-1">Cabos (Layer 2): TeleGeography Submarine Cable Map{cabos.status === "ok" && cabos.data ? `, retrato de ${fmtData(cabos.data)}` : ""}, classificados em internacionais, costeiros domésticos e fluviais; só os internacionais contam como conexão com o exterior. Os pontos de aterragem foram atribuídos à UF pela localização.</p>
         <p className="mt-1">Fibra (Layer 2): ANATEL, backhaul por município (2025).</p>
         <p className="mt-1">Datacenters (Layer 3): PeeringDB, consultado ao vivo, com o retrato de 23/09/2026 como reserva quando a fonte não responde.</p>
       </footer>
@@ -333,8 +370,8 @@ export default function Cenario1Infraestrutura() {
           </DialogHeader>
           <table className="w-full text-sm">
             <thead><tr className="border-b border-border text-left text-xs text-muted-foreground"><th className="py-2 pr-2">Nome</th><th className="py-2 pr-2">Tipo</th><th className="py-2 pr-2">Município</th><th className="py-2 text-right">MW</th></tr></thead>
-            <tbody>{usinasDaUF.map((u, i) => (
-              <tr key={i} className="border-b border-border/50"><td className="py-1.5 pr-2">{u.nome}</td><td className="py-1.5 pr-2 text-muted-foreground">{tipoNome(u.tipo)}{RENOVAVEIS.has(u.tipo) ? "" : ""}</td><td className="py-1.5 pr-2 text-muted-foreground">{u.municipio}</td><td className="py-1.5 text-right font-semibold">{fmtMw(u.potencia_kw / 1000)}</td></tr>
+            <tbody>{(usinasDaUF ?? []).map((u, i) => (
+              <tr key={i} className="border-b border-border/50"><td className="py-1.5 pr-2">{u.nome}</td><td className="py-1.5 pr-2 text-muted-foreground">{tipoNome(u.tipo)}</td><td className="py-1.5 pr-2 text-muted-foreground">{u.municipio}</td><td className="py-1.5 text-right font-semibold">{fmtMw(u.potencia_kw / 1000)}</td></tr>
             ))}</tbody>
           </table>
         </DialogContent>
