@@ -410,6 +410,26 @@ export default function MapaBrasil({
     return dadosCabos.points.filter((p) => pontoNaSelecaoGeografica(Number(p.latitude), Number(p.longitude)));
   }, [layer2Ativa, dadosCabos, pontoNaSelecaoGeografica]);
 
+  const usinasPorTipo = useMemo(() => {
+    if (!layer1Ativa || !dadosUsinas) return null;
+    const porTipo = new Map<string, string[]>();
+    // Ordena da maior para a menor potência: as pequenas ficam por cima e continuam visíveis.
+    const ordenadas = [...dadosUsinas].sort((a, b) => (b.potencia_kw ?? 0) - (a.potencia_kw ?? 0));
+    for (const u of ordenadas) {
+      if (!Number.isFinite(u.latitude) || !Number.isFinite(u.longitude)) continue;
+      if (u.longitude < LON0 || u.longitude > LON1 || u.latitude > LAT0 || u.latitude < LAT1) continue;
+      if (tiposUsina && tiposUsina.size > 0 && !tiposUsina.has(u.tipo)) continue;
+      if (!pontoNaSelecaoGeografica(u.latitude, u.longitude, u.uf)) continue;
+      const [x, y] = projetar(u.longitude, u.latitude);
+      const mw = Math.max(0, (u.potencia_kw ?? 0) / 1000);
+      const r = Math.min(tam * 1.2, tam * 0.12 * (1 + Math.sqrt(mw) / 12));
+      const arr = porTipo.get(u.tipo) ?? [];
+      arr.push(`M${(x - r).toFixed(1)} ${y.toFixed(1)}a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(2 * r).toFixed(2)} 0a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(-2 * r).toFixed(2)} 0`);
+      porTipo.set(u.tipo, arr);
+    }
+    return [...porTipo.entries()].map(([t, a]) => [t, a.join("")] as [string, string]);
+  }, [layer1Ativa, dadosUsinas, tiposUsina, pontoNaSelecaoGeografica, projetar, tam]);
+
   const cabosVisiveis = useMemo(() => {
     if (!layer2Ativa || !dadosCabos) return [];
     if (ufsFiltroAtivas.size === 0) return dadosCabos.cables;
@@ -702,43 +722,14 @@ export default function MapaBrasil({
           </g>
         )}
 
-        {/* Layer 1 — Usinas de Energia (ANEEL), abaixo dos marcadores SNI. */}
-        {layer1Ativa && dadosUsinas && (
+        {/* Layer 1 — Usinas de Energia (ANEEL), abaixo dos marcadores SNI.
+            ~22 mil usinas: um único <path> por tipo (círculos), em vez de um nó por usina,
+            mantém o mapa fluido. Raio cresce com a raiz da potência. */}
+        {layer1Ativa && usinasPorTipo && (
           <g pointerEvents="none" clipPath="url(#brasil-contorno)">
-            {dadosUsinas.map((u) => {
-              if (!Number.isFinite(u.latitude) || !Number.isFinite(u.longitude)) return null;
-              if (!pontoNaSelecaoGeografica(u.latitude, u.longitude, u.uf)) return null;
-              if (u.longitude < LON0 || u.longitude > LON1 || u.latitude > LAT0 || u.latitude < LAT1) return null;
-              if (tiposUsina && tiposUsina.size > 0 && !tiposUsina.has(u.tipo)) return null;
-              const [x, y] = projetar(u.longitude, u.latitude);
-              const icon = ICONE_USINA[u.tipo] || "electric_bolt";
-              const corClass = COR_CLASSE_USINA[u.tipo] || "text-gray-400";
-              const sz = (u.potencia_kw ?? 0) > 100000
-                ? tam * 0.9
-                : (u.potencia_kw ?? 0) > 10000
-                  ? tam * 0.75
-                  : tam * 0.6;
-              const local = [u.municipio, u.uf].filter(Boolean).join("/");
-              return (
-                <text
-                  key={u.id}
-                  x={x}
-                  y={y}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  className={`material-symbols-outlined select-none ${corClass}`}
-                   style={{
-                     fontSize: sz,
-                     opacity: 0.85,
-                     fontVariationSettings: '"FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24',
-                   }}
-                  fill="currentColor"
-                >
-                  {icon}
-                  <title>{`${u.nome} · ${u.tipo}${u.potencia_kw ? ` · ${(u.potencia_kw / 1000).toFixed(0)} MW` : ""}${local ? ` · ${local}` : ""}`}</title>
-                </text>
-              );
-            })}
+            {usinasPorTipo.map(([tipo, d]) => (
+              <path key={tipo} d={d} className={COR_CLASSE_USINA[tipo] || "text-gray-400"} fill="currentColor" fillOpacity={0.55} stroke="currentColor" strokeOpacity={0.9} strokeWidth={0.4} />
+            ))}
           </g>
         )}
 
