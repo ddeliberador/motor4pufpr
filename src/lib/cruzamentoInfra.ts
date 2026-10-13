@@ -1,0 +1,32 @@
+import { SITUACOES_ENERGIA } from "./infraEstados";
+
+export interface BalancoCruzamento { uf: string; situacao: string; razao_geracao_consumo: number | null; razao_brasil: number | null }
+export type CargaBalanco = { status: "carregando" } | { status: "erro" } | { status: "ok"; dados: BalancoCruzamento[] };
+export interface EstadoCruzamento {
+  uf: string; situacao: string | null; razao: number | null; brasil: number | null;
+  dc: number | null; cabo: number | null; fibra: number | null;
+}
+
+export function energiaSemProcessamento(l: Pick<EstadoCruzamento, "situacao" | "dc">) {
+  // Inclui PA (dois registros), conforme os estados solicitados na conferência.
+  return l.situacao === SITUACOES_ENERGIA[0] && l.dc != null && l.dc <= 2;
+}
+
+export function resumoCruzamento(linhas: EstadoCruzamento[], totalDc: number | null) {
+  if (totalDc == null || totalDc <= 0 || linhas.some(l => l.situacao == null || l.dc == null)) return null;
+  const exportadores = linhas.filter(l => l.situacao === SITUACOES_ENERGIA[0]);
+  const dependentes = linhas.filter(l => l.situacao === SITUACOES_ENERGIA[2]);
+  return {
+    exportadores: exportadores.length,
+    pctExportadores: 100 * exportadores.reduce((s, l) => s + (l.dc ?? 0), 0) / totalDc,
+    pctDependentes: 100 * dependentes.reduce((s, l) => s + (l.dc ?? 0), 0) / totalDc,
+    principalDependente: [...dependentes].sort((a, b) => (b.dc ?? 0) - (a.dc ?? 0))[0]?.uf,
+  };
+}
+
+export function fraseBalanco(razao: number | null) {
+  if (razao == null || !Number.isFinite(razao)) return "indisponível";
+  return razao < 1
+    ? `gera ${(razao * 100).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}% do que consome`
+    : `gera ${razao.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}× o que consome`;
+}

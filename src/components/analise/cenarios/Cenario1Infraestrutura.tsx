@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import AtoresDrawer from "./AtoresDrawer";
 import BalancoEnergia from "./BalancoEnergia";
+import CruzamentoInfraestrutura from "./CruzamentoInfraestrutura";
+import type { CargaBalanco, EstadoCruzamento } from "@/lib/cruzamentoInfra";
 import { supabase } from "@/integrations/supabase/client";
 import { carregarDatacenters } from "@/lib/bi/datasets";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
@@ -63,7 +65,8 @@ export default function Cenario1Infraestrutura() {
   const [dcs, setDcs] = useState<Estado<Datacenter[]>>({ status: "carregando" });
   const [listaUsinasUF, setListaUsinasUF] = useState<string | null>(null);
   const [listaDcUF, setListaDcUF] = useState<string | null>(null);
-  const [ordem, setOrdem] = useState<{ col: string; desc: boolean }>({ col: "mw", desc: true });
+  const [ufSelecionada, setUfSelecionada] = useState("PR");
+  const [balanco, setBalanco] = useState<CargaBalanco>({ status: "carregando" });
 
   useEffect(() => {
     // A API devolve no máximo 1.000 linhas por chamada: busca os 5.570 municípios em blocos paralelos.
@@ -135,26 +138,17 @@ export default function Cenario1Infraestrutura() {
   }, [dcs]);
   const totDc = dcs.status === "ok" ? dcs.dados.length : 0;
 
-  const linhas = useMemo(() => Object.keys(ESTADOS).map(uf => {
-    const e = energiaUF.find(x => x.uf === uf);
+  const linhas = useMemo<EstadoCruzamento[]>(() => Object.keys(ESTADOS).map(uf => {
+    const e = balanco.status === "ok" ? balanco.dados.find(x => x.uf === uf) : undefined;
     const b = backhaul.find(x => x.uf === uf);
     return {
-      uf, mw: energia.status === "ok" ? e?.mw_operacao ?? 0 : null,
-      ren: energia.status === "ok" && e ? e.pct_renovavel : null,
+      uf, situacao: e?.situacao ?? null,
+      razao: e?.razao_geracao_consumo ?? null, brasil: e?.razao_brasil ?? null,
       cabo: cabos.status === "ok" ? (ufsCabo.includes(uf) ? 1 : 0) : null,
       fibra: b ? b.pct : null,
       dc: dcs.status === "ok" ? dcUF.find(x => x.uf === uf)?.n ?? 0 : null,
     };
-  }), [energiaUF, backhaul, ufsCabo, dcUF, energia.status, cabos.status, dcs.status]);
-  const linhasOrd = [...linhas].sort((a, b) => {
-    const k = ordem.col as keyof typeof a;
-    const va = a[k], vb = b[k];
-    if (k === "uf") return (ordem.desc ? -1 : 1) * nomeUF(String(va)).localeCompare(nomeUF(String(vb)));
-    if (va == null) return 1; if (vb == null) return -1;
-    return (ordem.desc ? -1 : 1) * (Number(va) - Number(vb));
-  });
-  const energiaSemDc = energia.status === "ok" && dcs.status === "ok"
-    ? linhas.filter(l => (l.mw ?? 0) > 1000 && l.dc === 0).map(l => nomeUF(l.uf)) : null;
+  }), [balanco, backhaul, ufsCabo, dcUF, cabos.status, dcs.status]);
 
   const topE = energiaUF[0];
   const topDc = dcUF[0];
@@ -203,7 +197,7 @@ export default function Cenario1Infraestrutura() {
         {energia.status === "carregando" ? <Carregando /> : energia.status === "erro" ? <Indisponivel erro={energia.erro} /> : (
           <ResponsiveContainer width="100%" height={Math.max(420, chartEnergia.length * 22)}>
             <BarChart data={chartEnergia} layout="vertical" margin={{ top: 4, right: 12, left: 0, bottom: 4 }}
-              onClick={d => { const uf = d?.activePayload?.[0]?.payload?.uf; if (uf) setListaUsinasUF(uf); }}>
+              onClick={d => { const uf = d?.activePayload?.[0]?.payload?.uf; if (uf) { setUfSelecionada(uf); setListaUsinasUF(uf); } }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis type="number" tick={tick} tickFormatter={v => fmtMw(v)} />
               <YAxis type="category" dataKey="uf" tick={tick} width={32} interval={0} />
@@ -219,7 +213,7 @@ export default function Cenario1Infraestrutura() {
       </Bloco>
 
       {/* 2b. Balanço energético (EPE) */}
-      <BalancoEnergia dcStatus={dcs.status} dcPorUF={dcs.status === "ok" ? Object.fromEntries(dcUF.map(x => [x.uf, x.n])) : null} />
+      <BalancoEnergia uf={ufSelecionada} onUfChange={setUfSelecionada} onBalancoChange={setBalanco} dcStatus={dcs.status} dcPorUF={dcs.status === "ok" ? Object.fromEntries(dcUF.map(x => [x.uf, x.n])) : null} />
 
       {/* 3. Cabos internacionais + infovias + backhaul */}
       <Bloco titulo="Por onde o Brasil se conecta ao mundo?"
@@ -308,7 +302,7 @@ export default function Cenario1Infraestrutura() {
         {dcs.status === "carregando" ? <Carregando /> : dcs.status === "erro" ? <Indisponivel erro={dcs.erro} /> : (
           <ResponsiveContainer width="100%" height={Math.max(260, dcUF.length * 22)}>
             <BarChart data={dcUF} layout="vertical" margin={{ top: 4, right: 12, left: 0, bottom: 4 }}
-              onClick={d => { const uf = d?.activePayload?.[0]?.payload?.uf; if (uf) setListaDcUF(uf); }}>
+              onClick={d => { const uf = d?.activePayload?.[0]?.payload?.uf; if (uf) { setUfSelecionada(uf); setListaDcUF(uf); } }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis type="number" tick={tick} allowDecimals={false} />
               <YAxis type="category" dataKey="uf" tick={tick} width={32} interval={0} />
@@ -320,36 +314,8 @@ export default function Cenario1Infraestrutura() {
       </Bloco>
 
       {/* 5. Cruzamento */}
-      <Bloco titulo="Onde as três camadas se encontram"
-        frase={energiaSemDc ? (energiaSemDc.length
-          ? `${energiaSemDc.length} ${energiaSemDc.length === 1 ? "estado tem" : "estados têm"} mais de 1 GW em operação e nenhum datacenter: ${listaPt(energiaSemDc)}.`
-          : "Todos os estados com mais de 1 GW em operação têm ao menos um datacenter.") : undefined}
-        sub="Mostra onde há energia sem capacidade de processamento. Clique no título de uma coluna para ordenar.">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[620px] text-sm">
-            <thead><tr className="border-b border-border text-left text-xs text-muted-foreground">
-              {[["uf", "Estado"], ["mw", "Potência em operação (MW)"], ["ren", "% renovável"], ["cabo", "Cabo submarino"], ["fibra", "% municípios com fibra"], ["dc", "Datacenters"]].map(([k, l]) => (
-                <th key={k} className={`py-2 pr-3 ${k !== "uf" ? "text-right" : ""}`}>
-                  <button className="hover:text-foreground" onClick={() => setOrdem(o => ({ col: k, desc: o.col === k ? !o.desc : k !== "uf" }))}>
-                    {l}{ordem.col === k ? (ordem.desc ? " ↓" : " ↑") : ""}
-                  </button>
-                </th>
-              ))}
-            </tr></thead>
-            <tbody>{linhasOrd.map(l => (
-              <tr key={l.uf} className="border-b border-border/50">
-                <td className="py-1.5 pr-3 text-foreground">{nomeUF(l.uf)}</td>
-                <td className="py-1.5 pr-3 text-right">{l.mw == null ? "—" : fmtMw(l.mw)}</td>
-                <td className="py-1.5 pr-3 text-right">{l.ren == null ? "—" : `${fmtPct(l.ren)}%`}</td>
-                <td className="py-1.5 pr-3 text-right">{l.cabo == null ? "—" : l.cabo ? "sim" : "não"}</td>
-                <td className="py-1.5 pr-3 text-right">{l.fibra == null ? "—" : `${l.fibra}%`}</td>
-                <td className="py-1.5 text-right">{l.dc == null ? "—" : l.dc}</td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
-        <p className="mt-2 text-[11px] text-muted-foreground">"—" indica fonte indisponível no momento, não zero.</p>
-      </Bloco>
+      <CruzamentoInfraestrutura linhas={linhas} totalDc={dcs.status === "ok" ? totDc : null}
+        uf={ufSelecionada} onUfChange={setUfSelecionada} carregando={balanco.status === "carregando" || dcs.status === "carregando"} />
 
       {/* Notas metodológicas */}
       <footer className="rounded-xl border border-border bg-muted/30 p-5 text-xs leading-relaxed text-muted-foreground">
