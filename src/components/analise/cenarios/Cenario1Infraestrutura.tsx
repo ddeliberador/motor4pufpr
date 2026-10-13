@@ -181,7 +181,7 @@ export default function Cenario1Infraestrutura() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
           { v: num(energia.status, `${fmtGw(totMw)} GW`), l: energia.status === "erro" ? "Potência em operação · fonte indisponível no momento" : `Potência em operação · ${fmtPct(totMw ? 100 * renMw / totMw : 0)}% renovável (hídrica, eólica e solar)` },
-          { v: num(cabos.status, `${ufsCabo.length} estados`), l: cabos.status === "erro" ? "Cabo submarino · fonte indisponível no momento" : "Com cabo submarino chegando" },
+          { v: num(cabos.status, `${ufsCabo.length} estados`), l: cabos.status === "erro" ? "Cabo internacional · fonte indisponível no momento" : "Com cabo submarino internacional chegando" },
           { v: carregando ? "…" : erroBH ? "—" : `${fmtPct(100 * totalCom / (totalCom + totalSem))}%`, l: erroBH ? "Fibra · fonte indisponível no momento" : "Dos municípios com fibra (backhaul)" },
           { v: num(dcs.status, totDc.toLocaleString("pt-BR")), l: dcs.status === "erro" ? "Datacenters · fonte indisponível no momento" : "Datacenters no país" },
         ].map(m => (
