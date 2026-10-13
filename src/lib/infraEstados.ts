@@ -82,3 +82,14 @@ export const fmtMw = (v: number) => v.toLocaleString("pt-BR", { maximumFractionD
 export const fmtGw = (v: number) => (v / 1000).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 export const fmtPct = (v: number) => v.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
 export const listaPt = (xs: string[]) => xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} e ${xs[xs.length - 1]}`;
+
+// ── Balanço energético (EPE) ──
+export const SITUACOES_ENERGIA = ["Exporta energia", "Perto do equilíbrio", "Depende de energia de outros estados"] as const;
+export const corSituacao = (s: string | null | undefined) =>
+  s === "Exporta energia" ? "hsl(150 45% 42%)" : s === "Perto do equilíbrio" ? "hsl(45 70% 55%)" : s === "Depende de energia de outros estados" ? "hsl(15 60% 52%)" : "hsl(var(--muted))";
+export const fmtGwh = (v: number) => v.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+/** Queda de MMGD acima de 50% em um ano: provável erro na planilha da fonte. */
+export const mmgdQuedaAtipica = (atual: number | null | undefined, anterior: number | null | undefined) =>
+  atual != null && anterior != null && anterior > 0 && atual < anterior * 0.5;
+/** Razão geração/consumo em % (1,37 → 137). */
+export const razaoPct = (r: number) => Math.round(r * 100);
