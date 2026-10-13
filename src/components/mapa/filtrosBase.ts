@@ -128,6 +128,16 @@ export const FILTROS: FiltroDef[] = [
     valores: (_l, e) => textoDe(e.natureza_juridica),
   },
 
+  // ---------- Entes estaduais (CONFAP, CONSECTI, ABEP-TIC) ----------
+  {
+    id: "entes_tipo",
+    label: "Tipo de ente estadual",
+    fonte: "entes_estaduais",
+    controle: "check",
+    valores: (l) => [l.tipo].filter(Boolean),
+    ajuda: "FAP (rede CONFAP), Secretaria de CT&I (CONSECTI) ou órgão/empresa de TIC (ABEP-TIC).",
+  },
+
   // ---------- LISP Brasil ----------
   {
     id: "lisp_poder",

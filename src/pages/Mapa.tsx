@@ -1911,6 +1911,18 @@ export default function Mapa() {
                           <p className="text-[11px] text-muted-foreground">
                             Base: {fonteLabel(l.fonte)}
                           </p>
+                          {l.fonte === "entes_estaduais" && (() => {
+                            const m = (l.raw_metadata || {}) as Record<string, unknown>;
+                            const aprox = String(m.coordenada || "").includes("aproximada");
+                            return (
+                              <div className="mt-0.5 space-y-0.5 text-[11px] text-muted-foreground">
+                                {m.sigla ? <p>Sigla: <span className="text-foreground">{String(m.sigla)}</span></p> : null}
+                                {m.rede ? <p>Rede: {String(m.rede)}</p> : null}
+                                {m.peeringdb_nome ? <p>Opera o ponto de troca de tráfego <span className="text-foreground">{String(m.peeringdb_nome)}</span> (PeeringDB)</p> : null}
+                                {aprox && <p className="italic">Posição aproximada: sede municipal da capital.</p>}
+                              </div>
+                            );
+                          })()}
                           {href && (
                             <a
                               href={href}

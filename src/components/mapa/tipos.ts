@@ -14,6 +14,7 @@ export type CategoriaKey =
   | "supercomputacao"
   | "embrapii"
   | "habitat"
+  | "governo"
   | "energia"
   | "datacenter"
   | "backhaul"
@@ -38,6 +39,7 @@ export const CATEGORIAS: Categoria[] = [
   { key: "supercomputacao", label: "Centro de supercomputação", icon: "memory", cor: "text-cyan-500" },
   { key: "embrapii", label: "Unidade EMBRAPII / NIT", icon: "factory", cor: "text-emerald-500" },
   { key: "habitat", label: "Incubadora / parque / hub", icon: "hub", cor: "text-rose-500" },
+  { key: "governo", label: "Órgão estadual de CT&I / TIC", icon: "assured_workload", cor: "text-amber-600" },
   { key: "energia", label: "Usina de energia (ANEEL)", icon: "bolt", cor: "text-pink-500" },
   { key: "datacenter", label: "Datacenter (PeeringDB)", icon: "dns", cor: "text-yellow-500" },
   { key: "cabo", label: "Cabo submarino (TeleGeography)", icon: "lan", cor: "text-orange-500" },
@@ -62,6 +64,7 @@ const norm = (s: string) =>
 export function categorizar(tipo: string | null | undefined): CategoriaKey {
   const t = norm(tipo || "");
   if (!t) return "outro";
+  if (t.includes("amparo a pesquisa") || t.includes("secretaria estadual de ct") || /orgao\/empresa (estadual|municipal) de tic/.test(t)) return "governo";
   if (t.includes("datacenter") || t.includes("data center")) return "datacenter";
   if (t.includes("backhaul")) return "backhaul";
   if (t.includes("cabo submarino")) return "cabo";
@@ -91,6 +94,7 @@ export const FONTE_CURTA: Record<string, string> = {
   aneel_siga: "ANEEL — SIGA (usinas)",
   peeringdb: "PeeringDB (datacenters)",
   anatel_backhaul: "ANATEL — Backhaul municipal",
+  entes_estaduais: "Entes estaduais (CONFAP, CONSECTI, ABEP-TIC)",
   telegeography: "TeleGeography — Submarine Cable Map",
 };
 
