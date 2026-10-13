@@ -4,6 +4,7 @@ import { fetchAll } from "@/lib/fetchAll";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
 import { SITUACOES_ENERGIA, corSituacao, fmtGwh, fmtPct, mmgdQuedaAtipica, razaoPct } from "@/lib/infraEstados";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import type { CargaBalanco } from "@/lib/cruzamentoInfra";
 
 interface Balanco {
   uf: string; ano: number; geracao_gwh: number; consumo_gwh: number; razao_geracao_consumo: number; razao_brasil: number;
@@ -35,8 +36,7 @@ function BarraClasses({ titulo, itens }: { titulo: string; itens: { rotulo: stri
   );
 }
 
-export default function BalancoEnergia({ dcPorUF, dcStatus }: { dcPorUF: Record<string, number> | null; dcStatus: "carregando" | "erro" | "ok" }) {
-  const [uf, setUf] = useState("PR");
+export default function BalancoEnergia({ dcPorUF, dcStatus, uf, onUfChange: setUf, onBalancoChange }: { dcPorUF: Record<string, number> | null; dcStatus: "carregando" | "erro" | "ok"; uf: string; onUfChange: (uf: string) => void; onBalancoChange: (carga: CargaBalanco) => void }) {
   const [carga, setCarga] = useState<Carga>({ status: "carregando" });
   const [features, setFeatures] = useState<Feature[]>([]);
 
@@ -53,7 +53,8 @@ export default function BalancoEnergia({ dcPorUF, dcStatus }: { dcPorUF: Record<
         supabase.from("energia_uf_epe").select("indicador,valor").eq("uf", "BR").eq("ano", ano).like("indicador", "consumo_%_gwh").order("indicador").range(0, 99),
         supabase.from("energia_uf_epe").select("uf,valor").eq("indicador", "capacidade_mmgd_mw").eq("ano", ano - 1).order("uf").range(0, 99),
       ]);
-      if (e1 || e2) throw new Error((e1 ?? e2)!.message);
+      if (e1) throw new Error(e1.message);
+      if (e2) throw new Error(e2.message);
       setCarga({
         status: "ok",
         balanco: b.map(x => ({ ...x, ano: Number(x.ano), geracao_gwh: Number(x.geracao_gwh), consumo_gwh: Number(x.consumo_gwh), razao_geracao_consumo: Number(x.razao_geracao_consumo), razao_brasil: Number(x.razao_brasil), pct_industrial: Number(x.pct_industrial), pct_industrial_brasil: Number(x.pct_industrial_brasil), consumo_per_capita_kwh: Number(x.consumo_per_capita_kwh), per_capita_brasil: Number(x.per_capita_brasil), populacao_estimada: Number(x.populacao_estimada), mmgd_mw: n(x.mmgd_mw), pct_mmgd: n(x.pct_mmgd), crescimento_consumo_5a_pct: n(x.crescimento_consumo_5a_pct) })),
@@ -64,6 +65,10 @@ export default function BalancoEnergia({ dcPorUF, dcStatus }: { dcPorUF: Record<
       });
     }).catch(e => setCarga({ status: "erro", erro: String(e?.message ?? e) }));
   }, []);
+
+  useEffect(() => {
+    onBalancoChange(carga.status === "ok" ? { status: "ok", dados: carga.balanco } : { status: carga.status });
+  }, [carga, onBalancoChange]);
 
   const d = carga.status === "ok" ? carga.balanco.find(x => x.uf === uf) : undefined;
   const classesUF = useMemo(() => carga.status === "ok" ? carga.classes.filter(c => c.uf === uf).sort((a, b) => a.ordem - b.ordem) : [], [carga, uf]);

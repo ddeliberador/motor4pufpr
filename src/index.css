@@ -50,6 +50,9 @@
     --sistema-local: 164 48% 38%;
     --sistema-fluxo: 205 48% 46%;
     --sistema-matriz: 164 48% 38%;
+    --energia-exporta: 150 45% 42%;
+    --energia-equilibrio: 45 70% 55%;
+    --energia-depende: 15 60% 52%;
 
     /* Custom design tokens - Estilo moderno e limpo */
     --hero-gradient: linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(215 25% 20%) 50%, hsl(220 14% 35%) 100%);
@@ -101,6 +104,9 @@
     --sistema-local: 164 48% 54%;
     --sistema-fluxo: 205 48% 62%;
     --sistema-matriz: 164 48% 54%;
+    --energia-exporta: 150 45% 58%;
+    --energia-equilibrio: 45 70% 62%;
+    --energia-depende: 15 60% 65%;
 
     --glass-bg: rgba(30, 41, 59, 0.8);
     --glass-border: rgba(51, 65, 85, 0.3);

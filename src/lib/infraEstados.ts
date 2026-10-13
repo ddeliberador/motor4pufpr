@@ -86,7 +86,7 @@ export const listaPt = (xs: string[]) => xs.length <= 1 ? xs.join("") : `${xs.sl
 // ── Balanço energético (EPE) ──
 export const SITUACOES_ENERGIA = ["Exporta energia", "Perto do equilíbrio", "Depende de energia de outros estados"] as const;
 export const corSituacao = (s: string | null | undefined) =>
-  s === "Exporta energia" ? "hsl(150 45% 42%)" : s === "Perto do equilíbrio" ? "hsl(45 70% 55%)" : s === "Depende de energia de outros estados" ? "hsl(15 60% 52%)" : "hsl(var(--muted))";
+  s === "Exporta energia" ? "hsl(var(--energia-exporta))" : s === "Perto do equilíbrio" ? "hsl(var(--energia-equilibrio))" : s === "Depende de energia de outros estados" ? "hsl(var(--energia-depende))" : "hsl(var(--muted))";
 export const fmtGwh = (v: number) => v.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
 /** Queda de MMGD acima de 50% em um ano: provável erro na planilha da fonte. */
 export const mmgdQuedaAtipica = (atual: number | null | undefined, anterior: number | null | undefined) =>
