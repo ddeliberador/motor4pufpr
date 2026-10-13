@@ -72,15 +72,6 @@ const LAT1 = -34.0;
 const MIN_W = W / 24; // zoom máximo
 const MAX_W = W; // mapa inteiro
 
-const ICONE_USINA: Record<string, string> = {
-  UHE: "water",
-  PCH: "water",
-  CGH: "water",
-  EOL: "air",
-  UFV: "sunny",
-  UTE: "whatshot",
-  UTN: "bolt",
-};
 
 const COR_CLASSE_USINA: Record<string, string> = {
   UHE: "text-blue-400",
