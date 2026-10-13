@@ -170,6 +170,21 @@ const CONECTORES: DatasetDef[] = [
     load: () => lerOrdenado("vw_cabos_uf", "uf,pontos,pontos_internacionais,cabos_internacionais,cabos_costeiros,cabos_fluviais", "uf"),
   },
   {
+    key: "energia_balanco_uf", table: "", label: "Balanço energético por UF (EPE)", descricao: "",
+    columns: [d("uf", "uf"), d("ano", "ano"), d("situacao", "situacao"), d("classe_principal", "classe_principal"), m("geracao_gwh", "geracao_gwh"), m("consumo_gwh", "consumo_gwh"), m("razao_geracao_consumo", "razao_geracao_consumo"), m("indice_relativo", "indice_relativo"), m("pct_industrial", "pct_industrial"), m("consumo_per_capita_kwh", "consumo_per_capita_kwh"), m("populacao_estimada", "populacao_estimada"), m("mmgd_mw", "mmgd_mw"), m("pct_mmgd", "pct_mmgd"), m("crescimento_consumo_5a_pct", "crescimento_consumo_5a_pct")],
+    load: () => lerOrdenado("vw_energia_balanco_uf", "uf,ano,situacao,classe_principal,geracao_gwh,consumo_gwh,razao_geracao_consumo,indice_relativo,pct_industrial,consumo_per_capita_kwh,populacao_estimada,mmgd_mw,pct_mmgd,crescimento_consumo_5a_pct", "uf"),
+  },
+  {
+    key: "energia_consumo_classe_uf", table: "", label: "Consumo de energia por classe e UF (EPE)", descricao: "",
+    columns: [d("uf", "uf"), d("ano", "ano"), d("rotulo", "rotulo"), m("gwh", "gwh"), m("pct_do_consumo", "pct_do_consumo")],
+    load: () => lerOrdenado("vw_energia_consumo_classe_uf", "uf,ano,classe,rotulo,gwh,pct_do_consumo", "uf,ano,classe"),
+  },
+  {
+    key: "energia_serie_uf", table: "", label: "Série de geração e consumo por UF (EPE)", descricao: "",
+    columns: [d("uf", "uf"), d("ano", "ano"), m("geracao_gwh", "geracao_gwh"), m("consumo_gwh", "consumo_gwh"), m("razao_geracao_consumo", "razao_geracao_consumo"), m("indice_relativo", "indice_relativo")],
+    load: () => lerOrdenado("vw_energia_serie_uf", "uf,ano,geracao_gwh,consumo_gwh,razao_geracao_consumo,indice_relativo", "uf,ano"),
+  },
+  {
     key: "entes_estaduais", table: "", label: "Entes estaduais de CT&I e TIC", descricao: "",
     columns: [d("uf", "uf"), d("tipo", "tipo"), d("rede", "rede"), d("sigla", "sigla"), d("nome", "nome"), d("municipio", "municipio")],
     load: async () => (await lerOrdenado("research_locations", "id,nome,tipo,uf,municipio,rede:raw_metadata->>rede,sigla:raw_metadata->>sigla", "id", ["fonte", "entes_estaduais"]))

@@ -28,3 +28,16 @@ describe("infraestrutura por estado", () => {
     expect(a).toEqual([{ id: "x-brazil", nome: "X", uf: "AA", cabos: 2, aproximado: false }]);
   });
 });
+
+import { mmgdQuedaAtipica, razaoPct } from "@/lib/infraEstados";
+describe("balanço energético", () => {
+  it("sinaliza queda de MMGD acima de 50% em um ano (RN: 231 contra 792)", () => {
+    expect(mmgdQuedaAtipica(231.5, 792)).toBe(true);
+    expect(mmgdQuedaAtipica(400, 792)).toBe(false);
+    expect(mmgdQuedaAtipica(231.5, null)).toBe(false);
+  });
+  it("expressa a razão geração/consumo em %", () => {
+    expect(razaoPct(0.5)).toBe(50);
+    expect(razaoPct(1.37)).toBe(137);
+  });
+});
