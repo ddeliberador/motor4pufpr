@@ -35,6 +35,150 @@ export type Database = {
         }
         Relationships: []
       }
+      aneel_sync: {
+        Row: {
+          detalhe: string | null
+          disparado_em: string
+          id: number
+          potencia_gw: number | null
+          processado_em: string | null
+          registros: number | null
+          req_ids: number[]
+          situacao: string | null
+        }
+        Insert: {
+          detalhe?: string | null
+          disparado_em?: string
+          id?: never
+          potencia_gw?: number | null
+          processado_em?: string | null
+          registros?: number | null
+          req_ids: number[]
+          situacao?: string | null
+        }
+        Update: {
+          detalhe?: string | null
+          disparado_em?: string
+          id?: never
+          potencia_gw?: number | null
+          processado_em?: string | null
+          registros?: number | null
+          req_ids?: number[]
+          situacao?: string | null
+        }
+        Relationships: []
+      }
+      aneel_usinas: {
+        Row: {
+          aneel_id: number
+          carregado_em: string
+          ceg: string | null
+          data_conjunto: string | null
+          data_entrada_operacao: string | null
+          fonte_combustivel: string | null
+          garantia_fisica_kw: number | null
+          latitude: number | null
+          longitude: number | null
+          municipio: string | null
+          municipios: string | null
+          nome: string | null
+          origem_combustivel: string | null
+          potencia_fiscalizada_kw: number | null
+          potencia_kw: number | null
+          potencia_outorgada_kw: number | null
+          proprietarios: string | null
+          tipo: string | null
+          uf: string | null
+        }
+        Insert: {
+          aneel_id: number
+          carregado_em?: string
+          ceg?: string | null
+          data_conjunto?: string | null
+          data_entrada_operacao?: string | null
+          fonte_combustivel?: string | null
+          garantia_fisica_kw?: number | null
+          latitude?: number | null
+          longitude?: number | null
+          municipio?: string | null
+          municipios?: string | null
+          nome?: string | null
+          origem_combustivel?: string | null
+          potencia_fiscalizada_kw?: number | null
+          potencia_kw?: number | null
+          potencia_outorgada_kw?: number | null
+          proprietarios?: string | null
+          tipo?: string | null
+          uf?: string | null
+        }
+        Update: {
+          aneel_id?: number
+          carregado_em?: string
+          ceg?: string | null
+          data_conjunto?: string | null
+          data_entrada_operacao?: string | null
+          fonte_combustivel?: string | null
+          garantia_fisica_kw?: number | null
+          latitude?: number | null
+          longitude?: number | null
+          municipio?: string | null
+          municipios?: string | null
+          nome?: string | null
+          origem_combustivel?: string | null
+          potencia_fiscalizada_kw?: number | null
+          potencia_kw?: number | null
+          potencia_outorgada_kw?: number | null
+          proprietarios?: string | null
+          tipo?: string | null
+          uf?: string | null
+        }
+        Relationships: []
+      }
+      ator_ajuste_manual: {
+        Row: {
+          acao: string
+          categoria: string | null
+          criado_em: string | null
+          equivale_a: string | null
+          motivo: string
+          research_location_id: string
+          tipo: string | null
+        }
+        Insert: {
+          acao: string
+          categoria?: string | null
+          criado_em?: string | null
+          equivale_a?: string | null
+          motivo: string
+          research_location_id: string
+          tipo?: string | null
+        }
+        Update: {
+          acao?: string
+          categoria?: string | null
+          criado_em?: string | null
+          equivale_a?: string | null
+          motivo?: string
+          research_location_id?: string
+          tipo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ator_ajuste_manual_equivale_a_fkey"
+            columns: ["equivale_a"]
+            isOneToOne: false
+            referencedRelation: "research_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ator_ajuste_manual_research_location_id_fkey"
+            columns: ["research_location_id"]
+            isOneToOne: true
+            referencedRelation: "research_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ator_uf_resolvida: {
         Row: {
           confianca: string
@@ -110,6 +254,106 @@ export type Database = {
           nota_desenvolvimento?: string | null
           resolucao?: string | null
           titulo?: string
+        }
+        Relationships: []
+      }
+      cabos_aterragens: {
+        Row: {
+          distancia_km: number | null
+          fonte: string
+          latitude: number | null
+          longitude: number | null
+          municipio_proximo: string | null
+          nome: string | null
+          ponto_id: string
+          snapshot: string | null
+          uf: string | null
+        }
+        Insert: {
+          distancia_km?: number | null
+          fonte: string
+          latitude?: number | null
+          longitude?: number | null
+          municipio_proximo?: string | null
+          nome?: string | null
+          ponto_id: string
+          snapshot?: string | null
+          uf?: string | null
+        }
+        Update: {
+          distancia_km?: number | null
+          fonte?: string
+          latitude?: number | null
+          longitude?: number | null
+          municipio_proximo?: string | null
+          nome?: string | null
+          ponto_id?: string
+          snapshot?: string | null
+          uf?: string | null
+        }
+        Relationships: []
+      }
+      cabos_cabo_ponto: {
+        Row: {
+          cabo_id: string
+          ponto_id: string
+        }
+        Insert: {
+          cabo_id: string
+          ponto_id: string
+        }
+        Update: {
+          cabo_id?: string
+          ponto_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cabos_cabo_ponto_cabo_id_fkey"
+            columns: ["cabo_id"]
+            isOneToOne: false
+            referencedRelation: "cabos_lista"
+            referencedColumns: ["cabo_id"]
+          },
+          {
+            foreignKeyName: "cabos_cabo_ponto_ponto_id_fkey"
+            columns: ["ponto_id"]
+            isOneToOne: false
+            referencedRelation: "cabos_aterragens"
+            referencedColumns: ["ponto_id"]
+          },
+          {
+            foreignKeyName: "cabos_cabo_ponto_ponto_id_fkey"
+            columns: ["ponto_id"]
+            isOneToOne: false
+            referencedRelation: "vw_cabos_aterragens"
+            referencedColumns: ["ponto_id"]
+          },
+        ]
+      }
+      cabos_lista: {
+        Row: {
+          cabo_id: string
+          fonte: string
+          internacional: boolean | null
+          nome: string | null
+          snapshot: string | null
+          tipo: string | null
+        }
+        Insert: {
+          cabo_id: string
+          fonte: string
+          internacional?: boolean | null
+          nome?: string | null
+          snapshot?: string | null
+          tipo?: string | null
+        }
+        Update: {
+          cabo_id?: string
+          fonte?: string
+          internacional?: boolean | null
+          nome?: string | null
+          snapshot?: string | null
+          tipo?: string | null
         }
         Relationships: []
       }
@@ -1794,6 +2038,35 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_cabos_aterragens: {
+        Row: {
+          cabos: string | null
+          cabos_costeiros: number | null
+          cabos_fluviais: number | null
+          cabos_internacionais: number | null
+          latitude: number | null
+          longitude: number | null
+          municipio_proximo: string | null
+          nome: string | null
+          ponto_id: string | null
+          snapshot: string | null
+          uf: string | null
+        }
+        Relationships: []
+      }
+      vw_cabos_uf: {
+        Row: {
+          cabos_costeiros: number | null
+          cabos_fluviais: number | null
+          cabos_internacionais: number | null
+          nomes_fluviais: string | null
+          nomes_internacionais: string | null
+          pontos: number | null
+          pontos_internacionais: number | null
+          uf: string | null
+        }
+        Relationships: []
+      }
       vw_embrapii_pi_ano: {
         Row: {
           ano: number | null
@@ -1849,6 +2122,33 @@ export type Database = {
           unidade_embrapii: string | null
           valor_total_ipca: number | null
           vertical: string | null
+        }
+        Relationships: []
+      }
+      vw_energia_uf: {
+        Row: {
+          data_aneel: string | null
+          fonte_principal: string | null
+          gw_operacao: number | null
+          maior_usina: string | null
+          maior_usina_mw: number | null
+          maior_usina_tipo: string | null
+          mw_operacao: number | null
+          pct_brasil: number | null
+          pct_renovavel: number | null
+          uf: string | null
+          usinas: number | null
+        }
+        Relationships: []
+      }
+      vw_energia_uf_tipo: {
+        Row: {
+          fonte: string | null
+          mw: number | null
+          renovavel: boolean | null
+          tipo: string | null
+          uf: string | null
+          usinas: number | null
         }
         Relationships: []
       }
@@ -2042,6 +2342,9 @@ export type Database = {
       }
     }
     Functions: {
+      aneel_br_num: { Args: { v: string }; Returns: number }
+      aneel_disparar: { Args: never; Returns: number }
+      aneel_processar: { Args: never; Returns: string }
       calc_quality_score: {
         Args: {
           p_cnpj: string
