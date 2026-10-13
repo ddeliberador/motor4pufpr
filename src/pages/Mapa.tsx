@@ -820,7 +820,7 @@ export default function Mapa() {
       setLayerAtiva: (v) => { if (v) setLayer2Ativa(true); setL2Cabos(v); },
     },
     universidade: semLayer, instituto: semLayer, laboratorio: semLayer, startup: semLayer,
-    supercomputacao: semLayer, embrapii: semLayer, habitat: semLayer, outro: semLayer,
+    supercomputacao: semLayer, embrapii: semLayer, habitat: semLayer, governo: semLayer, outro: semLayer,
   };
 
   // Listagem: atores vinculados às Layers 4-7 primeiro; depois infraestrutura
