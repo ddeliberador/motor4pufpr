@@ -17,7 +17,7 @@ describe("infraestrutura por estado", () => {
   });
   it("atribui ponto à UF que o contém e, na costa, à mais próxima", () => {
     expect(ufDoPonto(0.5, 0.5, feats)).toEqual({ uf: "AA", aproximado: false });
-    expect(ufDoPonto(3.2, 0.5, feats)).toEqual({ uf: "BB", aproximado: true });
+    expect(ufDoPonto(3.1, 0.2, feats)).toEqual({ uf: "BB", aproximado: true });
     expect(ufDoPonto(10, 10, feats)).toBeNull();
   });
   it("conta cabos por ponto de aterragem brasileiro", () => {
