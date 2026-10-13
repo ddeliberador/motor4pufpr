@@ -1042,6 +1042,65 @@ export type Database = {
         }
         Relationships: []
       }
+      energia_indicadores_epe: {
+        Row: {
+          indicador: string
+          nome: string
+          nota: string | null
+          tabela: string
+          unidade: string
+        }
+        Insert: {
+          indicador: string
+          nome: string
+          nota?: string | null
+          tabela: string
+          unidade: string
+        }
+        Update: {
+          indicador?: string
+          nome?: string
+          nota?: string | null
+          tabela?: string
+          unidade?: string
+        }
+        Relationships: []
+      }
+      energia_uf_epe: {
+        Row: {
+          ano: number
+          carregado_em: string | null
+          edicao: string
+          indicador: string
+          uf: string
+          valor: number | null
+        }
+        Insert: {
+          ano: number
+          carregado_em?: string | null
+          edicao?: string
+          indicador: string
+          uf: string
+          valor?: number | null
+        }
+        Update: {
+          ano?: number
+          carregado_em?: string | null
+          edicao?: string
+          indicador?: string
+          uf?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "energia_uf_epe_indicador_fkey"
+            columns: ["indicador"]
+            isOneToOne: false
+            referencedRelation: "energia_indicadores_epe"
+            referencedColumns: ["indicador"]
+          },
+        ]
+      }
       indicadores_uf: {
         Row: {
           ano: number
@@ -2122,6 +2181,61 @@ export type Database = {
           unidade_embrapii: string | null
           valor_total_ipca: number | null
           vertical: string | null
+        }
+        Relationships: []
+      }
+      vw_energia_balanco_uf: {
+        Row: {
+          ano: number | null
+          capacidade_mw_epe: number | null
+          classe_principal: string | null
+          consumidores: number | null
+          consumo_gwh: number | null
+          consumo_per_capita_kwh: number | null
+          crescimento_consumo_5a_pct: number | null
+          fonte: string | null
+          geracao_gwh: number | null
+          indice_relativo: number | null
+          mmgd_mw: number | null
+          pct_comercial: number | null
+          pct_consumo_brasil: number | null
+          pct_geracao_brasil: number | null
+          pct_industrial: number | null
+          pct_industrial_brasil: number | null
+          pct_mmgd: number | null
+          pct_outros: number | null
+          pct_residencial: number | null
+          pct_rural: number | null
+          per_capita_brasil: number | null
+          populacao_estimada: number | null
+          razao_brasil: number | null
+          razao_geracao_consumo: number | null
+          saldo_bruto_gwh: number | null
+          situacao: string | null
+          uf: string | null
+        }
+        Relationships: []
+      }
+      vw_energia_consumo_classe_uf: {
+        Row: {
+          ano: number | null
+          classe: string | null
+          gwh: number | null
+          ordem: number | null
+          pct_do_consumo: number | null
+          rotulo: string | null
+          uf: string | null
+        }
+        Relationships: []
+      }
+      vw_energia_serie_uf: {
+        Row: {
+          ano: number | null
+          consumo_gwh: number | null
+          geracao_gwh: number | null
+          indice_relativo: number | null
+          razao_geracao_consumo: number | null
+          uf: string | null
         }
         Relationships: []
       }
