@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import AtoresDrawer from "./AtoresDrawer";
 import BalancoEnergia from "./BalancoEnergia";
 import CruzamentoInfraestrutura from "./CruzamentoInfraestrutura";
+import PainelEstadoInfraestrutura, { type DetalheInfra } from "./PainelEstadoInfraestrutura";
 import type { CargaBalanco, EstadoCruzamento } from "@/lib/cruzamentoInfra";
 import { supabase } from "@/integrations/supabase/client";
 import { carregarDatacenters } from "@/lib/bi/datasets";
@@ -66,6 +67,7 @@ export default function Cenario1Infraestrutura() {
   const [listaUsinasUF, setListaUsinasUF] = useState<string | null>(null);
   const [listaDcUF, setListaDcUF] = useState<string | null>(null);
   const [ufSelecionada, setUfSelecionada] = useState("PR");
+  const [painelUF, setPainelUF] = useState<string | null>(null);
   const [balanco, setBalanco] = useState<CargaBalanco>({ status: "carregando" });
 
   useEffect(() => {
@@ -151,6 +153,35 @@ export default function Cenario1Infraestrutura() {
   }), [balanco, backhaul, ufsCabo, dcUF, cabos.status, dcs.status]);
 
   const topE = energiaUF[0];
+  const detalhePainel = useMemo<DetalheInfra | null>(() => {
+    if (!painelUF) return null;
+    const e = energiaUF.find(x => x.uf === painelUF);
+    const b = balanco.status === "ok" ? balanco.dados.find(x => x.uf === painelUF) : undefined;
+    const c = cabos.status === "ok" ? cabos.dados.uf.find(x => x.uf === painelUF) : undefined;
+    const bh = backhaul.find(x => x.uf === painelUF);
+    const numero = (v: number | null | undefined, unidade = "") => v == null || !Number.isFinite(v) ? "indisponível" : `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}${unidade}`;
+    return {
+      energia: [
+        { rotulo: "Geração anual · EPE", valor: numero(b?.geracao_gwh, " GWh") },
+        { rotulo: "Consumo anual da rede · EPE", valor: numero(b?.consumo_gwh, " GWh") },
+        { rotulo: "Consumo por habitante", valor: numero(b?.consumo_per_capita_kwh, " kWh") },
+        { rotulo: "Geração distribuída (MMGD)", valor: numero(b?.mmgd_mw, " MW") },
+        { rotulo: "Potência centralizada · ANEEL", valor: numero(e?.mw_operacao, " MW") },
+        { rotulo: "Participação renovável", valor: numero(e?.pct_renovavel, "%") },
+        { rotulo: "Usinas em operação", valor: numero(e?.usinas) },
+        { rotulo: "Fonte principal", valor: e?.fonte_principal ?? "indisponível" },
+      ],
+      conectividade: [
+        { rotulo: "Municípios com fibra", valor: bh ? `${bh.com} de ${bh.com + bh.sem} (${bh.pct}%)` : "indisponível" },
+        { rotulo: "Municípios sem backhaul", valor: numero(bh?.sem) },
+        { rotulo: "Cabos internacionais", valor: cabos.status === "ok" ? String(c?.cabos_internacionais ?? 0) : "indisponível" },
+        { rotulo: "Ligações internacionais", valor: cabos.status === "ok" ? c?.nomes_internacionais ?? "Sem chegada registrada" : "indisponível" },
+        { rotulo: "Infovias fluviais", valor: cabos.status === "ok" ? String(c?.cabos_fluviais ?? 0) : "indisponível" },
+        { rotulo: "Nomes das infovias", valor: cabos.status === "ok" ? c?.nomes_fluviais ?? "Sem registro" : "indisponível" },
+      ],
+      datacenters: dcs.status === "ok" ? dcs.dados.filter(x => x.uf === painelUF).sort((a, b) => a.nome.localeCompare(b.nome)) : null,
+    };
+  }, [painelUF, energiaUF, balanco, cabos, backhaul, dcs]);
   const topDc = dcUF[0];
   useEffect(() => {
     if (!listaUsinasUF) return;
@@ -315,7 +346,8 @@ export default function Cenario1Infraestrutura() {
 
       {/* 5. Cruzamento */}
       <CruzamentoInfraestrutura linhas={linhas} totalDc={dcs.status === "ok" ? totDc : null}
-        uf={ufSelecionada} onUfChange={setUfSelecionada} carregando={balanco.status === "carregando" || dcs.status === "carregando"} />
+        uf={ufSelecionada} onUfChange={uf => { setUfSelecionada(uf); setPainelUF(uf); }} carregando={balanco.status === "carregando" || dcs.status === "carregando"} />
+      <PainelEstadoInfraestrutura estado={linhas.find(l => l.uf === painelUF) ?? null} detalhe={detalhePainel} onClose={() => setPainelUF(null)} />
 
       {/* Notas metodológicas */}
       <footer className="rounded-xl border border-border bg-muted/30 p-5 text-xs leading-relaxed text-muted-foreground">
