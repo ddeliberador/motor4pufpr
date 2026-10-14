@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { registrarSerieOpenAlex } from "./temporal_openalex.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -167,6 +168,12 @@ async function searchOpenAlex(query: string) {
     );
     resolved = null;
   }
+
+  // Série anual (publicações BR e coautorias internacionais) em segundo plano.
+  registrarSerieOpenAlex({
+    tema: query, conceito: resolved?.id ?? null, headers,
+    urlBr: resolved ? `${base}${brFilter}` : `https://api.openalex.org/works?search=${encoded}&filter=institutions.country_code:BR`,
+  });
 
 
   // Mapeamento básico dos papers
