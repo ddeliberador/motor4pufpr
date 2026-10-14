@@ -95,46 +95,83 @@ const SH4 = ["8541", "8542", "8507", "8471", "8517", "9001"]; // posições
 const SH6 = ["854143", "854470"]; // subposições: módulos fotovoltaicos, cabos de fibra
 const COMEX = "https://api-comexstat.mdic.gov.br/general";
 
-async function comexPost(body: unknown): Promise<Record<string, string>[]> {
-  for (let tentativa = 0; tentativa < 10; tentativa++) {
-    const r = await fetch(COMEX, {
-      method: "POST", headers: { ...UA, "Content-Type": "application/json" }, body: JSON.stringify(body),
-      signal: AbortSignal.timeout(90_000),
-    });
-    if (r.status === 429) { await dormir(15_000 + tentativa * 3000); continue; }
+// Uma requisição por vez; retry com backoff exponencial em 429 e 5xx, respeitando um prazo.
+async function comexPost(body: unknown, prazo: number): Promise<Record<string, string>[]> {
+  let ultimo = "";
+  for (let t = 0; t < 7; t++) {
+    let r: Response;
+    try {
+      r = await fetch(COMEX, {
+        method: "POST", headers: { ...UA, "Content-Type": "application/json" }, body: JSON.stringify(body),
+        signal: AbortSignal.timeout(Math.max(10_000, Math.min(90_000, prazo - Date.now()))),
+      });
+    } catch (e) { r = new Response(null, { status: 599 }); ultimo = msg(e); }
+    if (r.status === 429 || r.status >= 500) {
+      ultimo = ultimo || `HTTP ${r.status}`;
+      const espera = Math.min(10_000 * 2 ** t, 120_000);
+      if (Date.now() + espera > prazo) break;
+      await dormir(espera); ultimo = ""; continue;
+    }
     if (!r.ok) throw new Error(`Comex Stat HTTP ${r.status}: ${(await r.text()).slice(0, 200)}`);
     const p = await r.json();
     if (!p?.success) throw new Error(`Comex Stat: ${JSON.stringify(p).slice(0, 200)}`);
     return p.data?.list ?? [];
   }
-  throw new Error("Comex Stat: limite de requisições (429) persistente");
+  throw new Error(`Comex Stat indisponível após retries (${ultimo || "429/5xx"})`);
 }
 const codigo = (l: Record<string, string>) => l.headingCode ?? l.subHeadingCode ?? "";
 
-async function jobComex(sb: SupabaseClient, de: string, ate: string) {
+type Consulta = { flow: "import" | "export"; filtro: "heading" | "subHeading"; valores: string[]; pais: boolean };
+const CONSULTAS: Consulta[] = [
+  { flow: "import", filtro: "heading", valores: SH4, pais: true },
+  { flow: "import", filtro: "subHeading", valores: SH6, pais: true },
+  { flow: "export", filtro: "heading", valores: SH4, pais: false },
+  { flow: "export", filtro: "subHeading", valores: SH6, pais: false },
+];
+const rotulo = (c: Consulta) => `${c.flow === "import" ? "importação" : "exportação"} ${c.filtro === "heading" ? "SH4" : "SH6"}`;
+const indicadorDe = (c: Consulta) => c.flow === "import" ? "comex.importacao_usd_fob" : "comex.exportacao_usd_fob";
+
+// Já existe dado desta consulta no período? (retoma de onde parou, sem pedir de novo)
+async function consultaJaGravada(sb: SupabaseClient, c: Consulta, de: string, ate: string) {
+  const { count } = await sb.from("observacoes").select("id", { count: "exact", head: true })
+    .eq("indicador_id", indicadorDe(c)).eq("segmento", "").in("entidade_chave", c.valores)
+    .gte("periodo_referencia", `${de}-01`).lte("periodo_referencia", `${ate}-01`);
+  return (count ?? 0) > 0;
+}
+
+export type Resultado = { status: "ok" | "parcial"; mensagem: string };
+
+async function jobComex(sb: SupabaseClient, de: string, ate: string, retomar: boolean): Promise<Resultado> {
   const inicio = Date.now();
+  const prazo = inicio + 240_000; // cabe no timeout de 300 s do disparo
   const periodo = { from: de, to: ate };
-  const consultas: { flow: "import" | "export"; filtro: "heading" | "subHeading"; valores: string[]; pais: boolean }[] = [
-    { flow: "import", filtro: "heading", valores: SH4, pais: true },
-    { flow: "import", filtro: "subHeading", valores: SH6, pais: true },
-    { flow: "export", filtro: "heading", valores: SH4, pais: false },
-    { flow: "export", filtro: "subHeading", valores: SH6, pais: false },
-  ];
-  const respostas: Record<string, string>[][] = [];
-  for (const [i, c] of consultas.entries()) {
-    if (i > 0) await dormir(12_000);
-    respostas.push(await comexPost({
-      flow: c.flow, monthDetail: true, period: periodo,
-      filters: [{ filter: c.filtro, values: c.valores }],
-      details: c.pais ? [c.filtro, "country"] : [c.filtro], metrics: ["metricFOB", "metricKG"],
-    }));
+  const respostas = new Map<number, Record<string, string>[]>();
+  const faltando: string[] = [];
+  let primeira = true;
+  for (const [i, c] of CONSULTAS.entries()) {
+    if (retomar && await consultaJaGravada(sb, c, de, ate)) continue;
+    if (Date.now() > prazo - 20_000) { faltando.push(`${rotulo(c)} ${de} a ${ate}`); continue; }
+    if (!primeira) await dormir(15_000);
+    primeira = false;
+    try {
+      respostas.set(i, await comexPost({
+        flow: c.flow, monthDetail: true, period: periodo,
+        filters: [{ filter: c.filtro, values: c.valores }],
+        details: c.pais ? [c.filtro, "country"] : [c.filtro], metrics: ["metricFOB", "metricKG"],
+      }, prazo));
+    } catch (e) { faltando.push(`${rotulo(c)} ${de} a ${ate} (${msg(e)})`); }
   }
-  const hash = await sha256(JSON.stringify(respostas));
+  const resumoFalta = () => faltando.length ? `; faltando: ${faltando.join("; ")}` : "";
+  if (!respostas.size) {
+    if (faltando.length) return { status: "parcial", mensagem: `${de} a ${ate}: nada gravado${resumoFalta()}` };
+    return { status: "ok", mensagem: `${de} a ${ate}: já gravado` };
+  }
+  const hash = await sha256(JSON.stringify([...respostas]));
   const job = `coleta-temporal:comex:${de}_${ate}`;
-  if ((await ultimaColetaOk(sb, job))?.resposta_hash === hash) return `${de} a ${ate}: sem mudança`;
+  if (!faltando.length && (await ultimaColetaOk(sb, job))?.resposta_hash === hash) return { status: "ok", mensagem: `${de} a ${ate}: sem mudança` };
   const coletaId = await iniciarColeta(sb, {
     jobId: job, fonte: "comexstat", versaoConector: VERSAO, respostaHash: hash,
-    escopo: { periodo, sh4: SH4, sh6: SH6, linhas: respostas.map((r) => r.length) },
+    escopo: { periodo, sh4: SH4, sh6: SH6, consultas: [...respostas.keys()].map((i) => rotulo(CONSULTAS[i])), faltando },
   });
   try {
     const comum = { natureza: "fluxo" as const, periodicidade: "mensal", base_preco: "nominal", camada_mapa: "dependencia", fonte_chave: null };
@@ -149,12 +186,13 @@ async function jobComex(sb: SupabaseClient, de: string, ate: string) {
     const add = (id: string, ncm: string, seg: string, mes: string, v: number, meta: Record<string, unknown>) =>
       linhas.push({ indicador_id: id, entidade_tipo: "ncm", entidade_chave: ncm, segmento: seg, periodo_referencia: `${mes}-01`,
         granularidade: "mes", valor: v, origem_temporal: "serie_da_fonte", metadados: meta });
-    for (const [i, c] of consultas.entries()) {
+    for (const [i, resp] of respostas) {
+      const c = CONSULTAS[i];
       const nivel = c.filtro === "heading" ? "SH4" : "SH6";
-      const total = new Map<string, { fob: number; kg: number }>(); // ncm|mes
-      const somaPais = new Map<string, number>(); // ncm|pais -> fob no período
-      for (const l of respostas[i]) {
-        const k = `${codigo(l)}|${l.year}-${l.monthNumber}`;
+      const total = new Map<string, { fob: number; kg: number }>();
+      const somaPais = new Map<string, number>();
+      for (const l of resp) {
+        const k = `${codigo(l)}|${l.year}-${String(l.monthNumber).padStart(2, "0")}`;
         const t = total.get(k) ?? { fob: 0, kg: 0 };
         t.fob += Number(l.metricFOB) || 0; t.kg += Number(l.metricKG) || 0;
         total.set(k, t);
@@ -173,10 +211,10 @@ async function jobComex(sb: SupabaseClient, de: string, ate: string) {
         const porNcm = new Map<string, [string, number][]>();
         for (const [k, v] of somaPais) { const [n, p] = k.split("|"); porNcm.set(n, [...(porNcm.get(n) ?? []), [p, v]]); }
         for (const [n, arr] of porNcm) arr.sort((a, b) => b[1] - a[1]).slice(0, 10).forEach(([p]) => top.add(`${n}|${p}`));
-        for (const l of respostas[i]) {
+        for (const l of resp) {
           const ncm = codigo(l);
           if (!top.has(`${ncm}|${l.country}`)) continue;
-          const mes = `${l.year}-${l.monthNumber}`;
+          const mes = `${l.year}-${String(l.monthNumber).padStart(2, "0")}`;
           const meta = { fonte: "Comex Stat MDIC", nivel, recorte: `10 principais países de origem em ${de} a ${ate}` };
           add("comex.importacao_usd_fob", ncm, `pais:${l.country}`, mes, Number(l.metricFOB) || 0, meta);
           add("comex.importacao_kg", ncm, `pais:${l.country}`, mes, Number(l.metricKG) || 0, meta);
@@ -184,12 +222,26 @@ async function jobComex(sb: SupabaseClient, de: string, ate: string) {
       }
     }
     const obs = await registrarObservacoes(sb, { coletaId, linhas });
-    await finalizarColeta(sb, coletaId, { ok: true, found: linhas.length, inserted: obs.inseridas, inicioMs: inicio });
-    return `${de} a ${ate}: ${obs.inseridas} observações`;
+    await finalizarColeta(sb, coletaId, { ok: !faltando.length, found: linhas.length, inserted: obs.inseridas, inicioMs: inicio,
+      error: faltando.length ? `parcial: ${faltando.join("; ")}` : undefined });
+    return { status: faltando.length ? "parcial" : "ok", mensagem: `${de} a ${ate}: ${obs.inseridas} observações${resumoFalta()}` };
   } catch (e) {
     await finalizarColeta(sb, coletaId, { ok: false, error: msg(e), inicioMs: inicio });
     throw e;
   }
+}
+
+// Backfill: processa o primeiro ano (2015 em diante) que ainda tem consulta sem dado.
+async function backfillComex(sb: SupabaseClient): Promise<Resultado> {
+  const atual = new Date().getUTCFullYear();
+  for (let a = 2015; a <= atual; a++) {
+    let falta = false;
+    for (const c of CONSULTAS) if (!(await consultaJaGravada(sb, c, `${a}-01`, `${a}-12`))) { falta = true; break; }
+    if (!falta) continue;
+    const r = await jobComex(sb, `${a}-01`, `${a}-12`, true);
+    return { status: "parcial", mensagem: `ano ${a}: ${r.mensagem}` };
+  }
+  return { status: "ok", mensagem: "concluído: todos os anos desde 2015 têm dado nas quatro consultas" };
 }
 
 async function ultimoMesComex(): Promise<string> {
@@ -260,7 +312,7 @@ async function jobOpenalex(sb: SupabaseClient) {
     const add = (id: string, g: { key: string; count: number }[]) => {
       for (const x of g) {
         const ano = Number(x.key);
-        if (!Number.isInteger(ano) || ano < 1900) continue;
+        if (!Number.isInteger(ano) || ano < 1950 || ano > new Date().getUTCFullYear()) continue;
         linhas.push({ indicador_id: id, entidade_tipo: "tema", entidade_chave: "total", periodo_referencia: `${ano}-01-01`,
           granularidade: "ano", valor: x.count, origem_temporal: "serie_da_fonte", metadados: { fonte: "OpenAlex", recorte: "todas as publicações" } });
       }
@@ -279,7 +331,7 @@ async function jobOpenalex(sb: SupabaseClient) {
 // ---------------------------------------------------------------- execução
 const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-async function executar(sb: SupabaseClient, job: string, p: Record<string, unknown>): Promise<string> {
+async function executar(sb: SupabaseClient, job: string, p: Record<string, unknown>): Promise<string | Resultado> {
   switch (job) {
     case "peeringdb": return await jobPeeringdb(sb);
     case "cabos":
@@ -292,9 +344,10 @@ async function executar(sb: SupabaseClient, job: string, p: Record<string, unkno
     case "ipca": return await jobIpca(sb);
     case "openalex": return await jobOpenalex(sb);
     case "comex": {
-      if (p.ano) { const a = Number(p.ano); return await jobComex(sb, `${a}-01`, `${a}-12`); }
-      const ate = await ultimoMesComex();
-      return await jobComex(sb, menosMeses(ate, 2), ate);
+      if (p.proximo) return await backfillComex(sb);
+      if (p.ano) { const a = Number(p.ano); return await jobComex(sb, `${a}-01`, `${a}-12`, true); }
+      const ate = await ultimoMesComex(); // últimos 3 meses publicados
+      return await jobComex(sb, menosMeses(ate, 2), ate, false);
     }
     default: throw new Error(`job desconhecido: ${job}`);
   }
@@ -314,7 +367,10 @@ Deno.serve(async (req) => {
   const agendaJob = String(p.agenda ?? job);
   const tarefa = (async () => {
     let status = "ok", mensagem = "";
-    try { mensagem = await executar(sb, job, p); } catch (e) {
+    try {
+      const r = await executar(sb, job, p);
+      if (typeof r === "string") mensagem = r; else ({ status, mensagem } = r);
+    } catch (e) {
       status = "erro"; mensagem = msg(e);
       // Falha antes de abrir coleta (ex.: API fora): registra em ingest_runs mesmo assim.
       const id = await iniciarColeta(sb, { jobId: `coleta-temporal:${job}`, fonte: job, versaoConector: VERSAO, escopo: p }).catch(() => null);

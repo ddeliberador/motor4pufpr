@@ -2623,6 +2623,40 @@ export type Database = {
           },
         ]
       }
+      v_series_validas: {
+        Row: {
+          capturado_em: string | null
+          coleta_id: string | null
+          entidade_chave: string | null
+          entidade_tipo: string | null
+          granularidade: string | null
+          id: number | null
+          indicador_id: string | null
+          metadados: Json | null
+          origem_temporal: string | null
+          periodo_referencia: string | null
+          segmento: string | null
+          valor: number | null
+          valor_texto: string | null
+          versao_metodo: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "observacoes_coleta_id_fkey"
+            columns: ["coleta_id"]
+            isOneToOne: false
+            referencedRelation: "ingest_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "observacoes_indicador_id_fkey"
+            columns: ["indicador_id"]
+            isOneToOne: false
+            referencedRelation: "indicadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vw_ator_camada: {
         Row: {
           ator_id: string | null

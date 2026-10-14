@@ -43,7 +43,7 @@ export function registrarSerieOpenAlex(p: {
       const add = (id: string, g: { key: string; count: number }[] | undefined) => {
         for (const x of g ?? []) {
           const ano = Number(x.key);
-          if (!Number.isInteger(ano) || ano < 1900) continue;
+          if (!Number.isInteger(ano) || ano < 1950 || ano > new Date().getUTCFullYear()) continue;
           linhas.push({
             indicador_id: id, entidade_tipo: "tema", entidade_chave: tema, periodo_referencia: `${ano}-01-01`,
             granularidade: "ano", valor: x.count, origem_temporal: "serie_da_fonte",
