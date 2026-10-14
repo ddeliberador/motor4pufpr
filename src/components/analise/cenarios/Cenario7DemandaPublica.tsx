@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, ChevronDown, CircleHelp, ExternalLink, FileText, Landmark, DoorOpen } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, CircleHelp, Download, ExternalLink, FileText, Landmark, DoorOpen } from "lucide-react";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
 import { fetchAll } from "@/lib/fetchAll";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import MetricaCartao from "./MetricaCartao";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
-import { COBERTURAS, contagens, destacarTermos, filtrarDesafios, fraseLacuna, ordenarLacunas, rotuloCobertura, type Cobertura, type Desafio, type FiltrosDesafio, type LacunaArea } from "@/lib/demandaPublica";
+import { COBERTURAS, contagens, destacarTermos, exportarComSolucaoExcel, filtrarDesafios, fraseLacuna, ordenarLacunas, rotuloCobertura, type Cobertura, type Desafio, type FiltrosDesafio, type LacunaArea } from "@/lib/demandaPublica";
 
 type UfLinha = { uf: string | null; desafios: number; com_solucao_relacionada: number; sem_solucao_catalogada: number; abertos: number; municipais: number; estaduais: number; federais: number };
 type Projeto = { cod_projeto: string; termos_em_comum: string[]; titulo: string | null; ue_sigla: string | null; ue_uf: string | null; ano: number | null };
