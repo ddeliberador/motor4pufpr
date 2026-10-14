@@ -21,6 +21,7 @@ export default function CruzamentoInfraestrutura({ linhas, totalDc, uf, onUfChan
   linhas: EstadoCruzamento[]; totalDc: number | null; uf: string; onUfChange: (uf: string) => void; carregando: boolean;
 }) {
   const [ordem, setOrdem] = useState<{ col: Coluna; desc: boolean }>({ col: "dc", desc: true });
+  const totalRanking = linhas.filter(l => l.rankTarifa != null).length;
   const resumo = resumoCruzamento(linhas, totalDc);
   const ordenadas = [...linhas].sort((a, b) => {
     const va = a[ordem.col], vb = b[ordem.col];
@@ -70,7 +71,7 @@ export default function CruzamentoInfraestrutura({ linhas, totalDc, uf, onUfChan
         })}
       </div>
       {linhas.some(l => l.situacao == null) && <div><h3 className="mb-3 text-sm text-muted-foreground">Balanço energético indisponível</h3><div className="grid grid-cols-2 gap-2 lg:grid-cols-6">{linhas.filter(l => l.situacao == null).map(cartao)}</div></div>}
-      <p className="text-[11px] text-muted-foreground">Situação comparada à relação geração/consumo do Brasil. Energia sem processamento: estados exportadores com até 2 datacenters. Cabo indica apenas ligação internacional; fibra indica municípios com backhaul.</p>
+      <p className="text-[11px] text-muted-foreground">Situação comparada à relação geração/consumo do Brasil. Energia sem processamento: estados exportadores com até 2 datacenters. Ranking de custo: tarifa residencial (ANEEL), do mais barato (1º) ao mais caro (27º). Cabo indica apenas ligação internacional; fibra indica municípios com backhaul.</p>
       <details className="border-t border-border pt-3">
         <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold"><ChevronDown size={16} />Ver como tabela</summary>
         <div className="mt-3 overflow-x-auto">
