@@ -148,6 +148,7 @@ export default function Cenario1Infraestrutura() {
   }, [dcs]);
   const totDc = dcs.status === "ok" ? dcs.dados.length : 0;
 
+  const ranksTarifa = useMemo(() => rankingTarifa(tarifas), [tarifas]);
   const linhas = useMemo<EstadoCruzamento[]>(() => Object.keys(ESTADOS).map(uf => {
     const e = balanco.status === "ok" ? balanco.dados.find(x => x.uf === uf) : undefined;
     const b = backhaul.find(x => x.uf === uf);
@@ -157,8 +158,9 @@ export default function Cenario1Infraestrutura() {
       cabo: cabos.status === "ok" ? (ufsCabo.includes(uf) ? 1 : 0) : null,
       fibra: b ? b.pct : null,
       dc: dcs.status === "ok" ? dcUF.find(x => x.uf === uf)?.n ?? 0 : null,
+      tarifa: tarifas?.[uf] ?? null, rankTarifa: ranksTarifa[uf] ?? null,
     };
-  }), [balanco, backhaul, ufsCabo, dcUF, cabos.status, dcs.status]);
+  }), [balanco, backhaul, ufsCabo, dcUF, cabos.status, dcs.status, tarifas, ranksTarifa]);
 
   const topE = energiaUF[0];
   const detalhePainel = useMemo<DetalheInfra | null>(() => {
