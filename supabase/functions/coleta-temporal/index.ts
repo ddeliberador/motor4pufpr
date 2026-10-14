@@ -131,12 +131,35 @@ const CONSULTAS: Consulta[] = [
 const rotulo = (c: Consulta) => `${c.flow === "import" ? "importação" : "exportação"} ${c.filtro === "heading" ? "SH4" : "SH6"}`;
 const indicadorDe = (c: Consulta) => c.flow === "import" ? "comex.importacao_usd_fob" : "comex.exportacao_usd_fob";
 
-// Já existe dado desta consulta no período? (retoma de onde parou, sem pedir de novo)
-async function consultaJaGravada(sb: SupabaseClient, c: Consulta, de: string, ate: string) {
-  const { count } = await sb.from("observacoes").select("id", { count: "exact", head: true })
-    .eq("indicador_id", indicadorDe(c)).eq("segmento", "").in("entidade_chave", c.valores)
-    .gte("periodo_referencia", `${de}-01`).lte("periodo_referencia", `${ate}-01`);
-  return (count ?? 0) > 0;
+function mesesEntre(de: string, ate: string) {
+  const r: string[] = [];
+  for (let m = de; m <= ate; m = menosMeses(m, -1)) r.push(m);
+  return r;
+}
+
+// Pares "ncm|mes" já consultados que a fonte não devolveu (sem fluxo real); não são pedidos de novo.
+async function semRetornoComex(sb: SupabaseClient): Promise<Set<string>> {
+  const { data } = await sb.from("ingest_runs").select("escopo").eq("fonte", "comexstat").not("escopo->sem_retorno", "is", null).limit(1000);
+  const s = new Set<string>();
+  for (const r of data ?? []) for (const k of ((r.escopo as { sem_retorno?: string[] })?.sem_retorno ?? [])) s.add(k);
+  return s;
+}
+
+// Cobertura por mês: a consulta está gravada só se todo NCM tem todos os meses esperados
+// (ou o mês já foi tentado e a fonte não devolveu nada).
+async function consultaJaGravada(sb: SupabaseClient, c: Consulta, de: string, ate: string, semRet?: Set<string>) {
+  const existentes = new Set<string>();
+  for (let off = 0; ; off += 1000) {
+    const { data, error } = await sb.from("observacoes").select("entidade_chave,periodo_referencia")
+      .eq("indicador_id", indicadorDe(c)).eq("segmento", "").in("entidade_chave", c.valores)
+      .gte("periodo_referencia", `${de}-01`).lte("periodo_referencia", `${ate}-01`)
+      .order("id").range(off, off + 999);
+    if (error) throw error;
+    for (const r of data ?? []) existentes.add(`${r.entidade_chave}|${String(r.periodo_referencia).slice(0, 7)}`);
+    if ((data ?? []).length < 1000) break;
+  }
+  const sr = semRet ?? await semRetornoComex(sb);
+  return mesesEntre(de, ate).every((m) => c.valores.every((n) => existentes.has(`${n}|${m}`) || sr.has(`${n}|${m}`)));
 }
 
 export type Resultado = { status: "ok" | "parcial"; mensagem: string };
