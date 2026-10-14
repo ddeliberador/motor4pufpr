@@ -1,10 +1,22 @@
 import { describe, it, expect } from "vitest";
-import { agregarEnergia, ufDoPonto, aterragensBrasil, type FeatureUF } from "@/lib/infraEstados";
+import { agregarEnergia, ufDoPonto, aterragensBrasil, normalizarUfInfra, type FeatureUF } from "@/lib/infraEstados";
 
 const quad = (uf: string, x0: number, y0: number): FeatureUF => ({ uf, poligonos: [[[[x0, y0], [x0 + 1, y0], [x0 + 1, y0 + 1], [x0, y0 + 1], [x0, y0]]]] });
 const feats = [quad("AA", 0, 0), quad("BB", 2, 0)];
 
 describe("infraestrutura por estado", () => {
+  it("agrupa nomes e siglas de São Paulo e Rio de Janeiro na mesma UF", () => {
+    const contagens: Record<string, number> = {};
+    for (const valor of ["SP", "São paulo", "RJ", "Rio de Janeiro", "DF", "Distrito Federal"]) {
+      const uf = normalizarUfInfra(valor);
+      if (uf) contagens[uf] = (contagens[uf] ?? 0) + 1;
+    }
+    expect(contagens).toEqual({ SP: 2, RJ: 2, DF: 2 });
+    expect(normalizarUfInfra(" sao paulo ")).toBe("SP");
+    expect(normalizarUfInfra(null)).toBeNull();
+    expect(normalizarUfInfra("")).toBeNull();
+    expect(normalizarUfInfra("desconhecido")).toBeNull();
+  });
   it("soma potência em MW e calcula % renovável como razão de somas", () => {
     const r = agregarEnergia([
       { nome: "a", tipo: "UHE", uf: "PR", municipio: "", potencia_kw: 3000 },

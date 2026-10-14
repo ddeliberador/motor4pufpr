@@ -1,5 +1,7 @@
 # Project architecture rules
 
+- Normalize datacenter state names and abbreviations to canonical UF codes in the shared frontend loader before aggregation, so charts, cards and lists count each state consistently without dropping installations.
+
 - Scenario 1 cards and state panels share MetricaCartao for primary metric presentation, keeping icon, value, label and unavailable states consistent without changing data sources.
 
 - Keep the consolidated public data-source catalog on `/bases`; `/documentacao` only links to it, so source metadata has one public home.
