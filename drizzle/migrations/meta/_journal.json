@@ -155,6 +155,13 @@
       "when": 1791994579200,
       "tag": "0021_agenda_coletas",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1791998198567,
+      "tag": "0022_v_series_validas",
+      "breakpoints": true
     }
   ]
 }
