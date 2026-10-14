@@ -1,149 +1,25 @@
-import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Lock } from "lucide-react";
-import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { Link, NavLink } from "react-router-dom";
 
-const Header = () => {
-  const location = useLocation();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user } = useAuth();
+const navigation = [
+  ["/", "Início"], ["/mapa", "Mapa"], ["/analise", "Análise"],
+  ["/bases", "Bases"], ["/sobre", "Sobre"],
+];
 
-  const isActive = (path: string) => location.pathname === path;
-
-
-
-  return (
-    <header className="fixed top-0 left-0 right-0 z-50 glass-card">
-      <div className="container-wide">
-        <nav className="flex items-center justify-between gap-3 h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 sm:gap-3 group min-w-0">
-            {/* Engrenagem SVG inline */}
-            <svg className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <rect width="64" height="64" rx="14" fill="#07101c"/>
-              <g transform="translate(32,32)">
-                <g fill="#3b82f6">
-                  <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(0)"/>
-                  <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(45)"/>
-                  <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(90)"/>
-                  <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(135)"/>
-                  <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(180)"/>
-                  <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(225)"/>
-                  <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(270)"/>
-                  <rect x="-4.5" y="-26" width="9" height="10" rx="2" transform="rotate(315)"/>
-                  <circle cx="0" cy="0" r="18" fill="#3b82f6"/>
-                </g>
-                <circle cx="0" cy="0" r="10" fill="#07101c"/>
-                <circle cx="0" cy="-3.5" r="2" fill="#3b82f6"/>
-                <rect x="-1.5" y="0.5" width="3" height="7" rx="1.2" fill="#3b82f6"/>
-              </g>
-            </svg>
-            <div className="min-w-0">
-              <span className="font-semibold text-sm sm:text-base text-foreground tracking-tight whitespace-nowrap">
-                Motor da <span className="text-primary">Inovação</span>
-              </span>
-              <span className="text-[9px] sm:text-[10px] text-muted-foreground block -mt-0.5 tracking-widest uppercase whitespace-nowrap">UFPR · PPGPP</span>
-            </div>
-          </Link>
-
-
-
-          {/* Nav Links + CTA */}
-          <div className="hidden md:flex items-center gap-4 lg:gap-6 flex-shrink-0">
-            <Link
-              to="/analise"
-              className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${isActive('/analise') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              <span className="material-symbols-outlined text-base leading-none" style={{ fontVariationSettings: '"FILL" 1' }}>bar_chart</span>
-              Análise
-            </Link>
-            <Link
-              to="/mapa"
-              className={`text-sm font-medium transition-colors ${isActive('/mapa') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Mapa
-            </Link>
-            <Link
-              to="/bases"
-              className={`text-sm font-medium transition-colors ${isActive('/bases') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Bases
-            </Link>
-            <Link
-              to="/sobre"
-              className={`text-sm font-medium transition-colors ${isActive('/sobre') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Sobre
-            </Link>
-            <Link
-              to={user ? "/gestao-pesquisa" : "/auth"}
-              title="Gestão da Pesquisa"
-              className={`p-2 rounded-lg transition-colors ${isActive('/gestao-pesquisa') ? 'text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
-            >
-              <Lock className="w-4 h-4" />
-            </Link>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
-          >
-            {mobileMenuOpen ? (
-              <X className="w-5 h-5 text-foreground" />
-            ) : (
-              <Menu className="w-5 h-5 text-foreground" />
-            )}
-          </button>
-        </nav>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border">
-            <div className="flex flex-col gap-2">
-              <Link
-                to="/analise"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${isActive('/analise') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
-              >
-                <span className="material-symbols-outlined text-base leading-none" style={{ fontVariationSettings: '"FILL" 1' }}>bar_chart</span>
-                Análise
-              </Link>
-              <Link
-                to="/mapa"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/mapa') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
-              >
-                Mapa
-              </Link>
-              <Link
-                to="/bases"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/bases') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
-              >
-                Bases
-              </Link>
-              <Link
-                to="/sobre"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/sobre') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
-              >
-                Sobre
-              </Link>
-              <Link
-                to={user ? "/gestao-pesquisa" : "/auth"}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${isActive('/gestao-pesquisa') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
-              >
-                <Lock className="w-3.5 h-3.5" />
-                Área restrita
-              </Link>
-            </div>
-          </div>
-        )}
-      </div>
-    </header>
-  );
-};
+const Header = () => (
+  <header className="fixed inset-x-0 top-0 z-50 border-b border-border bg-background text-foreground">
+    <div className="mx-auto flex min-h-20 max-w-[1120px] flex-wrap items-center justify-between gap-x-8 gap-y-1 px-4 py-4 sm:flex-nowrap sm:px-6">
+      <Link to="/" className="font-serif text-xl font-bold leading-tight focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
+        Motor da Inovação
+      </Link>
+      <nav aria-label="Navegação principal" className="flex w-full items-center justify-between gap-3 sm:w-auto sm:gap-6">
+        {navigation.map(([to, label]) => (
+          <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) =>
+            `border-b-2 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent ${isActive ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-accent"}`
+          }>{label}</NavLink>
+        ))}
+      </nav>
+    </div>
+  </header>
+);
 
 export default Header;
