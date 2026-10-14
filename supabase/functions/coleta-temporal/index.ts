@@ -312,7 +312,7 @@ async function jobOpenalex(sb: SupabaseClient) {
     const add = (id: string, g: { key: string; count: number }[]) => {
       for (const x of g) {
         const ano = Number(x.key);
-        if (!Number.isInteger(ano) || ano < 1900) continue;
+        if (!Number.isInteger(ano) || ano < 1950 || ano > new Date().getUTCFullYear()) continue;
         linhas.push({ indicador_id: id, entidade_tipo: "tema", entidade_chave: "total", periodo_referencia: `${ano}-01-01`,
           granularidade: "ano", valor: x.count, origem_temporal: "serie_da_fonte", metadados: { fonte: "OpenAlex", recorte: "todas as publicações" } });
       }
@@ -331,7 +331,7 @@ async function jobOpenalex(sb: SupabaseClient) {
 // ---------------------------------------------------------------- execução
 const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-async function executar(sb: SupabaseClient, job: string, p: Record<string, unknown>): Promise<string> {
+async function executar(sb: SupabaseClient, job: string, p: Record<string, unknown>): Promise<string | Resultado> {
   switch (job) {
     case "peeringdb": return await jobPeeringdb(sb);
     case "cabos":
@@ -344,9 +344,10 @@ async function executar(sb: SupabaseClient, job: string, p: Record<string, unkno
     case "ipca": return await jobIpca(sb);
     case "openalex": return await jobOpenalex(sb);
     case "comex": {
-      if (p.ano) { const a = Number(p.ano); return await jobComex(sb, `${a}-01`, `${a}-12`); }
-      const ate = await ultimoMesComex();
-      return await jobComex(sb, menosMeses(ate, 2), ate);
+      if (p.proximo) return await backfillComex(sb);
+      if (p.ano) { const a = Number(p.ano); return await jobComex(sb, `${a}-01`, `${a}-12`, true); }
+      const ate = await ultimoMesComex(); // últimos 3 meses publicados
+      return await jobComex(sb, menosMeses(ate, 2), ate, false);
     }
     default: throw new Error(`job desconhecido: ${job}`);
   }
@@ -366,7 +367,10 @@ Deno.serve(async (req) => {
   const agendaJob = String(p.agenda ?? job);
   const tarefa = (async () => {
     let status = "ok", mensagem = "";
-    try { mensagem = await executar(sb, job, p); } catch (e) {
+    try {
+      const r = await executar(sb, job, p);
+      if (typeof r === "string") mensagem = r; else ({ status, mensagem } = r);
+    } catch (e) {
       status = "erro"; mensagem = msg(e);
       // Falha antes de abrir coleta (ex.: API fora): registra em ingest_runs mesmo assim.
       const id = await iniciarColeta(sb, { jobId: `coleta-temporal:${job}`, fonte: job, versaoConector: VERSAO, escopo: p }).catch(() => null);
