@@ -1,4 +1,5 @@
 # Roadmap — Catálogo de Bases como fonte da verdade
+- [ ] Padronizar métricas dos cartões e painel do Cenário 1; conferir SP, PA, AP e PR no computador e 390 px e executar testes.
 - [x] Cenário 1: cores destacadas nos cartões e painel estadual com limitações e oportunidades; verificado desktop/celular (SP, PA, RN)
 - [x] Cenário 1: cruzamento visual por balanço energético, tabela recolhida e conferência desktop/celular
 - [x] Cenário 6 Sistemas Estaduais: leituras, painel e lista paginada de atores

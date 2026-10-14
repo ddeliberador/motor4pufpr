@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Banknote, Cable, Network, Server, Zap, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import MetricaCartao, { valorBalanco } from "./MetricaCartao";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
 import { SITUACOES_ENERGIA, fmtPct } from "@/lib/infraEstados";
 import { energiaSemProcessamento, fraseBalanco, resumoCruzamento, type EstadoCruzamento } from "@/lib/cruzamentoInfra";
@@ -39,15 +40,16 @@ export default function CruzamentoInfraestrutura({ linhas, totalDc, uf, onUfChan
         <span className="min-w-0 text-sm font-semibold leading-tight">{ESTADOS[l.uf]}</span>
         <span className="shrink-0 text-[10px] text-muted-foreground">{l.uf}</span>
       </div>
-      <p className="mt-1 min-h-8 text-[11px] leading-snug text-muted-foreground">{fraseBalanco(l.razao)}</p>
-      <div className="mt-3 flex items-center justify-between gap-1">
-        <span className="flex items-center gap-1" title="Datacenters"><Server aria-hidden="true" className="text-muted-foreground" /><strong className={l.dc == null ? "text-[10px]" : "text-xl"}>{l.dc ?? "indisponível"}</strong></span>
-        <Cable aria-label={l.cabo == null ? "Cabo internacional indisponível" : l.cabo ? "Com cabo internacional" : "Sem cabo internacional"} className={l.cabo ? "text-primary" : "text-muted-foreground opacity-35"} />
+      <div className="mt-2 grid grid-cols-2 items-start gap-x-2 gap-y-3">
+        <MetricaCartao icon={Zap} valor={valorBalanco(l.razao)} rotulo="geração / consumo" />
+        <MetricaCartao icon={Server} valor={l.dc} rotulo="datacenters" />
+        <MetricaCartao icon={Network} valor={l.fibra == null ? null : `${fmtPct(l.fibra)}%`} rotulo="municípios com fibra">
+          <progress aria-label={`Municípios com fibra em ${ESTADOS[l.uf]}`} value={l.fibra ?? undefined} max={100} className="mt-1 block h-1 w-full overflow-hidden rounded [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:bg-primary [&::-moz-progress-bar]:bg-primary" />
+        </MetricaCartao>
+        <MetricaCartao icon={Cable} valor={l.cabo} rotulo="cabos internacionais" />
+        <MetricaCartao className="col-span-2" icon={Banknote} valor={l.tarifa == null ? null : `R$ ${l.tarifa.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} rotulo={`por MWh · ${l.rankTarifa == null ? "ranking indisponível" : `${l.rankTarifa}ª mais barata de ${totalRanking}`}`} />
       </div>
-      <div className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground"><Network aria-hidden="true" /><span>Fibra {l.fibra == null ? "indisponível" : `${fmtPct(l.fibra)}%`}</span></div>
-      <div className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground"><Banknote aria-hidden="true" /><span title="Tarifa residencial · ANEEL">Tarifa {l.tarifa == null ? "indisponível" : `R$ ${l.tarifa.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}/MWh`} · {l.rankTarifa == null ? "ranking indisponível" : `${l.rankTarifa}º mais barata de ${totalRanking}`}</span></div>
-      {l.fibra != null && <progress aria-label={`Municípios com fibra em ${ESTADOS[l.uf]}`} value={l.fibra} max={100} className="mt-1 block h-1 w-full overflow-hidden rounded [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:bg-primary [&::-moz-progress-bar]:bg-primary" />}
-      {energiaSemProcessamento(l) && <span className="mt-3 flex items-start gap-1 text-[10px] font-semibold leading-tight text-[hsl(var(--energia-exporta))]"><Zap aria-hidden="true" />energia sem processamento</span>}
+      {energiaSemProcessamento(l) && <span className="mt-3 flex items-start gap-1 text-[10px] font-semibold leading-tight text-[hsl(var(--energia-exporta))]"><Zap size={16} className="shrink-0" aria-hidden="true" />energia sem processamento</span>}
     </Button>
   );
   return (

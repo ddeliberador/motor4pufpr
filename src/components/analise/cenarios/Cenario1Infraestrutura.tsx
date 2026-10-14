@@ -155,12 +155,12 @@ export default function Cenario1Infraestrutura() {
     return {
       uf, situacao: e?.situacao ?? null,
       razao: e?.razao_geracao_consumo ?? null, brasil: e?.razao_brasil ?? null,
-      cabo: cabos.status === "ok" ? (ufsCabo.includes(uf) ? 1 : 0) : null,
+      cabo: cabos.status === "ok" ? cabos.dados.uf.find(c => c.uf === uf)?.cabos_internacionais ?? 0 : null,
       fibra: b ? b.pct : null,
       dc: dcs.status === "ok" ? dcUF.find(x => x.uf === uf)?.n ?? 0 : null,
       tarifa: tarifas?.[uf] ?? null, rankTarifa: ranksTarifa[uf] ?? null,
     };
-  }), [balanco, backhaul, ufsCabo, dcUF, cabos.status, dcs.status, tarifas, ranksTarifa]);
+  }), [balanco, backhaul, dcUF, cabos, dcs.status, tarifas, ranksTarifa]);
 
   const topE = energiaUF[0];
   const detalhePainel = useMemo<DetalheInfra | null>(() => {
