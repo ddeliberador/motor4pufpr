@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import MetricaCartao from "./MetricaCartao";
+import ChamadasPublicas from "./ChamadasPublicas";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
 import { COBERTURAS, contagens, destacarTermos, exportarComSolucaoExcel, filtrarDesafios, fraseLacuna, ordenarLacunas, rotuloCobertura, type Cobertura, type Desafio, type FiltrosDesafio, type LacunaArea } from "@/lib/demandaPublica";
 
@@ -152,6 +153,8 @@ export default function Cenario7DemandaPublica() {
             </article>; })}
         </div>
       </section>
+
+      <ChamadasPublicas />
 
       <details className="rounded-lg border border-border p-4">
         <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold"><ChevronDown size={16} />Como cruzamos</summary>
