@@ -689,6 +689,41 @@ export type Database = {
           },
         ]
       }
+      chamada_projeto_relacionado: {
+        Row: {
+          calculado_em: string
+          chamada_id: number
+          cod_projeto: string
+          n_termos: number
+          origem: string
+          termos_em_comum: string[]
+        }
+        Insert: {
+          calculado_em?: string
+          chamada_id: number
+          cod_projeto: string
+          n_termos: number
+          origem: string
+          termos_em_comum?: string[]
+        }
+        Update: {
+          calculado_em?: string
+          chamada_id?: number
+          cod_projeto?: string
+          n_termos?: number
+          origem?: string
+          termos_em_comum?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chamada_projeto_relacionado_chamada_id_fkey"
+            columns: ["chamada_id"]
+            isOneToOne: false
+            referencedRelation: "chamadas_publicas"
+            referencedColumns: ["chamada_id"]
+          },
+        ]
+      }
       chamadas_publicas: {
         Row: {
           abertura: string | null
@@ -3332,6 +3367,7 @@ export type Database = {
         }
         Returns: number
       }
+      chamadas_cruzar: { Args: never; Returns: number }
       classify_tipo: {
         Args: { p_nome: string; p_raw_payload?: Json; p_tipo_raw: string }
         Returns: string
