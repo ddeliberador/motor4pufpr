@@ -71,6 +71,7 @@ export default function Cenario1Infraestrutura() {
   const [ufSelecionada, setUfSelecionada] = useState("PR");
   const [painelUF, setPainelUF] = useState<string | null>(null);
   const [balanco, setBalanco] = useState<CargaBalanco>({ status: "carregando" });
+  const [tarifas, setTarifas] = useState<Record<string, number> | null>(null);
 
   useEffect(() => {
     // A API devolve no máximo 1.000 linhas por chamada: busca os 5.570 municípios em blocos paralelos.
@@ -117,6 +118,11 @@ export default function Cenario1Infraestrutura() {
     carregarDatacenters()
       .then(l => setDcs({ status: "ok", dados: l.map(x => ({ nome: String(x.nome ?? ""), cidade: String(x.cidade ?? ""), org: String(x.org ?? ""), uf: String(x.uf ?? "") })) }))
       .catch(e => setDcs({ status: "erro", erro: String(e?.message ?? e) }));
+
+    // Tarifa residencial (ANEEL) para o ranking de custo do cruzamento.
+    fetchAll<TarifaUF>(supabase.from("vw_energia_tarifa_uf").select("uf,tarifa_residencial_rs_mwh").order("uf"))
+      .then(t => setTarifas(Object.fromEntries(t.map(x => [x.uf, Number(x.tarifa_residencial_rs_mwh)]))))
+      .catch(() => setTarifas(null));
   }, []);
 
   const semFibra = backhaul.filter(b => b.pct < 70);
