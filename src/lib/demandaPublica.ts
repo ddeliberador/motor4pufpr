@@ -55,3 +55,32 @@ export function filtrarDesafios(ds: Desafio[], f: FiltrosDesafio) {
   return ds.filter(d => ok(d.area, f.area) && ok(d.uf, f.uf) && ok(d.esfera, f.esfera) && ok(d.status, f.status) && ok(d.tipo_chamada, f.tipo) && ok(d.cobertura, f.cobertura)
     && (!b || norm([d.nome, d.problema, d.orgao, d.desafio_id].filter(Boolean).join(" ")).includes(b)));
 }
+
+/** Exporta para Excel os desafios com possível solução encontrada no Motor. */
+export async function exportarComSolucaoExcel(ds: Desafio[]) {
+  const { utils, writeFile } = await import("xlsx");
+  const lista = ds.filter(d => d.cobertura === COBERTURAS[0]);
+  const linhas = lista.map(d => ({
+    "ID": d.desafio_id,
+    "Desafio": d.nome,
+    "Órgão": d.orgao ?? "",
+    "Esfera": d.esfera ?? "",
+    "UF": d.uf ?? "",
+    "Área": d.area ?? "",
+    "Status": d.status ?? "",
+    "Inscrições até": d.inscricoes_ate ?? "",
+    "Prêmio ou contrato": d.premio_ou_contrato ?? "",
+    "Projetos EMBRAPII relacionados": d.projetos_embrapii_relacionados ?? "",
+    "Unidades EMBRAPII": (d.unidades ?? []).join("; "),
+    "Exemplos de projetos": (d.exemplos ?? []).join(" | "),
+    "Startups do segmento no Brasil": d.startups_segmento_brasil ?? "",
+    "Fonte": d.fonte_url ?? "",
+    "Página": d.pagina_url ?? "",
+  }));
+  const ws = utils.json_to_sheet(linhas);
+  ws["!cols"] = [{ wch: 10 }, { wch: 60 }, { wch: 30 }, { wch: 12 }, { wch: 6 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 24 }, { wch: 12 }, { wch: 40 }, { wch: 60 }, { wch: 14 }, { wch: 40 }, { wch: 40 }];
+  const wb = utils.book_new();
+  utils.book_append_sheet(wb, ws, "Com solução no Motor");
+  writeFile(wb, `desafios-com-solucao-no-motor-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  return lista.length;
+}
