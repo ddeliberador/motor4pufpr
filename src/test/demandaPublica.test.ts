@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { contagens, destacarTermos, fraseLacuna, filtrarDesafios, type Desafio, type LacunaArea } from "@/lib/demandaPublica";
+import { contagens, destacarTermos, fraseLacuna, filtrarDesafios, rotuloCobertura, type Desafio, type LacunaArea } from "@/lib/demandaPublica";
 
 const d = (p: Partial<Desafio>) => ({ desafio_id: "X", nome: "n", cobertura: "Sem solução catalogada no Motor", status: "Encerrado", ...p }) as Desafio;
 
@@ -20,5 +20,10 @@ describe("demanda pública", () => {
   it("filtra por UF e busca sem acento", () => {
     const ds = [d({ uf: "RJ", nome: "Compras Públicas" }), d({ uf: "SP", nome: "Compras" })];
     expect(filtrarDesafios(ds, { area: "", uf: "RJ", esfera: "", status: "", tipo: "", cobertura: "", busca: "publicas" })).toHaveLength(1);
+  });
+  it("troca só a apresentação da cobertura, mantendo o valor do banco", () => {
+    expect(rotuloCobertura("Possível solução relacionada no Motor")).toBe("Possível solução encontrada no Motor");
+    expect(rotuloCobertura("Sem solução catalogada no Motor")).toBe("Sem solução catalogada no Motor");
+    expect(rotuloCobertura("Descrição insuficiente para cruzar")).toBe("Descrição insuficiente para cruzar");
   });
 });
