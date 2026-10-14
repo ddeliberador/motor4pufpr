@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { guardRequest } from "../_shared/guard.ts";
-import { registrarTemporalDatacenters, registrarTemporalEnergia } from "./temporal_infra.ts";
+import { registrarTemporalDatacenters, registrarTemporalEnergia } from "../_shared/temporal_infra.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -92,8 +92,9 @@ async function carregarDatacenters() {
       redes: Number.isFinite(Number(fac.net_count)) ? Number(fac.net_count) : undefined,
     }];
   });
-  // Foto versionada da lista completa do PeeringDB (resposta 200, sem paginação).
-  registrarTemporalDatacenters(data, true, url);
+  // Foto versionada da lista completa do PeeringDB (resposta 200, sem paginação):
+  // grava a lista bruta inteira, inclusive instalações sem coordenada.
+  registrarTemporalDatacenters(Array.isArray(payload.data) ? payload.data : [], true, url);
   return { data, source: url };
 }
 

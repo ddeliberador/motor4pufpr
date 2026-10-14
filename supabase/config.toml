@@ -2,3 +2,6 @@ project_id = "jtoeinerhvxxgoeicrif"
 
 [functions.embrapii-sync]
 verify_jwt = false
+
+[functions.coleta-temporal]
+verify_jwt = false

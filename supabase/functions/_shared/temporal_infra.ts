@@ -3,7 +3,7 @@
 import {
   clienteServico, emSegundoPlano, finalizarColeta, garantirIndicador, iniciarColeta,
   registrarFoto, registrarObservacoes, sha256, ultimaColetaOk, type LinhaObservacao,
-} from "../_shared/temporal.ts";
+} from "./temporal.ts";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 const VERSAO = "map-infrastructure-temporal-v1-2026-10";
@@ -21,7 +21,7 @@ async function lerTudo(supabase: SupabaseClient, tabela: string, colunas: string
 
 const COLS_ANEEL = "aneel_id,ceg,nome,tipo,fonte_combustivel,origem_combustivel,potencia_outorgada_kw,potencia_fiscalizada_kw,garantia_fisica_kw,potencia_kw,uf,municipios,municipio,latitude,longitude,data_entrada_operacao,proprietarios,data_conjunto";
 
-async function fotoAneel(supabase: SupabaseClient) {
+export async function fotoAneel(supabase: SupabaseClient) {
   const inicio = Date.now();
   const usinas = await lerTudo(supabase, "aneel_usinas", COLS_ANEEL, "aneel_id");
   if (usinas.length === 0) return;
@@ -111,7 +111,7 @@ async function fotoAneel(supabase: SupabaseClient) {
   }
 }
 
-async function fotoTabela(supabase: SupabaseClient, tabela: string, colunas: string, chave: string) {
+export async function fotoTabela(supabase: SupabaseClient, tabela: string, colunas: string, chave: string) {
   const inicio = Date.now();
   const registros = await lerTudo(supabase, tabela, colunas, chave);
   if (registros.length === 0) return;
