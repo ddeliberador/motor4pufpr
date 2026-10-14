@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { guardRequest } from "../_shared/guard.ts";
+import { registrarTemporalDatacenters, registrarTemporalEnergia } from "./temporal_infra.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,6 +52,7 @@ async function carregarEnergia() {
     }];
   });
   if (data.length === 0) throw new Error("Cópia da ANEEL no banco está vazia.");
+  registrarTemporalEnergia();
   const dataConjunto = registros.map((r) => String(r.data_conjunto ?? "")).filter(Boolean).sort().pop() ?? "?";
   return { data, failures: [], source: `ANEEL SIGA, cópia mensal no banco (data_conjunto ${dataConjunto})`, data_conjunto: dataConjunto };
 }
@@ -90,6 +92,8 @@ async function carregarDatacenters() {
       redes: Number.isFinite(Number(fac.net_count)) ? Number(fac.net_count) : undefined,
     }];
   });
+  // Foto versionada da lista completa do PeeringDB (resposta 200, sem paginação).
+  registrarTemporalDatacenters(data, true, url);
   return { data, source: url };
 }
 
