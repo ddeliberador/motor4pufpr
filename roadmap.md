@@ -1,5 +1,5 @@
 # Roadmap — Catálogo de Bases como fonte da verdade
-- [ ] Home textual, navegação visível e status real sem cache; verificar links, temas e celular.
+- [x] Home textual, navegação visível e status real sem cache; links, temas, celular e falha de leitura conferidos.
 - [x] Padronizar métricas dos cartões e painel do Cenário 1; SP, PA, AP e PR conferidos no computador e 390 px, testes e tipos aprovados.
 - [x] Cenário 1: cores destacadas nos cartões e painel estadual com limitações e oportunidades; verificado desktop/celular (SP, PA, RN)
 - [x] Cenário 1: cruzamento visual por balanço energético, tabela recolhida e conferência desktop/celular
