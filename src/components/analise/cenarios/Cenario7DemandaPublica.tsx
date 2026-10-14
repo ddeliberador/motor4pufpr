@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, ChevronDown, CircleHelp, ExternalLink, FileText, Landmark, DoorOpen } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, CircleHelp, Download, ExternalLink, FileText, Landmark, DoorOpen } from "lucide-react";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
 import { fetchAll } from "@/lib/fetchAll";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import MetricaCartao from "./MetricaCartao";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
-import { COBERTURAS, contagens, destacarTermos, filtrarDesafios, fraseLacuna, ordenarLacunas, rotuloCobertura, type Cobertura, type Desafio, type FiltrosDesafio, type LacunaArea } from "@/lib/demandaPublica";
+import { COBERTURAS, contagens, destacarTermos, exportarComSolucaoExcel, filtrarDesafios, fraseLacuna, ordenarLacunas, rotuloCobertura, type Cobertura, type Desafio, type FiltrosDesafio, type LacunaArea } from "@/lib/demandaPublica";
 
 type UfLinha = { uf: string | null; desafios: number; com_solucao_relacionada: number; sem_solucao_catalogada: number; abertos: number; municipais: number; estaduais: number; federais: number };
 type Projeto = { cod_projeto: string; termos_em_comum: string[]; titulo: string | null; ue_sigla: string | null; ue_uf: string | null; ano: number | null };
@@ -85,6 +85,14 @@ export default function Cenario7DemandaPublica() {
         <MetricaCartao icon={AlertTriangle} valor={c?.sem} rotulo="sem solução catalogada" />
         <MetricaCartao icon={CircleHelp} valor={c?.insuf} rotulo="com descrição insuficiente para cruzar" />
       </section>
+
+      {desafios && c && c.com > 0 && (
+        <div className="flex justify-end">
+          <Button variant="outline" size="sm" onClick={() => exportarComSolucaoExcel(desafios)}>
+            <Download size={14} className="mr-1" />Exportar em Excel os {c.com} com possível solução encontrada no Motor
+          </Button>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">{ROT.map((r, i) => <span key={r} className="flex items-center gap-1"><span className={`h-3 w-3 rounded-sm ${COR[i]}`} />{r}</span>)}</div>
 

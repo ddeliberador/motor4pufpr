@@ -1374,6 +1374,109 @@ export type Database = {
         }
         Relationships: []
       }
+      entidade_versoes: {
+        Row: {
+          chave_origem: string
+          coleta_id: string | null
+          encerrado_em: string | null
+          id: number
+          motivo_encerramento: string | null
+          registro: Json
+          registro_hash: string
+          tabela_origem: string
+          valido_de: string
+          visto_ate: string
+        }
+        Insert: {
+          chave_origem: string
+          coleta_id?: string | null
+          encerrado_em?: string | null
+          id?: never
+          motivo_encerramento?: string | null
+          registro: Json
+          registro_hash: string
+          tabela_origem: string
+          valido_de: string
+          visto_ate: string
+        }
+        Update: {
+          chave_origem?: string
+          coleta_id?: string | null
+          encerrado_em?: string | null
+          id?: never
+          motivo_encerramento?: string | null
+          registro?: Json
+          registro_hash?: string
+          tabela_origem?: string
+          valido_de?: string
+          visto_ate?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entidade_versoes_coleta_id_fkey"
+            columns: ["coleta_id"]
+            isOneToOne: false
+            referencedRelation: "ingest_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      indicadores: {
+        Row: {
+          base_preco: string | null
+          camada_mapa: string | null
+          cnae: string | null
+          criado_em: string
+          descricao: string | null
+          fonte_chave: string | null
+          id: string
+          metodologia: string | null
+          moeda: string | null
+          natureza: string
+          nome: string
+          periodicidade: string | null
+          unidade: string | null
+        }
+        Insert: {
+          base_preco?: string | null
+          camada_mapa?: string | null
+          cnae?: string | null
+          criado_em?: string
+          descricao?: string | null
+          fonte_chave?: string | null
+          id: string
+          metodologia?: string | null
+          moeda?: string | null
+          natureza: string
+          nome: string
+          periodicidade?: string | null
+          unidade?: string | null
+        }
+        Update: {
+          base_preco?: string | null
+          camada_mapa?: string | null
+          cnae?: string | null
+          criado_em?: string
+          descricao?: string | null
+          fonte_chave?: string | null
+          id?: string
+          metodologia?: string | null
+          moeda?: string | null
+          natureza?: string
+          nome?: string
+          periodicidade?: string | null
+          unidade?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "indicadores_fonte_chave_fkey"
+            columns: ["fonte_chave"]
+            isOneToOne: false
+            referencedRelation: "catalogo_bases"
+            referencedColumns: ["chave"]
+          },
+        ]
+      }
       indicadores_uf: {
         Row: {
           ano: number
@@ -1526,37 +1629,46 @@ export type Database = {
           created_at: string
           duration_ms: number | null
           error: string | null
+          escopo: Json | null
           fonte: string
           found: number
           id: string
           inserted: number
           job_id: string
           ok: boolean
+          resposta_hash: string | null
           started_at: string
+          versao_conector: string | null
         }
         Insert: {
           created_at?: string
           duration_ms?: number | null
           error?: string | null
+          escopo?: Json | null
           fonte: string
           found?: number
           id?: string
           inserted?: number
           job_id: string
           ok: boolean
+          resposta_hash?: string | null
           started_at?: string
+          versao_conector?: string | null
         }
         Update: {
           created_at?: string
           duration_ms?: number | null
           error?: string | null
+          escopo?: Json | null
           fonte?: string
           found?: number
           id?: string
           inserted?: number
           job_id?: string
           ok?: boolean
+          resposta_hash?: string | null
           started_at?: string
+          versao_conector?: string | null
         }
         Relationships: []
       }
@@ -1765,6 +1877,72 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      observacoes: {
+        Row: {
+          capturado_em: string
+          coleta_id: string | null
+          entidade_chave: string
+          entidade_tipo: string
+          granularidade: string
+          id: number
+          indicador_id: string
+          metadados: Json | null
+          origem_temporal: string
+          periodo_referencia: string
+          segmento: string
+          valor: number | null
+          valor_texto: string | null
+          versao_metodo: string | null
+        }
+        Insert: {
+          capturado_em?: string
+          coleta_id?: string | null
+          entidade_chave: string
+          entidade_tipo: string
+          granularidade: string
+          id?: never
+          indicador_id: string
+          metadados?: Json | null
+          origem_temporal: string
+          periodo_referencia: string
+          segmento?: string
+          valor?: number | null
+          valor_texto?: string | null
+          versao_metodo?: string | null
+        }
+        Update: {
+          capturado_em?: string
+          coleta_id?: string | null
+          entidade_chave?: string
+          entidade_tipo?: string
+          granularidade?: string
+          id?: never
+          indicador_id?: string
+          metadados?: Json | null
+          origem_temporal?: string
+          periodo_referencia?: string
+          segmento?: string
+          valor?: number | null
+          valor_texto?: string | null
+          versao_metodo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "observacoes_coleta_id_fkey"
+            columns: ["coleta_id"]
+            isOneToOne: false
+            referencedRelation: "ingest_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "observacoes_indicador_id_fkey"
+            columns: ["indicador_id"]
+            isOneToOne: false
+            referencedRelation: "indicadores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ons_intercambio_subsistema: {
         Row: {
@@ -2381,6 +2559,40 @@ export type Database = {
         }
         Relationships: []
       }
+      v_observacoes_vigentes: {
+        Row: {
+          capturado_em: string | null
+          coleta_id: string | null
+          entidade_chave: string | null
+          entidade_tipo: string | null
+          granularidade: string | null
+          id: number | null
+          indicador_id: string | null
+          metadados: Json | null
+          origem_temporal: string | null
+          periodo_referencia: string | null
+          segmento: string | null
+          valor: number | null
+          valor_texto: string | null
+          versao_metodo: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "observacoes_coleta_id_fkey"
+            columns: ["coleta_id"]
+            isOneToOne: false
+            referencedRelation: "ingest_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "observacoes_indicador_id_fkey"
+            columns: ["indicador_id"]
+            isOneToOne: false
+            referencedRelation: "indicadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vw_ator_camada: {
         Row: {
           ator_id: string | null
@@ -2963,6 +3175,22 @@ export type Database = {
         Returns: {
           promoted: number
           skipped: number
+        }[]
+      }
+      registrar_foto: {
+        Args: {
+          p_capturado_em?: string
+          p_chave_campo: string
+          p_coleta?: string
+          p_completo?: boolean
+          p_registros: Json
+          p_tabela: string
+        }
+        Returns: {
+          alterados: number
+          inalterados: number
+          novos: number
+          removidos: number
         }[]
       }
       resolver_uf_atores: { Args: never; Returns: number }
