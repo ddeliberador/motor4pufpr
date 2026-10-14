@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import MetricaCartao from "./MetricaCartao";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
-import { COBERTURAS, contagens, destacarTermos, filtrarDesafios, fraseLacuna, ordenarLacunas, type Desafio, type FiltrosDesafio, type LacunaArea } from "@/lib/demandaPublica";
+import { COBERTURAS, contagens, destacarTermos, filtrarDesafios, fraseLacuna, ordenarLacunas, rotuloCobertura, type Desafio, type FiltrosDesafio, type LacunaArea } from "@/lib/demandaPublica";
 
 type UfLinha = { uf: string | null; desafios: number; com_solucao_relacionada: number; sem_solucao_catalogada: number; abertos: number; municipais: number; estaduais: number; federais: number };
 type Projeto = { cod_projeto: string; termos_em_comum: string[]; titulo: string | null; ue_sigla: string | null; ue_uf: string | null; ano: number | null };
@@ -81,7 +81,7 @@ export default function Cenario7DemandaPublica() {
       <section aria-label="Números de destaque" className="grid grid-cols-2 gap-4 rounded-xl border border-border bg-card p-4 sm:grid-cols-3 lg:grid-cols-5">
         <MetricaCartao icon={Landmark} valor={c?.total} rotulo="desafios mapeados" />
         <MetricaCartao icon={DoorOpen} valor={c?.abertos} rotulo="com inscrição aberta hoje" />
-        <MetricaCartao icon={CheckCircle2} valor={c?.com} rotulo="com possível solução relacionada no Motor" />
+        <MetricaCartao icon={CheckCircle2} valor={c?.com} rotulo="com possível solução encontrada no Motor" />
         <MetricaCartao icon={AlertTriangle} valor={c?.sem} rotulo="sem solução catalogada" />
         <MetricaCartao icon={CircleHelp} valor={c?.insuf} rotulo="com descrição insuficiente para cruzar" />
       </section>
@@ -121,7 +121,7 @@ export default function Cenario7DemandaPublica() {
         <div className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-7">
           <label className="col-span-2 text-xs text-muted-foreground md:col-span-4 lg:col-span-1">Buscar<Input className="mt-1 h-9" value={f.busca} onChange={e => setF({ ...f, busca: e.target.value })} placeholder="nome, órgão…" /></label>
           {sel("area", "Área", opcoes("area"))}{sel("uf", "UF", opcoes("uf"), nomeUf)}{sel("esfera", "Esfera", opcoes("esfera"))}
-          {sel("status", "Status", opcoes("status"))}{sel("tipo", "Tipo de chamada", opcoes("tipo_chamada"))}{sel("cobertura", "Cobertura", COBERTURAS)}
+          {sel("status", "Status", opcoes("status"))}{sel("tipo", "Tipo de chamada", opcoes("tipo_chamada"))}{sel("cobertura", "Cobertura", COBERTURAS, c => rotuloCobertura(c as Cobertura))}
         </div>
         <div className="flex items-center justify-between text-xs text-muted-foreground"><span>{lista.length} de {desafios?.length ?? "…"} desafios</span>{JSON.stringify(f) !== JSON.stringify(VAZIO) && <Button variant="ghost" size="sm" onClick={() => setF(VAZIO)}>Limpar filtros</Button>}</div>
         <div className="grid gap-3 md:grid-cols-2">
@@ -165,7 +165,7 @@ export default function Cenario7DemandaPublica() {
               <DialogTitle className="pr-6 leading-snug">{aberto.nome}</DialogTitle>
               <DialogDescription>{[aberto.desafio_id, aberto.orgao, aberto.area, nomeUf(aberto.uf)].filter(Boolean).join(" · ")}</DialogDescription>
             </DialogHeader>
-            <span className={`w-fit rounded border px-1.5 py-0.5 text-xs font-semibold ${SELO[COBERTURAS.indexOf(aberto.cobertura)]}`}>{aberto.cobertura}</span>
+            <span className={`w-fit rounded border px-1.5 py-0.5 text-xs font-semibold ${SELO[COBERTURAS.indexOf(aberto.cobertura)]}`}>{rotuloCobertura(aberto.cobertura)}</span>
             <div><h4 className="text-xs font-semibold uppercase text-muted-foreground">Problema</h4><p className="mt-1 text-sm text-foreground">{aberto.problema || "Não descrito na fonte."}</p></div>
             <div className="grid grid-cols-2 gap-3 rounded-lg border border-border p-3">
               <MetricaCartao icon={Landmark} valor={aberto.startups_segmento_uf} rotulo={`startups do segmento em ${nomeUf(aberto.uf)}`} />

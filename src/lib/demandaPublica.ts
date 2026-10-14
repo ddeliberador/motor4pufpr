@@ -1,6 +1,14 @@
 export type Cobertura = "Possível solução relacionada no Motor" | "Sem solução catalogada no Motor" | "Descrição insuficiente para cruzar";
 export const COBERTURAS: Cobertura[] = ["Possível solução relacionada no Motor", "Sem solução catalogada no Motor", "Descrição insuficiente para cruzar"];
 
+/** Rótulos exibidos na tela. O banco guarda "relacionada"; só a apresentação muda. */
+export const ROTULO_COBERTURA: Record<Cobertura, string> = {
+  "Possível solução relacionada no Motor": "Possível solução encontrada no Motor",
+  "Sem solução catalogada no Motor": "Sem solução catalogada no Motor",
+  "Descrição insuficiente para cruzar": "Descrição insuficiente para cruzar",
+};
+export const rotuloCobertura = (c: Cobertura) => ROTULO_COBERTURA[c] ?? c;
+
 export type Desafio = {
   desafio_id: string; nome: string; problema: string | null; orgao: string | null; esfera: string | null; uf: string | null;
   area: string | null; tipo_chamada: string | null; ano: number | null; inscricoes_ate: string | null; status: string | null;
