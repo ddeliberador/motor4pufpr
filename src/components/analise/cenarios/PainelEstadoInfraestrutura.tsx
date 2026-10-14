@@ -90,7 +90,7 @@ export default function PainelEstadoInfraestrutura({ estado, detalhe, onClose }:
     </> },
     { t: "2. Quanto custa a energia aqui?", c: <>
       <p className="text-sm"><strong className="text-lg">R$ {n(d.tarifa_residencial_rs_mwh, 0)}/MWh</strong> · Brasil R$ {n(d.tarifa_residencial_brasil, 0)}/MWh</p>
-      <p className="text-sm">{tdif == null ? "Diferença indisponível" : `${n(Math.abs(tdif))}% ${tdif >= 0 ? "acima" : "abaixo"} da média`}{d.tarifa_posicao_mais_cara != null && ` · ${d.tarifa_posicao_mais_cara}ª mais cara de 27`}</p>
+      <p className="text-sm">{tdif == null ? "Diferença indisponível" : `${n(Math.abs(tdif))}% ${tdif >= 0 ? "acima" : "abaixo"} da média`}{d.tarifa_posicao_mais_cara != null && ` · ${28 - Number(d.tarifa_posicao_mais_cara)}ª mais barata de 27`}</p>
       <p className="text-xs text-muted-foreground">Distribuidora principal: {d.distribuidora_principal ?? "indisponível"}</p>
       <p className="mt-2 text-[11px] text-muted-foreground">Tarifa homologada pela ANEEL, sem ICMS, PIS/Cofins e bandeiras; média das distribuidoras do estado ponderada pelas unidades consumidoras.</p>
     </> },
