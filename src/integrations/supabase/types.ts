@@ -663,6 +663,130 @@ export type Database = {
         }
         Relationships: []
       }
+      chamada_desafio: {
+        Row: {
+          chamada_id: number
+          criterio: string
+          desafio_id: string
+        }
+        Insert: {
+          chamada_id: number
+          criterio: string
+          desafio_id: string
+        }
+        Update: {
+          chamada_id?: number
+          criterio?: string
+          desafio_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chamada_desafio_chamada_id_fkey"
+            columns: ["chamada_id"]
+            isOneToOne: false
+            referencedRelation: "chamadas_publicas"
+            referencedColumns: ["chamada_id"]
+          },
+        ]
+      }
+      chamada_projeto_relacionado: {
+        Row: {
+          calculado_em: string
+          chamada_id: number
+          cod_projeto: string
+          n_termos: number
+          origem: string
+          termos_em_comum: string[]
+        }
+        Insert: {
+          calculado_em?: string
+          chamada_id: number
+          cod_projeto: string
+          n_termos: number
+          origem: string
+          termos_em_comum?: string[]
+        }
+        Update: {
+          calculado_em?: string
+          chamada_id?: number
+          cod_projeto?: string
+          n_termos?: number
+          origem?: string
+          termos_em_comum?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chamada_projeto_relacionado_chamada_id_fkey"
+            columns: ["chamada_id"]
+            isOneToOne: false
+            referencedRelation: "chamadas_publicas"
+            referencedColumns: ["chamada_id"]
+          },
+        ]
+      }
+      chamadas_publicas: {
+        Row: {
+          abertura: string | null
+          carregado_em: string
+          chamada_id: number
+          esfera: string | null
+          fonte_info: string | null
+          instrumento: string | null
+          levantamento_em: string
+          link_oficial: string | null
+          nome: string
+          observacoes: string | null
+          orgao: string | null
+          origem: string
+          prazo_final: string | null
+          quem_pode: string | null
+          status: string
+          tema: string | null
+          uf: string | null
+          valor_premio: string | null
+        }
+        Insert: {
+          abertura?: string | null
+          carregado_em?: string
+          chamada_id: number
+          esfera?: string | null
+          fonte_info?: string | null
+          instrumento?: string | null
+          levantamento_em?: string
+          link_oficial?: string | null
+          nome: string
+          observacoes?: string | null
+          orgao?: string | null
+          origem?: string
+          prazo_final?: string | null
+          quem_pode?: string | null
+          status: string
+          tema?: string | null
+          uf?: string | null
+          valor_premio?: string | null
+        }
+        Update: {
+          abertura?: string | null
+          carregado_em?: string
+          chamada_id?: number
+          esfera?: string | null
+          fonte_info?: string | null
+          instrumento?: string | null
+          levantamento_em?: string
+          link_oficial?: string | null
+          nome?: string
+          observacoes?: string | null
+          orgao?: string | null
+          origem?: string
+          prazo_final?: string | null
+          quem_pode?: string | null
+          status?: string
+          tema?: string | null
+          uf?: string | null
+          valor_premio?: string | null
+        }
+        Relationships: []
+      }
       city_geocode: {
         Row: {
           cidade: string
@@ -1450,6 +1574,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      fontes_desafios: {
+        Row: {
+          esfera: string | null
+          frequencia: string | null
+          id: number
+          metodo: string | null
+          nome: string
+          origem: string | null
+          responsavel: string | null
+          tipo: string | null
+          url: string | null
+        }
+        Insert: {
+          esfera?: string | null
+          frequencia?: string | null
+          id?: never
+          metodo?: string | null
+          nome: string
+          origem?: string | null
+          responsavel?: string | null
+          tipo?: string | null
+          url?: string | null
+        }
+        Update: {
+          esfera?: string | null
+          frequencia?: string | null
+          id?: never
+          metodo?: string | null
+          nome?: string
+          origem?: string | null
+          responsavel?: string | null
+          tipo?: string | null
+          url?: string | null
+        }
+        Relationships: []
       }
       indicadores: {
         Row: {
@@ -3207,6 +3367,7 @@ export type Database = {
         }
         Returns: number
       }
+      chamadas_cruzar: { Args: never; Returns: number }
       classify_tipo: {
         Args: { p_nome: string; p_raw_payload?: Json; p_tipo_raw: string }
         Returns: string
