@@ -131,25 +131,49 @@ const CONSULTAS: Consulta[] = [
 const rotulo = (c: Consulta) => `${c.flow === "import" ? "importação" : "exportação"} ${c.filtro === "heading" ? "SH4" : "SH6"}`;
 const indicadorDe = (c: Consulta) => c.flow === "import" ? "comex.importacao_usd_fob" : "comex.exportacao_usd_fob";
 
-// Já existe dado desta consulta no período? (retoma de onde parou, sem pedir de novo)
-async function consultaJaGravada(sb: SupabaseClient, c: Consulta, de: string, ate: string) {
-  const { count } = await sb.from("observacoes").select("id", { count: "exact", head: true })
-    .eq("indicador_id", indicadorDe(c)).eq("segmento", "").in("entidade_chave", c.valores)
-    .gte("periodo_referencia", `${de}-01`).lte("periodo_referencia", `${ate}-01`);
-  return (count ?? 0) > 0;
+function mesesEntre(de: string, ate: string) {
+  const r: string[] = [];
+  for (let m = de; m <= ate; m = menosMeses(m, -1)) r.push(m);
+  return r;
+}
+
+// Pares "ncm|mes" já consultados que a fonte não devolveu (sem fluxo real); não são pedidos de novo.
+async function semRetornoComex(sb: SupabaseClient): Promise<Set<string>> {
+  const { data } = await sb.from("ingest_runs").select("escopo").eq("fonte", "comexstat").not("escopo->sem_retorno", "is", null).limit(1000);
+  const s = new Set<string>();
+  for (const r of data ?? []) for (const k of ((r.escopo as { sem_retorno?: string[] })?.sem_retorno ?? [])) s.add(k);
+  return s;
+}
+
+// Cobertura por mês: a consulta está gravada só se todo NCM tem todos os meses esperados
+// (ou o mês já foi tentado e a fonte não devolveu nada).
+async function consultaJaGravada(sb: SupabaseClient, c: Consulta, de: string, ate: string, semRet?: Set<string>) {
+  const existentes = new Set<string>();
+  for (let off = 0; ; off += 1000) {
+    const { data, error } = await sb.from("observacoes").select("entidade_chave,periodo_referencia")
+      .eq("indicador_id", indicadorDe(c)).eq("segmento", "").in("entidade_chave", c.valores)
+      .gte("periodo_referencia", `${de}-01`).lte("periodo_referencia", `${ate}-01`)
+      .order("id").range(off, off + 999);
+    if (error) throw error;
+    for (const r of data ?? []) existentes.add(`${r.entidade_chave}|${String(r.periodo_referencia).slice(0, 7)}`);
+    if ((data ?? []).length < 1000) break;
+  }
+  const sr = semRet ?? await semRetornoComex(sb);
+  return mesesEntre(de, ate).every((m) => c.valores.every((n) => existentes.has(`${n}|${m}`) || sr.has(`${n}|${m}`)));
 }
 
 export type Resultado = { status: "ok" | "parcial"; mensagem: string };
 
 async function jobComex(sb: SupabaseClient, de: string, ate: string, retomar: boolean): Promise<Resultado> {
   const inicio = Date.now();
-  const prazo = inicio + 240_000; // cabe no timeout de 300 s do disparo
+  const prazo = inicio + 120_000; // o gateway encerra a requisição após 150 s ociosos
   const periodo = { from: de, to: ate };
   const respostas = new Map<number, Record<string, string>[]>();
   const faltando: string[] = [];
   let primeira = true;
+  const semRet = retomar ? await semRetornoComex(sb) : undefined;
   for (const [i, c] of CONSULTAS.entries()) {
-    if (retomar && await consultaJaGravada(sb, c, de, ate)) continue;
+    if (retomar && await consultaJaGravada(sb, c, de, ate, semRet)) continue;
     if (Date.now() > prazo - 20_000) { faltando.push(`${rotulo(c)} ${de} a ${ate}`); continue; }
     if (!primeira) await dormir(15_000);
     primeira = false;
@@ -168,10 +192,15 @@ async function jobComex(sb: SupabaseClient, de: string, ate: string, retomar: bo
   }
   const hash = await sha256(JSON.stringify([...respostas]));
   const job = `coleta-temporal:comex:${de}_${ate}`;
-  if (!faltando.length && (await ultimaColetaOk(sb, job))?.resposta_hash === hash) return { status: "ok", mensagem: `${de} a ${ate}: sem mudança` };
+  const semRetorno: string[] = [];
+  for (const [i, resp] of respostas) {
+    const vistos = new Set(resp.map((l) => `${codigo(l)}|${l.year}-${String(l.monthNumber).padStart(2, "0")}`));
+    for (const m of mesesEntre(de, ate)) for (const n of CONSULTAS[i].valores) if (!vistos.has(`${n}|${m}`)) semRetorno.push(`${n}|${m}`);
+  }
+  if (!retomar && !faltando.length && (await ultimaColetaOk(sb, job))?.resposta_hash === hash) return { status: "ok", mensagem: `${de} a ${ate}: sem mudança` };
   const coletaId = await iniciarColeta(sb, {
     jobId: job, fonte: "comexstat", versaoConector: VERSAO, respostaHash: hash,
-    escopo: { periodo, sh4: SH4, sh6: SH6, consultas: [...respostas.keys()].map((i) => rotulo(CONSULTAS[i])), faltando },
+    escopo: { periodo, sh4: SH4, sh6: SH6, consultas: [...respostas.keys()].map((i) => rotulo(CONSULTAS[i])), faltando, sem_retorno: semRetorno },
   });
   try {
     const comum = { natureza: "fluxo" as const, periodicidade: "mensal", base_preco: "nominal", camada_mapa: "dependencia", fonte_chave: null };
@@ -234,14 +263,18 @@ async function jobComex(sb: SupabaseClient, de: string, ate: string, retomar: bo
 // Backfill: processa o primeiro ano (2015 em diante) que ainda tem consulta sem dado.
 async function backfillComex(sb: SupabaseClient): Promise<Resultado> {
   const atual = new Date().getUTCFullYear();
+  const ultimo = await ultimoMesComex();
+  const semRet = await semRetornoComex(sb);
   for (let a = 2015; a <= atual; a++) {
+    const ate = a === atual ? ultimo : `${a}-12`;
+    if (ate < `${a}-01`) continue;
     let falta = false;
-    for (const c of CONSULTAS) if (!(await consultaJaGravada(sb, c, `${a}-01`, `${a}-12`))) { falta = true; break; }
+    for (const c of CONSULTAS) if (!(await consultaJaGravada(sb, c, `${a}-01`, ate, semRet))) { falta = true; break; }
     if (!falta) continue;
-    const r = await jobComex(sb, `${a}-01`, `${a}-12`, true);
+    const r = await jobComex(sb, `${a}-01`, ate, true);
     return { status: "parcial", mensagem: `ano ${a}: ${r.mensagem}` };
   }
-  return { status: "ok", mensagem: "concluído: todos os anos desde 2015 têm dado nas quatro consultas" };
+  return { status: "ok", mensagem: "concluído: todos os meses esperados desde 2015 estão gravados nas quatro consultas" };
 }
 
 async function ultimoMesComex(): Promise<string> {
