@@ -169,6 +169,13 @@
       "when": 1792000589254,
       "tag": "0023_chamada_projeto_relacionado",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792000606224,
+      "tag": "0024_chamadas_cruzar_simplifica",
+      "breakpoints": true
     }
   ]
 }
