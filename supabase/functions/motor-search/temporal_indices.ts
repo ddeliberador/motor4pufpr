@@ -28,7 +28,7 @@ export function registrarIndicesTemporal(p: {
         const v = p.valores[k];
         if (v == null || !Number.isFinite(Number(v))) continue;
         await garantirIndicador(supabase, {
-          id: `indice.${k}`, nome: NOMES[k], natureza: "indice", unidade: "0 a 100", periodicidade: "por busca",
+          id: `indice.${k}`, nome: NOMES[k], natureza: "indice", unidade: "0 a 100", periodicidade: "irregular",
           metodologia: `Calculado pelo motor-search, fórmula ${VERSAO_METODO}.`,
         });
         linhas.push({
