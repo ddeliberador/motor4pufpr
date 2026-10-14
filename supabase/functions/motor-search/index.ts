@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { registrarIndicesTemporal } from "./temporal_indices.ts";
 import { guardRequest } from "../_shared/guard.ts";
 
 const corsHeaders = {
@@ -901,6 +902,11 @@ Deno.serve(async (req) => {
       fetchHistorico(snapshotRow.tema_normalizado, snapshotUf || "", snapshotMunicipio || "", 24),
       saveSnapshot(snapshotRow),
     ]);
+    // Série temporal: uma observação por índice (foto da fórmula atual), sem alterar a resposta.
+    registrarIndicesTemporal({
+      tema: snapshotRow.tema_normalizado, uf: snapshotUf, municipioIbge: snapshotMunicipio,
+      valores: { gt: snapshotRow.gt, cd: snapshotRow.cd, aue: snapshotRow.aue, ei: snapshotRow.ei },
+    });
     const historicoAnterior = historicoBruto.filter((p) => nowMs - new Date(p.data).getTime() > 10_000);
     const historico: HistoricoPoint[] = [
       ...historicoAnterior,
