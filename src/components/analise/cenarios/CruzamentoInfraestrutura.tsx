@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Cable, Network, Server, Zap, ChevronDown } from "lucide-react";
+import { Banknote, Cable, Network, Server, Zap, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
 import { SITUACOES_ENERGIA, fmtPct } from "@/lib/infraEstados";
@@ -44,6 +44,7 @@ export default function CruzamentoInfraestrutura({ linhas, totalDc, uf, onUfChan
         <Cable aria-label={l.cabo == null ? "Cabo internacional indisponível" : l.cabo ? "Com cabo internacional" : "Sem cabo internacional"} className={l.cabo ? "text-primary" : "text-muted-foreground opacity-35"} />
       </div>
       <div className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground"><Network aria-hidden="true" /><span>Fibra {l.fibra == null ? "indisponível" : `${fmtPct(l.fibra)}%`}</span></div>
+      <div className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground"><Banknote aria-hidden="true" /><span title="Tarifa residencial · ANEEL">Tarifa {l.tarifa == null ? "indisponível" : `R$ ${l.tarifa.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}/MWh`} · {l.rankTarifa == null ? "ranking indisponível" : `${l.rankTarifa}º mais barata de ${totalRanking}`}</span></div>
       {l.fibra != null && <progress aria-label={`Municípios com fibra em ${ESTADOS[l.uf]}`} value={l.fibra} max={100} className="mt-1 block h-1 w-full overflow-hidden rounded [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:bg-primary [&::-moz-progress-bar]:bg-primary" />}
       {energiaSemProcessamento(l) && <span className="mt-3 flex items-start gap-1 text-[10px] font-semibold leading-tight text-[hsl(var(--energia-exporta))]"><Zap aria-hidden="true" />energia sem processamento</span>}
     </Button>
