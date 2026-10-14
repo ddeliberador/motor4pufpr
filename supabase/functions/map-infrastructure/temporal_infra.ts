@@ -128,6 +128,9 @@ export function registrarTemporalEnergia() {
   const supabase = clienteServico();
   if (!supabase) return;
   emSegundoPlano((async () => {
+    // A cópia da ANEEL muda uma vez por mês: confere no máximo a cada 12 h.
+    const ultima = await ultimaColetaOk(supabase, "map-infrastructure:aneel");
+    if (ultima && Date.now() - new Date(ultima.created_at).getTime() < 12 * 3600_000) return;
     await fotoAneel(supabase);
     await fotoTabela(supabase, "cabos_lista", "cabo_id,nome,tipo,fonte,snapshot,internacional", "cabo_id");
     await fotoTabela(supabase, "cabos_aterragens", "ponto_id,nome,uf,municipio_proximo,latitude,longitude,distancia_km,fonte,snapshot", "ponto_id");
