@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { safeSupabase as supabase } from "@/lib/supabaseClient";
 import { carregarCatalogo, useCatalogo, detalhesDe, type CatalogoBase } from "@/lib/catalogo";
 import { buscarModelosHF, buscarContratosIA } from "@/utils/cruzarLayers";
+import { normalizarUfInfra } from "@/lib/infraEstados";
 
 export type ColumnKind = "dimension" | "metric";
 
@@ -318,7 +319,7 @@ export async function carregarDatacenters(): Promise<Linha[]> {
   const { data, error } = await supabase.functions.invoke("map-infrastructure", { body: { layer: "datacenters" } });
   let lista = (data as { data?: Linha[] } | null)?.data;
   if (error || !lista?.length) lista = (await jsonPublico<{ data: Linha[] }>("/peeringdb-br.json")).data;
-  return lista.map((x) => ({ uf: x.uf ?? null, cidade: x.cidade ?? null, org: x.org ?? null, nome: x.nome, redes: x.redes ?? null }));
+  return lista.map((x) => ({ uf: normalizarUfInfra(x.uf), cidade: x.cidade ?? null, org: x.org ?? null, nome: x.nome, redes: x.redes ?? null }));
 }
 
 async function carregarProducao(): Promise<Linha[]> {

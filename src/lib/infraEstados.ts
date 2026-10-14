@@ -1,4 +1,14 @@
 // Cenário 1 · agregações por UF das três camadas de infraestrutura (L1 energia, L2 física, L3 lógica).
+import { ESTADOS } from "./sistemasEstaduais";
+
+/** A fonte pode informar tanto a sigla quanto o nome do estado. */
+export function normalizarUfInfra(valor: unknown): string | null {
+  if (typeof valor !== "string" || !valor.trim()) return null;
+  const chave = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
+  const uf = chave(valor);
+  if (ESTADOS[uf]) return uf;
+  return Object.entries(ESTADOS).find(([, nome]) => chave(nome) === uf)?.[0] ?? null;
+}
 
 export const TIPOS_USINA = [
   { sigla: "UHE", nome: "Hidrelétrica", renovavel: true, cor: "hsl(205 70% 45%)" },
