@@ -7,6 +7,20 @@ export type CargaBalanco = { status: "carregando" } | { status: "erro" } | { sta
 export interface EstadoCruzamento {
   uf: string; situacao: string | null; razao: number | null; brasil: number | null;
   dc: number | null; cabo: number | null; fibra: number | null;
+  tarifa: number | null; rankTarifa: number | null;
+}
+
+// Ranking de custo da tarifa residencial (R$/MWh): 1º é a mais barata. Tarifas iguais dividem a posição.
+export function rankingTarifa(tarifas: Record<string, number | null | undefined> | null): Record<string, number> {
+  if (!tarifas) return {};
+  const validas = Object.entries(tarifas).filter(([, t]) => t != null && Number.isFinite(t as number)) as [string, number][];
+  validas.sort((a, b) => a[1] - b[1]);
+  const rank: Record<string, number> = {};
+  validas.forEach(([uf, t], i) => {
+    const empatada = i > 0 && validas[i - 1][1] === t;
+    rank[uf] = empatada ? rank[validas[i - 1][0]] : i + 1;
+  });
+  return rank;
 }
 
 export function energiaSemProcessamento(l: Pick<EstadoCruzamento, "situacao" | "dc">) {
