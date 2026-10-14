@@ -4,6 +4,7 @@ import BalancoEnergia from "./BalancoEnergia";
 import CruzamentoInfraestrutura from "./CruzamentoInfraestrutura";
 import PainelEstadoInfraestrutura, { type DetalheInfra } from "./PainelEstadoInfraestrutura";
 import type { CargaBalanco, EstadoCruzamento } from "@/lib/cruzamentoInfra";
+import { rankingTarifa } from "@/lib/cruzamentoInfra";
 import { supabase } from "@/integrations/supabase/client";
 import { carregarDatacenters } from "@/lib/bi/datasets";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
@@ -30,6 +31,7 @@ const FONTES_ENERGIA: { fonte: string; cor: string }[] = [
   { fonte: "Nuclear (UTN)", cor: "hsl(280 30% 50%)" },
 ];
 interface CaboUF { uf: string; cabos_internacionais: number; cabos_fluviais: number; nomes_internacionais: string | null; nomes_fluviais: string | null }
+interface TarifaUF { uf: string; tarifa_residencial_rs_mwh: number }
 interface Aterragem { ponto_id: string; nome: string; uf: string; cabos_internacionais: number }
 interface Usina { nome: string; tipo: string; municipio: string | null; potencia_kw: number }
 const fmtData = (d?: string) => d ? d.slice(0, 10).split("-").reverse().join("/") : "data indisponível";
