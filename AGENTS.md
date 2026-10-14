@@ -21,3 +21,6 @@
 - Periodic temporal collections run through the `coleta-temporal` edge function, called by pg_cron via `coleta_temporal_disparar()` with a Vault key (`coleta_temporal_key`) and waiting synchronously (background tasks get killed); each run updates `agenda_coletas` and `ingest_runs`, and skips writing when the source hash is unchanged so reruns stay idempotent.
 - Temporal series for screens and variation calculations are read from `v_series_validas` (vigentes, 1950 to today); collectors only write years 1950 to the current year, and jobs that finish with gaps report status 'parcial' listing the missing periods.
 - Cruzamento chamada–projeto EMBRAPII é feito no banco por `chamadas_cruzar()` (mesmo método e termos ignorados de `desafios_cruzar()`; chamadas com vínculo em `chamada_desafio` herdam os projetos); o cliente só lê `chamada_projeto_relacionado` e calcula dias restantes na tela.
+
+- Home: página de texto sem gráficos; busca por perfis fora da navegação, código preservado.
+- Home status reads the catalog count and paginated successful collection sources fresh on each mount; hide both counts on read failure to avoid invented totals.

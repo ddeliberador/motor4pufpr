@@ -1,126 +1,58 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, GitBranch, Globe, Landmark } from "lucide-react";
-import { motion } from "framer-motion";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import PersonaSelector from "@/components/mvp/PersonaSelector";
+import { carregarStatusHome } from "@/lib/homeStatus";
 
-const LAYERS = [
-  { icon: BookOpen, label: "Conhecimento", sources: "OpenAlex · CAPES · CNPq · INEP" },
-  { icon: GitBranch, label: "Tecnologia", sources: "INPI · GitHub · RAIS · ANVISA" },
-  { icon: Landmark, label: "Política", sources: "PNCP · Transparência · TCU · SIOP" },
-  { icon: Globe, label: "Internacional", sources: "COMEX · BCB · OpenAlex intl." },
+const entradas = [
+  { to: "/mapa", titulo: "Mapa", descricao: "Explore o país pelas sete camadas da inteligência artificial, da energia às aplicações." },
+  { to: "/analise", titulo: "Análise", descricao: "Séries históricas, variação e comparações entre estados, setores e períodos." },
+  { to: "/bases", titulo: "Bases", descricao: "Todas as fontes usadas, com situação da coleta, periodicidade e o que ainda não funciona." },
+  { to: "/sobre", titulo: "Sobre", descricao: "O projeto, o método e quem participa da pesquisa." },
 ];
 
-const Index = () => (
-  <div className="min-h-screen flex flex-col bg-[#07101c]">
-    <Header />
+const Index = () => {
+  const [status, setStatus] = useState<Awaited<ReturnType<typeof carregarStatusHome>> | null>(null);
+  const [falhou, setFalhou] = useState(false);
+  useEffect(() => {
+    let ativo = true;
+    carregarStatusHome().then((resultado) => { if (ativo) setStatus(resultado); })
+      .catch(() => { if (ativo) setFalhou(true); });
+    return () => { ativo = false; };
+  }, []);
 
-    <main className="flex-1 pt-16">
-      <div className="max-w-6xl mx-auto px-6 py-16 lg:py-24">
-
-        {/* Layout duas colunas */}
-        <div className="grid lg:grid-cols-2 gap-16 items-start">
-
-          {/* Coluna esquerda — apresentação */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="space-y-10"
-          >
-            {/* Identificação acadêmica */}
-            <div>
-              <p className="text-xs text-blue-600 font-mono tracking-widest uppercase mb-6">
-                PPGPP-UFPR · Políticas Públicas e Inovação
-              </p>
-              <h1 className="text-4xl lg:text-5xl font-bold text-white leading-tight mb-5">
-                Diagnóstico do<br />
-                <span className="text-blue-500">Sistema de<br />Inovação Brasileiro</span>
-              </h1>
-              <p className="text-slate-400 text-base leading-relaxed">
-                Conecta 40+ bases públicas e cruza quatro camadas analíticas para gerar diagnósticos verificáveis por tema tecnológico.
-              </p>
-            </div>
-
-            {/* As 4 camadas */}
-            <div className="space-y-3">
-              <p className="text-xs text-slate-600 uppercase tracking-widest font-mono">4 camadas analíticas</p>
-              {LAYERS.map((layer, i) => {
-                const Icon = layer.icon;
-                return (
-                  <div key={i} className="flex items-start gap-4 py-3 border-b border-slate-800/60">
-                    <div className="w-8 h-8 rounded bg-blue-950 border border-blue-900 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Icon className="w-4 h-4 text-blue-500" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-white">{layer.label}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{layer.sources}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Índices */}
-            <div className="flex flex-wrap gap-x-6 gap-y-3">
-              {[
-                { code: "GT", name: "Gap de Tradução" },
-                { code: "CD", name: "Dependência Externa" },
-                { code: "AUE", name: "Articulação U-E" },
-                { code: "EI", name: "Efetividade Instrumental" },
-              ].map(idx => (
-                <div key={idx.code} className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-blue-500">{idx.code}</span>
-                  <span className="text-xs text-slate-500">{idx.name}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Link conceito */}
-            <Link
-              to="/conceito"
-              className="inline-flex items-center gap-2 text-xs text-slate-600 hover:text-slate-400 transition-colors"
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              Nelson &amp; Winter · Mazzucato · Freeman
-            </Link>
-
-            {/* Selo institucional — Banco Brasileiro de Soluções de IA */}
-            <div className="border border-slate-800 rounded-lg px-4 py-3 flex items-start gap-3">
-              <div className="w-1.5 h-full min-h-[2rem] bg-blue-600 rounded-full flex-shrink-0 mt-0.5" />
+  return (
+    <div className="home-textual min-h-screen bg-background text-foreground">
+      <Header />
+      <main className="mx-auto max-w-[928px] px-4 pb-14 pt-44 sm:px-6 sm:pt-40">
+        <h1 className="home-title max-w-[16ch] font-bold leading-[1.06]">
+          Onde está a inovação brasileira e como ela evolui
+        </h1>
+        <p className="mt-7 max-w-[54ch] text-lg leading-relaxed text-muted-foreground">
+          Dados públicos de pesquisa, energia, infraestrutura, mercado e política em um só lugar, cada um com a fonte e a data da coleta.
+        </p>
+        <nav aria-label="Explore o Motor" className="mt-12 border-t border-border sm:mt-16">
+          {entradas.map(({ to, titulo, descricao }) => (
+            <Link key={to} to={to} className="group flex items-center justify-between gap-6 border-b border-border py-[26px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
               <div>
-                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-mono mb-1">Registro acadêmico</p>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Submetido ao{" "}
-                  <span className="text-blue-400 font-medium">Banco Brasileiro de Soluções de IA</span>
-                  {" "}em 28/07/2026 como protótipo de pesquisa de doutorado acadêmico.
-                </p>
-                <p className="text-[10px] text-slate-600 mt-1">PPGPP · UFPR · Políticas Públicas e Inovação</p>
+                <h2 className="text-2xl font-semibold group-hover:text-accent">{titulo}</h2>
+                <p className="mt-2 max-w-[56ch] text-[15px] leading-relaxed text-muted-foreground">{descricao}</p>
               </div>
-            </div>
-          </motion.div>
-
-          {/* Coluna direita — busca */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-          >
-            <div className="bg-[#0c1929] border border-slate-800 rounded-2xl p-8">
-              <p className="text-xs text-slate-600 uppercase tracking-widest font-mono mb-6">
-                Consulta ao sistema
-              </p>
-              <PersonaSelector />
-            </div>
-          </motion.div>
-
+              <span aria-hidden="true" className="shrink-0 text-2xl text-accent motion-safe:transition-transform motion-safe:duration-150 motion-safe:group-hover:translate-x-1">→</span>
+            </Link>
+          ))}
+        </nav>
+        <div aria-live="polite" className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-[13px] leading-relaxed text-muted-foreground tabular-nums">
+          {status && <><span>{status.bases.toLocaleString("pt-BR")} bases no catálogo</span><span>{status.coletas.toLocaleString("pt-BR")} com coleta registrada</span></>}
+          {falhou && <span>Contagens indisponíveis no momento.</span>}
+          <span className="text-warning">CNPq e CAPES ainda sem dado real</span>
         </div>
-      </div>
-    </main>
-
-    <Footer />
-  </div>
-);
+      </main>
+      <footer className="mx-auto max-w-[928px] border-t border-border px-4 py-8 text-[13px] leading-relaxed text-muted-foreground sm:px-6">
+        <p>Pesquisa de doutorado em Políticas Públicas, PPGPP/UFPR</p>
+        <p className="mt-1">Orientação: Prof. Walter Shima · Coorientação: Profª Eunice Liu</p>
+      </footer>
+    </div>
+  );
+};
 
 export default Index;
