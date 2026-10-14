@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { buscarEditaisAbertosPNCP } from "../_shared/pncp.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -282,29 +283,17 @@ async function fetchMencoesQueridoDiario(query: string) {
 }
 
 async function fetchEditaisRelacionados(query: string) {
-  const termos = ["inovação", "incubadora", query.split(" ")[0]];
-  const allResults: any[] = [];
-  const seen = new Set<string>();
-  for (const termo of termos.slice(0, 3)) {
-    const data = await safeFetch(
-      `https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?tamanhoPagina=5&pagina=1&q=${encodeURIComponent(termo)}`
-    );
-    const items = Array.isArray(data) ? data : (data?.data || data?.content || []);
-    for (const item of items) {
-      const id = item.id || item.numeroCompra || item.objetoCompra?.slice(0, 30);
-      if (!id || seen.has(id)) continue;
-      seen.add(id);
-      allResults.push({
-        objeto: (item.objetoCompra || item.objeto || "").slice(0, 200),
-        orgao: item.orgaoEntidade?.razaoSocial || "",
-        valor: item.valorTotalEstimado || 0,
-        data: item.dataPublicacao || "",
-        uf: item.unidadeOrgao?.ufSigla || "",
-        url: item.linkSistemaOrigem || `https://pncp.gov.br/app/editais?q=${encodeURIComponent(termo)}`,
-      });
-    }
-  }
-  return allResults.slice(0, 8);
+  // Máx. 3 termos × 2 tentativas × 6 s (+ pausa): cabe nos 45 s da camada no motor-search.
+  const termos = [...new Set(["inovação", "incubadora", query.split(" ")[0]])];
+  const editais = await buscarEditaisAbertosPNCP(termos, { porTermo: 5, timeoutMs: 6000 });
+  return editais.slice(0, 8).map((e) => ({
+    objeto: e.objeto.slice(0, 200),
+    orgao: e.orgao,
+    valor: e.valor,
+    data: e.dataPublicacao,
+    uf: e.uf,
+    url: e.url,
+  }));
 }
 
 // --- Câmara dos Deputados — Dados Abertos ---
@@ -414,7 +403,7 @@ Deno.serve(async (req) => {
           { fonte: "Senado Federal — Dados Abertos", url: "https://legis.senado.leg.br/dadosabertos/processo", total: senado.length },
         ],
       },
-      sources: ["Políticas públicas curadas", "Lei do Bem/MCTI", "Lei da Informática/SEPIN", "ANPROTEC", "Querido Diário", "PNCP", "Câmara dos Deputados", "Senado Federal",
+      sources: ["Políticas públicas curadas", "Lei do Bem/MCTI", "Lei da Informática/SEPIN", "ANPROTEC", "Querido Diário", ...(editaisPNCP.length ? ["PNCP"] : []), "Câmara dos Deputados", "Senado Federal",
         ...(temaDataCenter ? ["ReData — MP 1.318/2026 (Planalto)"] : [])],
       processing_time_ms: Date.now() - start,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });

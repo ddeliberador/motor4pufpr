@@ -1,22 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { buscarEditaisAbertosPNCP } from "../_shared/pncp.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-async function safeFetch(url: string, options?: RequestInit, timeoutMs = 15000): Promise<any> {
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, { signal: ctrl.signal, ...options });
-    if (!res.ok) { console.warn(`${res.status}: ${url}`); return null; }
-    return await res.json();
-  } catch (e) {
-    console.warn(`fetch error: ${e instanceof Error ? e.message : e}`);
-    return null;
-  } finally { clearTimeout(t); }
-}
 
 const FAP_BY_UF: Record<string, { nome: string; sigla: string; url: string; descricao: string }> = {
   "SP": { nome: "Fundação de Amparo à Pesquisa do Estado de São Paulo", sigla: "FAPESP", url: "https://fapesp.br/chamadas", descricao: "Chamadas para empresas: PIPE (até R$ 2M), PAPPE, PITE para parcerias empresa-universidade" },
@@ -256,47 +244,33 @@ function getLinhasFinanciamento(uf: string) {
 
 
 async function fetchPregoesAbertos(query: string, uf: string, searchTerms: string[]) {
-  const resultados: any[] = [];
-  const seen = new Set<string>();
-  const termos = [query, ...searchTerms.slice(0, 2)];
-  const ufParam = uf ? `&ufSigla=${uf}` : "";
+  // Máx. 3 termos × 2 tentativas × 6 s (+ pausa): cabe nos 45 s da camada no motor-search.
+  const termos = [query, ...searchTerms.filter((t) => t !== query).slice(0, 2)];
+  const editais = await buscarEditaisAbertosPNCP(termos, { uf, porTermo: 8, timeoutMs: 6000 });
 
-  for (const termo of termos.slice(0, 3)) {
-    const data = await safeFetch(
-      `https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?tamanhoPagina=8&pagina=1&q=${encodeURIComponent(termo)}${ufParam}`,
-      {}, 15000
-    );
-    const items: any[] = Array.isArray(data) ? data : (data?.data || data?.content || []);
-    for (const item of items) {
-      const id = item.id || item.numeroCompra || String(item.objetoCompra || "").slice(0, 30);
-      if (!id || seen.has(id)) continue;
-      seen.add(id);
-
-      const dataFim = item.dataEncerramentoProposta || item.dataFim;
-      let diasRestantes: number | null = null;
-      let prazoUrgencia = "normal";
-      if (dataFim) {
-        const diff = (new Date(dataFim).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-        diasRestantes = Math.ceil(diff);
-        if (diasRestantes > 0 && diasRestantes <= 15) prazoUrgencia = "urgente";
-        else if (diasRestantes > 0 && diasRestantes <= 60) prazoUrgencia = "proximo";
-      }
-
-      resultados.push({
-        tipo: "pregao",
-        titulo: (item.objetoCompra || item.objeto || "Contratação pública").slice(0, 120),
-        orgao: item.orgaoEntidade?.razaoSocial || "",
-        valor: item.valorTotalEstimado || 0,
-        modalidade: item.modalidadeNome || "",
-        data_publicacao: (item.dataPublicacao || "").slice(0, 10),
-        data_encerramento: dataFim ? dataFim.slice(0, 10) : null,
-        dias_restantes: diasRestantes,
-        prazo_urgencia: prazoUrgencia,
-        uf: item.unidadeOrgao?.ufSigla || uf || "",
-        url: item.linkSistemaOrigem || "https://pncp.gov.br/app/editais",
-      });
+  const resultados = editais.map((e) => {
+    let diasRestantes: number | null = null;
+    let prazoUrgencia = "normal";
+    if (e.dataEncerramento) {
+      const diff = (new Date(e.dataEncerramento).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+      diasRestantes = Math.ceil(diff);
+      if (diasRestantes > 0 && diasRestantes <= 15) prazoUrgencia = "urgente";
+      else if (diasRestantes > 0 && diasRestantes <= 60) prazoUrgencia = "proximo";
     }
-  }
+    return {
+      tipo: "pregao",
+      titulo: (e.objeto || "Contratação pública").slice(0, 120),
+      orgao: e.orgao,
+      valor: e.valor,
+      modalidade: e.modalidade,
+      data_publicacao: e.dataPublicacao.slice(0, 10),
+      data_encerramento: e.dataEncerramento ? e.dataEncerramento.slice(0, 10) : null,
+      dias_restantes: diasRestantes,
+      prazo_urgencia: prazoUrgencia,
+      uf: e.uf || uf || "",
+      url: e.url,
+    };
+  });
 
   return resultados
     .sort((a, b) => {
@@ -331,7 +305,7 @@ Deno.serve(async (req) => {
         total_verba_disponivel: "R$ 3,6bi+ em subvenção Finep 2026 + crédito BNDES permanente",
 
       },
-      sources: ["PNCP", "Curadoria Motor da Inovação"],
+      sources: [...(pregoesAbertos.length ? ["PNCP"] : []), "Curadoria Motor da Inovação"],
       processing_time_ms: Date.now() - start,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 

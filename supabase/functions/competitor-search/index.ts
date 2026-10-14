@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { guardRequest } from "../_shared/guard.ts";
+import { agruparFornecedores, buscarContratosPNCP } from "../_shared/pncp.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -132,31 +133,17 @@ async function searchGitHubOrgs(query: string): Promise<any[]> {
 }
 
 // ===== Search via PNCP for companies with contracts =====
+// O fornecedor só existe nos contratos (as contratações não têm esse campo);
+// a busca textual já traz CNPJ e razão social de cada um.
 async function searchPNCPCompanies(query: string): Promise<any[]> {
-  const data = await safeFetch(
-    `https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?q=${encodeURIComponent(query)}&pagina=1&tamanhoPagina=20`
-  );
-  if (!data?.data) return [];
-
-  const companyCounts: Record<string, { cnpj: string; contracts: number; totalValue: number }> = {};
-  for (const item of data.data) {
-    const fornecedor = item.nomeRazaoSocialFornecedor || "";
-    const cnpj = item.cnpjFornecedor || "";
-    if (fornecedor && cnpj) {
-      if (!companyCounts[fornecedor]) companyCounts[fornecedor] = { cnpj, contracts: 0, totalValue: 0 };
-      companyCounts[fornecedor].contracts++;
-      companyCounts[fornecedor].totalValue += item.valorTotalEstimado || 0;
-    }
-  }
-
-  return Object.entries(companyCounts)
-    .sort((a, b) => b[1].contracts - a[1].contracts)
+  const contratos = await buscarContratosPNCP([query], { porTermo: 20, timeoutMs: 12000 });
+  return agruparFornecedores(contratos)
     .slice(0, 10)
-    .map(([name, info]) => ({
-      name,
-      cnpj: info.cnpj,
-      contracts: info.contracts,
-      total_value: info.totalValue,
+    .map((f) => ({
+      name: f.nome,
+      cnpj: f.cnpj,
+      contracts: f.contratos,
+      total_value: f.valorTotal,
       origin: "pncp",
     }));
 }
