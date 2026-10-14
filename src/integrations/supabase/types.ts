@@ -3177,6 +3177,10 @@ export type Database = {
         Args: { p_nome: string; p_raw_payload?: Json; p_tipo_raw: string }
         Returns: string
       }
+      coleta_temporal_disparar: {
+        Args: { p_agenda: string; p_extra?: Json; p_job: string }
+        Returns: number
+      }
       desafios_carregar: { Args: { p: Json }; Returns: number }
       desafios_cruzar: { Args: never; Returns: number }
       embrapii_derivar_interacoes: { Args: never; Returns: number }
