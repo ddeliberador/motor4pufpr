@@ -166,13 +166,14 @@ export type Resultado = { status: "ok" | "parcial"; mensagem: string };
 
 async function jobComex(sb: SupabaseClient, de: string, ate: string, retomar: boolean): Promise<Resultado> {
   const inicio = Date.now();
-  const prazo = inicio + 240_000; // cabe no timeout de 300 s do disparo
+  const prazo = inicio + 120_000; // o gateway encerra a requisição após 150 s ociosos
   const periodo = { from: de, to: ate };
   const respostas = new Map<number, Record<string, string>[]>();
   const faltando: string[] = [];
   let primeira = true;
+  const semRet = retomar ? await semRetornoComex(sb) : undefined;
   for (const [i, c] of CONSULTAS.entries()) {
-    if (retomar && await consultaJaGravada(sb, c, de, ate)) continue;
+    if (retomar && await consultaJaGravada(sb, c, de, ate, semRet)) continue;
     if (Date.now() > prazo - 20_000) { faltando.push(`${rotulo(c)} ${de} a ${ate}`); continue; }
     if (!primeira) await dormir(15_000);
     primeira = false;
@@ -191,10 +192,15 @@ async function jobComex(sb: SupabaseClient, de: string, ate: string, retomar: bo
   }
   const hash = await sha256(JSON.stringify([...respostas]));
   const job = `coleta-temporal:comex:${de}_${ate}`;
-  if (!faltando.length && (await ultimaColetaOk(sb, job))?.resposta_hash === hash) return { status: "ok", mensagem: `${de} a ${ate}: sem mudança` };
+  const semRetorno: string[] = [];
+  for (const [i, resp] of respostas) {
+    const vistos = new Set(resp.map((l) => `${codigo(l)}|${l.year}-${String(l.monthNumber).padStart(2, "0")}`));
+    for (const m of mesesEntre(de, ate)) for (const n of CONSULTAS[i].valores) if (!vistos.has(`${n}|${m}`)) semRetorno.push(`${n}|${m}`);
+  }
+  if (!retomar && !faltando.length && (await ultimaColetaOk(sb, job))?.resposta_hash === hash) return { status: "ok", mensagem: `${de} a ${ate}: sem mudança` };
   const coletaId = await iniciarColeta(sb, {
     jobId: job, fonte: "comexstat", versaoConector: VERSAO, respostaHash: hash,
-    escopo: { periodo, sh4: SH4, sh6: SH6, consultas: [...respostas.keys()].map((i) => rotulo(CONSULTAS[i])), faltando },
+    escopo: { periodo, sh4: SH4, sh6: SH6, consultas: [...respostas.keys()].map((i) => rotulo(CONSULTAS[i])), faltando, sem_retorno: semRetorno },
   });
   try {
     const comum = { natureza: "fluxo" as const, periodicidade: "mensal", base_preco: "nominal", camada_mapa: "dependencia", fonte_chave: null };
@@ -257,14 +263,18 @@ async function jobComex(sb: SupabaseClient, de: string, ate: string, retomar: bo
 // Backfill: processa o primeiro ano (2015 em diante) que ainda tem consulta sem dado.
 async function backfillComex(sb: SupabaseClient): Promise<Resultado> {
   const atual = new Date().getUTCFullYear();
+  const ultimo = await ultimoMesComex();
+  const semRet = await semRetornoComex(sb);
   for (let a = 2015; a <= atual; a++) {
+    const ate = a === atual ? ultimo : `${a}-12`;
+    if (ate < `${a}-01`) continue;
     let falta = false;
-    for (const c of CONSULTAS) if (!(await consultaJaGravada(sb, c, `${a}-01`, `${a}-12`))) { falta = true; break; }
+    for (const c of CONSULTAS) if (!(await consultaJaGravada(sb, c, `${a}-01`, ate, semRet))) { falta = true; break; }
     if (!falta) continue;
-    const r = await jobComex(sb, `${a}-01`, `${a}-12`, true);
+    const r = await jobComex(sb, `${a}-01`, ate, true);
     return { status: "parcial", mensagem: `ano ${a}: ${r.mensagem}` };
   }
-  return { status: "ok", mensagem: "concluído: todos os anos desde 2015 têm dado nas quatro consultas" };
+  return { status: "ok", mensagem: "concluído: todos os meses esperados desde 2015 estão gravados nas quatro consultas" };
 }
 
 async function ultimoMesComex(): Promise<string> {
