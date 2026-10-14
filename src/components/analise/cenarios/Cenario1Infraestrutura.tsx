@@ -4,6 +4,7 @@ import BalancoEnergia from "./BalancoEnergia";
 import CruzamentoInfraestrutura from "./CruzamentoInfraestrutura";
 import PainelEstadoInfraestrutura, { type DetalheInfra } from "./PainelEstadoInfraestrutura";
 import type { CargaBalanco, EstadoCruzamento } from "@/lib/cruzamentoInfra";
+import { rankingTarifa } from "@/lib/cruzamentoInfra";
 import { supabase } from "@/integrations/supabase/client";
 import { carregarDatacenters } from "@/lib/bi/datasets";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
@@ -30,6 +31,7 @@ const FONTES_ENERGIA: { fonte: string; cor: string }[] = [
   { fonte: "Nuclear (UTN)", cor: "hsl(280 30% 50%)" },
 ];
 interface CaboUF { uf: string; cabos_internacionais: number; cabos_fluviais: number; nomes_internacionais: string | null; nomes_fluviais: string | null }
+interface TarifaUF { uf: string; tarifa_residencial_rs_mwh: number }
 interface Aterragem { ponto_id: string; nome: string; uf: string; cabos_internacionais: number }
 interface Usina { nome: string; tipo: string; municipio: string | null; potencia_kw: number }
 const fmtData = (d?: string) => d ? d.slice(0, 10).split("-").reverse().join("/") : "data indisponível";
@@ -69,6 +71,7 @@ export default function Cenario1Infraestrutura() {
   const [ufSelecionada, setUfSelecionada] = useState("PR");
   const [painelUF, setPainelUF] = useState<string | null>(null);
   const [balanco, setBalanco] = useState<CargaBalanco>({ status: "carregando" });
+  const [tarifas, setTarifas] = useState<Record<string, number> | null>(null);
 
   useEffect(() => {
     // A API devolve no máximo 1.000 linhas por chamada: busca os 5.570 municípios em blocos paralelos.
@@ -115,6 +118,11 @@ export default function Cenario1Infraestrutura() {
     carregarDatacenters()
       .then(l => setDcs({ status: "ok", dados: l.map(x => ({ nome: String(x.nome ?? ""), cidade: String(x.cidade ?? ""), org: String(x.org ?? ""), uf: String(x.uf ?? "") })) }))
       .catch(e => setDcs({ status: "erro", erro: String(e?.message ?? e) }));
+
+    // Tarifa residencial (ANEEL) para o ranking de custo do cruzamento.
+    fetchAll<TarifaUF>(supabase.from("vw_energia_tarifa_uf").select("uf,tarifa_residencial_rs_mwh").order("uf"))
+      .then(t => setTarifas(Object.fromEntries(t.map(x => [x.uf, Number(x.tarifa_residencial_rs_mwh)]))))
+      .catch(() => setTarifas(null));
   }, []);
 
   const semFibra = backhaul.filter(b => b.pct < 70);
@@ -140,6 +148,7 @@ export default function Cenario1Infraestrutura() {
   }, [dcs]);
   const totDc = dcs.status === "ok" ? dcs.dados.length : 0;
 
+  const ranksTarifa = useMemo(() => rankingTarifa(tarifas), [tarifas]);
   const linhas = useMemo<EstadoCruzamento[]>(() => Object.keys(ESTADOS).map(uf => {
     const e = balanco.status === "ok" ? balanco.dados.find(x => x.uf === uf) : undefined;
     const b = backhaul.find(x => x.uf === uf);
@@ -149,8 +158,9 @@ export default function Cenario1Infraestrutura() {
       cabo: cabos.status === "ok" ? (ufsCabo.includes(uf) ? 1 : 0) : null,
       fibra: b ? b.pct : null,
       dc: dcs.status === "ok" ? dcUF.find(x => x.uf === uf)?.n ?? 0 : null,
+      tarifa: tarifas?.[uf] ?? null, rankTarifa: ranksTarifa[uf] ?? null,
     };
-  }), [balanco, backhaul, ufsCabo, dcUF, cabos.status, dcs.status]);
+  }), [balanco, backhaul, ufsCabo, dcUF, cabos.status, dcs.status, tarifas, ranksTarifa]);
 
   const topE = energiaUF[0];
   const detalhePainel = useMemo<DetalheInfra | null>(() => {

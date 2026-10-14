@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Cable, Network, Server, Zap, ChevronDown } from "lucide-react";
+import { Banknote, Cable, Network, Server, Zap, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
 import { SITUACOES_ENERGIA, fmtPct } from "@/lib/infraEstados";
@@ -21,6 +21,7 @@ export default function CruzamentoInfraestrutura({ linhas, totalDc, uf, onUfChan
   linhas: EstadoCruzamento[]; totalDc: number | null; uf: string; onUfChange: (uf: string) => void; carregando: boolean;
 }) {
   const [ordem, setOrdem] = useState<{ col: Coluna; desc: boolean }>({ col: "dc", desc: true });
+  const totalRanking = linhas.filter(l => l.rankTarifa != null).length;
   const resumo = resumoCruzamento(linhas, totalDc);
   const ordenadas = [...linhas].sort((a, b) => {
     const va = a[ordem.col], vb = b[ordem.col];
@@ -44,6 +45,7 @@ export default function CruzamentoInfraestrutura({ linhas, totalDc, uf, onUfChan
         <Cable aria-label={l.cabo == null ? "Cabo internacional indisponível" : l.cabo ? "Com cabo internacional" : "Sem cabo internacional"} className={l.cabo ? "text-primary" : "text-muted-foreground opacity-35"} />
       </div>
       <div className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground"><Network aria-hidden="true" /><span>Fibra {l.fibra == null ? "indisponível" : `${fmtPct(l.fibra)}%`}</span></div>
+      <div className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground"><Banknote aria-hidden="true" /><span title="Tarifa residencial · ANEEL">Tarifa {l.tarifa == null ? "indisponível" : `R$ ${l.tarifa.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}/MWh`} · {l.rankTarifa == null ? "ranking indisponível" : `${l.rankTarifa}º mais barata de ${totalRanking}`}</span></div>
       {l.fibra != null && <progress aria-label={`Municípios com fibra em ${ESTADOS[l.uf]}`} value={l.fibra} max={100} className="mt-1 block h-1 w-full overflow-hidden rounded [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:bg-primary [&::-moz-progress-bar]:bg-primary" />}
       {energiaSemProcessamento(l) && <span className="mt-3 flex items-start gap-1 text-[10px] font-semibold leading-tight text-[hsl(var(--energia-exporta))]"><Zap aria-hidden="true" />energia sem processamento</span>}
     </Button>
@@ -69,7 +71,7 @@ export default function CruzamentoInfraestrutura({ linhas, totalDc, uf, onUfChan
         })}
       </div>
       {linhas.some(l => l.situacao == null) && <div><h3 className="mb-3 text-sm text-muted-foreground">Balanço energético indisponível</h3><div className="grid grid-cols-2 gap-2 lg:grid-cols-6">{linhas.filter(l => l.situacao == null).map(cartao)}</div></div>}
-      <p className="text-[11px] text-muted-foreground">Situação comparada à relação geração/consumo do Brasil. Energia sem processamento: estados exportadores com até 2 datacenters. Cabo indica apenas ligação internacional; fibra indica municípios com backhaul.</p>
+      <p className="text-[11px] text-muted-foreground">Situação comparada à relação geração/consumo do Brasil. Energia sem processamento: estados exportadores com até 2 datacenters. Ranking de custo: tarifa residencial (ANEEL), do mais barato (1º) ao mais caro (27º). Cabo indica apenas ligação internacional; fibra indica municípios com backhaul.</p>
       <details className="border-t border-border pt-3">
         <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold"><ChevronDown size={16} />Ver como tabela</summary>
         <div className="mt-3 overflow-x-auto">
