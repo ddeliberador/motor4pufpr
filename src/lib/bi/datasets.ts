@@ -185,6 +185,21 @@ const CONECTORES: DatasetDef[] = [
     load: () => lerOrdenado("vw_energia_serie_uf", "uf,ano,geracao_gwh,consumo_gwh,razao_geracao_consumo,indice_relativo", "uf,ano"),
   },
   {
+    key: "uf_infra_painel", table: "", label: "Infraestrutura por UF: energia em cinco perguntas", descricao: "",
+    columns: [d("uf", "uf"), d("nome_subsistema", "nome_subsistema"), d("subsistema_papel", "subsistema_papel"), d("situacao", "situacao"), d("distribuidora_principal", "distribuidora_principal"), m("razao_geracao_consumo", "razao_geracao_consumo"), m("tarifa_residencial_rs_mwh", "tarifa_residencial_rs_mwh"), m("tarifa_dif_brasil_pct", "tarifa_dif_brasil_pct"), m("cfurh_estado_municipios_mi", "cfurh_estado_municipios_mi"), m("dec_horas", "dec_horas"), m("fec_interrupcoes", "fec_interrupcoes"), m("crescimento_consumo_5a_pct", "crescimento_consumo_5a_pct"), m("pct_municipios_com_fibra", "pct_municipios_com_fibra"), m("cabos_internacionais", "cabos_internacionais")],
+    load: () => lerOrdenado("vw_uf_infra_painel", "uf,nome_subsistema,subsistema_papel,situacao,distribuidora_principal,razao_geracao_consumo,tarifa_residencial_rs_mwh,tarifa_dif_brasil_pct,cfurh_estado_municipios_mi,dec_horas,fec_interrupcoes,crescimento_consumo_5a_pct,pct_municipios_com_fibra,cabos_internacionais", "uf"),
+  },
+  {
+    key: "energia_tarifa_uf", table: "", label: "Tarifa residencial por UF (ANEEL)", descricao: "",
+    columns: [d("uf", "uf"), d("distribuidora_principal", "distribuidora_principal"), m("tarifa_residencial_rs_mwh", "tarifa_residencial_rs_mwh"), m("tarifa_residencial_brasil", "tarifa_residencial_brasil"), m("dif_brasil_pct", "dif_brasil_pct"), m("posicao_mais_cara", "posicao_mais_cara"), m("distribuidoras", "distribuidoras")],
+    load: () => lerOrdenado("vw_energia_tarifa_uf", "uf,distribuidora_principal,tarifa_residencial_rs_mwh,tarifa_residencial_brasil,dif_brasil_pct,posicao_mais_cara,distribuidoras", "uf"),
+  },
+  {
+    key: "ons_intercambio", table: "", label: "Intercâmbio entre subsistemas (ONS)", descricao: "",
+    columns: [d("ano", "ano"), d("origem", "origem"), d("destino", "destino"), m("mwmed_medio", "mwmed_medio"), m("gwh_liquido", "gwh_liquido")],
+    load: () => lerOrdenado("ons_intercambio_subsistema", "ano,origem,destino,mwmed_medio,gwh_liquido", "ano,origem,destino"),
+  },
+  {
     key: "entes_estaduais", table: "", label: "Entes estaduais de CT&I e TIC", descricao: "",
     columns: [d("uf", "uf"), d("tipo", "tipo"), d("rede", "rede"), d("sigla", "sigla"), d("nome", "nome"), d("municipio", "municipio")],
     load: async () => (await lerOrdenado("research_locations", "id,nome,tipo,uf,municipio,rede:raw_metadata->>rede,sigla:raw_metadata->>sigla", "id", ["fonte", "entes_estaduais"]))
