@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      agenda_coletas: {
+        Row: {
+          cron: string
+          descricao: string | null
+          funcao: string
+          job: string
+          ultima_execucao: string | null
+          ultima_mensagem: string | null
+          ultimo_status: string | null
+        }
+        Insert: {
+          cron: string
+          descricao?: string | null
+          funcao: string
+          job: string
+          ultima_execucao?: string | null
+          ultima_mensagem?: string | null
+          ultimo_status?: string | null
+        }
+        Update: {
+          cron?: string
+          descricao?: string | null
+          funcao?: string
+          job?: string
+          ultima_execucao?: string | null
+          ultima_mensagem?: string | null
+          ultimo_status?: string | null
+        }
+        Relationships: []
+      }
       ai_rate_limits: {
         Row: {
           created_at: string
