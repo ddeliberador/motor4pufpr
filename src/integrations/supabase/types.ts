@@ -35,6 +35,24 @@ export type Database = {
         }
         Relationships: []
       }
+      aneel_cfurh_req: {
+        Row: {
+          competencia: string | null
+          recurso: string | null
+          req_id: number
+        }
+        Insert: {
+          competencia?: string | null
+          recurso?: string | null
+          req_id: number
+        }
+        Update: {
+          competencia?: string | null
+          recurso?: string | null
+          req_id?: number
+        }
+        Relationships: []
+      }
       aneel_sync: {
         Row: {
           detalhe: string | null
@@ -65,6 +83,72 @@ export type Database = {
           registros?: number | null
           req_ids?: number[]
           situacao?: string | null
+        }
+        Relationships: []
+      }
+      aneel_tarifas_bt: {
+        Row: {
+          carregado_em: string | null
+          cnpj: string
+          fim_vigencia: string | null
+          inicio_vigencia: string
+          sig_agente: string | null
+          subgrupo: string
+          te_rs_mwh: number | null
+          total_rs_mwh: number | null
+          tusd_rs_mwh: number | null
+        }
+        Insert: {
+          carregado_em?: string | null
+          cnpj: string
+          fim_vigencia?: string | null
+          inicio_vigencia: string
+          sig_agente?: string | null
+          subgrupo: string
+          te_rs_mwh?: number | null
+          total_rs_mwh?: number | null
+          tusd_rs_mwh?: number | null
+        }
+        Update: {
+          carregado_em?: string | null
+          cnpj?: string
+          fim_vigencia?: string | null
+          inicio_vigencia?: string
+          sig_agente?: string | null
+          subgrupo?: string
+          te_rs_mwh?: number | null
+          total_rs_mwh?: number | null
+          tusd_rs_mwh?: number | null
+        }
+        Relationships: []
+      }
+      aneel_ucs_distribuidora_municipio: {
+        Row: {
+          cnpj: string
+          cod_ibge: string
+          ref: string
+          sig_agente: string | null
+          tipo_outorga: string | null
+          ucs_ativas: number | null
+          uf: string | null
+        }
+        Insert: {
+          cnpj: string
+          cod_ibge: string
+          ref: string
+          sig_agente?: string | null
+          tipo_outorga?: string | null
+          ucs_ativas?: number | null
+          uf?: string | null
+        }
+        Update: {
+          cnpj?: string
+          cod_ibge?: string
+          ref?: string
+          sig_agente?: string | null
+          tipo_outorga?: string | null
+          ucs_ativas?: number | null
+          uf?: string | null
         }
         Relationships: []
       }
@@ -1042,6 +1126,39 @@ export type Database = {
         }
         Relationships: []
       }
+      energia_cfurh_uf: {
+        Row: {
+          ano: number
+          carregado_em: string | null
+          meses: number | null
+          pago_estado_rs: number | null
+          pago_municipios_rs: number | null
+          pago_total_rs: number | null
+          recurso: string
+          uf: string
+        }
+        Insert: {
+          ano: number
+          carregado_em?: string | null
+          meses?: number | null
+          pago_estado_rs?: number | null
+          pago_municipios_rs?: number | null
+          pago_total_rs?: number | null
+          recurso: string
+          uf: string
+        }
+        Update: {
+          ano?: number
+          carregado_em?: string | null
+          meses?: number | null
+          pago_estado_rs?: number | null
+          pago_municipios_rs?: number | null
+          pago_total_rs?: number | null
+          recurso?: string
+          uf?: string
+        }
+        Relationships: []
+      }
       energia_indicadores_epe: {
         Row: {
           indicador: string
@@ -1100,6 +1217,30 @@ export type Database = {
             referencedColumns: ["indicador"]
           },
         ]
+      }
+      energia_uf_subsistema: {
+        Row: {
+          nome_subsistema: string
+          nota_fonte: string | null
+          nota_interligacao: string | null
+          subsistema: string
+          uf: string
+        }
+        Insert: {
+          nome_subsistema: string
+          nota_fonte?: string | null
+          nota_interligacao?: string | null
+          subsistema: string
+          uf: string
+        }
+        Update: {
+          nome_subsistema?: string
+          nota_fonte?: string | null
+          nota_interligacao?: string | null
+          subsistema?: string
+          uf?: string
+        }
+        Relationships: []
       }
       indicadores_uf: {
         Row: {
@@ -1176,6 +1317,36 @@ export type Database = {
           tem_backhaul?: boolean
           tipo?: string
           uf?: string
+        }
+        Relationships: []
+      }
+      infra_regras_uf: {
+        Row: {
+          codigo: string
+          condicao: string
+          justificativa: string
+          ordem: number
+          pergunta: string
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          codigo: string
+          condicao: string
+          justificativa: string
+          ordem: number
+          pergunta: string
+          tipo: string
+          titulo: string
+        }
+        Update: {
+          codigo?: string
+          condicao?: string
+          justificativa?: string
+          ordem?: number
+          pergunta?: string
+          tipo?: string
+          titulo?: string
         }
         Relationships: []
       }
@@ -1460,6 +1631,42 @@ export type Database = {
           subpilar?: string | null
           tipo_acesso?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      ons_intercambio_subsistema: {
+        Row: {
+          ano: number
+          carregado_em: string | null
+          destino: string
+          gwh_liquido: number | null
+          horas: number | null
+          mwmed_medio: number | null
+          nome_destino: string | null
+          nome_origem: string | null
+          origem: string
+        }
+        Insert: {
+          ano: number
+          carregado_em?: string | null
+          destino: string
+          gwh_liquido?: number | null
+          horas?: number | null
+          mwmed_medio?: number | null
+          nome_destino?: string | null
+          nome_origem?: string | null
+          origem: string
+        }
+        Update: {
+          ano?: number
+          carregado_em?: string | null
+          destino?: string
+          gwh_liquido?: number | null
+          horas?: number | null
+          mwmed_medio?: number | null
+          nome_destino?: string | null
+          nome_origem?: string | null
+          origem?: string
         }
         Relationships: []
       }
@@ -2239,6 +2446,32 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_energia_subsistema_fluxo: {
+        Row: {
+          ano: number | null
+          nome_subsistema: string | null
+          papel: string | null
+          saldo_exportado_gwh: number | null
+          saldo_exportado_mwmed: number | null
+          subsistema: string | null
+        }
+        Relationships: []
+      }
+      vw_energia_tarifa_uf: {
+        Row: {
+          dif_brasil_pct: number | null
+          distribuidora_principal: string | null
+          distribuidoras: number | null
+          metodo: string | null
+          pct_ucs_com_tarifa: number | null
+          posicao_mais_cara: number | null
+          tarifa_residencial_brasil: number | null
+          tarifa_residencial_rs_mwh: number | null
+          uf: string | null
+          vigencia_mais_recente: string | null
+        }
+        Relationships: []
+      }
       vw_energia_uf: {
         Row: {
           data_aneel: string | null
@@ -2422,6 +2655,46 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_uf_infra_painel: {
+        Row: {
+          ano_balanco: number | null
+          ano_cfurh: number | null
+          ano_intercambio: number | null
+          ano_qualidade: number | null
+          cabos_fluviais: number | null
+          cabos_internacionais: number | null
+          cfurh_estado_municipios_mi: number | null
+          com_fibra: number | null
+          crescimento_consumo_5a_pct: number | null
+          dec_brasil: number | null
+          dec_horas: number | null
+          dec_relativo_brasil: number | null
+          distribuidora_principal: string | null
+          fec_brasil: number | null
+          fec_interrupcoes: number | null
+          indice_relativo: number | null
+          municipios: number | null
+          nome_subsistema: string | null
+          nota_interligacao: string | null
+          nota_interligacao_fonte: string | null
+          pct_industrial: number | null
+          pct_municipios_com_fibra: number | null
+          razao_brasil: number | null
+          razao_geracao_consumo: number | null
+          saldo_bruto_gwh: number | null
+          situacao: string | null
+          subsistema: string | null
+          subsistema_papel: string | null
+          subsistema_saldo_exportado_gwh: number | null
+          tarifa_dif_brasil_pct: number | null
+          tarifa_posicao_mais_cara: number | null
+          tarifa_residencial_brasil: number | null
+          tarifa_residencial_rs_mwh: number | null
+          tarifa_vigencia: string | null
+          uf: string | null
+        }
+        Relationships: []
+      }
       vw_uf_limitacoes: {
         Row: {
           codigo: string | null
@@ -2477,6 +2750,17 @@ export type Database = {
       }
       embrapii_derivar_interacoes: { Args: never; Returns: number }
       fmt_br: { Args: { casas?: number; v: number }; Returns: string }
+      fn_uf_infra_apontamentos: {
+        Args: { p_datacenters?: number; p_uf: string }
+        Returns: {
+          codigo: string
+          ordem: number
+          pergunta: string
+          texto: string
+          tipo: string
+          titulo: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

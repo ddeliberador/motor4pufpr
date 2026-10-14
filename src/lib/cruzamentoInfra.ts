@@ -32,17 +32,3 @@ export function fraseBalanco(razao: number | null) {
     ? `gera ${(razao * 100).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}% do que consome`
     : `gera ${razao.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}× o que consome`;
 }
-
-export function apontamentosInfra(l: EstadoCruzamento) {
-  return [
-    { camada: "Energia", tipo: l.situacao === SITUACOES_ENERGIA[2] ? "Atenção" : l.situacao == null ? "Indisponível" : "Possibilidade",
-      evidencia: l.situacao == null ? "Balanço energético indisponível." : `${l.situacao}: ${fraseBalanco(l.razao)}.`,
-      acao: l.situacao === SITUACOES_ENERGIA[2] ? "Avaliar segurança do fornecimento, transmissão e contratos de energia antes de ampliar o processamento." : l.situacao == null ? "Confirmar o balanço antes de avaliar novos investimentos." : "Investigar locais com acesso à rede elétrica para processamento; o saldo estadual não comprova disponibilidade no terreno." },
-    { camada: "Conectividade", tipo: l.fibra == null ? "Indisponível" : l.fibra < 70 ? "Atenção" : "Possibilidade",
-      evidencia: l.fibra == null ? "Cobertura de fibra indisponível." : `${l.fibra}% dos municípios com backhaul${l.cabo == null ? "; cabos internacionais indisponíveis" : l.cabo ? "; há chegada de cabo internacional" : "; sem chegada de cabo internacional"}.`,
-      acao: l.fibra == null ? "Confirmar cobertura e rotas de fibra antes de escolher o local." : l.fibra < 100 ? "Priorizar os municípios sem backhaul e verificar rotas redundantes até os centros de processamento." : "Verificar redundância, capacidade e latência das rotas; cobertura municipal não mede velocidade." },
-    { camada: "Processamento", tipo: l.dc == null ? "Indisponível" : energiaSemProcessamento(l) ? "Possibilidade" : "Atenção",
-      evidencia: l.dc == null ? "Registros de datacenters indisponíveis." : `${l.dc} registros de datacenters e pontos de troca de tráfego${energiaSemProcessamento(l) ? ": energia sem processamento" : ""}.`,
-      acao: l.dc == null ? "Confirmar as instalações antes de estimar oferta de processamento." : energiaSemProcessamento(l) ? "Estudar novos centros de processamento próximos à geração, condicionados a fibra, transmissão, água e demanda comprovada." : l.dc === 0 ? "Investigar acesso ao processamento regional e demanda local antes de propor uma nova instalação." : "Avaliar expansão ou modernização das instalações existentes; a contagem não informa capacidade de computação nem GPUs." },
-  ];
-}
