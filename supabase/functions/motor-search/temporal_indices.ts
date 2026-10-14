@@ -5,7 +5,7 @@ import {
 
 const VERSAO_METODO = "v1-2026-10";
 const VERSAO_CONECTOR = "motor-search-temporal-v1-2026-10";
-const NOMES: Record<string, string> = { gt: "Índice GT", cd: "Índice CD", aue: "Índice AUE", ei: "Índice EI" };
+const NOMES: Record<string, string> = { gt: "Índice GT (Gap de Tradução)", cd: "Índice CD (Dependência Científica)", aue: "Índice AUE (Articulação U-E)", ei: "Índice EI (Efetividade Instrumental)" };
 
 /** Grava GT, CD, AUE e EI calculados nesta busca como fotos em observacoes. */
 export function registrarIndicesTemporal(p: {
