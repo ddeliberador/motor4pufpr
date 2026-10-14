@@ -86,6 +86,14 @@ export default function Cenario7DemandaPublica() {
         <MetricaCartao icon={CircleHelp} valor={c?.insuf} rotulo="com descrição insuficiente para cruzar" />
       </section>
 
+      {desafios && c && c.com > 0 && (
+        <div className="flex justify-end">
+          <Button variant="outline" size="sm" onClick={() => exportarComSolucaoExcel(desafios)}>
+            <Download size={14} className="mr-1" />Exportar em Excel os {c.com} com possível solução encontrada no Motor
+          </Button>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">{ROT.map((r, i) => <span key={r} className="flex items-center gap-1"><span className={`h-3 w-3 rounded-sm ${COR[i]}`} />{r}</span>)}</div>
 
       <section aria-labelledby="lacunas-t" className="space-y-3">
