@@ -28,7 +28,15 @@ async function fotoAneel(supabase: SupabaseClient) {
   const dataConjunto = usinas.map((u) => String(u.data_conjunto ?? "")).filter(Boolean).sort().pop() ?? null;
   const hash = await sha256(JSON.stringify(usinas));
   const ultima = await ultimaColetaOk(supabase, "map-infrastructure:aneel");
-  if (ultima?.resposta_hash === hash) return; // mesma cópia já fotografada
+  if (ultima?.resposta_hash === hash) {
+    // Mesma cópia já fotografada: só registra a conferência, sem nova foto.
+    const id = await iniciarColeta(supabase, {
+      jobId: "map-infrastructure:aneel", fonte: "aneel_usinas", versaoConector: VERSAO, respostaHash: hash,
+      escopo: { tabela: "aneel_usinas", data_conjunto: dataConjunto, registros: usinas.length, sem_mudanca: true },
+    });
+    await finalizarColeta(supabase, id, { ok: true, found: usinas.length, inserted: 0, inicioMs: inicio });
+    return;
+  }
 
   const coletaId = await iniciarColeta(supabase, {
     jobId: "map-infrastructure:aneel", fonte: "aneel_usinas", versaoConector: VERSAO, respostaHash: hash,
