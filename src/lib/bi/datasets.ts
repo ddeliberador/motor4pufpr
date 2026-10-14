@@ -201,6 +201,22 @@ const CONECTORES: DatasetDef[] = [
     load: () => lerOrdenado("ons_intercambio_subsistema", "ano,origem,destino,mwmed_medio,gwh_liquido", "ano,origem,destino"),
   },
   {
+    // valor_rs mistura prêmio, teto de contrato e fomento: só dimensão, nunca métrica somável.
+    key: "desafios_cobertura", table: "", label: "Desafios públicos e cobertura", descricao: "",
+    columns: [d("desafio_id", "desafio_id"), d("nome", "nome"), d("problema", "problema"), d("orgao", "orgao"), d("esfera", "esfera"), d("uf", "uf"), d("area", "area"), d("tipo_chamada", "tipo_chamada"), d("inscricoes_ate", "inscricoes_ate"), d("status", "status"), d("premio_ou_contrato", "premio_ou_contrato"), d("fonte_url", "fonte_url"), d("pagina_url", "pagina_url"), d("verificacao", "verificacao"), d("cobertura", "cobertura"), d("valor_rs", "valor_rs"), m("ano", "ano"), m("startups_segmento_uf", "startups_segmento_uf"), m("startups_segmento_brasil", "startups_segmento_brasil"), m("projetos_embrapii_relacionados", "projetos_embrapii_relacionados"), m("unidades_embrapii_relacionadas", "unidades_embrapii_relacionadas")],
+    load: () => lerOrdenado("vw_desafios_cobertura", "desafio_id,nome,problema,orgao,esfera,uf,area,tipo_chamada,ano,inscricoes_ate,status,premio_ou_contrato,valor_rs,fonte_url,pagina_url,verificacao,startups_segmento_uf,startups_segmento_brasil,projetos_embrapii_relacionados,unidades_embrapii_relacionadas,cobertura", "desafio_id"),
+  },
+  {
+    key: "desafios_lacunas_area", table: "", label: "Lacunas por área", descricao: "",
+    columns: [d("area", "area"), m("desafios", "desafios"), m("com_solucao_relacionada", "com_solucao_relacionada"), m("sem_solucao_catalogada", "sem_solucao_catalogada"), m("descricao_insuficiente", "descricao_insuficiente"), m("pct_sem_solucao", "pct_sem_solucao"), m("startups_segmento_brasil", "startups_segmento_brasil"), m("projetos_embrapii_relacionados", "projetos_embrapii_relacionados")],
+    load: () => lerOrdenado("vw_desafios_lacunas_area", "area,desafios,com_solucao_relacionada,sem_solucao_catalogada,descricao_insuficiente,pct_sem_solucao,startups_segmento_brasil,projetos_embrapii_relacionados", "area"),
+  },
+  {
+    key: "desafios_uf", table: "", label: "Desafios por UF", descricao: "",
+    columns: [d("uf", "uf"), m("desafios", "desafios"), m("com_solucao_relacionada", "com_solucao_relacionada"), m("sem_solucao_catalogada", "sem_solucao_catalogada"), m("abertos", "abertos"), m("municipais", "municipais"), m("estaduais", "estaduais"), m("federais", "federais")],
+    load: () => lerOrdenado("vw_desafios_uf", "uf,desafios,com_solucao_relacionada,sem_solucao_catalogada,abertos,municipais,estaduais,federais", "uf"),
+  },
+  {
     key: "entes_estaduais", table: "", label: "Entes estaduais de CT&I e TIC", descricao: "",
     columns: [d("uf", "uf"), d("tipo", "tipo"), d("rede", "rede"), d("sigla", "sigla"), d("nome", "nome"), d("municipio", "municipio")],
     load: async () => (await lerOrdenado("research_locations", "id,nome,tipo,uf,municipio,rede:raw_metadata->>rede,sigla:raw_metadata->>sigla", "id", ["fonte", "entes_estaduais"]))

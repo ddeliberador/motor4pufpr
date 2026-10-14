@@ -837,6 +837,138 @@ export type Database = {
           },
         ]
       }
+      desafio_area_segmento: {
+        Row: {
+          area: string
+          segmento: string
+        }
+        Insert: {
+          area: string
+          segmento: string
+        }
+        Update: {
+          area?: string
+          segmento?: string
+        }
+        Relationships: []
+      }
+      desafio_projeto_relacionado: {
+        Row: {
+          cod_projeto: string
+          desafio_id: string
+          n_termos: number | null
+          termos_em_comum: string[] | null
+        }
+        Insert: {
+          cod_projeto: string
+          desafio_id: string
+          n_termos?: number | null
+          termos_em_comum?: string[] | null
+        }
+        Update: {
+          cod_projeto?: string
+          desafio_id?: string
+          n_termos?: number | null
+          termos_em_comum?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "desafio_projeto_relacionado_desafio_id_fkey"
+            columns: ["desafio_id"]
+            isOneToOne: false
+            referencedRelation: "desafios_publicos"
+            referencedColumns: ["desafio_id"]
+          },
+          {
+            foreignKeyName: "desafio_projeto_relacionado_desafio_id_fkey"
+            columns: ["desafio_id"]
+            isOneToOne: false
+            referencedRelation: "vw_desafios_cobertura"
+            referencedColumns: ["desafio_id"]
+          },
+        ]
+      }
+      desafio_termos_ignorados: {
+        Row: {
+          motivo: string | null
+          termo: string
+        }
+        Insert: {
+          motivo?: string | null
+          termo: string
+        }
+        Update: {
+          motivo?: string | null
+          termo?: string
+        }
+        Relationships: []
+      }
+      desafios_publicos: {
+        Row: {
+          ano: number | null
+          area: string | null
+          carregado_em: string | null
+          desafio_id: string
+          esfera: string | null
+          fonte_url: string | null
+          inscricoes_ate: string | null
+          nome: string
+          nota: string | null
+          orgao: string | null
+          origem: string
+          pagina_url: string | null
+          premio_ou_contrato: string | null
+          problema: string | null
+          status_levantamento: string | null
+          tipo_chamada: string | null
+          uf: string | null
+          valor_rs: number | null
+          verificacao: string | null
+        }
+        Insert: {
+          ano?: number | null
+          area?: string | null
+          carregado_em?: string | null
+          desafio_id: string
+          esfera?: string | null
+          fonte_url?: string | null
+          inscricoes_ate?: string | null
+          nome: string
+          nota?: string | null
+          orgao?: string | null
+          origem?: string
+          pagina_url?: string | null
+          premio_ou_contrato?: string | null
+          problema?: string | null
+          status_levantamento?: string | null
+          tipo_chamada?: string | null
+          uf?: string | null
+          valor_rs?: number | null
+          verificacao?: string | null
+        }
+        Update: {
+          ano?: number | null
+          area?: string | null
+          carregado_em?: string | null
+          desafio_id?: string
+          esfera?: string | null
+          fonte_url?: string | null
+          inscricoes_ate?: string | null
+          nome?: string
+          nota?: string | null
+          orgao?: string | null
+          origem?: string
+          pagina_url?: string | null
+          premio_ou_contrato?: string | null
+          problema?: string | null
+          status_levantamento?: string | null
+          tipo_chamada?: string | null
+          uf?: string | null
+          valor_rs?: number | null
+          verificacao?: string | null
+        }
+        Relationships: []
+      }
       embrapii_extracoes: {
         Row: {
           extraido_em: string
@@ -2333,6 +2465,61 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_desafios_cobertura: {
+        Row: {
+          ano: number | null
+          area: string | null
+          cobertura: string | null
+          desafio_id: string | null
+          esfera: string | null
+          exemplos: string[] | null
+          exemplos_termos: string[] | null
+          fonte_url: string | null
+          inscricoes_ate: string | null
+          nome: string | null
+          orgao: string | null
+          pagina_url: string | null
+          premio_ou_contrato: string | null
+          problema: string | null
+          projetos_embrapii_relacionados: number | null
+          startups_segmento_brasil: number | null
+          startups_segmento_uf: number | null
+          status: string | null
+          tipo_chamada: string | null
+          uf: string | null
+          unidades: string[] | null
+          unidades_embrapii_relacionadas: number | null
+          valor_rs: number | null
+          verificacao: string | null
+        }
+        Relationships: []
+      }
+      vw_desafios_lacunas_area: {
+        Row: {
+          area: string | null
+          com_solucao_relacionada: number | null
+          desafios: number | null
+          descricao_insuficiente: number | null
+          pct_sem_solucao: number | null
+          projetos_embrapii_relacionados: number | null
+          sem_solucao_catalogada: number | null
+          startups_segmento_brasil: number | null
+        }
+        Relationships: []
+      }
+      vw_desafios_uf: {
+        Row: {
+          abertos: number | null
+          com_solucao_relacionada: number | null
+          desafios: number | null
+          estaduais: number | null
+          federais: number | null
+          municipais: number | null
+          sem_solucao_catalogada: number | null
+          uf: string | null
+        }
+        Relationships: []
+      }
       vw_embrapii_pi_ano: {
         Row: {
           ano: number | null
@@ -2748,6 +2935,8 @@ export type Database = {
         Args: { p_nome: string; p_raw_payload?: Json; p_tipo_raw: string }
         Returns: string
       }
+      desafios_carregar: { Args: { p: Json }; Returns: number }
+      desafios_cruzar: { Args: never; Returns: number }
       embrapii_derivar_interacoes: { Args: never; Returns: number }
       fmt_br: { Args: { casas?: number; v: number }; Returns: string }
       fn_uf_infra_apontamentos: {

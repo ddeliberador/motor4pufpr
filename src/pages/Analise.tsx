@@ -6,6 +6,7 @@ import Cenario3Governanca from "@/components/analise/cenarios/Cenario3Governanca
 import Cenario5Dependencia from "@/components/analise/cenarios/Cenario5Dependencia";
 import CenarioInteracao from "@/components/analise/cenarios/CenarioInteracao";
 import Cenario6SistemasEstaduais from "@/components/analise/cenarios/Cenario6SistemasEstaduais";
+import Cenario7DemandaPublica from "@/components/analise/cenarios/Cenario7DemandaPublica";
 import { Button } from "@/components/ui/button";
 
 const CENARIOS = [
@@ -21,9 +22,11 @@ const CENARIOS = [
     descricao: "Laços de cooperação ICT–empresa mediados pela EMBRAPII: quem coopera, com quem, com que dinheiro e com que resultado." },
   { id: 6, titulo: "Sistemas Estaduais", subtitulo: "Como se forma e se conecta o sistema de inovação de cada estado?", icone: "map", cor: "hsl(var(--sistema-local))",
     descricao: "Atores nas sete camadas de IA, relações entre estados, caminhos do fomento e limitações dos sistemas estaduais de inovação." },
+  { id: 7, titulo: "Demanda pública", subtitulo: "Os problemas que o setor público publicou têm solução no Motor?", icone: "campaign", cor: "#ef4444",
+    descricao: "Cruza desafios de inovação aberta já publicados pelo setor público com as soluções catalogadas: onde há oferta relacionada e onde há lacuna." },
 ] as const;
 
-type CenarioId = 1 | 2 | 3 | 4 | 5 | 6;
+type CenarioId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export default function Analise() {
   const [cenarioAtivo, setCenarioAtivo] = useState<CenarioId>(1);
@@ -36,7 +39,7 @@ export default function Analise() {
 
       {/* Menu de cenários em botões */}
       <div className="pt-20 border-b border-border bg-background/95 backdrop-blur sticky top-0 z-40">
-        <div className="px-4 py-3 max-w-7xl mx-auto grid grid-cols-2 gap-2 lg:grid-cols-6">
+        <div className="px-4 py-3 max-w-7xl mx-auto grid grid-cols-2 gap-2 lg:grid-cols-7">
           {CENARIOS.map(c => {
             const ativo = cenarioAtivo === c.id;
             return (
@@ -94,6 +97,7 @@ export default function Analise() {
         {cenarioAtivo === 4 && <Cenario5Dependencia />}
         {cenarioAtivo === 5 && <CenarioInteracao />}
         {cenarioAtivo === 6 && <Cenario6SistemasEstaduais />}
+        {cenarioAtivo === 7 && <Cenario7DemandaPublica />}
       </div>
     </div>
   );
