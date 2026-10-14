@@ -1,34 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
-const { from, range, eq, order } = vi.hoisted(() => ({
-  from: vi.fn(), range: vi.fn(), eq: vi.fn(), order: vi.fn(),
-}));
-vi.mock("@/lib/supabaseClient", () => ({ safeSupabase: { from } }));
+const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
+vi.mock("@/lib/supabaseClient", () => ({ safeSupabase: { functions: { invoke } } }));
 import { carregarStatusHome } from "@/lib/homeStatus";
-
-beforeEach(() => {
-  vi.resetAllMocks();
-  eq.mockReturnValue({ order });
-  order.mockReturnValue({ range });
-  from.mockImplementation((table: string) => ({ select: () => table === "catalogo_bases"
-    ? Promise.resolve({ count: 113, error: null }) : { eq } }));
-});
+beforeEach(() => vi.resetAllMocks());
 describe("Home status rules", () => {
-  it("counts distinct successful collection sources, with ordered pagination", async () => {
-    range.mockResolvedValueOnce({ data: Array.from({ length: 1000 }, () => ({ fonte: "aneel" })), error: null })
-      .mockResolvedValueOnce({ data: [{ fonte: "ipca" }, { fonte: "aneel" }], error: null });
-    expect(await carregarStatusHome()).toEqual({ bases: 113, coletas: 2 });
-    expect(eq).toHaveBeenCalledWith("ok", true);
-    expect(range).toHaveBeenNthCalledWith(2, 1000, 1999);
+  it("returns the catalog count and successful-source count from the protected reader", async () => {
+    invoke.mockResolvedValue({ data: { bases: 113, coletas: 13 }, error: null });
+    expect(await carregarStatusHome()).toEqual({ bases: 113, coletas: 13 });
+    expect(invoke).toHaveBeenCalledWith("home-status");
   });
   it("does not return default totals if a read fails", async () => {
-    range.mockResolvedValue({ data: null, error: new Error("denied") });
-    await expect(carregarStatusHome()).rejects.toThrow("denied");
+    invoke.mockResolvedValue({ data: null, error: new Error("denied") });
+    await expect(carregarStatusHome()).rejects.toThrow("Contagens indisponíveis");
+  });
+  it("rejects incomplete totals instead of filling missing values", async () => {
+    invoke.mockResolvedValue({ data: { bases: 113 }, error: null });
+    await expect(carregarStatusHome()).rejects.toThrow();
   });
   it("reads again on each visit without cached results", async () => {
-    range.mockResolvedValue({ data: [], error: null });
-    await carregarStatusHome();
-    await carregarStatusHome();
-    expect(from.mock.calls.filter(([table]) => table === "catalogo_bases")).toHaveLength(2);
+    invoke.mockResolvedValue({ data: { bases: 113, coletas: 13 }, error: null });
+    await carregarStatusHome(); await carregarStatusHome();
+    expect(invoke).toHaveBeenCalledTimes(2);
   });
 });

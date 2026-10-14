@@ -23,4 +23,4 @@
 - Cruzamento chamada–projeto EMBRAPII é feito no banco por `chamadas_cruzar()` (mesmo método e termos ignorados de `desafios_cruzar()`; chamadas com vínculo em `chamada_desafio` herdam os projetos); o cliente só lê `chamada_projeto_relacionado` e calcula dias restantes na tela.
 
 - Home: página de texto sem gráficos; busca por perfis fora da navegação, código preservado.
-- Home status reads the catalog count and paginated successful collection sources fresh on each mount; hide both counts on read failure to avoid invented totals.
+- Home status uses an aggregate-only public edge function with protected, ordered paginated reads because ingest_runs is admin-only; read fresh on each mount and hide both counts on failure.
