@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { Cable, Network, Server, Zap, TriangleAlert, ArrowUpRight, Info } from "lucide-react";
+import { Cable, Network, Server, Zap, TriangleAlert, ArrowUpRight, Info, Banknote, Clock, TrendingUp } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
 import { fraseBalanco, type EstadoCruzamento } from "@/lib/cruzamentoInfra";
+
+import MetricaCartao, { valorBalanco } from "./MetricaCartao";
 
 export interface DetalheInfra {
   energia: { rotulo: string; valor: string }[];
@@ -44,7 +46,8 @@ function Diagrama({ fluxos, destaque }: { fluxos: Fluxo[]; destaque: string | nu
 function Barra({ rotulo, valor, brasil, unidade }: { rotulo: string; valor: number | null; brasil: number | null; unidade: string }) {
   const max = Math.max(valor ?? 0, brasil ?? 0, 1);
   return <div className="space-y-1 text-xs">
-    <p><strong className="text-sm">{n(valor)}</strong> {unidade} · Brasil {n(brasil)}</p>
+    <MetricaCartao icon={Clock} valor={valor == null ? null : n(valor)} rotulo={unidade} />
+    <p className="text-[11px] text-muted-foreground">Brasil {n(brasil)} · {rotulo}</p>
     <div className="h-1.5 rounded bg-muted"><div className="h-1.5 rounded bg-primary" style={{ width: `${100 * (valor ?? 0) / max}%` }} /></div>
     <div className="h-1.5 rounded bg-muted"><div className="h-1.5 rounded bg-muted-foreground/50" style={{ width: `${100 * (brasil ?? 0) / max}%` }} /></div>
     <p className="text-[10px] text-muted-foreground">{rotulo}: estado (azul) e Brasil (cinza)</p>
@@ -89,13 +92,14 @@ export default function PainelEstadoInfraestrutura({ estado, detalhe, onClose }:
       {d.nota_interligacao && <p className="mt-2 rounded border border-border bg-muted/40 p-2 text-xs">{d.nota_interligacao} {d.nota_interligacao_fonte && <a className="text-primary underline" href={String(d.nota_interligacao_fonte)} target="_blank" rel="noreferrer">fonte</a>}</p>}
     </> },
     { t: "2. Quanto custa a energia aqui?", c: <>
-      <p className="text-sm"><strong className="text-lg">R$ {n(d.tarifa_residencial_rs_mwh, 0)}/MWh</strong> · Brasil R$ {n(d.tarifa_residencial_brasil, 0)}/MWh</p>
-      <p className="text-sm">{tdif == null ? "Diferença indisponível" : `${n(Math.abs(tdif))}% ${tdif >= 0 ? "acima" : "abaixo"} da média`}{d.tarifa_posicao_mais_cara != null && ` · ${28 - Number(d.tarifa_posicao_mais_cara)}ª mais barata de 27`}</p>
+      <MetricaCartao icon={Banknote} valor={d.tarifa_residencial_rs_mwh == null ? null : `R$ ${n(d.tarifa_residencial_rs_mwh, 0)}`} rotulo="por MWh" />
+      <p className="mt-2 text-[11px] text-muted-foreground">Brasil R$ {n(d.tarifa_residencial_brasil, 0)}/MWh</p>
+      <p className="text-[11px] text-muted-foreground">{tdif == null ? "Diferença indisponível" : `${n(Math.abs(tdif))}% ${tdif >= 0 ? "acima" : "abaixo"} da média`}{d.tarifa_posicao_mais_cara != null && ` · ${28 - Number(d.tarifa_posicao_mais_cara)}ª mais barata de 27`}</p>
       <p className="text-xs text-muted-foreground">Distribuidora principal: {d.distribuidora_principal ?? "indisponível"}</p>
       <p className="mt-2 text-[11px] text-muted-foreground">Tarifa homologada pela ANEEL, sem ICMS, PIS/Cofins e bandeiras; média das distribuidoras do estado ponderada pelas unidades consumidoras.</p>
     </> },
     { t: "3. Quem fica com a receita?", c: <>
-      <p className="text-sm"><strong className="text-lg">{cfurh == null ? "indisponível" : cfurh === 0 ? "R$ 0" : `R$ ${n(cfurh)} milhões`}</strong> de CFURH em {d.ano_cfurh ?? "—"}</p>
+      <MetricaCartao icon={Banknote} valor={cfurh == null ? null : cfurh === 0 ? "R$ 0" : `R$ ${n(cfurh)}`} rotulo={`CFURH${cfurh === 0 ? "" : " · milhões de reais"} em ${d.ano_cfurh ?? "—"}`} />
       <p className="mt-2 text-[11px] text-muted-foreground">O ICMS sobre energia é recolhido no estado onde ela é consumida. O estado que gera recebe a compensação financeira das hidrelétricas (CFURH) e, no caso de Itaipu, royalties.</p>
     </> },
     { t: "4. O fornecimento é confiável?", c: <>
@@ -103,11 +107,12 @@ export default function PainelEstadoInfraestrutura({ estado, detalhe, onClose }:
       <div className="mt-2"><Barra rotulo="FEC" valor={num(d.fec_interrupcoes)} brasil={num(d.fec_brasil)} unidade="interrupções" /></div>
       <p className="mt-2 text-[11px] text-muted-foreground">ANEEL/EPE; média do Brasil ponderada pelo número de consumidores.</p>
     </> },
-    { t: "5. Há infraestrutura para crescer?", c: <dl className="space-y-1 text-sm">
-      <div><dt className="text-xs text-muted-foreground">Crescimento do consumo em 5 anos</dt><dd className="font-semibold">{d.crescimento_consumo_5a_pct == null ? "indisponível" : `${n(d.crescimento_consumo_5a_pct)}%`}</dd></div>
-      <div><dt className="text-xs text-muted-foreground">Municípios com fibra</dt><dd className="font-semibold">{d.pct_municipios_com_fibra == null ? "indisponível" : `${n(d.pct_municipios_com_fibra)}% (${d.com_fibra} de ${d.municipios})`}</dd></div>
-      <div><dt className="text-xs text-muted-foreground">Cabos submarinos internacionais</dt><dd className="font-semibold">{d.cabos_internacionais ?? "indisponível"}</dd></div>
-    </dl> },
+    { t: "5. Há infraestrutura para crescer?", c: <div className="grid grid-cols-2 gap-3">
+      <MetricaCartao className="col-span-2" icon={TrendingUp} valor={d.crescimento_consumo_5a_pct == null ? null : `${n(d.crescimento_consumo_5a_pct)}%`} rotulo="crescimento do consumo em 5 anos" />
+      <MetricaCartao icon={Network} valor={d.pct_municipios_com_fibra == null ? null : `${n(d.pct_municipios_com_fibra)}%`} rotulo="municípios com fibra" />
+      <MetricaCartao icon={Cable} valor={d.cabos_internacionais} rotulo="cabos internacionais" />
+      <p className="col-span-2 text-[11px] text-muted-foreground">Fibra: {d.com_fibra ?? "indisponível"} de {d.municipios ?? "indisponível"} municípios.</p>
+    </div> },
   ] : [];
 
   return <Dialog open={estado != null} onOpenChange={open => !open && onClose()}>
@@ -117,10 +122,24 @@ export default function PainelEstadoInfraestrutura({ estado, detalhe, onClose }:
         <DialogDescription>{estado?.situacao ?? "Balanço indisponível"} · {fraseBalanco(estado?.razao ?? null)}. Referência Brasil: {estado?.brasil == null ? "indisponível" : `${estado.brasil.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}×`}.</DialogDescription>
       </DialogHeader>
       <div className="grid gap-5 md:grid-cols-3">
-        {[{ nome: "Energia", icon: Zap, itens: detalhe?.energia ?? [] }, { nome: "Conectividade física", icon: Cable, itens: detalhe?.conectividade ?? [] }, { nome: "Processamento", icon: Server, itens: [{ rotulo: "Datacenters e pontos de troca de tráfego", valor: estado?.dc == null ? "indisponível" : String(estado.dc) }] }].map(b => <section key={b.nome} className="min-w-0 border-t-2 border-primary pt-3">
-          <h3 className="flex items-center gap-2 text-base font-bold"><b.icon className="h-4 w-4 text-primary" />{b.nome}</h3>
-          <dl className="mt-3 space-y-3">{b.itens.map(m => <div key={m.rotulo}><dt className="text-xs text-muted-foreground">{m.rotulo}</dt><dd className="mt-1 break-words text-sm font-semibold">{m.valor}</dd></div>)}</dl>
-        </section>)}
+        <section className="min-w-0 border-t-2 border-primary pt-3">
+          <h3 className="text-base font-bold">Energia</h3>
+          <MetricaCartao className="mt-3" icon={Zap} valor={valorBalanco(estado?.razao ?? null)} rotulo="geração / consumo" />
+          <dl className="mt-4 space-y-3">{(detalhe?.energia ?? []).map(m => <div key={m.rotulo}><dt className="text-[11px] text-muted-foreground">{m.rotulo}</dt><dd className="mt-1 break-words text-xs">{m.valor}</dd></div>)}</dl>
+        </section>
+        <section className="min-w-0 border-t-2 border-primary pt-3">
+          <h3 className="text-base font-bold">Conectividade física</h3>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <MetricaCartao icon={Network} valor={estado?.fibra == null ? null : `${n(estado.fibra, 0)}%`} rotulo="municípios com fibra" />
+            <MetricaCartao icon={Cable} valor={estado?.cabo} rotulo="cabos internacionais" />
+          </div>
+          <dl className="mt-4 space-y-3">{(detalhe?.conectividade ?? []).map(m => <div key={m.rotulo}><dt className="text-[11px] text-muted-foreground">{m.rotulo}</dt><dd className="mt-1 break-words text-xs">{m.valor}</dd></div>)}</dl>
+        </section>
+        <section className="min-w-0 border-t-2 border-primary pt-3">
+          <h3 className="text-base font-bold">Processamento</h3>
+          <MetricaCartao className="mt-3" icon={Server} valor={estado?.dc} rotulo="datacenters" />
+          <p className="mt-3 text-[11px] text-muted-foreground">Datacenters e pontos de troca de tráfego.</p>
+        </section>
       </div>
       <section className="border-t border-border pt-4" aria-labelledby="cinco-perguntas">
         <h3 id="cinco-perguntas" className="text-lg font-bold">Energia no estado em cinco perguntas</h3>

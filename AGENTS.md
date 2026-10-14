@@ -1,5 +1,7 @@
 # Project architecture rules
 
+- Scenario 1 cards and state panels share MetricaCartao for primary metric presentation, keeping icon, value, label and unavailable states consistent without changing data sources.
+
 - Keep the consolidated public data-source catalog on `/bases`; `/documentacao` only links to it, so source metadata has one public home.
 - Scenario 1 shares the loaded energy-balance rows and selected UF between the balance map and infrastructure crossover; this avoids duplicate reads and keeps state selection synchronized.
 - Scenario 1 state detail panels consume already loaded infrastructure data and deterministic evidence-based signals, not new queries or AI-generated viability claims; this keeps drill-down consistent with the charts.
