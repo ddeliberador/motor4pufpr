@@ -11,7 +11,7 @@ import GraficosOportunidades from "./GraficosOportunidades";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
 import { COBERTURAS, destacarTermos, rotuloCobertura, type Cobertura } from "@/lib/demandaPublica";
 import { diasRestantes, textoDias } from "@/lib/chamadasPublicas";
-import { FILTROS_VAZIOS, contagensOportunidades, filtrarOportunidades, chamadaIdNumerico, exportarOportunidadesExcel, type Oportunidade, type AreaOportunidades, type FiltrosOportunidade } from "@/lib/oportunidadesPublicas";
+import { FILTROS_VAZIOS, contagensOportunidades, filtrarOportunidades, chamadaIdNumerico, exportarOportunidadesExcel, unidadesSolucao, type UnidadeCatalogo, type Oportunidade, type AreaOportunidades, type FiltrosOportunidade } from "@/lib/oportunidadesPublicas";
 
 type Projeto = { cod_projeto: string; termos_em_comum: string[]; titulo: string | null; ue_sigla: string | null; ue_uf: string | null; ano: number | null };
 // Views supplied by the project, until generated client types include them.
@@ -32,6 +32,7 @@ export default function Cenario7DemandaPublica() {
   const [projetos, setProjetos] = useState<Projeto[] | null>(null);
   const [erroProjetos, setErroProjetos] = useState<string | null>(null);
   const [erroExportacao, setErroExportacao] = useState<string | null>(null);
+  const [catalogoUnidades, setCatalogoUnidades] = useState<UnidadeCatalogo[]>([]);
 
   useEffect(() => {
     let ativo = true;
@@ -49,7 +50,7 @@ export default function Cenario7DemandaPublica() {
   useEffect(() => {
     if (!aberto) return;
     let ativo = true;
-    setProjetos(null); setErroProjetos(null);
+    setProjetos(null); setErroProjetos(null); setCatalogoUnidades([]);
     (async () => {
       const chamada = aberto.tipo_registro === "chamada";
       const id = chamada ? chamadaIdNumerico(aberto) : aberto.id;
@@ -63,12 +64,23 @@ export default function Cenario7DemandaPublica() {
       }
       const p = new Map(dados.map(x => [x.cod_projeto, x]));
       if (ativo) setProjetos(rel.map(r => { const x = p.get(r.cod_projeto); return { ...r, titulo: x?.proj_titulo_publico ?? null, ue_sigla: x?.ue_sigla ?? null, ue_uf: x?.ue_uf ?? null, ano: x?.ano_contrato ?? null }; }));
+      const siglas = unidadesSolucao(aberto.unidades ?? [], dados, []).map(u => u.sigla);
+      if (siglas.length) {
+        try {
+          const unidades = await fetchAll<UnidadeCatalogo>(db.from("embrapii_unidades").select("sigla,uf,unidade_embrapii").in("sigla", siglas).order("co_unidade"));
+          if (ativo) setCatalogoUnidades(unidades);
+        } catch { /* Keep the unit labels already supplied by the opportunity and projects. */ }
+      }
     })().catch(e => ativo && setErroProjetos(String(e?.message ?? e)));
     return () => { ativo = false; };
   }, [aberto]);
 
   const c = oportunidades ? contagensOportunidades(oportunidades) : null;
   const lista = oportunidades ? filtrarOportunidades(oportunidades, f) : [];
+  const unidades = aberto ? unidadesSolucao(aberto.unidades ?? [], projetos ?? [], catalogoUnidades) : [];
+  const segmentos = [...new Set(metodo?.seg.filter(s => s.area === aberto?.area).map(s => s.segmento) ?? [])];
+  const segmentosTexto = segmentos.length > 1 ? `${segmentos.slice(0, -1).join(", ")} e ${segmentos[segmentos.length - 1]}` : segmentos[0];
+  const unidadeTexto = (u: (typeof unidades)[number]) => u.nome ? `${u.nome} (${[u.sigla, u.uf].filter(Boolean).join(", ")})` : `${u.sigla}${u.uf ? ` (${u.uf})` : ""}`;
   const opcoes = (k: keyof Oportunidade) => [...new Set((oportunidades ?? []).map(o => o[k]).filter(v => typeof v === "string") as string[])].sort();
   const sel = (k: keyof FiltrosOportunidade, rot: string, ops: string[], nome?: (v: string) => string) => (
     <label className="text-xs text-muted-foreground">{rot}
@@ -126,7 +138,7 @@ export default function Cenario7DemandaPublica() {
       </section>
       <details className="rounded-lg border border-border p-4">
         <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold"><ChevronDown size={16} />Como cruzamos</summary>
-        <p className="mt-3 text-sm text-muted-foreground">Desafios e chamadas sem desafio ligado são comparados com os títulos dos projetos EMBRAPII. Chamadas com vínculo herdam os projetos dos desafios ligados. Um projeto conta como possivelmente relacionado quando compartilha ao menos dois termos específicos com o nome e o problema do desafio, isto é, termos que aparecem em até 40 títulos e que não estão na lista de termos genéricos. As startups entram por setor: a área do desafio corresponde a segmentos da ABStartups, numa tabela explícita. Não usamos IA no cruzamento por termos. As startups não têm descrição de produto na base, por isso contam só como oferta setorial.</p>
+        <p className="mt-3 text-sm text-muted-foreground">Desafios e chamadas sem desafio ligado são comparados com os títulos dos projetos EMBRAPII. Chamadas com vínculo herdam os projetos dos desafios ligados. Um projeto conta como possivelmente relacionado quando compartilha ao menos dois termos específicos com o nome e o problema do desafio, isto é, termos que aparecem em até 40 títulos e que não estão na lista de termos genéricos. As startups entram por setor: a área do desafio corresponde a segmentos da ABStartups, numa tabela explícita. Não usamos IA no cruzamento por termos. As startups não têm descrição de produto na base, por isso contam só como oferta setorial. A contagem de startups é por setor e não indica que alguma delas resolva o desafio; a ligação com a EMBRAPII é feita por termos em comum com os títulos dos projetos.</p>
         {metodo ? <div className="mt-4 grid gap-4 md:grid-cols-2">
           <div><h4 className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Área → segmentos ABStartups</h4>
             <table className="w-full text-xs"><tbody>{[...new Set(metodo.seg.map(s => s.area))].map(a => <tr key={a} className="border-b border-border/50 align-top"><td className="py-1 pr-2 font-medium">{a}</td><td className="py-1 text-muted-foreground">{metodo.seg.filter(s => s.area === a).map(s => s.segmento).join("; ")}</td></tr>)}</tbody></table></div>
@@ -147,20 +159,26 @@ export default function Cenario7DemandaPublica() {
             <span className={`w-fit rounded border px-1.5 py-0.5 text-xs font-semibold ${SELO[COBERTURAS.indexOf(aberto.cobertura)]}`}>{rotuloCobertura(aberto.cobertura)}</span>
             {aberto.chamada_nome && <p className="text-sm text-muted-foreground">Parte de: {aberto.chamada_nome}</p>}
             <div><h4 className="text-xs font-semibold uppercase text-muted-foreground">Descrição</h4><p className="mt-1 text-sm text-foreground">{aberto.descricao || "Não descrito na fonte."}</p></div>
-            <div className="grid grid-cols-2 gap-3 rounded-lg border border-border p-3">
-              <MetricaCartao icon={Landmark} valor={aberto.startups_segmento_uf} rotulo={`startups do segmento em ${nomeUf(aberto.uf)}`} />
-              <MetricaCartao icon={Landmark} valor={aberto.startups_segmento_brasil} rotulo="startups do segmento no Brasil" />
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold uppercase text-muted-foreground">Projetos EMBRAPII possivelmente relacionados</h4>
+            <section aria-label="Solução encontrada na EMBRAPII" className="space-y-2">
+              <h4 className="text-sm font-semibold">Solução encontrada na EMBRAPII</h4>
+              {aberto.cobertura === COBERTURAS[0] && unidades.length > 0 && <div className="border-l-2 border-accent pl-3">
+                <p className="text-base font-semibold text-accent">{unidades.length === 1 ? `Possível solução na unidade ${unidadeTexto(unidades[0])}` : `Possível solução em ${unidades.length} unidades EMBRAPII`}</p>
+                {unidades.length > 1 && <ul className="mt-2 space-y-1 text-sm">{unidades.map(u => <li key={`${u.sigla}-${u.uf}`}>{[u.sigla, u.nome, u.uf].filter(Boolean).join(" · ")}</li>)}</ul>}
+              </div>}
+              <h5 className="pt-1 text-xs font-semibold uppercase text-muted-foreground">Projetos EMBRAPII possivelmente relacionados</h5>
               <p className="mt-1 text-xs text-muted-foreground">Correspondência por termos em comum ou herdada dos desafios ligados. Indica competência próxima, não validação de aderência nem prova de solução.</p>
               {erroProjetos ? <p className="mt-2 text-sm text-muted-foreground">Projetos indisponíveis: {erroProjetos}</p> : projetos == null ? <p className="mt-2 text-sm text-muted-foreground">Carregando…</p> : !projetos.length ? <p className="mt-2 text-sm text-muted-foreground">Nenhum projeto relacionado pelos critérios do cruzamento.</p> :
                 <ul className="mt-2 space-y-2">{projetos.map(p => <li key={p.cod_projeto} className="rounded border border-border p-2 text-sm">
                   <p className="text-foreground">{p.titulo ? destacarTermos(p.titulo, p.termos_em_comum).map((s, i) => s.marcado ? <mark key={i} className="rounded bg-accent/20 px-0.5 text-foreground">{s.texto}</mark> : <span key={i}>{s.texto}</span>) : p.cod_projeto}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{[p.ue_sigla, p.ue_uf, p.ano].filter(Boolean).join(" · ")} · termos em comum: {p.termos_em_comum.join(", ")}</p>
                 </li>)}</ul>}
-            </div>
-            {!!aberto.unidades?.length && <div><h4 className="text-xs font-semibold uppercase text-muted-foreground">Unidades EMBRAPII envolvidas</h4><p className="mt-1 text-sm">{aberto.unidades.join(", ")}</p></div>}
+            </section>
+            {(aberto.startups_segmento_brasil != null || aberto.startups_segmento_uf != null) && <section aria-label="Startups do mesmo setor no Brasil" className="space-y-2 border-t border-border pt-4 text-xs text-muted-foreground">
+              <h4 className="text-xs font-medium">Startups do mesmo setor no Brasil</h4>
+              {aberto.startups_segmento_brasil != null && <p>{aberto.startups_segmento_brasil.toLocaleString("pt-BR")} startups mapeadas{segmentosTexto ? ` nos segmentos ${segmentosTexto}` : ""} (base ABStartups). Contexto de oferta do setor, sem verificação de aderência a este desafio.</p>}
+              {aberto.startups_segmento_uf != null && <p>{aberto.startups_segmento_uf.toLocaleString("pt-BR")} no estado{aberto.uf ? ` (${aberto.uf})` : ""}.</p>}
+              {aberto.startups_segmento_brasil == null && <p>Contexto de oferta do setor, sem verificação de aderência a este desafio.</p>}
+            </section>}
           </>}
         </DialogContent>
       </Dialog>

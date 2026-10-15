@@ -1,4 +1,5 @@
 # Roadmap — Catálogo de Bases como fonte da verdade
+- [x] Cenário 7: solução EMBRAPII separada do contexto setorial ABStartups; DB-002 e chamada conferidos no computador/celular, 18 testes aprovados; coluna do gráfico e método atualizados.
 - [x] Cenário 7: lista unificada (174; grupos 28/118/28; 18 vigentes), quadradinhos/cartograma, filtros, detalhes e Excel de 28 oportunidades conferidos; 17 testes aprovados, computador/celular sem rolagem horizontal.
 - [x] Home textual, navegação visível e status real sem cache; links, temas, celular e falha de leitura conferidos.
 - [x] Padronizar métricas dos cartões e painel do Cenário 1; SP, PA, AP e PR conferidos no computador e 390 px, testes e tipos aprovados.

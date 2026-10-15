@@ -1,6 +1,6 @@
 # Project architecture rules
 
-- Normalize datacenter state names/abbreviations to canonical UF codes in the shared frontend loader before aggregation, keeping charts, cards and lists consistent without dropping installations.
+- Normalize datacenter UFs in the shared loader before aggregation; keep charts/cards/lists consistent without dropping installations.
 
 - Scenario 1 cards and state panels share MetricaCartao, keeping icons, values, labels and unavailable states consistent without changing sources.
 
@@ -17,7 +17,7 @@
 - Cenário 1 lê energia de `vw_energia_uf`/`vw_energia_uf_tipo` e cabos de `vw_cabos_uf`, derivadas das mesmas tabelas que a função `map-infrastructure` serve ao Mapa e ao BI; fonte que falha mostra "indisponível", nunca zero, e só cabos com `internacional = true` contam como conexão com o exterior. Balanço energético (geração × consumo, classes, per capita) vem de `vw_energia_balanco_uf`, `vw_energia_consumo_classe_uf` e `vw_energia_serie_uf` (EPE); a situação do estado compara sua relação geração/consumo com a do Brasil, nunca com 100%, porque a geração inclui perdas e autoprodução.
 - Apontamentos de infraestrutura por UF (pontos críticos, oportunidades, contexto) vêm só de `fn_uf_infra_apontamentos`, com regras em `infra_regras_uf`; o cliente passa a contagem de datacenters que exibe e não escreve apontamentos próprios.
 - Cenário 7 lê vw_oportunidades (desafios + chamadas sem desafio); ordem padrão: com solução primeiro; gráfico de áreas em quadradinhos, sem cartograma de UFs (removido a pedido do autor).
-- Scenario 7 shares filtering/counts/Excel in oportunidadesPublicas; area/UF views and existing project relations keep categories consistent. Matching is a clue, not proof; prizes are never summed.
+- Scenario 7 shares filters/counts/Excel in oportunidadesPublicas; details separate deduplicated EMBRAPII units/projects from ABStartups sector context, omitting missing startup counts. Matching is not proof; never sum prizes.
 - Edge functions write time series only through `supabase/functions/_shared/temporal.ts` (ingest_runs as coleta, observacoes append-only, registrar_foto for versioned photos), in the background and without changing responses; observacoes dedupe by reading existing keys of the coleta because the idempotency index is partial and PostgREST cannot target it with ON CONFLICT.
 - Periodic temporal collections run through the `coleta-temporal` edge function, called by pg_cron via `coleta_temporal_disparar()` with a Vault key (`coleta_temporal_key`) and waiting synchronously (background tasks get killed); each run updates `agenda_coletas` and `ingest_runs`, and skips writing when the source hash is unchanged so reruns stay idempotent.
 - Temporal series for screens and variation calculations are read from `v_series_validas` (vigentes, 1950 to today); collectors only write years 1950 to the current year, and jobs that finish with gaps report status 'parcial' listing the missing periods.
