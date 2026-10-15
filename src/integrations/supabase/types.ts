@@ -663,6 +663,35 @@ export type Database = {
         }
         Relationships: []
       }
+      chamada_area: {
+        Row: {
+          area: string
+          chamada_id: number
+          classificado_em: string
+          origem: string
+        }
+        Insert: {
+          area: string
+          chamada_id: number
+          classificado_em?: string
+          origem?: string
+        }
+        Update: {
+          area?: string
+          chamada_id?: number
+          classificado_em?: string
+          origem?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chamada_area_chamada_id_fkey"
+            columns: ["chamada_id"]
+            isOneToOne: true
+            referencedRelation: "chamadas_publicas"
+            referencedColumns: ["chamada_id"]
+          },
+        ]
+      }
       chamada_desafio: {
         Row: {
           chamada_id: number
@@ -3185,6 +3214,60 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_oportunidades: {
+        Row: {
+          area: string | null
+          chamada_id: number | null
+          chamada_nome: string | null
+          cobertura: string | null
+          descricao: string | null
+          esfera: string | null
+          exemplos: string[] | null
+          exemplos_termos: string[] | null
+          fonte_url: string | null
+          id: string | null
+          nome: string | null
+          ordem_cobertura: number | null
+          ordem_status: number | null
+          orgao: string | null
+          pagina_url: string | null
+          prazo: string | null
+          projetos_embrapii: number | null
+          startups_segmento_brasil: number | null
+          startups_segmento_uf: number | null
+          status: string | null
+          tipo: string | null
+          tipo_registro: string | null
+          uf: string | null
+          unidades: string[] | null
+          valor_texto: string | null
+          verificacao: string | null
+        }
+        Relationships: []
+      }
+      vw_oportunidades_area: {
+        Row: {
+          area: string | null
+          com_solucao: number | null
+          insuficiente: number | null
+          sem_solucao: number | null
+          startups_segmento_brasil: number | null
+          total: number | null
+          vigentes: number | null
+        }
+        Relationships: []
+      }
+      vw_oportunidades_uf: {
+        Row: {
+          com_solucao: number | null
+          insuficiente: number | null
+          sem_solucao: number | null
+          total: number | null
+          uf: string | null
+          vigentes: number | null
+        }
+        Relationships: []
+      }
       vw_relacoes_cooperacao: {
         Row: {
           ano: number | null
@@ -3206,6 +3289,14 @@ export type Database = {
           status: string | null
           tecnologia: string | null
           valor_rateado: number | null
+        }
+        Relationships: []
+      }
+      vw_startups_area_uf: {
+        Row: {
+          area: string | null
+          n: number | null
+          uf: string | null
         }
         Relationships: []
       }
