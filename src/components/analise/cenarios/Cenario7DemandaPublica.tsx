@@ -11,7 +11,7 @@ import GraficosOportunidades from "./GraficosOportunidades";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
 import { COBERTURAS, destacarTermos, rotuloCobertura, type Cobertura } from "@/lib/demandaPublica";
 import { diasRestantes, textoDias } from "@/lib/chamadasPublicas";
-import { FILTROS_VAZIOS, contagensOportunidades, filtrarOportunidades, fraseLacunaOportunidades, chamadaIdNumerico, exportarOportunidadesExcel, type Oportunidade, type AreaOportunidades, type UfOportunidades, type FiltrosOportunidade } from "@/lib/oportunidadesPublicas";
+import { FILTROS_VAZIOS, contagensOportunidades, filtrarOportunidades, chamadaIdNumerico, exportarOportunidadesExcel, type Oportunidade, type AreaOportunidades, type UfOportunidades, type FiltrosOportunidade } from "@/lib/oportunidadesPublicas";
 
 type Projeto = { cod_projeto: string; termos_em_comum: string[]; titulo: string | null; ue_sigla: string | null; ue_uf: string | null; ano: number | null };
 // Views supplied by the project, until generated client types include them.
@@ -94,7 +94,6 @@ export default function Cenario7DemandaPublica() {
           <Download size={14} />Exportar em Excel as {c.com} oportunidades com possível solução
         </Button>{erroExportacao && <p role="alert" className="text-sm text-muted-foreground">{erroExportacao}</p>}
       </div>}
-      <p className="border-l-2 border-accent pl-4 text-base font-semibold">{areas ? fraseLacunaOportunidades(areas) ?? "Sem áreas no levantamento." : "Carregando…"}</p>
       {areas && ufs && <GraficosOportunidades areas={areas} ufs={ufs} selecionada={f.uf} onArea={area => setF({ ...FILTROS_VAZIOS, area })} onUf={uf => setF({ ...f, uf: f.uf === uf ? "" : uf })} />}
       <section aria-labelledby="lista-t" className="space-y-4">
         <h2 id="lista-t" className="text-xl font-bold">Lista de oportunidades</h2>

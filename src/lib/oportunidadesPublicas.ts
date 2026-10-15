@@ -28,11 +28,6 @@ export function contagensOportunidades(os: Oportunidade[]) {
     com: os.filter(o => o.cobertura === COBERTURAS[0]).length, sem: os.filter(o => o.cobertura === COBERTURAS[1]).length,
     insuf: os.filter(o => o.cobertura === COBERTURAS[2]).length };
 }
-export function fraseLacunaOportunidades(areas: AreaOportunidades[]) {
-  const a = [...areas].sort((a, b) => b.sem_solucao - a.sem_solucao || b.total - a.total)[0];
-  if (!a) return null;
-  return `Em ${a.area}, ${a.sem_solucao} de ${a.total - a.insuficiente} oportunidades com descrição não têm solução catalogada no Motor${a.startups_segmento_brasil ? `, embora haja ${a.startups_segmento_brasil.toLocaleString("pt-BR")} startups dos segmentos ligados à área` : ""}.`;
-}
 export function chamadaIdNumerico(o: Pick<Oportunidade, "id" | "chamada_id">) {
   if (o.chamada_id != null) return Number(o.chamada_id);
   const match = /^CH-(\d+)$/.exec(o.id);

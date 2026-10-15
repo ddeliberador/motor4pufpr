@@ -1,4 +1,4 @@
-import { FILTROS_VAZIOS, contagensOportunidades, filtrarOportunidades, ordenarOportunidades, linhasExcelOportunidades, fraseLacunaOportunidades, type Oportunidade } from "@/lib/oportunidadesPublicas";
+import { FILTROS_VAZIOS, contagensOportunidades, filtrarOportunidades, ordenarOportunidades, linhasExcelOportunidades, type Oportunidade } from "@/lib/oportunidadesPublicas";
 import { describe, it, expect } from "vitest";
 import { contagens, destacarTermos, fraseLacuna, filtrarDesafios, rotuloCobertura, type Desafio, type LacunaArea } from "@/lib/demandaPublica";
 
@@ -47,8 +47,5 @@ describe("oportunidades unificadas", () => {
     expect(linhas.map(l => l.tipo_registro)).toEqual(["desafio", "chamada"]);
     expect(linhas[0].chamada_nome).toBe("Edital");
     expect(linhas[1]["Valor ou prêmio"]).toBe("Até R$ 50 mil");
-  });
-  it("frase desconta descrições insuficientes do total unificado", () => {
-    expect(fraseLacunaOportunidades([{ area: "Saúde", total: 10, com_solucao: 2, sem_solucao: 5, insuficiente: 3, vigentes: 1, startups_segmento_brasil: null }])).toBe("Em Saúde, 5 de 7 oportunidades com descrição não têm solução catalogada no Motor.");
   });
 });
