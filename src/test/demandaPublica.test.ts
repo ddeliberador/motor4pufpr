@@ -1,4 +1,4 @@
-import { FILTROS_VAZIOS, contagensOportunidades, filtrarOportunidades, ordenarOportunidades, linhasExcelOportunidades, type Oportunidade } from "@/lib/oportunidadesPublicas";
+import { FILTROS_VAZIOS, contagensOportunidades, filtrarOportunidades, ordenarOportunidades, linhasExcelOportunidades, unidadesSolucao, type Oportunidade } from "@/lib/oportunidadesPublicas";
 import { describe, it, expect } from "vitest";
 import { contagens, destacarTermos, fraseLacuna, filtrarDesafios, rotuloCobertura, type Desafio, type LacunaArea } from "@/lib/demandaPublica";
 
@@ -31,6 +31,12 @@ describe("demanda pública", () => {
 
 const o = (p: Partial<Oportunidade>) => ({ id: "DB-001", tipo_registro: "desafio", nome: "Saúde", cobertura: "Possível solução relacionada no Motor", ordem_cobertura: 0, ordem_status: 0, status: "Aberta", prazo: null, ...p }) as Oportunidade;
 describe("oportunidades unificadas", () => {
+  it("DB-002 mantém uma unidade ISP em SP sem tratar IF-SP como nome completo", () => {
+    expect(unidadesSolucao(["ISP (SP)"], [{ ue_sigla: "ISP", ue_uf: "SP" }], [{ sigla: "ISP", uf: "SP", unidade_embrapii: "IF-SP" }])).toEqual([{ sigla: "ISP", uf: "SP", nome: null }]);
+  });
+  it("unidades distintas preservam o nome completo quando registrado", () => {
+    expect(unidadesSolucao(["ISP (SP)", "ABC (PR)"], [], [{ sigla: "ABC", uf: "PR", unidade_embrapii: "Instituto de Pesquisa" }])).toEqual([{ sigla: "ABC", uf: "PR", nome: "Instituto de Pesquisa" }, { sigla: "ISP", uf: "SP", nome: null }]);
+  });
   it("vigentes são Aberta e Em andamento para ambos os registros", () => {
     expect(contagensOportunidades([o({}), o({ tipo_registro: "chamada", status: "Em andamento" }), o({ status: "Recorrente", cobertura: "Sem solução catalogada no Motor" }), o({ status: "A verificar", cobertura: "Descrição insuficiente para cruzar" })])).toEqual({ total: 4, vigentes: 2, com: 2, sem: 1, insuf: 1 });
   });

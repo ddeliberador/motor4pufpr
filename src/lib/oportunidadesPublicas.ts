@@ -13,6 +13,23 @@ export type AreaOportunidades = { area: string; total: number; com_solucao: numb
 export type UfOportunidades = Omit<AreaOportunidades, "area" | "startups_segmento_brasil"> & { uf: string | null };
 export type FiltrosOportunidade = { busca: string; area: string; uf: string; esfera: string; status: string; tipo: string; cobertura: string; tipo_registro: string };
 export const FILTROS_VAZIOS: FiltrosOportunidade = { busca: "", area: "", uf: "", esfera: "", status: "", tipo: "", cobertura: "", tipo_registro: "" };
+export type UnidadeSolucao = { sigla: string; uf: string | null; nome: string | null };
+export type UnidadeCatalogo = { sigla: string | null; uf: string | null; unidade_embrapii: string | null };
+export function unidadesSolucao(rotulos: string[], projetos: { ue_sigla: string | null; ue_uf: string | null }[], catalogo: UnidadeCatalogo[]): UnidadeSolucao[] {
+  const unidades = new Map<string, UnidadeSolucao>();
+  const adicionar = (sigla: string, uf: string | null) => {
+    const cadastro = catalogo.find(u => u.sigla === sigla && (!uf || u.uf === uf));
+    const nome = cadastro?.unidade_embrapii?.trim();
+    const estado = uf ?? cadastro?.uf ?? null;
+    unidades.set(`${sigla}|${estado ?? ""}`, { sigla, uf: estado, nome: nome && /\s/.test(nome) ? nome : null });
+  };
+  rotulos.forEach(r => {
+    const m = /^(.*?)\s*\(([A-Z]{2})\)$/.exec(r.trim());
+    adicionar(m ? m[1].trim() : r.trim(), m?.[2] ?? null);
+  });
+  projetos.forEach(p => { if (p.ue_sigla) adicionar(p.ue_sigla, p.ue_uf); });
+  return [...unidades.values()].sort((a, b) => a.sigla.localeCompare(b.sigla) || (a.uf ?? "").localeCompare(b.uf ?? ""));
+}
 const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 export function ordenarOportunidades(os: Oportunidade[]) {
   return [...os].sort((a, b) => a.ordem_cobertura - b.ordem_cobertura || a.ordem_status - b.ordem_status
