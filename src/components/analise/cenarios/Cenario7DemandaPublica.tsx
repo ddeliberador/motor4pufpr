@@ -11,7 +11,7 @@ import GraficosOportunidades from "./GraficosOportunidades";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
 import { COBERTURAS, destacarTermos, rotuloCobertura, type Cobertura } from "@/lib/demandaPublica";
 import { diasRestantes, textoDias } from "@/lib/chamadasPublicas";
-import { FILTROS_VAZIOS, contagensOportunidades, filtrarOportunidades, chamadaIdNumerico, exportarOportunidadesExcel, type Oportunidade, type AreaOportunidades, type UfOportunidades, type FiltrosOportunidade } from "@/lib/oportunidadesPublicas";
+import { FILTROS_VAZIOS, contagensOportunidades, filtrarOportunidades, chamadaIdNumerico, exportarOportunidadesExcel, type Oportunidade, type AreaOportunidades, type FiltrosOportunidade } from "@/lib/oportunidadesPublicas";
 
 type Projeto = { cod_projeto: string; termos_em_comum: string[]; titulo: string | null; ue_sigla: string | null; ue_uf: string | null; ano: number | null };
 // Views supplied by the project, until generated client types include them.
@@ -25,7 +25,6 @@ const nomeUf = (u: string | null) => u == null ? "UF não identificada" : u === 
 export default function Cenario7DemandaPublica() {
   const [oportunidades, setOportunidades] = useState<Oportunidade[] | null>(null);
   const [areas, setAreas] = useState<AreaOportunidades[] | null>(null);
-  const [ufs, setUfs] = useState<UfOportunidades[] | null>(null);
   const [metodo, setMetodo] = useState<{ seg: { area: string; segmento: string }[]; ign: { termo: string; motivo: string | null }[] } | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [f, setF] = useState<FiltrosOportunidade>(FILTROS_VAZIOS);
@@ -39,8 +38,7 @@ export default function Cenario7DemandaPublica() {
     Promise.all([
       fetchAll<Oportunidade>(db.from("vw_oportunidades").select("*").order("ordem_cobertura").order("ordem_status").order("prazo", { nullsFirst: false }).order("id")),
       fetchAll<AreaOportunidades>(db.from("vw_oportunidades_area").select("*").order("area")),
-      fetchAll<UfOportunidades>(db.from("vw_oportunidades_uf").select("*").order("uf")),
-    ]).then(([o, a, u]) => { if (ativo) { setOportunidades(o); setAreas(a); setUfs(u); } }).catch(e => ativo && setErro(String(e?.message ?? e)));
+    ]).then(([o, a]) => { if (ativo) { setOportunidades(o); setAreas(a); } }).catch(e => ativo && setErro(String(e?.message ?? e)));
     Promise.all([
       fetchAll<{ area: string; segmento: string }>(db.from("desafio_area_segmento").select("area,segmento").order("area").order("segmento")),
       fetchAll<{ termo: string; motivo: string | null }>(db.from("desafio_termos_ignorados").select("termo,motivo").order("termo")),
@@ -94,7 +92,7 @@ export default function Cenario7DemandaPublica() {
           <Download size={14} />Exportar em Excel as {c.com} oportunidades com possível solução
         </Button>{erroExportacao && <p role="alert" className="text-sm text-muted-foreground">{erroExportacao}</p>}
       </div>}
-      {areas && ufs && <GraficosOportunidades areas={areas} ufs={ufs} selecionada={f.uf} onArea={area => setF({ ...FILTROS_VAZIOS, area })} onUf={uf => setF({ ...f, uf: f.uf === uf ? "" : uf })} />}
+      {areas && <GraficosOportunidades areas={areas} onArea={area => setF({ ...FILTROS_VAZIOS, area })} />}
       <section aria-labelledby="lista-t" className="space-y-4">
         <h2 id="lista-t" className="text-xl font-bold">Lista de oportunidades</h2>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
