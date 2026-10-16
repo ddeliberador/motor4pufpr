@@ -9,7 +9,7 @@ import { geocodeLote } from "@/utils/geocodeMunicipio";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search, X, ExternalLink, MapPin, Loader2, Filter, List, Database,
-  SlidersHorizontal,
+  SlidersHorizontal, BarChart3,
 } from "lucide-react";
 import Header from "@/components/Header";
 import MapaBrasil, { type AncoraPbia, type Ponto } from "@/components/mapa/MapaBrasil";
@@ -32,6 +32,10 @@ import type { EnriquecimentoLayers } from "@/components/mapa/caboSubmarino";
 import { cruzarLayersComAtores } from "@/utils/cruzarLayers";
 import { canonizar, passaLake, resumoLake, type SelecaoLake } from "@/components/mapa/dataLake";
 import { Button } from "@/components/ui/button";
+import { REGIAO_POR_UF, REGIOES, ROTULO_REGIAO, UFS_POR_REGIAO, type Regiao } from "@/lib/regioes";
+import { INDICADORES_REGIONAIS, corRegiao, formatarValorRegional, useSerieRegional } from "@/lib/seriesRegionais";
+import { FichaRegional, ReguaTempo } from "@/components/mapa/VisaoRegional";
+import type { VisaoRegionalMapa } from "@/components/mapa/MapaBrasil";
 import {
   type AntenaERB,
   type BackhaulMunicipio,
@@ -43,15 +47,6 @@ import {
 const COLUNAS =
   "id,nome,tipo,uf,municipio,latitude,longitude,fonte,fonte_url,cnpj,data_coleta,raw_metadata";
 
-const REGIAO_POR_UF: Record<string, string> = {
-  AC: "Norte", AM: "Norte", AP: "Norte", PA: "Norte", RO: "Norte", RR: "Norte", TO: "Norte",
-  AL: "Nordeste", BA: "Nordeste", CE: "Nordeste", MA: "Nordeste", PB: "Nordeste",
-  PE: "Nordeste", PI: "Nordeste", RN: "Nordeste", SE: "Nordeste",
-  DF: "Centro-Oeste", GO: "Centro-Oeste", MT: "Centro-Oeste", MS: "Centro-Oeste",
-  ES: "Sudeste", MG: "Sudeste", RJ: "Sudeste", SP: "Sudeste",
-  PR: "Sul", RS: "Sul", SC: "Sul",
-};
-const REGIOES = ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"];
 
 // Subtipos de geração da ANEEL (SIGA), conforme SigTipoGeracao,
 // agrupados por fonte de geração para o filtro da Layer 1.
@@ -210,6 +205,11 @@ export default function Mapa() {
   const [pontoSelecionadoId, setPontoSelecionadoId] = useState<string | null>(null);
   const [listaAberta, setListaAberta] = useState(false);
   const [painelPoliticasAberto, setPainelPoliticasAberto] = useState(false);
+  // Visão regional: macrorregiões coloridas pela série histórica + régua do tempo.
+  const [visaoRegional, setVisaoRegional] = useState(false);
+  const [indicadorRegionalId, setIndicadorRegionalId] = useState(INDICADORES_REGIONAIS[0].id);
+  const [idxAnoRegional, setIdxAnoRegional] = useState(0);
+  const [regiaoFoco, setRegiaoFoco] = useState<Regiao | null>(null);
   // Camadas de dados exibidas no mapa (todas ligadas por padrão).
   const [camadas, setCamadas] = useState<Set<CategoriaKey>>(
     () => new Set(CATEGORIAS.map((c) => c.key)),
@@ -904,7 +904,60 @@ export default function Mapa() {
   const interArcos = useMemo(() => agregarArcos((interFluxos ?? []).filter((r) =>
     (interAno == null || r.ano === interAno) && (interTecs.size === 0 || (r.tecnologia != null && interTecs.has(r.tecnologia))))), [interFluxos, interAno, interTecs]);
 
+  const indicadorRegional =
+    INDICADORES_REGIONAIS.find((i) => i.id === indicadorRegionalId) ?? INDICADORES_REGIONAIS[0];
+  const serieRegionalQ = useSerieRegional(indicadorRegional.id, visaoRegional);
+  const anosRegionais = useMemo(() => serieRegionalQ.data?.serie.anos ?? [], [serieRegionalQ.data]);
+  // Ao trocar de indicador, a régua começa no ano mais recente.
+  useEffect(() => {
+    setIdxAnoRegional(Math.max(0, anosRegionais.length - 1));
+  }, [anosRegionais]);
+  const anoRegional = anosRegionais.length ? anosRegionais[Math.min(idxAnoRegional, anosRegionais.length - 1)] : null;
+
+  const regionalMapa = useMemo<VisaoRegionalMapa | null>(() => {
+    if (!visaoRegional) return null;
+    const serie = serieRegionalQ.data?.serie;
+    const linha = serie && anoRegional != null ? serie.celulas[anoRegional] : null;
+    const preenchimento: Record<string, string> = {};
+    const dica: Record<string, string> = {};
+    for (const r of REGIOES) {
+      const c = linha?.[r];
+      for (const uf of UFS_POR_REGIAO[r]) {
+        preenchimento[uf] = corRegiao(c?.valor ?? null, serie?.maximo ?? 0);
+        const vUf = c?.porUf[uf];
+        dica[uf] = `${r} · ${formatarValorRegional(c?.valor ?? null)} ${indicadorRegional.unidade}` +
+          (anoRegional != null ? ` em ${anoRegional}` : "") +
+          `\n${uf}: ${vUf == null ? "sem dado" : formatarValorRegional(vUf)}`;
+      }
+    }
+    return {
+      preenchimento,
+      dica,
+      destaque: new Set(regiaoFoco ? UFS_POR_REGIAO[regiaoFoco] : []),
+      rotulos: REGIOES.map((r) => ({
+        lon: ROTULO_REGIAO[r][0],
+        lat: ROTULO_REGIAO[r][1],
+        titulo: r,
+        valor: linha ? formatarValorRegional(linha[r].valor) : "",
+        ativo: regiaoFoco === r,
+      })),
+      onSelecionarUf: (uf: string) => {
+        const r = REGIAO_POR_UF[uf];
+        if (r) setRegiaoFoco((atual) => (atual === r ? null : r));
+      },
+    };
+  }, [visaoRegional, serieRegionalQ.data, anoRegional, regiaoFoco, indicadorRegional.unidade]);
+
+  const alternarVisaoRegional = () => {
+    setVisaoRegional((v) => !v);
+    setListaAberta(false);
+    setPainelPoliticasAberto(false);
+    setUfFoco(null);
+  };
+
   const limpar = () => {
+    setVisaoRegional(false);
+    setRegiaoFoco(null);
     setInterAtiva(false);
     setInterSel(null);
     setBusca("");
@@ -1999,9 +2052,24 @@ export default function Mapa() {
                 </p>
                 <div className="inline-flex shrink-0 items-center rounded-lg border border-border bg-card p-0.5">
                   <button
+                    onClick={alternarVisaoRegional}
+                    aria-pressed={visaoRegional}
+                    title="Visão regional com evolução histórica"
+                    aria-label="Visão regional"
+                    className={`flex h-8 w-9 items-center justify-center rounded-md text-[11px] font-medium transition-colors sm:h-auto sm:w-auto sm:gap-1.5 sm:px-2.5 sm:py-1.5 ${
+                      visaoRegional
+                        ? "bg-primary/15 text-foreground"
+                        : "text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <BarChart3 className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Visão regional</span>
+                  </button>
+                  <button
                     onClick={() => {
                       setListaAberta((v) => !v);
                       setPainelPoliticasAberto(false);
+                      setVisaoRegional(false);
                     }}
                     aria-pressed={listaAberta}
                     title="Listagem filtrada"
@@ -2022,6 +2090,7 @@ export default function Mapa() {
                       onClick={() => {
                         setPainelPoliticasAberto((valor) => !valor);
                         setListaAberta(false);
+                        setVisaoRegional(false);
                       }}
                       aria-pressed={painelPoliticasAberto}
                       title="Políticas públicas por layer"
@@ -2065,10 +2134,11 @@ export default function Mapa() {
             )}
 
             {!isLoading && !error && (
-              <div className="relative flex min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-background shadow-sm">
-                <div className="relative min-w-0 flex-1 overflow-hidden bg-background transition-[width] duration-300">
+              <div className={`relative flex min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-background shadow-sm ${visaoRegional ? "flex-col sm:flex-row" : ""}`}>
+                <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-background transition-[width] duration-300">
                   <MapaBrasil
-                    pontos={pontos}
+                    pontos={visaoRegional ? [] : pontos}
+                    regional={regionalMapa}
                     ufSelecionada={ufFoco}
                     ufsSelecionadas={ufsSel}
                     ufsFiltroAtivas={ufsFiltroAtivas}
@@ -2134,12 +2204,32 @@ export default function Mapa() {
                         </div>); })()}
                     </div>
                   )}
-                  <p className="pointer-events-none absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-center text-[11px] text-muted-foreground sm:block">
+                  {visaoRegional && serieRegionalQ.data && (
+                    <ReguaTempo
+                      anos={anosRegionais}
+                      indice={Math.min(idxAnoRegional, Math.max(0, anosRegionais.length - 1))}
+                      onIndice={setIdxAnoRegional}
+                    />
+                  )}
+                  <p className={`pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-center text-[11px] text-muted-foreground ${visaoRegional ? "hidden" : "hidden sm:block"}`}>
                     <MapPin className="mr-1 inline h-3 w-3" />
                     {pontos.length.toLocaleString("pt-BR")} pontos georreferenciados · clique num
                     estado para aproximar, num ícone para ver a ficha
                   </p>
                 </div>
+                {visaoRegional && (
+                  <FichaRegional
+                    indicador={indicadorRegional}
+                    onIndicador={(id) => { setIndicadorRegionalId(id); }}
+                    dados={serieRegionalQ.data}
+                    carregando={serieRegionalQ.isLoading}
+                    erro={serieRegionalQ.error}
+                    ano={anoRegional}
+                    regiaoFoco={regiaoFoco}
+                    onRegiaoFoco={setRegiaoFoco}
+                    onFechar={() => setVisaoRegional(false)}
+                  />
+                )}
                 {listaAberta && (
                   <ListaFiltrados
                      itens={[...((grupoIds ? selecionadosOrdenados.filter((l) => grupoIds.has(l.id)) : selecionadosOrdenados).filter((l) => !catsEixoPbia || catsEixoPbia.has(l.categoria))), ...pbiaItens]}

@@ -25,3 +25,4 @@
 
 - Home: página de texto sem gráficos; busca por perfis fora da navegação, código preservado.
 - Home status uses an aggregate-only public edge function with protected, ordered paginated reads because ingest_runs is admin-only; read fresh on each mount and hide both counts on failure.
+- Visão regional do Mapa soma no cliente as séries por UF de `v_series_validas` (segmento vazio = total) nas 5 macrorregiões de `src/lib/regioes.ts`, fonte única da tabela UF→região; UF sem linha no ano fica fora da soma e aparece como cobertura parcial, nunca zero; participação é razão de somas e base 100 usa o primeiro ano positivo nos 10 anos anteriores.

@@ -260,6 +260,16 @@ interface Props {
   onSelecionarAncora?: (a: AncoraPbia) => void;
   /** Camadas temáticas extras desenhadas sobre o mapa (ex.: cooperação EMBRAPII). */
   sobreposicao?: (ctx: { tam: number; escala: number; bloqueado: () => boolean }) => React.ReactNode;
+  /** Visão regional: preenche cada UF com a cor da sua região e rotula as regiões. */
+  regional?: VisaoRegionalMapa | null;
+}
+
+export interface VisaoRegionalMapa {
+  preenchimento: Record<string, string>;
+  dica: Record<string, string>;
+  destaque: Set<string>;
+  rotulos: { lon: number; lat: number; titulo: string; valor: string; ativo: boolean }[];
+  onSelecionarUf: (uf: string) => void;
 }
 
 export default function MapaBrasil({
@@ -295,6 +305,7 @@ export default function MapaBrasil({
   corEixoPbia,
   onSelecionarAncora,
   sobreposicao,
+  regional,
 }: Props) {
   const [features, setFeatures] = useState<Feature[] | null>(null);
   const [erroMalha, setErroMalha] = useState<string | null>(null);
@@ -553,22 +564,26 @@ export default function MapaBrasil({
           {paths.map((p) => {
             const n = contagemPorUf[p.sigla] || 0;
             const ativa = ufsSelecionadas.has(p.sigla);
+            const fill = regional
+              ? regional.preenchimento[p.sigla] ?? "hsl(var(--muted) / 0.35)"
+              : ativa ? "hsl(var(--primary) / 0.22)" : "hsl(var(--muted) / 0.35)";
+            const realce = regional?.destaque.has(p.sigla);
             return (
               <path
                 key={p.sigla}
                 d={p.d}
-                fill={ativa ? "hsl(var(--primary) / 0.22)" : "hsl(var(--muted) / 0.35)"}
-                stroke="hsl(var(--foreground) / 0.25)"
-                strokeWidth={1.4 * escala}
+                fill={fill}
+                stroke={regional ? (realce ? "hsl(var(--primary) / 0.9)" : "hsl(var(--foreground) / 0.12)") : "hsl(var(--foreground) / 0.25)"}
+                strokeWidth={(regional && realce ? 2.2 : 1.4) * escala}
                 strokeLinejoin="round"
                 className={`transition-[fill] duration-200 hover:brightness-110 ${arrastando ? "cursor-grabbing" : "cursor-pointer"}`}
                 style={{ pointerEvents: arrastando ? "none" : "auto" }}
                 onClick={(e) => {
                   if (movidoRef.current) { e.stopPropagation(); return; }
-                  onSelecionarUf(p.sigla);
+                  (regional ? regional.onSelecionarUf : onSelecionarUf)(p.sigla);
                 }}
               >
-                <title>{`${p.sigla} — ${n.toLocaleString("pt-BR")} registros`}</title>
+                <title>{regional ? regional.dica[p.sigla] ?? p.sigla : `${p.sigla} — ${n.toLocaleString("pt-BR")} registros`}</title>
               </path>
             );
           })}
@@ -1005,6 +1020,24 @@ export default function MapaBrasil({
             >
               location_on
             </text>
+          </g>
+        )}
+        {regional && (
+          <g pointerEvents="none" aria-hidden>
+            {regional.rotulos.map((r) => {
+              const [x, y] = projetar(r.lon, r.lat);
+              const fs = 15 * escala;
+              return (
+                <g key={r.titulo}>
+                  <text x={x} y={y} textAnchor="middle" fontSize={fs} fontWeight={r.ativo ? 700 : 600}
+                    fill="hsl(var(--foreground))" stroke="hsl(var(--background))" strokeWidth={fs * 0.28}
+                    strokeLinejoin="round" paintOrder="stroke">{r.titulo}</text>
+                  <text x={x} y={y + fs * 1.15} textAnchor="middle" fontSize={fs * 0.85} fontWeight={500}
+                    fill="hsl(var(--foreground) / 0.85)" stroke="hsl(var(--background))" strokeWidth={fs * 0.22}
+                    strokeLinejoin="round" paintOrder="stroke">{r.valor}</text>
+                </g>
+              );
+            })}
           </g>
         )}
       </svg>

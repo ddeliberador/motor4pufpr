@@ -2,6 +2,7 @@
 // com todas as informações disponíveis na base e exportação em PDF.
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { REGIAO_POR_UF } from "@/lib/regioes";
 import { ChevronDown, FileDown, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { CATEGORIA_MAP, fonteLabel, type CategoriaKey } from "@/components/mapa/tipos";
@@ -15,14 +16,6 @@ interface PBIAEixoSimples { numero: number; nome: string; cor: string; layers: s
 
 const PAGINA = 50;
 
-const REGIAO_POR_UF: Record<string, string> = {
-  AC: "Norte", AM: "Norte", AP: "Norte", PA: "Norte", RO: "Norte", RR: "Norte", TO: "Norte",
-  AL: "Nordeste", BA: "Nordeste", CE: "Nordeste", MA: "Nordeste", PB: "Nordeste",
-  PE: "Nordeste", PI: "Nordeste", RN: "Nordeste", SE: "Nordeste",
-  DF: "Centro-Oeste", GO: "Centro-Oeste", MT: "Centro-Oeste", MS: "Centro-Oeste",
-  ES: "Sudeste", MG: "Sudeste", RJ: "Sudeste", SP: "Sudeste",
-  PR: "Sul", RS: "Sul", SC: "Sul",
-};
 
 /** Rótulos legíveis para os campos guardados em raw_metadata. */
 const META_LABEL: Record<string, string> = {
