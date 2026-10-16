@@ -11,6 +11,7 @@
 
 import type { ResearchLocation } from "@/lib/researchLocations";
 import { listaDe, type Enriquecimento } from "@/lib/locationEnrichment";
+import { REGIAO_POR_UF } from "@/lib/regioes";
 
 export type Controle = "check" | "dropdown";
 
@@ -198,14 +199,7 @@ const FUNCOES: OpcaoEixo[] = [
 
 // ------------------------------------------------------- 4. território
 
-export const REGIAO_POR_UF: Record<string, string> = {
-  AC: "Norte", AM: "Norte", AP: "Norte", PA: "Norte", RO: "Norte", RR: "Norte", TO: "Norte",
-  AL: "Nordeste", BA: "Nordeste", CE: "Nordeste", MA: "Nordeste", PB: "Nordeste",
-  PE: "Nordeste", PI: "Nordeste", RN: "Nordeste", SE: "Nordeste",
-  DF: "Centro-Oeste", GO: "Centro-Oeste", MT: "Centro-Oeste", MS: "Centro-Oeste",
-  ES: "Sudeste", MG: "Sudeste", RJ: "Sudeste", SP: "Sudeste",
-  PR: "Sul", RS: "Sul", SC: "Sul",
-};
+export { REGIAO_POR_UF };
 
 const REGIOES: OpcaoEixo[] = ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"].map(
   (r) => ({ key: r, label: r }),
