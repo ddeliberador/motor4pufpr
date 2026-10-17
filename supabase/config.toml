@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.coleta-temporal]
 verify_jwt = false
+
+[functions.coleta-cnpj]
+verify_jwt = false
