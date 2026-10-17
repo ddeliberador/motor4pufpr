@@ -66,6 +66,33 @@ const facetasTipo = (tipo: string) =>
 const segmentoDe = (l: ResearchLocation) =>
   typeof l.raw_metadata?.segmento === "string" ? (l.raw_metadata.segmento as string) : null;
 
+type AtorLocalizado = { cnpj: string; precisao: "endereco" | "cep" | "municipio"; latitude: number | null; longitude: number | null; fonte_coordenada: string | null; capturado_em: string | null };
+
+/**
+ * Atores com CNPJ recebem a coordenada do cadastro (CEP ou endereço) no lugar do
+ * centro do município; precisão 'municipio' só preenche quem não tem coordenada.
+ * A coordenada antiga fica guardada em coord_cnpj. Falha na leitura mantém as originais.
+ */
+async function aplicarCoordenadasCnpj(locais: ResearchLocation[]) {
+  const com = locais.filter((l) => l.cnpj);
+  if (!com.length) return;
+  let atores: AtorLocalizado[];
+  try {
+    atores = await fetchAll<AtorLocalizado>(
+      supabase.from("vw_atores_localizados").select("cnpj,precisao,latitude,longitude,fonte_coordenada,capturado_em").order("cnpj"),
+    );
+  } catch { return; }
+  const porCnpj = new Map(atores.map((a) => [a.cnpj, a]));
+  for (const l of com) {
+    const a = porCnpj.get(String(l.cnpj).replace(/\D/g, ""));
+    if (!a || a.latitude == null || a.longitude == null) continue;
+    if (a.precisao === "municipio" && l.latitude != null && l.longitude != null) continue;
+    l.coord_cnpj = { precisao: a.precisao, capturado_em: a.capturado_em, fonte: a.fonte_coordenada, latitude_anterior: l.latitude, longitude_anterior: l.longitude };
+    l.latitude = a.latitude;
+    l.longitude = a.longitude;
+  }
+}
+
 /** Busca paginada — a base tem mais linhas do que o limite por requisição. */
 async function carregarLocais(): Promise<ResearchLocation[]> {
   const passo = 1000;
@@ -81,6 +108,7 @@ async function carregarLocais(): Promise<ResearchLocation[]> {
     todos.push(...lote);
     if (lote.length < passo) break;
   }
+  await aplicarCoordenadasCnpj(todos);
   // Defesa: descarta coordenadas fora do território nacional (dado incorreto na fonte).
   return todos.filter(
     (l) =>

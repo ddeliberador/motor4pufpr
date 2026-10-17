@@ -454,6 +454,20 @@ export default function ListaFiltrados({
                           </div>
                         </div>
 
+                        {l.coord_cnpj && (
+                          <div className="flex items-center gap-3 px-3 py-2.5 border-b border-border/40">
+                            <span className="material-symbols-outlined text-base leading-none text-muted-foreground w-4 text-center" aria-hidden>location_on</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Origem da coordenada</p>
+                              <p className="text-xs text-foreground mt-0.5">
+                                Cadastro CNPJ, precisão {{ endereco: "endereço", cep: "CEP", municipio: "município" }[l.coord_cnpj.precisao]}
+                                {l.coord_cnpj.capturado_em ? `, coletado em ${new Date(l.coord_cnpj.capturado_em).toLocaleDateString("pt-BR")}` : ""}
+                              </p>
+                              {l.coord_cnpj.fonte && <p className="text-[11px] text-muted-foreground mt-0.5">{l.coord_cnpj.fonte}</p>}
+                            </div>
+                          </div>
+                        )}
+
                         {/* Data da coleta */}
                         <div className={`flex items-center gap-3 px-3 py-2.5 ${extras.length > 0 || href ? "border-b border-border/40" : ""}`}>
                           <span className="material-symbols-outlined text-base leading-none text-muted-foreground w-4 text-center" aria-hidden>calendar_today</span>

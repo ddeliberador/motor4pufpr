@@ -17,6 +17,8 @@ export interface ResearchLocation {
   cnpj: string | null;
   data_coleta: string;
   raw_metadata?: Record<string, unknown>;
+  /** Coordenada vinda do cadastro CNPJ (vw_atores_localizados), quando aplicada. */
+  coord_cnpj?: { precisao: "endereco" | "cep" | "municipio"; capturado_em: string | null; fonte: string | null; latitude_anterior: number | null; longitude_anterior: number | null };
 }
 
 export const FONTE_LABEL: Record<string, string> = {

@@ -15,3 +15,4 @@
 - [x] 5. Teste no navegador (admin e Colab)
 - [x] 6. Conector PBIA/CGEE integrado — validado antes por extração manual (25 com entregas / 19 iniciada / 10 não iniciada, medido 01/10/2026)
 - [x] Análise: C1 com os 5.570 municípios (paginação), gráfico C4 com L1–L7, menu em botões, títulos maiores, sem barra bicolor
+- [ ] Coleta CNPJ: aguardar fim dos lotes automáticos (~4–5 h) e conferir contagens finais.
