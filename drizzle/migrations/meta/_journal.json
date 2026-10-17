@@ -176,6 +176,13 @@
       "when": 1792000606224,
       "tag": "0024_chamadas_cruzar_simplifica",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792246626182,
+      "tag": "0025_cnpj_cadastro",
+      "breakpoints": true
     }
   ]
 }

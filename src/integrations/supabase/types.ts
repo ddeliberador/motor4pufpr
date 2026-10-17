@@ -663,6 +663,42 @@ export type Database = {
         }
         Relationships: []
       }
+      cep_coordenada: {
+        Row: {
+          cep: string
+          consultado_em: string
+          http_status: number | null
+          latitude: number | null
+          longitude: number | null
+          municipio: string | null
+          municipio_ibge: string | null
+          servico: string | null
+          uf: string | null
+        }
+        Insert: {
+          cep: string
+          consultado_em?: string
+          http_status?: number | null
+          latitude?: number | null
+          longitude?: number | null
+          municipio?: string | null
+          municipio_ibge?: string | null
+          servico?: string | null
+          uf?: string | null
+        }
+        Update: {
+          cep?: string
+          consultado_em?: string
+          http_status?: number | null
+          latitude?: number | null
+          longitude?: number | null
+          municipio?: string | null
+          municipio_ibge?: string | null
+          servico?: string | null
+          uf?: string | null
+        }
+        Relationships: []
+      }
       chamada_area: {
         Row: {
           area: string
@@ -849,6 +885,159 @@ export type Database = {
           nota?: string | null
           uf?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      cnpj_cadastro: {
+        Row: {
+          bairro: string | null
+          capturado_em: string
+          cep: string | null
+          cnae_principal: string | null
+          cnae_principal_descricao: string | null
+          cnaes_secundarios: string[]
+          cnpj: string
+          complemento: string | null
+          data_abertura: string | null
+          fonte: string
+          logradouro: string | null
+          mei: boolean | null
+          municipio: string | null
+          municipio_ibge: string | null
+          nome_fantasia: string | null
+          numero: string | null
+          porte: string | null
+          razao_social: string | null
+          situacao_cadastral: string | null
+          uf: string | null
+          versao_conector: string | null
+        }
+        Insert: {
+          bairro?: string | null
+          capturado_em?: string
+          cep?: string | null
+          cnae_principal?: string | null
+          cnae_principal_descricao?: string | null
+          cnaes_secundarios?: string[]
+          cnpj: string
+          complemento?: string | null
+          data_abertura?: string | null
+          fonte?: string
+          logradouro?: string | null
+          mei?: boolean | null
+          municipio?: string | null
+          municipio_ibge?: string | null
+          nome_fantasia?: string | null
+          numero?: string | null
+          porte?: string | null
+          razao_social?: string | null
+          situacao_cadastral?: string | null
+          uf?: string | null
+          versao_conector?: string | null
+        }
+        Update: {
+          bairro?: string | null
+          capturado_em?: string
+          cep?: string | null
+          cnae_principal?: string | null
+          cnae_principal_descricao?: string | null
+          cnaes_secundarios?: string[]
+          cnpj?: string
+          complemento?: string | null
+          data_abertura?: string | null
+          fonte?: string
+          logradouro?: string | null
+          mei?: boolean | null
+          municipio?: string | null
+          municipio_ibge?: string | null
+          nome_fantasia?: string | null
+          numero?: string | null
+          porte?: string | null
+          razao_social?: string | null
+          situacao_cadastral?: string | null
+          uf?: string | null
+          versao_conector?: string | null
+        }
+        Relationships: []
+      }
+      cnpj_geocodificado: {
+        Row: {
+          cnpj: string
+          fonte_coordenada: string
+          geocodificado_em: string
+          lat_cep: number | null
+          lat_municipio: number | null
+          latitude: number | null
+          lon_cep: number | null
+          lon_municipio: number | null
+          longitude: number | null
+          metodo: string
+          precisao: Database["public"]["Enums"]["precisao_coordenada"]
+        }
+        Insert: {
+          cnpj: string
+          fonte_coordenada: string
+          geocodificado_em?: string
+          lat_cep?: number | null
+          lat_municipio?: number | null
+          latitude?: number | null
+          lon_cep?: number | null
+          lon_municipio?: number | null
+          longitude?: number | null
+          metodo: string
+          precisao: Database["public"]["Enums"]["precisao_coordenada"]
+        }
+        Update: {
+          cnpj?: string
+          fonte_coordenada?: string
+          geocodificado_em?: string
+          lat_cep?: number | null
+          lat_municipio?: number | null
+          latitude?: number | null
+          lon_cep?: number | null
+          lon_municipio?: number | null
+          longitude?: number | null
+          metodo?: string
+          precisao?: Database["public"]["Enums"]["precisao_coordenada"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cnpj_geocodificado_cnpj_fkey"
+            columns: ["cnpj"]
+            isOneToOne: true
+            referencedRelation: "cnpj_cadastro"
+            referencedColumns: ["cnpj"]
+          },
+          {
+            foreignKeyName: "cnpj_geocodificado_cnpj_fkey"
+            columns: ["cnpj"]
+            isOneToOne: true
+            referencedRelation: "vw_atores_localizados"
+            referencedColumns: ["cnpj"]
+          },
+        ]
+      }
+      cnpj_pendencias: {
+        Row: {
+          cnpj: string
+          http_status: number | null
+          motivo: string
+          tentativas: number
+          ultima_tentativa: string
+        }
+        Insert: {
+          cnpj: string
+          http_status?: number | null
+          motivo: string
+          tentativas?: number
+          ultima_tentativa?: string
+        }
+        Update: {
+          cnpj?: string
+          http_status?: number | null
+          motivo?: string
+          tentativas?: number
+          ultima_tentativa?: string
         }
         Relationships: []
       }
@@ -2866,6 +3055,24 @@ export type Database = {
           },
         ]
       }
+      vw_atores_localizados: {
+        Row: {
+          capturado_em: string | null
+          cnae_principal: string | null
+          cnae_principal_descricao: string | null
+          cnpj: string | null
+          fonte_coordenada: string | null
+          geocodificado_em: string | null
+          latitude: number | null
+          longitude: number | null
+          mei: boolean | null
+          municipio: string | null
+          precisao: Database["public"]["Enums"]["precisao_coordenada"] | null
+          razao_social: string | null
+          uf: string | null
+        }
+        Relationships: []
+      }
       vw_atores_sni: {
         Row: {
           ator_id: string | null
@@ -2927,6 +3134,12 @@ export type Database = {
           pontos: number | null
           pontos_internacionais: number | null
           uf: string | null
+        }
+        Relationships: []
+      }
+      vw_cnpj_conhecidos: {
+        Row: {
+          cnpj: string | null
         }
         Relationships: []
       }
@@ -3463,6 +3676,14 @@ export type Database = {
         Args: { p_nome: string; p_raw_payload?: Json; p_tipo_raw: string }
         Returns: string
       }
+      cnpj_fila: {
+        Args: { p_limite: number }
+        Returns: {
+          cnpj: string
+        }[]
+      }
+      coleta_cnpj_agendar: { Args: { p_ligar: boolean }; Returns: string }
+      coleta_cnpj_disparar: { Args: never; Returns: number }
       coleta_temporal_disparar: {
         Args: { p_agenda: string; p_extra?: Json; p_job: string }
         Returns: number
@@ -3532,6 +3753,7 @@ export type Database = {
         | "snapshot_publico"
         | "api_cliente"
         | "funcao_motor"
+      precisao_coordenada: "endereco" | "cep" | "municipio"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3667,6 +3889,7 @@ export const Constants = {
         "api_cliente",
         "funcao_motor",
       ],
+      precisao_coordenada: ["endereco", "cep", "municipio"],
     },
   },
 } as const

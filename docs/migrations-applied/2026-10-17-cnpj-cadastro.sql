@@ -1,3 +1,4 @@
+-- lovable-cron-fallback-reviewed: lote limitado por taxa da API; job se desagenda quando a fila esvazia (drain), religado só pela rodada mensal
 -- Cadastro CNPJ (Receita via BrasilAPI) e geocodificação por CEP/município.
 create type public.precisao_coordenada as enum ('endereco', 'cep', 'municipio');
 
