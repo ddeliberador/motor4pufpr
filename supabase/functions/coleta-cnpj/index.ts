@@ -22,9 +22,10 @@ class Ritmo {
   intervalo = 500; ultima = 0; vistos429 = 0;
   async buscar(url: string): Promise<Response> {
     for (let tentativa = 0; ; tentativa++) {
-      const espera = this.ultima + this.intervalo - Date.now();
-      if (espera > 0) await dormir(espera);
-      this.ultima = Date.now();
+      // Reserva o próximo horário antes de dormir: vale para vários trabalhadores.
+      const slot = Math.max(Date.now(), this.ultima + this.intervalo);
+      this.ultima = slot;
+      if (slot > Date.now()) await dormir(slot - Date.now());
       const r = await fetch(url, { headers: UA, signal: AbortSignal.timeout(20_000) });
       if (r.status !== 429 || tentativa >= 2) return r;
       this.vistos429++;
@@ -88,15 +89,18 @@ async function lote(sb: SupabaseClient) {
   const coletaId = await iniciarColeta(sb, { jobId: JOB, fonte: "brasilapi_cnpj", versaoConector: VERSAO, escopo: { fila: cnpjs.length, ritmo_ms: ritmo.intervalo } });
   const municipios = await carregarMunicipios(sb);
   const fotos: Record<string, unknown>[] = [];
-  let pend = 0, geo = 0, feitos = 0;
-  try {
-    for (const cnpj of cnpjs) {
+  let pend = 0, geo = 0, feitos = 0, parar = false, prox = 0;
+  // Vários trabalhadores escondem a latência da API; o ritmo global segue em 2 req/s.
+  const trabalhador = async () => {
+    while (!parar) {
       if (Date.now() - inicio > ORCAMENTO_MS) break;
+      const cnpj = cnpjs[prox++];
+      if (!cnpj) break;
       const r = await ritmo.buscar(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
       feitos++;
       if (!r.ok) {
         await r.body?.cancel();
-        if (r.status === 429) break; // ritmo esgotado: retoma no próximo lote
+        if (r.status === 429) { parar = true; break; } // ritmo esgotado: retoma no próximo lote
         const motivo = r.status === 404 ? "não encontrado na fonte" : r.status === 400 ? "CNPJ inválido" : `erro HTTP ${r.status}`;
         const { data: ant } = await sb.from("cnpj_pendencias").select("tentativas").eq("cnpj", cnpj).maybeSingle();
         await sb.from("cnpj_pendencias").upsert({ cnpj, motivo, http_status: r.status, tentativas: (ant?.tentativas ?? 0) + 1, ultima_tentativa: new Date().toISOString() });
@@ -143,6 +147,9 @@ async function lote(sb: SupabaseClient) {
         geo++;
       }
     }
+  };
+  try {
+    await Promise.all(Array.from({ length: 6 }, trabalhador));
     let foto = null;
     if (fotos.length) foto = await registrarFoto(sb, { tabela: "cnpj_cadastro", campoChave: "cnpj", registros: fotos, completo: false, coletaId });
     await finalizarColeta(sb, coletaId, { ok: true, found: feitos, inserted: fotos.length, inicioMs: inicio });
