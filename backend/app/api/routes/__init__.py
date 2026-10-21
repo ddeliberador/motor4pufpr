@@ -5,3 +5,4 @@ from .productive_demand import router as productive_demand_router
 from .integrated_bases import router as integrated_bases_router
 from .companies import router as companies_router
 from .analysis import router as analysis_router
+from .coletas import router as coletas_router

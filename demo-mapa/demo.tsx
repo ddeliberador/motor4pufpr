@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "@/index.css";
-import MapaBrasil, { type Ponto, type VisaoRegionalMapa, type FundoId, FUNDOS } from "@/components/mapa/MapaBrasil";
+import MapaBrasil, { type Ponto, type VisaoRegionalMapa, type FundoId, FUNDOS, CORES_COROPLETICO, classeDoValor } from "@/components/mapa/MapaBrasil";
+import { cortesQuantis } from "@/lib/seriesMunicipais";
 import { CATEGORIAS } from "@/components/mapa/tipos";
 import { REGIAO_POR_UF, REGIOES } from "@/lib/regioes";
 
@@ -35,6 +36,20 @@ function Demo() {
   const [reg, setReg] = useState(false);
   const [inter, setInter] = useState(false);
   const [fundo, setFundo] = useState<FundoId>("sobrio");
+  const [coro, setCoro] = useState(false);
+  const coropletico = useMemo(() => {
+    if (!coro) return null;
+    // valores sintéticos: cresce com o código IBGE dentro da UF, com lacunas
+    const valores: Record<string, number> = {};
+    let x = 11;
+    for (let i = 0; i < 6000; i++) { x = (x * 48271) % 2147483647; }
+    const codigos: string[] = [];
+    Object.keys(CAPITAIS).forEach(() => undefined);
+    for (const uf of [11,12,13,14,15,16,17,21,22,23,24,25,26,27,28,29,31,32,33,35,41,42,43,50,51,52,53]) for (let k = 0; k < 900; k++) codigos.push(`${uf}${String(k).padStart(5, "0")}`);
+    for (const c of codigos) { x = (x * 48271) % 2147483647; if (x % 7 !== 0) valores[c] = (x % 1000) * (Number(c.slice(0, 2)) > 40 ? 3 : 1); }
+    const cortes = cortesQuantis(valores);
+    return { valores, cortes, cores: CORES_COROPLETICO.slice(0, cortes.length + 1), rotulo: "Sintético · acessos", formatar: (v: number) => `${v.toFixed(0)} acessos` };
+  }, [coro]);
   const contagem = useMemo(() => pontos.reduce((a, p) => { const u = p.id.split("-")[0]; a[u] = (a[u] ?? 0) + 1; return a; }, {} as Record<string, number>), []);
   const regional: VisaoRegionalMapa | null = reg ? {
     preenchimento: Object.fromEntries(Object.keys(CAPITAIS).map((u) => [u, COR_REG[REGIAO_POR_UF[u]]])),
@@ -48,7 +63,7 @@ function Demo() {
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
       <div className="flex gap-3 border-b border-border p-2 text-xs">
-        {[["Layer 1", l1, setL1], ["Regional", reg, setReg], ["Interação", inter, setInter]].map(([r, v, s]) => (
+        {[["Layer 1", l1, setL1], ["Regional", reg, setReg], ["Interação", inter, setInter], ["Coroplético", coro, setCoro]].map(([r, v, s]) => (
           <label key={String(r)} className="flex items-center gap-1"><input type="checkbox" checked={v as boolean} onChange={(e) => (s as (b: boolean) => void)(e.target.checked)} />{String(r)}</label>
         ))}
         <button className="rounded border px-2" onClick={() => document.documentElement.classList.toggle("dark")}>tema</button>
@@ -56,7 +71,7 @@ function Demo() {
         <span className="text-muted-foreground">UF: {uf ?? "—"} · ponto: {sel ?? "—"} · {pontos.length} pontos</span>
       </div>
       <div className="relative" style={{ height: "calc(100vh - 41px)" }}>
-        <MapaBrasil fundo={fundo} pontos={reg ? [] : pontos} regional={regional} ufSelecionada={uf} ufsSelecionadas={new Set(uf ? [uf] : [])} ufsFiltroAtivas={new Set()} contagemPorUf={contagem}
+        <MapaBrasil fundo={fundo} coropletico={coropletico} pontos={reg ? [] : pontos} regional={regional} ufSelecionada={uf} ufsSelecionadas={new Set(uf ? [uf] : [])} ufsFiltroAtivas={new Set()} contagemPorUf={contagem}
           onSelecionarUf={(u) => setUf((x) => (x === u ? null : u))} onSelecionarCluster={(ps, t) => console.log("cluster", t, ps.length)}
           pontoSelecionadoId={sel} onSelecionarPonto={setSel}
           layer1Ativa={l1} dadosUsinas={usinas}

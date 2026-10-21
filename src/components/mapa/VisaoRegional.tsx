@@ -196,7 +196,8 @@ export function FichaRegional({
 }
 
 interface ReguaProps {
-  anos: number[];
+  /** Rótulos dos períodos, em ordem (anos ou meses "12/2024"). */
+  anos: (number | string)[];
   indice: number;
   onIndice: (i: number) => void;
 }
@@ -271,7 +272,7 @@ export function ReguaTempo({ anos, indice, onIndice }: ReguaProps) {
             ))}
           </div>
         </div>
-        <span className="w-12 shrink-0 text-right text-lg font-bold tabular-nums">{anos[indice]}</span>
+        <span className="w-16 shrink-0 text-right text-lg font-bold tabular-nums">{anos[indice]}</span>
       </div>
     </div>
   );

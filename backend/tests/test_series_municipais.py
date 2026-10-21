@@ -1,0 +1,121 @@
+"""Coletores municipais com arquivos sintéticos (sem rede, sem Supabase)."""
+from __future__ import annotations
+
+import io
+import zipfile
+from pathlib import Path
+
+import pytest
+
+from app.services.series_municipais import registro
+from app.services.series_municipais.coletores import anatel_bl, aneel_gd, capes_ppg, cnpj_cnae
+from app.services.series_municipais.csv_util import indice, ler_linhas, numero
+from app.services.series_municipais.municipios import TabelaMunicipios, normalizar
+
+
+class SbFalso:
+    def __init__(self):
+        self.indicadores, self.obs = [], []
+    def listar(self, tabela, select, filtros=None, ordem=None, pagina=1000):
+        if tabela == "infra_backhaul_municipio":
+            base = [("4106902", "Curitiba", "PR"), ("3550308", "São Paulo", "SP"), ("4100103", "Abatiá", "PR"), ("2927408", "Salvador", "BA"), ("1100015", "Alta Floresta D'Oeste", "RO")]
+            # completa até 5000 para passar na checagem de tamanho
+            base += [(f"99{i:05d}", f"Fictício {i}", "ZZ") for i in range(5000)]
+            return [{"codigo_ibge": c, "municipio": n, "uf": u} for c, n, u in base]
+        return []
+
+
+@pytest.fixture
+def municipios():
+    return TabelaMunicipios(SbFalso())
+
+
+def zipar(tmp_path: Path, nome: str, conteudo: str, cod="utf-8") -> Path:
+    p = tmp_path / f"{nome}.zip"
+    with zipfile.ZipFile(p, "w") as z:
+        z.writestr(f"{nome}.csv", conteudo.encode(cod))
+    return p
+
+
+def test_normalizar_e_lookup(municipios):
+    assert normalizar("São Paulo") == "sao paulo"
+    assert municipios.por_nome_uf("SAO PAULO", "sp") == "3550308"
+    assert municipios.por_nome_uf("Alta Floresta D Oeste", "RO") == "1100015"
+    assert municipios.ibge_valido("410690") == "4106902"   # 6 dígitos, prefixo único
+    assert municipios.ibge_valido("0000000") is None
+
+
+def test_csv_util_detecta_separador_e_colunas():
+    cab, linhas = ler_linhas(io.BytesIO("Ano;Mês;Código IBGE Município;Acessos\n2024;12;4106902;10\n".encode("latin-1")))
+    assert indice(cab, "mes", "mês") == 1
+    assert indice(cab, "codigo ibge") == 2
+    assert list(linhas) == [["2024", "12", "4106902", "10"]]
+    assert numero("1.234,5") == 1234.5 and numero("12.5") == 12.5 and numero("x") is None
+
+
+def test_anatel_ultimo_mes_e_fibra(tmp_path, municipios, monkeypatch):
+    csv = "Ano;Mês;UF;Município;Código IBGE Município;Tecnologia;Meio de Acesso;Acessos\n" \
+          "2024;11;PR;Curitiba;4106902;Fibra;Fibra;100\n2024;12;PR;Curitiba;4106902;Fibra;Fibra;120\n" \
+          "2024;12;PR;Curitiba;4106902;xDSL;Cabo Metálico;30\n2024;12;SP;São Paulo;3550308;Cabo Coaxial;Cabo;7\n2024;12;XX;Nada;0000000;Fibra;Fibra;5\n"
+    monkeypatch.setattr(anatel_bl, "baixar", lambda url, reutilizar=True: zipar(tmp_path, "bl", csv, "latin-1"))
+    obs, escopo = anatel_bl.coletar(municipios)
+    d = {(o.entidade_chave, o.segmento, o.periodo_referencia): o.valor for o in obs}
+    assert d[("4106902", "", "2024-12-01")] == 150 and d[("4106902", "fibra", "2024-12-01")] == 120
+    assert d[("3550308", "fibra", "2024-12-01")] == 0 and ("4106902", "", "2024-11-01") not in d
+    assert escopo["municipios"] == 2
+
+
+def test_aneel_acumula_por_ano(tmp_path, municipios, monkeypatch):
+    csv = "CodMunicipioIbge;NomMunicipio;DthAtualizaCadastralEmpreend;SigTipoGeracao;MdaPotenciaInstaladaKW\n" \
+          "4106902;Curitiba;10/05/2022;UFV;5,5\n4106902;Curitiba;2023-02-01;UFV;4,5\n4106902;Curitiba;01/07/2023;CGH;100\n"
+    monkeypatch.setattr(aneel_gd, "descobrir_url", lambda: "http://x/gd.csv")
+    monkeypatch.setattr(aneel_gd, "baixar", lambda url, reutilizar=True: zipar(tmp_path, "gd", csv))
+    obs, _ = aneel_gd.coletar(municipios)
+    d = {(o.indicador_id, o.segmento, o.periodo_referencia): o.valor for o in obs}
+    assert d[("mun.gd_potencia_kw", "", "2022-12-31")] == 5.5
+    assert d[("mun.gd_potencia_kw", "", "2023-12-31")] == 110.0
+    assert d[("mun.gd_potencia_kw", "UFV", "2023-12-31")] == 10.0
+    assert d[("mun.gd_unidades", "", "2023-12-31")] == 3
+    assert all(o.origem_temporal == "reconstruida" for o in obs)
+
+
+def test_cnpj_conta_ativos_por_cnae(tmp_path, municipios, monkeypatch):
+    def linha(sit, cnae, uf, tom):
+        campos = [""] * 30
+        campos[cnpj_cnae.COL_SITUACAO], campos[cnpj_cnae.COL_CNAE], campos[cnpj_cnae.COL_UF], campos[cnpj_cnae.COL_MUNICIPIO] = sit, cnae, uf, tom
+        return ";".join(f'"{c}"' for c in campos)
+    estab = "\n".join([linha("02", "6201501", "PR", "7535"), linha("02", "6311900", "PR", "7535"), linha("08", "6201501", "PR", "7535"), linha("02", "6201501", "SP", "7107"), linha("02", "4711301", "SP", "7107")])
+    munis = "\n".join([f'"{i:04d}";"NOME {i}"' for i in range(5000)] + ['"7535";"CURITIBA"', '"7107";"SAO PAULO"'])
+    arquivos = {"Municipios.zip": zipar(tmp_path, "mun", munis, "latin-1"), "Estabelecimentos0.zip": zipar(tmp_path, "est", estab, "latin-1")}
+    monkeypatch.setattr(cnpj_cnae, "pasta_mais_recente", lambda: "2026-09")
+    monkeypatch.setattr(cnpj_cnae, "baixar", lambda url, reutilizar=True: arquivos[url.rsplit("/", 1)[-1]])
+    obs, escopo = cnpj_cnae.coletar(municipios, amostra=10_000)
+    d = {(o.indicador_id, o.entidade_chave): o.valor for o in obs}
+    assert d[("mun.estab_ti", "4106902")] == 1 and d[("mun.estab_dados", "4106902")] == 1 and d[("mun.estab_ti", "3550308")] == 1
+    assert ("mun.estab_dados", "3550308") not in d
+    assert obs[0].periodo_referencia == "2026-09-01" and escopo["pasta"] == "2026-09"
+
+
+def test_capes_programas_distintos(tmp_path, municipios, monkeypatch):
+    csv = "AN_BASE;CD_PROGRAMA_IES;NM_AREA_AVALIACAO;NM_MUNICIPIO_PROGRAMA_IES;SG_UF_PROGRAMA_IES\n" \
+          "2023;40001016034P2;CIÊNCIA DA COMPUTAÇÃO;CURITIBA;PR\n2023;40001016034P2;CIÊNCIA DA COMPUTAÇÃO;CURITIBA;PR\n" \
+          "2023;40001016999P1;ECONOMIA;CURITIBA;PR\n2023;33002010001P0;ECONOMIA;SÃO PAULO;SP\n2023;1;ECONOMIA;LUGAR NENHUM;SP\n"
+    monkeypatch.setattr(capes_ppg, "listar_csvs", lambda: [("prog2023", "http://x/p.csv")])
+    monkeypatch.setattr(capes_ppg, "baixar", lambda url, reutilizar=True: zipar(tmp_path, "capes", csv))
+    obs, escopo = capes_ppg.coletar(municipios)
+    d = {(o.entidade_chave, o.segmento): o.valor for o in obs}
+    assert d[("4106902", "")] == 2 and d[("4106902", "computacao")] == 1
+    assert d[("3550308", "")] == 1 and ("3550308", "computacao") not in d
+    assert escopo["sem_municipio"] == 1
+
+
+def test_simular_nao_grava(monkeypatch, municipios):
+    from app.services.series_municipais.postgrest import Observacao
+    class Mod:
+        ID = "x"; JOB = "j"; VERSAO = "v"; INDICADORES = []
+        @staticmethod
+        def coletar(m, amostra=None):
+            return [Observacao("mun.x", "4106902", "2024-12-31", 1.0)], {"completo": True}
+    monkeypatch.setitem(registro.COLETORES, "x", Mod)
+    r = registro.executar_coleta("x", simular=True, sb=SbFalso())
+    assert r["simulado"] and r["observacoes"] == 1 and r["indicadores"] == ["mun.x"]

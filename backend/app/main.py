@@ -11,7 +11,7 @@ import logging
 
 from app.core.config import settings
 from app.core.auth import ApiKeyMiddleware
-from app.api.routes import health_router, incidence_router, productive_demand_router, integrated_bases_router, companies_router, analysis_router
+from app.api.routes import health_router, incidence_router, productive_demand_router, integrated_bases_router, companies_router, analysis_router, coletas_router
 from app.connectors.capes_sucupira import buscar_programas_pg, buscar_bolsistas
 from app.connectors.anatel import buscar_cobertura_municipio
 from app.connectors.formict import buscar_formict
@@ -112,6 +112,7 @@ app.include_router(productive_demand_router, prefix=settings.API_PREFIX)
 app.include_router(integrated_bases_router, prefix=settings.API_PREFIX)
 app.include_router(companies_router, prefix=settings.API_PREFIX)
 app.include_router(analysis_router, prefix=settings.API_PREFIX)
+app.include_router(coletas_router, prefix=settings.API_PREFIX)
 
 
 @app.get("/api/v1/capes/programas")

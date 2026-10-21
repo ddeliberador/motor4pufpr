@@ -119,6 +119,29 @@ interface Props {
   mostrarNomes?: boolean;
   /** Carrega a malha municipal ao aproximar. */
   malhaMunicipal?: boolean;
+  /** Coroplético municipal (séries das Camadas de IA): pinta os 5.570 municípios. */
+  coropletico?: CoropleticoMunicipal | null;
+}
+
+export interface CoropleticoMunicipal {
+  /** código IBGE (7 dígitos) → valor já na escala exibida. */
+  valores: Record<string, number>;
+  /** Cortes crescentes entre classes (n cortes = n+1 classes). */
+  cortes: number[];
+  /** Cores das classes (cortes.length + 1). */
+  cores: string[];
+  rotulo: string;
+  formatar: (v: number) => string;
+}
+
+/** Rampa sequencial para o coroplético (claro → escuro), legível nos dois temas. */
+export const CORES_COROPLETICO = ["#dbeafe", "#93c5fd", "#3b82f6", "#1d4ed8", "#172554"];
+export const COR_SEM_DADO = "rgba(128,128,128,0.18)";
+
+export function classeDoValor(v: number, cortes: number[]) {
+  let k = 0;
+  while (k < cortes.length && v > cortes[k]) k++;
+  return k;
 }
 
 /** Operações que a página pode disparar no mapa (exportação). */
@@ -176,7 +199,7 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
   layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa, enriquecimentoLayers,
   ancorasPbia, corEixoPbia, onSelecionarAncora,
   interacao, regional,
-  fundo = "sobrio", mostrarNomes = true, malhaMunicipal = true,
+  fundo = "sobrio", mostrarNomes = true, malhaMunicipal = true, coropletico = null,
 }, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const dicaRef = useRef<HTMLDivElement>(null);
@@ -196,8 +219,8 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
   const [tipoCabo, setTipoCabo] = useState<Record<string, ClasseCabo>>({});
 
   // Callbacks mais recentes acessíveis pelos handlers do mapa (registrados uma vez).
-  const cb = useRef({ onSelecionarUf, onSelecionarCluster, onSelecionarPonto, onSelecionarAncora, interacao, regional });
-  cb.current = { onSelecionarUf, onSelecionarCluster, onSelecionarPonto, onSelecionarAncora, interacao, regional };
+  const cb = useRef({ onSelecionarUf, onSelecionarCluster, onSelecionarPonto, onSelecionarAncora, interacao, regional, coropletico });
+  cb.current = { onSelecionarUf, onSelecionarCluster, onSelecionarPonto, onSelecionarAncora, interacao, regional, coropletico };
   const pontosPorId = useRef(new Map<string, Ponto>());
   const arcosPorChave = useRef(new Map<string, ArcoAgregado>());
   const unidadesPorId = useRef(new Map<string, UnidadeEmbrapii>());
@@ -295,7 +318,12 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
       const top = fts[0];
       const dica = dicaRef.current;
       if (dica) {
-        const texto = top?.properties?.dica as string | undefined;
+        let texto = top?.properties?.dica as string | undefined;
+        const coro = cb.current.coropletico;
+        if (coro && top?.layer.id === "mun-fill") {
+          const v = coro.valores[String(top.properties?.id)];
+          texto = `${texto} · ${v == null ? "sem dado" : coro.formatar(v)}`;
+        }
         if (texto) {
           dica.textContent = texto;
           dica.style.display = "block";
@@ -427,11 +455,12 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !features || !malhaMunicipal) return;
+    if (!map || !features || (!malhaMunicipal && !coropletico)) return;
     let vivo = true;
     const carregar = () => {
       const alvo = new Set(ufsVisiveis());
       if (ufSelecionada && map.getZoom() >= ZOOM_MUNICIPIOS - 0.5) alvo.add(ufSelecionada);
+      if (coropletico) for (const f of features) alvo.add(f.properties.sigla);
       for (const uf of alvo) {
         if (municipios[uf]) continue;
         carregarMunicipios(uf)
@@ -442,19 +471,42 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
     carregar();
     map.on("moveend", carregar);
     return () => { vivo = false; map.off("moveend", carregar); };
-  }, [features, ufSelecionada, municipios, ufsVisiveis, malhaMunicipal]);
+  }, [features, ufSelecionada, municipios, ufsVisiveis, malhaMunicipal, coropletico]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !versaoEstilo || !estiloOkRef.current) return;
-    for (const id of ["mun-line", "mun-fill"]) map.setLayoutProperty(id, "visibility", malhaMunicipal ? "visible" : "none");
+    for (const id of ["mun-line", "mun-fill"]) {
+      map.setLayoutProperty(id, "visibility", malhaMunicipal || coropletico ? "visible" : "none");
+      map.setLayerZoomRange(id, coropletico ? 0 : ZOOM_MUNICIPIOS, 24);
+    }
+    map.setLayerZoomRange("mun-coro", 0, 24);
+    map.setLayoutProperty("mun-coro", "visibility", coropletico ? "visible" : "none");
     const todos = Object.values(municipios).flat().map((f) => ({
       ...f, properties: { ...f.properties, dica: `${f.properties.name} (${f.properties.uf})` },
     }));
     (map.getSource("municipios") as GeoJSONSource | undefined)?.setData(fc(todos));
     map.setPaintProperty("mun-line", "line-color", corDoTema("--foreground", 0.22));
     map.setPaintProperty("mun-fill", "fill-color", corDoTema("--primary"));
-  }, [municipios, versaoEstilo, tema, malhaMunicipal]);
+  }, [municipios, versaoEstilo, tema, malhaMunicipal, coropletico]);
+
+  // ---------- coroplético: cor por município via feature-state ----------
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !versaoEstilo || !estiloOkRef.current) return;
+    const src = map.getSource("municipios") as GeoJSONSource | undefined;
+    if (!src) return;
+    // A UF some por baixo do coroplético, mas o contorno continua.
+    map.setPaintProperty("ufs-fill", "fill-opacity", coropletico ? 0 : ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.85]);
+    map.setPaintProperty("mun-line", "line-color", coropletico ? corDoTema("--background", 0.9) : corDoTema("--foreground", 0.22));
+    map.setPaintProperty("mun-line", "line-width", coropletico ? ["interpolate", ["linear"], ["zoom"], 3, 0.15, 7, 0.5, 9, 0.9] : ["interpolate", ["linear"], ["zoom"], ZOOM_MUNICIPIOS, 0.3, 9, 0.8]);
+    for (const f of Object.values(municipios).flat()) {
+      const id = Number(f.properties.id);
+      if (!coropletico) { map.removeFeatureState({ source: "municipios", id }); continue; }
+      const v = coropletico.valores[f.properties.id];
+      map.setFeatureState({ source: "municipios", id }, { cor: v == null ? COR_SEM_DADO : coropletico.cores[classeDoValor(v, coropletico.cortes)] });
+    }
+  }, [coropletico, municipios, versaoEstilo, tema]);
 
   // ---------- zoom na UF selecionada ----------
   useEffect(() => {
@@ -759,7 +811,7 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
   }
 
   const botao = "flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40";
-  const temLegenda = layer1Ativa || layer2Ativa || layer3Ativa || layer4Ativa || layer5Ativa || layer6Ativa || layer7Ativa;
+  const temLegenda = layer1Ativa || layer2Ativa || layer3Ativa || layer4Ativa || layer5Ativa || layer6Ativa || layer7Ativa || !!coropletico;
 
   return (
     <div className="relative h-full w-full">
@@ -786,6 +838,24 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
       {temLegenda && (
         <div className="absolute bottom-8 left-3 max-h-[45%] space-y-1.5 overflow-y-auto rounded-lg border border-border bg-card/90 p-2.5 text-[10px] shadow-sm backdrop-blur">
           <p className="font-semibold text-foreground">Camadas de IA ativas</p>
+          {coropletico && (<>
+            <p className="font-medium text-foreground">{coropletico.rotulo}</p>
+            {coropletico.cores.map((cor, k) => {
+              const de = k === 0 ? null : coropletico.cortes[k - 1];
+              const ate = k < coropletico.cortes.length ? coropletico.cortes[k] : null;
+              const texto = de == null ? `até ${coropletico.formatar(ate ?? 0)}` : ate == null ? `acima de ${coropletico.formatar(de)}` : `${coropletico.formatar(de)} a ${coropletico.formatar(ate)}`;
+              return (
+                <div key={k} className="flex items-center gap-1.5">
+                  <span className="inline-block h-2.5 w-4 rounded-sm" style={{ background: cor }} />
+                  <span className="text-muted-foreground">{coropletico.cortes.length ? texto : coropletico.formatar(0)}</span>
+                </div>
+              );
+            })}
+            <div className="flex items-center gap-1.5">
+              <span className="inline-block h-2.5 w-4 rounded-sm" style={{ background: COR_SEM_DADO }} />
+              <span className="text-muted-foreground">sem dado</span>
+            </div>
+          </>)}
           {layer1Ativa && (<>
             <p className="font-medium text-pink-500">Layer 1 — Energia (ANEEL)</p>
             {Object.entries(ROTULO_USINA).filter(([tipo]) => !tiposUsina || tiposUsina.size === 0 || tiposUsina.has(tipo)).map(([tipo, label]) => (
@@ -894,6 +964,9 @@ function montarCamadas(map: MapLibre) {
   geo("municipios");
   map.addLayer({ id: "mun-fill", type: "fill", source: "municipios", minzoom: ZOOM_MUNICIPIOS, paint: {
     "fill-color": "#000", "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.12, 0],
+  } });
+  map.addLayer({ id: "mun-coro", type: "fill", source: "municipios", layout: oculto, paint: {
+    "fill-color": ["coalesce", ["feature-state", "cor"], COR_SEM_DADO], "fill-opacity": 0.9,
   } });
   map.addLayer({ id: "mun-line", type: "line", source: "municipios", minzoom: ZOOM_MUNICIPIOS, paint: {
     "line-color": "#888", "line-width": ["interpolate", ["linear"], ["zoom"], ZOOM_MUNICIPIOS, 0.3, 9, 0.8], "line-opacity": ["interpolate", ["linear"], ["zoom"], ZOOM_MUNICIPIOS, 0.3, 7, 1],
