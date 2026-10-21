@@ -24,7 +24,7 @@ import { type ResearchLocation } from "@/lib/researchLocations";
 import { safeHttpUrl } from "@/lib/utils";
 import PainelDataLake from "@/components/mapa/PainelDataLake";
 import PainelPoliticas from "@/components/mapa/PainelPoliticas";
-import CamadaInteracaoSvg, { agregarArcos, type FluxoUf, type UnidadeEmbrapii, type ArcoAgregado } from "@/components/mapa/CamadaInteracao";
+import { agregarArcos, type FluxoUf, type UnidadeEmbrapii, type ArcoAgregado } from "@/components/mapa/CamadaInteracao";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAll } from "@/lib/fetchAll";
 import { TEC_IA } from "@/lib/interacao";
@@ -2201,10 +2201,10 @@ export default function Mapa() {
                     ancorasPbia={layer7Ativa ? (pbiaEixo ? (pbiaAncoras ?? []).filter((a) => a.eixo === pbiaEixo) : pbiaAncorasAtivas ? pbiaAncoras : null) : null}
                     corEixoPbia={layer7Ativa ? pbiaCor : null}
                     onSelecionarAncora={setAncoraSel}
-                    sobreposicao={interAtiva && interFluxos ? ({ tam, escala, bloqueado }) => (
-                      <CamadaInteracaoSvg arcos={interArcos} unidades={interUnidades ?? []} tam={tam} escala={escala} bloqueado={bloqueado}
-                        onArco={(a) => setInterSel({ arco: a })} onUnidade={(u) => setInterSel({ unidade: u })} />
-                    ) : undefined}
+                    interacao={interAtiva && interFluxos ? {
+                      arcos: interArcos, unidades: interUnidades ?? [],
+                      onArco: (a) => setInterSel({ arco: a }), onUnidade: (u) => setInterSel({ unidade: u }),
+                    } : null}
                   />
                   {interSel && (
                     <div className="absolute right-3 top-3 z-20 w-72 rounded-lg border border-border bg-card p-3 text-xs shadow-lg">
@@ -2242,7 +2242,7 @@ export default function Mapa() {
                   <p className={`pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-center text-[11px] text-muted-foreground ${visaoRegional ? "hidden" : "hidden sm:block"}`}>
                     <MapPin className="mr-1 inline h-3 w-3" />
                     {pontos.length.toLocaleString("pt-BR")} pontos georreferenciados · clique num
-                    estado para aproximar, num ícone para ver a ficha
+                    estado para aproximar, num ícone para ver a ficha · aproxime para ver os municípios
                   </p>
                 </div>
                 {visaoRegional && (
