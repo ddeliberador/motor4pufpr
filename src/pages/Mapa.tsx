@@ -3,16 +3,18 @@ import PbiaEixos, { CATEGORIAS_POR_EIXO } from "@/components/mapa/PbiaEixos";
 // sem lista congelada em arquivo. Mapa sóbrio (contorno + UFs), coluna lateral
 // com filtros funcionais e lista exportável dos registros filtrados.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCatalogo, inativaNoCatalogo } from "@/lib/catalogo";
 import { geocodeLote } from "@/utils/geocodeMunicipio";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search, X, ExternalLink, MapPin, Loader2, Filter, List, Database,
-  SlidersHorizontal, BarChart3,
+  SlidersHorizontal,
 } from "lucide-react";
 import Header from "@/components/Header";
-import MapaBrasil, { type AncoraPbia, type Ponto } from "@/components/mapa/MapaBrasil";
+import MapaBrasil, { type AncoraPbia, type Ponto, type MapaBrasilHandle, FUNDOS, type FundoId } from "@/components/mapa/MapaBrasil";
+import PainelConfiguracoes, { type ConfiguracoesMapa } from "@/components/mapa/PainelConfiguracoes";
+import { definirTema, temaAtual } from "@/lib/tema";
 
 import ListaFiltrados from "@/components/mapa/ListaFiltrados";
 import FiltrosPorBase from "@/components/mapa/FiltrosPorBase";
@@ -192,6 +194,30 @@ function mensagemFalhaInfra(falha: unknown): string {
   return "fonte temporariamente indisponível";
 }
 
+type Aba = "atores" | "camadas" | "interacao" | "regional";
+const ABAS: { id: Aba; rotulo: string; icone: string; titulo: string }[] = [
+  { id: "atores", rotulo: "Atores", icone: "groups", titulo: "Atores do SNI: universidades, ICTs, empresas, hubs" },
+  { id: "camadas", rotulo: "Camadas de IA", icone: "layers", titulo: "As 7 camadas de IA: energia, infraestrutura, modelos, aplicações, pesquisa e governança" },
+  { id: "interacao", rotulo: "Interação", icone: "share", titulo: "Cooperação ICT–empresa (EMBRAPII)" },
+  { id: "regional", rotulo: "Regional", icone: "public", titulo: "As 5 macrorregiões com evolução histórica" },
+];
+const CHAVE_CONFIG = "mapa-inovacao-config";
+const URL_ISSUES = "https://github.com/ddeliberador/motor4pufpr/issues/new";
+
+function lerAbaDaUrl(): Aba {
+  const v = new URLSearchParams(window.location.search).get("aba");
+  return ABAS.some((a) => a.id === v) ? (v as Aba) : "atores";
+}
+function lerConfigSalva(): ConfiguracoesMapa {
+  const base: ConfiguracoesMapa = { tema: temaAtual(), fundo: "sobrio", mostrarNomes: true, malhaMunicipal: true };
+  try {
+    const salvo = JSON.parse(localStorage.getItem(CHAVE_CONFIG) || "{}") as Partial<ConfiguracoesMapa>;
+    const fundoUrl = new URLSearchParams(window.location.search).get("fundo");
+    const fundo = FUNDOS.some((f) => f.id === fundoUrl) ? (fundoUrl as FundoId) : FUNDOS.some((f) => f.id === salvo.fundo) ? (salvo.fundo as FundoId) : "sobrio";
+    return { ...base, ...salvo, fundo, tema: temaAtual() };
+  } catch { return base; }
+}
+
 export default function Mapa() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["research_locations", "mapa"],
@@ -243,6 +269,11 @@ export default function Mapa() {
     () => new Set(CATEGORIAS.map((c) => c.key)),
   );
   const [filtrosMobileAbertos, setFiltrosMobileAbertos] = useState(false);
+  // Abas da barra superior (uma por intenção de uso); cada uma mostra só o que lhe diz respeito.
+  const [aba, setAba] = useState<Aba>(() => lerAbaDaUrl());
+  const [configAberta, setConfigAberta] = useState(false);
+  const [config, setConfig] = useState<ConfiguracoesMapa>(lerConfigSalva);
+  const mapaRef = useRef<MapaBrasilHandle>(null);
   // Camadas de IA — desligadas por padrão. Os locais físicos são pré-carregados
   // para que o total represente sempre o universo completo; a renderização só
   // ocorre quando a camada correspondente é ativada.
@@ -976,14 +1007,71 @@ export default function Mapa() {
     };
   }, [visaoRegional, serieRegionalQ.data, anoRegional, regiaoFoco, indicadorRegional.unidade]);
 
-  const alternarVisaoRegional = () => {
-    setVisaoRegional((v) => !v);
-    setListaAberta(false);
-    setPainelPoliticasAberto(false);
-    setUfFoco(null);
+  // A aba Regional liga a visão regional; sair dela desliga. A aba Interação liga a camada EMBRAPII ao entrar.
+  useEffect(() => {
+    if (aba === "regional") {
+      setVisaoRegional(true);
+      setListaAberta(false);
+      setPainelPoliticasAberto(false);
+      setUfFoco(null);
+    } else {
+      setVisaoRegional(false);
+    }
+    if (aba === "interacao") setInterAtiva(true);
+  }, [aba]);
+
+  useEffect(() => {
+    definirTema(config.tema);
+    try { localStorage.setItem(CHAVE_CONFIG, JSON.stringify(config)); } catch { /* sem armazenamento */ }
+  }, [config]);
+
+  // Estado vindo de um link compartilhado (ver linkDoMapa), lido uma vez.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const uf = q.get("uf");
+    if (uf && /^[A-Z]{2}$/.test(uf)) { setUfsSel(new Set([uf])); setUfFoco(uf); }
+    const cat = q.get("cat");
+    if (cat) setCamadas(new Set(cat.split(",").filter((k) => k in CATEGORIA_MAP) as CategoriaKey[]));
+    const l = new Set((q.get("l") || "").split(",").filter(Boolean));
+    if (l.size) {
+      setLayer1Ativa(l.has("1")); setLayer2Ativa(l.has("2")); setLayer3Ativa(l.has("3"));
+      setLayer4Ativa(l.has("4")); setLayer5Ativa(l.has("5")); setLayer6Ativa(l.has("6")); setLayer7Ativa(l.has("7"));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const linkDoMapa = () => {
+    const q = new URLSearchParams();
+    q.set("aba", aba);
+    if (ufFoco) q.set("uf", ufFoco);
+    q.set("cat", [...camadas].join(","));
+    const l = [layer1Ativa, layer2Ativa, layer3Ativa, layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa].map((v, i) => (v ? String(i + 1) : "")).filter(Boolean);
+    if (l.length) q.set("l", l.join(","));
+    if (config.fundo !== "sobrio") q.set("fundo", config.fundo);
+    return `${window.location.origin}${window.location.pathname}?${q.toString()}`;
+  };
+
+  const nomeArquivo = () => `mapa-inovacao-${aba}${ufFoco ? `-${ufFoco}` : ""}`;
+  const salvarPng = async () => {
+    const url = await mapaRef.current?.imagemPng();
+    if (!url) return;
+    const a = document.createElement("a");
+    a.href = url; a.download = `${nomeArquivo()}.png`; a.click();
+  };
+  const salvarPdf = async () => {
+    const url = await mapaRef.current?.imagemPng();
+    if (!url) return;
+    const { jsPDF } = await import("jspdf");
+    const img = new Image();
+    await new Promise<void>((ok) => { img.onload = () => ok(); img.src = url; });
+    const pdf = new jsPDF({ orientation: img.width >= img.height ? "landscape" : "portrait", unit: "px", format: [img.width, img.height] });
+    pdf.addImage(url, "PNG", 0, 0, img.width, img.height);
+    pdf.text(`Mapa da Inovação · Motor da Inovação (UFPR/PPGPP) · ${new Date().toLocaleDateString("pt-BR")}`, 12, img.height - 12);
+    pdf.save(`${nomeArquivo()}.pdf`);
   };
 
   const limpar = () => {
+    setAba("atores");
     setVisaoRegional(false);
     setRegiaoFoco(null);
     setInterAtiva(false);
@@ -1108,21 +1196,15 @@ export default function Mapa() {
 
       <main className="pt-16">
         {/* Cabeçalho institucional */}
-        <div className="border-b border-border px-4 py-3 sm:px-6 sm:py-4 lg:py-5">
-          <div className="w-full">
-            <h1 className="text-lg font-bold tracking-tight sm:text-xl lg:text-2xl">
-              Mapa da Inovação — Brasil
-            </h1>
-            <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground sm:mt-1 sm:text-sm">
-              Motor da Inovação · UFPR/PPGPP · Pesquisa Colaborativa do Mapa da Inovação
-              {ultimaColeta && (
-                <span className="block sm:inline"> última coleta em {ultimaColeta}</span>
-              )}
-            </p>
-          </div>
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b border-border px-4 py-2 sm:px-6">
+          <h1 className="text-base font-bold tracking-tight sm:text-lg">Mapa da Inovação — Brasil</h1>
+          <p className="text-[11px] text-muted-foreground sm:text-xs">
+            Motor da Inovação · UFPR/PPGPP
+            {ultimaColeta && <span> · última coleta em {ultimaColeta}</span>}
+          </p>
         </div>
 
-        <div className="flex flex-col lg:h-[calc(100vh-4rem)] lg:flex-row">
+        <div className="flex flex-col lg:h-[calc(100vh-4rem-2.6rem)] lg:flex-row">
           {/* Coluna lateral de filtros */}
           <aside
             className={`${
@@ -1155,6 +1237,7 @@ export default function Mapa() {
                 </div>
               </div>
 
+              {aba === "atores" && (<>
               {/* Seletor de modo */}
               <div className="flex rounded-lg border border-border bg-card p-0.5">
                 <button
@@ -1224,6 +1307,9 @@ export default function Mapa() {
                 </div>
               </div>
 
+              </>)}
+
+              {aba === "camadas" && (<>
               {/* Camadas no mapa — Infraestrutura (Camadas de IA) */}
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -1644,8 +1730,24 @@ export default function Mapa() {
                       onSelecionarAncora={setAncoraSel}
                     />
                   )}
+                  {erroLayersEnr && (layer4Ativa || layer5Ativa || layer6Ativa || layer7Ativa) && (
+                    <p className="px-2 text-[10px] text-destructive">Cruzamento: {erroLayersEnr}</p>
+                  )}
+                </div>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  Infraestrutura de IA no Brasil. Desligadas por padrão.
+                </p>
+              </div>
+              </>)}
+
+              {aba === "interacao" && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Interação entre atores</p>
+                  <p className="mb-2 text-[11px] text-muted-foreground">
+                    Fluxos de cooperação entre unidades EMBRAPII e empresas, por UF de origem e destino. Clique num arco ou numa unidade para ver os números.
+                  </p>
                   <div className="mt-2 rounded-lg border border-border bg-card/60 p-2">
-                    <p className="px-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Camada temática · atores e interação</p>
+                    <p className="px-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Cooperação ICT–empresa</p>
                     <label className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1 text-xs hover:bg-muted">
                       <input type="checkbox" checked={interAtiva} onChange={() => { setInterAtiva((v) => !v); setInterSel(null); }}
                         className="h-3.5 w-3.5 shrink-0 accent-amber-500" />
@@ -1684,14 +1786,20 @@ export default function Mapa() {
                       </div>
                     )}
                   </div>
-                  {erroLayersEnr && (layer4Ativa || layer5Ativa || layer6Ativa || layer7Ativa) && (
-                    <p className="px-2 text-[10px] text-destructive">Cruzamento: {erroLayersEnr}</p>
-                  )}
                 </div>
-                <p className="mt-1.5 text-[11px] text-muted-foreground">
-                  Infraestrutura de IA no Brasil. Desligadas por padrão.
-                </p>
-              </div>
+              )}
+
+              {aba === "regional" && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Visão regional</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    O mapa se preenche com o indicador escolhido no painel ao lado, somado por macrorregião, e a régua de tempo sob o mapa percorre os anos da série.
+                    Clique numa região para destacá-la.
+                  </p>
+                </div>
+              )}
+
+              {aba === "atores" && (<>
 
               {modo === "bases" && (<>
 
@@ -1961,6 +2069,8 @@ export default function Mapa() {
                 />
               )}
 
+              </>)}
+
               {/* Ficha do ponto/agrupamento selecionado */}
               {detalhados.length > 0 && (
                 <div className="rounded-xl border border-border bg-card p-3">
@@ -2060,56 +2170,46 @@ export default function Mapa() {
               </Button>
             </div>
 
-            {/* Barra do cruzamento */}
+            {/* Barra superior: abas por intenção + painéis à direita (no espírito do Global Election Simulator) */}
             {!isLoading && !error && (
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="hidden items-center gap-1.5 rounded-md bg-foreground px-2 py-1 text-[11px] font-semibold text-background sm:inline-flex">
-                    {modo === "lake" ? (
-                      <><Database className="h-3 w-3" /> Data Lake Cruzado</>
-                    ) : (
-                      <><Filter className="h-3 w-3" /> Bases de origem</>
-                    )}
-                  </span>
-                  <span className="whitespace-nowrap">
-                    <strong className="font-semibold text-foreground">
-                      {selecionados.length.toLocaleString("pt-BR")}
-                    </strong>{" "}
-                    selecionados de {totalLocais.toLocaleString("pt-BR")} locais
-                  </span>
-                </p>
+              <div className="mb-2 flex items-center gap-2">
+                <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto rounded-lg border border-border bg-card p-0.5">
+                  {ABAS.map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => setAba(a.id)}
+                      aria-pressed={aba === a.id}
+                      title={a.titulo}
+                      className={`flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                        aba === a.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-base leading-none" aria-hidden>{a.icone}</span>
+                      <span className={aba === a.id ? "inline" : "hidden sm:inline"}>{a.rotulo}</span>
+                    </button>
+                  ))}
+                </div>
+                <span className="hidden whitespace-nowrap text-xs text-muted-foreground md:inline">
+                  <strong className="font-semibold text-foreground">{selecionados.length.toLocaleString("pt-BR")}</strong> de {totalLocais.toLocaleString("pt-BR")} locais
+                </span>
                 <div className="inline-flex shrink-0 items-center rounded-lg border border-border bg-card p-0.5">
-                  <button
-                    onClick={alternarVisaoRegional}
-                    aria-pressed={visaoRegional}
-                    title="Visão regional com evolução histórica"
-                    aria-label="Visão regional"
-                    className={`flex h-8 w-9 items-center justify-center rounded-md text-[11px] font-medium transition-colors sm:h-auto sm:w-auto sm:gap-1.5 sm:px-2.5 sm:py-1.5 ${
-                      visaoRegional
-                        ? "bg-primary/15 text-foreground"
-                        : "text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <BarChart3 className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Visão regional</span>
-                  </button>
                   <button
                     onClick={() => {
                       setListaAberta((v) => !v);
                       setPainelPoliticasAberto(false);
-                      setVisaoRegional(false);
+                      setConfigAberta(false);
+                      if (aba === "regional") setAba("atores");
                     }}
                     aria-pressed={listaAberta}
                     title="Listagem filtrada"
                     aria-label="Listagem filtrada"
                     className={`flex h-8 w-9 items-center justify-center rounded-md text-[11px] font-medium transition-colors sm:h-auto sm:w-auto sm:gap-1.5 sm:px-2.5 sm:py-1.5 ${
-                      listaAberta
-                        ? "bg-primary/15 text-foreground"
-                        : "text-muted-foreground hover:bg-muted"
+                      listaAberta ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-muted"
                     }`}
                   >
                     <List className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Listagem filtrada</span>
+                    <span className="hidden sm:inline">Listagem</span>
                   </button>
                   {layersIaAtivas.length > 0 && (
                     <Button
@@ -2118,7 +2218,8 @@ export default function Mapa() {
                       onClick={() => {
                         setPainelPoliticasAberto((valor) => !valor);
                         setListaAberta(false);
-                        setVisaoRegional(false);
+                        setConfigAberta(false);
+                        if (aba === "regional") setAba("camadas");
                       }}
                       aria-pressed={painelPoliticasAberto}
                       title="Políticas públicas por layer"
@@ -2129,16 +2230,21 @@ export default function Mapa() {
                           : "text-muted-foreground"
                       }`}
                     >
-                      <span
-                        className="material-symbols-outlined text-base leading-none"
-                        style={{ fontVariationSettings: '"FILL" 1' }}
-                        aria-hidden
-                      >
-                        policy
-                      </span>
+                      <span className="material-symbols-outlined text-base leading-none" style={{ fontVariationSettings: '"FILL" 1' }} aria-hidden>policy</span>
                       <span className="hidden sm:inline">Políticas</span>
                     </Button>
                   )}
+                  <button
+                    onClick={() => { setConfigAberta((v) => !v); setListaAberta(false); setPainelPoliticasAberto(false); }}
+                    aria-pressed={configAberta}
+                    title="Configurações do mapa"
+                    aria-label="Configurações do mapa"
+                    className={`flex h-8 w-9 items-center justify-center rounded-md transition-colors sm:h-auto sm:px-2.5 sm:py-1.5 ${
+                      configAberta ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-base leading-none" aria-hidden>settings</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -2165,6 +2271,10 @@ export default function Mapa() {
               <div className={`relative flex min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-background shadow-sm ${visaoRegional ? "flex-col sm:flex-row" : ""}`}>
                 <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-background transition-[width] duration-300">
                   <MapaBrasil
+                    ref={mapaRef}
+                    fundo={config.fundo}
+                    mostrarNomes={config.mostrarNomes}
+                    malhaMunicipal={config.malhaMunicipal}
                     pontos={visaoRegional ? [] : pontos}
                     regional={regionalMapa}
                     ufSelecionada={ufFoco}
@@ -2231,6 +2341,17 @@ export default function Mapa() {
                           <p className="text-muted-foreground">{interAno ?? "Acumulado"} · {interTecs.size === 0 ? "todas as tecnologias" : [...interTecs].join(", ")}</p>
                         </div>); })()}
                     </div>
+                  )}
+                  {configAberta && (
+                    <PainelConfiguracoes
+                      config={config}
+                      onConfig={setConfig}
+                      onFechar={() => setConfigAberta(false)}
+                      linkDoMapa={linkDoMapa}
+                      onSalvarPng={salvarPng}
+                      onSalvarPdf={salvarPdf}
+                      urlIssues={URL_ISSUES}
+                    />
                   )}
                   {visaoRegional && serieRegionalQ.data && (
                     <ReguaTempo

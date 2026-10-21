@@ -35,6 +35,16 @@ export function corDoTema(token: string, alpha?: number): string {
   return `hsla(${h}, ${s}, ${l}, ${alpha ?? 1})`;
 }
 
+/**
+ * Converte uma cor CSS que usa token do tema, como "hsl(var(--primary) / 0.4)",
+ * para uma cor que o MapLibre entende. Cores já concretas passam intactas.
+ */
+export function resolverCorCss(cor: string): string {
+  const m = /^hsl\(\s*var\((--[\w-]+)\)\s*(?:\/\s*([\d.]+)\s*)?\)$/.exec(cor.trim());
+  if (!m) return cor;
+  return corDoTema(m[1], m[2] != null ? Number(m[2]) : undefined);
+}
+
 export function idIcone(glifo: string, cor: string, preenchido = true) {
   return `ms|${glifo}|${cor}|${preenchido ? 1 : 0}`;
 }
