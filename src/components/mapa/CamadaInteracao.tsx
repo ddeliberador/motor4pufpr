@@ -1,4 +1,6 @@
-import { projetar } from "@/components/mapa/MapaBrasil";
+// Camada de interação (cooperação EMBRAPII): tipos e agregação dos fluxos
+// UF→UF. O desenho fica a cargo do MapaBrasil (MapLibre), que recebe os
+// arcos agregados e as unidades pela prop `interacao`.
 
 export type FluxoUf = {
   ano: number | null; tecnologia: string | null;
@@ -18,6 +20,15 @@ export type ArcoAgregado = {
   lacos: number; projetos: number; empresas: number; valor: number;
 };
 
+export interface CamadaInteracaoProps {
+  arcos: ArcoAgregado[];
+  unidades: UnidadeEmbrapii[];
+  onArco: (a: ArcoAgregado) => void;
+  onUnidade: (u: UnidadeEmbrapii) => void;
+}
+
+export const COR_INTERACAO = "#f59e0b";
+
 /** Soma os fluxos filtrados por par origem→destino. */
 export function agregarArcos(linhas: FluxoUf[]): ArcoAgregado[] {
   const m = new Map<string, ArcoAgregado>();
@@ -29,58 +40,4 @@ export function agregarArcos(linhas: FluxoUf[]): ArcoAgregado[] {
     m.set(k, a);
   }
   return [...m.values()].sort((x, y) => x.lacos - y.lacos);
-}
-
-const COR = "#f59e0b";
-
-export default function CamadaInteracaoSvg({
-  arcos, unidades, tam, escala, bloqueado, onArco, onUnidade,
-}: {
-  arcos: ArcoAgregado[]; unidades: UnidadeEmbrapii[]; tam: number; escala: number;
-  bloqueado: () => boolean; onArco: (a: ArcoAgregado) => void; onUnidade: (u: UnidadeEmbrapii) => void;
-}) {
-  const maxL = Math.max(1, ...arcos.map((a) => a.lacos));
-  const maxP = Math.max(1, ...unidades.map((u) => Number(u.projetos ?? 0)));
-  return (
-    <g>
-      {arcos.map((a) => {
-        const [x1, y1] = projetar(a.o[0], a.o[1]);
-        const [x2, y2] = projetar(a.d[0], a.d[1]);
-        const w = (0.6 + 7 * Math.sqrt(a.lacos / maxL)) * escala;
-        const clique = (e: React.MouseEvent) => { e.stopPropagation(); if (!bloqueado()) onArco(a); };
-        const titulo = `${a.origem} → ${a.destino} · ${a.lacos.toLocaleString("pt-BR")} laços`;
-        if (a.origem === a.destino) {
-          const r = (2 + 14 * Math.sqrt(a.lacos / maxL)) * escala;
-          return (
-            <circle key={a.chave} cx={x1} cy={y1} r={r} fill={COR} fillOpacity={0.18} stroke={COR} strokeWidth={0.8 * escala} className="cursor-pointer" onClick={clique}>
-              <title>{titulo}</title>
-            </circle>
-          );
-        }
-        const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
-        const dx = x2 - x1, dy = y2 - y1;
-        const cx = mx - dy * 0.2, cy = my + dx * 0.2;
-        return (
-          <path key={a.chave} d={`M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}`} fill="none" stroke={COR} strokeOpacity={0.45}
-            strokeWidth={w} strokeLinecap="round" className="cursor-pointer hover:stroke-opacity-90" onClick={clique}>
-            <title>{titulo}</title>
-          </path>
-        );
-      })}
-      {unidades.map((u) => {
-        if (u.lat == null || u.lon == null) return null;
-        const [x, y] = projetar(u.lon, u.lat);
-        const r = tam * (0.25 + 0.75 * Math.sqrt(Number(u.projetos ?? 0) / maxP));
-        const vazado = !!u.coordenada_aproximada;
-        return (
-          <circle key={u.co_unidade ?? `${u.sigla}-${u.uf}`} cx={x} cy={y} r={r}
-            fill={vazado ? "none" : COR} fillOpacity={0.85} stroke={vazado ? COR : "hsl(var(--background))"}
-            strokeWidth={(vazado ? 1.6 : 0.6) * escala} className="cursor-pointer"
-            onClick={(e) => { e.stopPropagation(); if (!bloqueado()) onUnidade(u); }}>
-            <title>{u.unidade_embrapii ?? u.sigla ?? "Unidade EMBRAPII"}</title>
-          </circle>
-        );
-      })}
-    </g>
-  );
 }

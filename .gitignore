@@ -58,3 +58,6 @@ env/
 # OS
 Thumbs.db
 *.tmp
+
+# Harness visual do mapa
+demo-mapa/dist
