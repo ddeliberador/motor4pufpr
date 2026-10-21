@@ -5,21 +5,27 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-import PesquisadorPanel from "./components/pesquisador/PesquisadorPanel";
-import UniversidadePanel from "./components/universidade/UniversidadePanel";
-import EmpresaPanel from "./components/empresa/EmpresaPanel";
-import GovernoPanel from "./components/governo/GovernoPanel";
-import Index from "./pages/Index";
-import Conceito from "./pages/Conceito";
-import Analise from "./pages/Analise";
-import Mapa from "./pages/Mapa";
-import Documentacao from "./pages/Documentacao";
-import Bases from "./pages/Bases";
-import Faq from "./pages/Faq";
-import GestaoPesquisa from "./pages/GestaoPesquisa";
-import AuthPage from "./pages/Auth";
-import NotFound from "./pages/NotFound";
-import Sobre from "./pages/Sobre";
+// Cada rota vira um pedaço separado do bundle: a página só baixa o que usa
+// (o /mapa, por exemplo, é a única que carrega o MapLibre).
+const PesquisadorPanel = React.lazy(() => import("./components/pesquisador/PesquisadorPanel"));
+const UniversidadePanel = React.lazy(() => import("./components/universidade/UniversidadePanel"));
+const EmpresaPanel = React.lazy(() => import("./components/empresa/EmpresaPanel"));
+const GovernoPanel = React.lazy(() => import("./components/governo/GovernoPanel"));
+const Index = React.lazy(() => import("./pages/Index"));
+const Conceito = React.lazy(() => import("./pages/Conceito"));
+const Analise = React.lazy(() => import("./pages/Analise"));
+const Mapa = React.lazy(() => import("./pages/Mapa"));
+const Documentacao = React.lazy(() => import("./pages/Documentacao"));
+const Bases = React.lazy(() => import("./pages/Bases"));
+const Faq = React.lazy(() => import("./pages/Faq"));
+const GestaoPesquisa = React.lazy(() => import("./pages/GestaoPesquisa"));
+const AuthPage = React.lazy(() => import("./pages/Auth"));
+const NotFound = React.lazy(() => import("./pages/NotFound"));
+const Sobre = React.lazy(() => import("./pages/Sobre"));
+
+const Carregando = () => (
+  <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">Carregando…</div>
+);
 
 const queryClient = new QueryClient();
 
@@ -29,6 +35,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <React.Suspense fallback={<Carregando />}>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/conceito" element={<Conceito />} />
@@ -49,6 +56,7 @@ const App = () => (
           <Route path="/mvp" element={<Navigate to="/pesquisador" replace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </React.Suspense>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

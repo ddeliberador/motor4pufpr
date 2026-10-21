@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "@/index.css";
-import MapaBrasil, { type Ponto, type VisaoRegionalMapa } from "@/components/mapa/MapaBrasil";
+import MapaBrasil, { type Ponto, type VisaoRegionalMapa, type FundoId, FUNDOS } from "@/components/mapa/MapaBrasil";
 import { CATEGORIAS } from "@/components/mapa/tipos";
 import { REGIAO_POR_UF, REGIOES } from "@/lib/regioes";
 
@@ -26,7 +26,7 @@ Object.entries(CAPITAIS).forEach(([uf, [lon, lat]]) => {
 const usinas = Object.entries(CAPITAIS).flatMap(([uf, [lon, lat]]) => Array.from({ length: 300 }, (_, i) => ({
   id: `u${uf}${i}`, nome: `Usina ${uf} ${i}`, tipo: ["UHE", "PCH", "EOL", "UFV", "UTE"][i % 5], potencia_kw: rnd() * 800000, latitude: lat + (rnd() - 0.5) * 4, longitude: lon + (rnd() - 0.5) * 4, uf,
 })));
-const COR_REG: Record<string, string> = { Norte: "rgba(34,197,94,.35)", Nordeste: "rgba(245,158,11,.35)", "Centro-Oeste": "rgba(168,85,247,.35)", Sudeste: "rgba(59,130,246,.35)", Sul: "rgba(236,72,153,.35)" };
+const COR_REG: Record<string, string> = { Norte: "hsl(var(--primary) / 0.15)", Nordeste: "hsl(var(--primary) / 0.3)", "Centro-Oeste": "hsl(var(--primary) / 0.45)", Sudeste: "hsl(var(--primary) / 0.6)", Sul: "hsl(var(--primary) / 0.7)" };
 
 function Demo() {
   const [uf, setUf] = useState<string | null>(null);
@@ -34,6 +34,7 @@ function Demo() {
   const [l1, setL1] = useState(false);
   const [reg, setReg] = useState(false);
   const [inter, setInter] = useState(false);
+  const [fundo, setFundo] = useState<FundoId>("sobrio");
   const contagem = useMemo(() => pontos.reduce((a, p) => { const u = p.id.split("-")[0]; a[u] = (a[u] ?? 0) + 1; return a; }, {} as Record<string, number>), []);
   const regional: VisaoRegionalMapa | null = reg ? {
     preenchimento: Object.fromEntries(Object.keys(CAPITAIS).map((u) => [u, COR_REG[REGIAO_POR_UF[u]]])),
@@ -51,10 +52,11 @@ function Demo() {
           <label key={String(r)} className="flex items-center gap-1"><input type="checkbox" checked={v as boolean} onChange={(e) => (s as (b: boolean) => void)(e.target.checked)} />{String(r)}</label>
         ))}
         <button className="rounded border px-2" onClick={() => document.documentElement.classList.toggle("dark")}>tema</button>
+        <select aria-label="Fundo do mapa" value={fundo} onChange={(e) => setFundo(e.target.value as FundoId)} className="rounded border bg-background px-1">{FUNDOS.map((f) => <option key={f.id} value={f.id}>{f.rotulo}</option>)}</select>
         <span className="text-muted-foreground">UF: {uf ?? "—"} · ponto: {sel ?? "—"} · {pontos.length} pontos</span>
       </div>
       <div className="relative" style={{ height: "calc(100vh - 41px)" }}>
-        <MapaBrasil pontos={reg ? [] : pontos} regional={regional} ufSelecionada={uf} ufsSelecionadas={new Set(uf ? [uf] : [])} ufsFiltroAtivas={new Set()} contagemPorUf={contagem}
+        <MapaBrasil fundo={fundo} pontos={reg ? [] : pontos} regional={regional} ufSelecionada={uf} ufsSelecionadas={new Set(uf ? [uf] : [])} ufsFiltroAtivas={new Set()} contagemPorUf={contagem}
           onSelecionarUf={(u) => setUf((x) => (x === u ? null : u))} onSelecionarCluster={(ps, t) => console.log("cluster", t, ps.length)}
           pontoSelecionadoId={sel} onSelecionarPonto={setSel}
           layer1Ativa={l1} dadosUsinas={usinas}

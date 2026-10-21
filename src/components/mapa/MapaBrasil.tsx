@@ -7,11 +7,11 @@
 // Fundos opcionais (OpenFreeMap claro/escuro, imagens Esri) são escolhidos pelo
 // usuário e lembrados no navegador; o padrão continua sem base cartográfica.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import maplibregl, { type Map as MapLibre, type MapMouseEvent, type GeoJSONSource, type StyleSpecification, type ExpressionSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Feature, FeatureCollection, Point, LineString, Polygon, MultiPolygon } from "geojson";
-import { Minus, Plus, Maximize2, Layers, Download } from "lucide-react";
+import { Minus, Plus, Maximize2 } from "lucide-react";
 import { CATEGORIA_MAP, CATEGORIAS, type CategoriaKey } from "./tipos";
 import { supabase } from "@/integrations/supabase/client";
 import type { EnriquecimentoLayers } from "./caboSubmarino";
@@ -23,8 +23,9 @@ import {
   type UsinaAneel,
 } from "./caboSubmarino";
 import { COR_INTERACAO, type CamadaInteracaoProps, type ArcoAgregado, type UnidadeEmbrapii } from "./CamadaInteracao";
-import { aguardarFonteMaterial, badgesDeCluster, corDaClasse, corDoTema, garantirIcone, garantirRotulo } from "./maplibre/icones";
-import { ATRIBUICAO_FUNDO, FUNDOS, type FundoId, URL_ESTILO_FUNDO, estiloSatelite, estiloSobrio } from "./maplibre/fundos";
+import { aguardarFonteMaterial, badgesDeCluster, corDaClasse, corDoTema, garantirIcone, garantirRotulo, resolverCorCss } from "./maplibre/icones";
+import { ATRIBUICAO_FUNDO, type FundoId, URL_ESTILO_FUNDO, estiloSatelite, estiloSobrio } from "./maplibre/fundos";
+export { FUNDOS, type FundoId } from "./maplibre/fundos";
 import {
   BBOX_BRASIL, type Bbox, type FeatureMun, type FeatureUf,
   arcoCurvo, bboxDaFeature, bboxesIntersectam, carregarMunicipios, dentroDaFeature,
@@ -112,6 +113,19 @@ interface Props {
   interacao?: CamadaInteracaoProps | null;
   /** Visão regional: preenche cada UF com a cor da sua região e rotula as regiões. */
   regional?: VisaoRegionalMapa | null;
+  /** Fundo cartográfico (ver FUNDOS). Padrão: sóbrio. */
+  fundo?: FundoId;
+  /** Mostra os nomes de lugares do fundo (só tem efeito nos fundos com tiles). */
+  mostrarNomes?: boolean;
+  /** Carrega a malha municipal ao aproximar. */
+  malhaMunicipal?: boolean;
+}
+
+/** Operações que a página pode disparar no mapa (exportação). */
+export interface MapaBrasilHandle {
+  /** PNG do mapa como data URL. */
+  imagemPng(): Promise<string>;
+  enquadrar(): void;
 }
 
 /** Estilo dos cabos por classificação de `cabos_lista` (tipo + internacional). */
@@ -138,7 +152,6 @@ const ROTULO_USINA: Record<string, string> = {
 
 const COR_ANEL = { l4: "#4ade80", l5: "#2dd4bf", l6: "#22d3ee", l7: "#a78bfa" } as const;
 const ZOOM_MUNICIPIOS = 5.5;
-const CHAVE_FUNDO = "mapa-inovacao-fundo";
 
 // Escala dos ícones por zoom: crescem menos que o mapa, como no mapa anterior.
 const ESCALA_ICONE: [number, number][] = [[3, 0.6], [6, 0.85], [10, 1.1]];
@@ -154,14 +167,7 @@ const fc = <G extends Point | LineString | Polygon | MultiPolygon, P>(features: 
   ({ type: "FeatureCollection", features });
 const VAZIO = fc<Point, Record<string, unknown>>([]);
 
-function lerFundoSalvo(): FundoId {
-  try {
-    const v = localStorage.getItem(CHAVE_FUNDO) as FundoId | null;
-    return v && FUNDOS.some((f) => f.id === v) ? v : "sobrio";
-  } catch { return "sobrio"; }
-}
-
-export default function MapaBrasil({
+const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
   pontos, ufSelecionada, ufsSelecionadas, ufsFiltroAtivas, contagemPorUf,
   onSelecionarUf, onSelecionarCluster, pontoSelecionadoId, onSelecionarPonto, grupoIds,
   layer1Ativa, dadosUsinas, tiposUsina, usinaDestaque,
@@ -170,19 +176,20 @@ export default function MapaBrasil({
   layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa, enriquecimentoLayers,
   ancorasPbia, corEixoPbia, onSelecionarAncora,
   interacao, regional,
-}: Props) {
+  fundo = "sobrio", mostrarNomes = true, malhaMunicipal = true,
+}, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const dicaRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibre | null>(null);
   const [features, setFeatures] = useState<FeatureUf[] | null>(null);
   const [erroMalha, setErroMalha] = useState<string | null>(null);
-  const [fundo, setFundo] = useState<FundoId>(lerFundoSalvo);
-  const [menuFundo, setMenuFundo] = useState(false);
   // Incrementa a cada style.load: todas as camadas são remontadas e os dados reenviados.
   const [versaoEstilo, setVersaoEstilo] = useState(0);
   // Falso entre um setStyle e o style.load seguinte (nesse intervalo o mapa rejeita setData/setPaintProperty).
   // map.isStyleLoaded() não serve: também fica falso enquanto qualquer fonte ainda baixa.
   const estiloOkRef = useRef(false);
+  // Camadas de rótulo do fundo cartográfico (para "nomes de lugares").
+  const camadasBaseRef = useRef<string[]>([]);
   const [tema, setTema] = useState(0);
   const [zoom, setZoom] = useState(3);
   const [municipios, setMunicipios] = useState<Record<string, FeatureMun[]>>({});
@@ -257,6 +264,7 @@ export default function MapaBrasil({
 
     map.on("style.load", () => {
       estiloOkRef.current = true;
+      camadasBaseRef.current = (map.getStyle().layers ?? []).filter((l) => l.type === "symbol").map((l) => l.id);
       montarCamadas(map);
       setVersaoEstilo((v) => v + 1);
     });
@@ -350,7 +358,6 @@ export default function MapaBrasil({
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    try { localStorage.setItem(CHAVE_FUNDO, fundo); } catch { /* sem armazenamento */ }
     let estilo: StyleSpecification | string;
     if (fundo === "sobrio") estilo = estiloSobrio(corDoTema("--background"));
     else if (fundo === "satelite") estilo = estiloSatelite();
@@ -358,6 +365,14 @@ export default function MapaBrasil({
     estiloOkRef.current = false;
     map.setStyle(estilo, { diff: false });
   }, [fundo, tema]);
+
+  // ---------- nomes de lugares do fundo ----------
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !versaoEstilo || !estiloOkRef.current) return;
+    for (const id of camadasBaseRef.current)
+      if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", mostrarNomes ? "visible" : "none");
+  }, [mostrarNomes, versaoEstilo]);
 
   // ---------- dados: UFs ----------
   useEffect(() => {
@@ -370,7 +385,7 @@ export default function MapaBrasil({
     const data = fc(features.map((f) => {
       const s = f.properties.sigla;
       const n = contagemPorUf[s] || 0;
-      const fill = regional ? regional.preenchimento[s] ?? corMuted : ufsSelecionadas.has(s) ? corSel : corMuted;
+      const fill = regional ? resolverCorCss(regional.preenchimento[s] ?? corMuted) : ufsSelecionadas.has(s) ? corSel : corMuted;
       const realce = !!regional?.destaque.has(s);
       return {
         ...f,
@@ -412,7 +427,7 @@ export default function MapaBrasil({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !features) return;
+    if (!map || !features || !malhaMunicipal) return;
     let vivo = true;
     const carregar = () => {
       const alvo = new Set(ufsVisiveis());
@@ -427,18 +442,19 @@ export default function MapaBrasil({
     carregar();
     map.on("moveend", carregar);
     return () => { vivo = false; map.off("moveend", carregar); };
-  }, [features, ufSelecionada, municipios, ufsVisiveis]);
+  }, [features, ufSelecionada, municipios, ufsVisiveis, malhaMunicipal]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !versaoEstilo || !estiloOkRef.current) return;
+    for (const id of ["mun-line", "mun-fill"]) map.setLayoutProperty(id, "visibility", malhaMunicipal ? "visible" : "none");
     const todos = Object.values(municipios).flat().map((f) => ({
       ...f, properties: { ...f.properties, dica: `${f.properties.name} (${f.properties.uf})` },
     }));
     (map.getSource("municipios") as GeoJSONSource | undefined)?.setData(fc(todos));
     map.setPaintProperty("mun-line", "line-color", corDoTema("--foreground", 0.22));
     map.setPaintProperty("mun-fill", "fill-color", corDoTema("--primary"));
-  }, [municipios, versaoEstilo, tema]);
+  }, [municipios, versaoEstilo, tema, malhaMunicipal]);
 
   // ---------- zoom na UF selecionada ----------
   useEffect(() => {
@@ -719,18 +735,20 @@ export default function MapaBrasil({
     map.setPaintProperty("ancoras-halo", "circle-stroke-color", cor);
   }, [ancorasPbia, corEixoPbia, pontoNaSelecaoGeografica, versaoEstilo]);
 
-  // ---------- exportação ----------
-  const exportarPng = () => {
-    const map = mapRef.current;
-    if (!map) return;
-    map.once("render", () => {
-      const a = document.createElement("a");
-      a.href = map.getCanvas().toDataURL("image/png");
-      a.download = `mapa-inovacao${ufSelecionada ? `-${ufSelecionada}` : ""}.png`;
-      a.click();
-    });
-    map.triggerRepaint();
-  };
+  // ---------- operações expostas à página ----------
+  const enquadrar = useCallback(() => {
+    mapRef.current?.fitBounds((ufSelecionada && bboxes[ufSelecionada]) || BBOX_BRASIL, { padding: ufSelecionada ? 32 : 16, duration: 500, maxZoom: 9 });
+  }, [ufSelecionada, bboxes]);
+
+  useImperativeHandle(ref, () => ({
+    imagemPng: () => new Promise<string>((resolve, reject) => {
+      const map = mapRef.current;
+      if (!map) return reject(new Error("mapa não montado"));
+      map.once("render", () => resolve(map.getCanvas().toDataURL("image/png")));
+      map.triggerRepaint();
+    }),
+    enquadrar,
+  }), [enquadrar]);
 
   if (erroMalha) {
     return (
@@ -752,32 +770,14 @@ export default function MapaBrasil({
       <div className="absolute left-3 top-3 flex flex-col rounded-lg border border-border bg-card/80 p-0.5 shadow-sm backdrop-blur">
         <button type="button" className={botao} title="Aproximar" aria-label="Aproximar" disabled={zoom >= 14} onClick={() => mapRef.current?.zoomIn()}><Plus className="h-4 w-4" /></button>
         <button type="button" className={botao} title="Afastar" aria-label="Afastar" disabled={zoom <= 2.5} onClick={() => mapRef.current?.zoomOut()}><Minus className="h-4 w-4" /></button>
-        <button type="button" className={botao} title={ufSelecionada ? `Enquadrar ${ufSelecionada}` : "Ver o Brasil inteiro"} aria-label="Enquadrar"
-          onClick={() => mapRef.current?.fitBounds((ufSelecionada && bboxes[ufSelecionada]) || BBOX_BRASIL, { padding: ufSelecionada ? 32 : 16, duration: 500, maxZoom: 9 })}>
+        <button type="button" className={botao} title={ufSelecionada ? `Enquadrar ${ufSelecionada}` : "Ver o Brasil inteiro"} aria-label="Enquadrar" onClick={enquadrar}>
           <Maximize2 className="h-3.5 w-3.5" />
         </button>
-        <div className="my-0.5 h-px bg-border" />
-        <button type="button" className={`${botao} ${menuFundo ? "bg-muted text-foreground" : ""}`} title="Fundo do mapa" aria-label="Fundo do mapa" aria-expanded={menuFundo} onClick={() => setMenuFundo((m) => !m)}>
-          <Layers className="h-4 w-4" />
-        </button>
-        <button type="button" className={botao} title="Baixar imagem (PNG)" aria-label="Baixar imagem (PNG)" onClick={exportarPng}><Download className="h-4 w-4" /></button>
       </div>
-      {menuFundo && (
-        <div className="absolute left-14 top-3 z-20 w-56 rounded-lg border border-border bg-card p-1 text-xs shadow-lg">
-          <p className="px-2 py-1 font-semibold text-foreground">Fundo do mapa</p>
-          {FUNDOS.map((f) => (
-            <button key={f.id} type="button" onClick={() => { setFundo(f.id); setMenuFundo(false); }}
-              className={`block w-full rounded px-2 py-1.5 text-left hover:bg-muted ${fundo === f.id ? "bg-muted text-foreground" : "text-muted-foreground"}`}>
-              <span className="font-medium text-foreground">{f.rotulo}</span>
-              <span className="block text-[10px] text-muted-foreground">{f.descricao}</span>
-            </button>
-          ))}
-        </div>
-      )}
 
       <p className="pointer-events-none absolute bottom-1 right-2 text-[9px] text-muted-foreground/70">{ATRIBUICAO_FUNDO[fundo]}</p>
 
-      {zoom >= ZOOM_MUNICIPIOS && (
+      {malhaMunicipal && zoom >= ZOOM_MUNICIPIOS && (
         <p className="pointer-events-none absolute right-3 top-3 rounded-md border border-border bg-card/80 px-2 py-1 text-[10px] text-muted-foreground backdrop-blur">
           Malha municipal (IBGE) visível
         </p>
@@ -858,7 +858,9 @@ export default function MapaBrasil({
       )}
     </div>
   );
-}
+});
+
+export default MapaBrasil;
 
 function Anel({ cor, rotulo }: { cor: string; rotulo: string }) {
   return (

@@ -18,6 +18,17 @@ export default defineConfig(({ mode }) => ({
     },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  build: {
+    rollupOptions: {
+      output: {
+        // Bibliotecas pesadas em pedaços próprios, baixados só por quem as usa.
+        manualChunks: {
+          maplibre: ["maplibre-gl"],
+          three: ["three", "@react-three/fiber", "@react-three/drei"],
+        },
+      },
+    },
+  },
   resolve: {
     // Force every pre-bundled dependency to share React's single hook dispatcher.
     // This prevents stale/duplicated Vite chunks from crashing providers after HMR.
