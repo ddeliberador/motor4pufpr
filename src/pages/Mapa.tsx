@@ -1196,15 +1196,15 @@ export default function Mapa() {
 
       <main className="pt-16">
         {/* Cabeçalho institucional */}
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b border-border px-4 py-2 sm:px-6">
-          <h1 className="text-base font-bold tracking-tight sm:text-lg">Mapa da Inovação — Brasil</h1>
-          <p className="text-[11px] text-muted-foreground sm:text-xs">
-            Motor da Inovação · UFPR/PPGPP
+        <div className="flex h-11 items-center justify-between gap-4 border-b border-border bg-muted/30 px-4 sm:px-6">
+          <h1 className="truncate text-sm font-semibold tracking-tight sm:text-base">Mapa da Inovação — Brasil</h1>
+          <p className="hidden shrink-0 text-xs text-muted-foreground sm:block">
+            UFPR/PPGPP · MCTI
             {ultimaColeta && <span> · última coleta em {ultimaColeta}</span>}
           </p>
         </div>
 
-        <div className="flex flex-col lg:h-[calc(100vh-4rem-2.6rem)] lg:flex-row">
+        <div className="flex flex-col lg:h-[calc(100vh-4rem-2.75rem)] lg:flex-row">
           {/* Coluna lateral de filtros */}
           <aside
             className={`${
