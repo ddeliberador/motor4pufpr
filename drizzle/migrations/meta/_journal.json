@@ -183,6 +183,13 @@
       "when": 1792246626182,
       "tag": "0025_cnpj_cadastro",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1792626436627,
+      "tag": "0026_series_municipais",
+      "breakpoints": true
     }
   ]
 }

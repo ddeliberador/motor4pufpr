@@ -13,10 +13,14 @@ export function definirTema(t: Tema) {
   try { localStorage.setItem(CHAVE, t); } catch { /* sem armazenamento */ }
 }
 
-/** Chamado uma vez na inicialização, antes da primeira pintura. */
+/**
+ * Chamado uma vez na inicialização. O padrão é o escuro (o <html> já nasce
+ * com a classe `dark` no index.html, para não piscar claro); só sai dele quem
+ * escolheu o claro nas configurações.
+ */
 export function aplicarTemaSalvo() {
   try {
     const t = localStorage.getItem(CHAVE) as Tema | null;
-    if (t === "escuro") document.documentElement.classList.add("dark");
+    document.documentElement.classList.toggle("dark", t !== "claro");
   } catch { /* sem armazenamento */ }
 }

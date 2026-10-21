@@ -12,7 +12,8 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import Header from "@/components/Header";
-import MapaBrasil, { type AncoraPbia, type Ponto, type MapaBrasilHandle, FUNDOS, type FundoId } from "@/components/mapa/MapaBrasil";
+import MapaBrasil, { type AncoraPbia, type Ponto, type MapaBrasilHandle, FUNDOS, type FundoId, type CoropleticoMunicipal as Coro } from "@/components/mapa/MapaBrasil";
+import CoropleticoMunicipal, { ESTADO_COROPLETICO_INICIAL, type EstadoCoropletico } from "@/components/mapa/CoropleticoMunicipal";
 import PainelConfiguracoes, { type ConfiguracoesMapa } from "@/components/mapa/PainelConfiguracoes";
 import { definirTema, temaAtual } from "@/lib/tema";
 
@@ -274,6 +275,10 @@ export default function Mapa() {
   const [configAberta, setConfigAberta] = useState(false);
   const [config, setConfig] = useState<ConfiguracoesMapa>(lerConfigSalva);
   const mapaRef = useRef<MapaBrasilHandle>(null);
+  // Coroplético municipal (séries das Camadas de IA).
+  const [coroEstado, setCoroEstado] = useState<EstadoCoropletico>(ESTADO_COROPLETICO_INICIAL);
+  const [coro, setCoro] = useState<{ dados: Coro | null; regua: { rotulos: string[]; indice: number } | null }>({ dados: null, regua: null });
+  const onCoropletico = useCallback((dados: Coro | null, regua: { rotulos: string[]; indice: number } | null) => setCoro({ dados, regua }), []);
   // Camadas de IA — desligadas por padrão. Os locais físicos são pré-carregados
   // para que o total represente sempre o universo completo; a renderização só
   // ocorre quando a camada correspondente é ativada.
@@ -1032,6 +1037,8 @@ export default function Mapa() {
     if (uf && /^[A-Z]{2}$/.test(uf)) { setUfsSel(new Set([uf])); setUfFoco(uf); }
     const cat = q.get("cat");
     if (cat) setCamadas(new Set(cat.split(",").filter((k) => k in CATEGORIA_MAP) as CategoriaKey[]));
+    const coroUrl = q.get("coro");
+    if (coroUrl) setCoroEstado({ indicador: coroUrl, segmento: q.get("seg") || "", normalizar: q.get("pop") === "1", indicePeriodo: null });
     const l = new Set((q.get("l") || "").split(",").filter(Boolean));
     if (l.size) {
       setLayer1Ativa(l.has("1")); setLayer2Ativa(l.has("2")); setLayer3Ativa(l.has("3"));
@@ -1048,6 +1055,11 @@ export default function Mapa() {
     const l = [layer1Ativa, layer2Ativa, layer3Ativa, layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa].map((v, i) => (v ? String(i + 1) : "")).filter(Boolean);
     if (l.length) q.set("l", l.join(","));
     if (config.fundo !== "sobrio") q.set("fundo", config.fundo);
+    if (coroEstado.indicador) {
+      q.set("coro", coroEstado.indicador);
+      if (coroEstado.segmento) q.set("seg", coroEstado.segmento);
+      if (coroEstado.normalizar) q.set("pop", "1");
+    }
     return `${window.location.origin}${window.location.pathname}?${q.toString()}`;
   };
 
@@ -1072,6 +1084,7 @@ export default function Mapa() {
 
   const limpar = () => {
     setAba("atores");
+    setCoroEstado(ESTADO_COROPLETICO_INICIAL);
     setVisaoRegional(false);
     setRegiaoFoco(null);
     setInterAtiva(false);
@@ -1196,15 +1209,15 @@ export default function Mapa() {
 
       <main className="pt-16">
         {/* Cabeçalho institucional */}
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b border-border px-4 py-2 sm:px-6">
-          <h1 className="text-base font-bold tracking-tight sm:text-lg">Mapa da Inovação — Brasil</h1>
-          <p className="text-[11px] text-muted-foreground sm:text-xs">
-            Motor da Inovação · UFPR/PPGPP
+        <div className="flex h-11 items-center justify-between gap-4 border-b border-border bg-muted/30 px-4 sm:px-6">
+          <h1 className="truncate text-sm font-semibold tracking-tight sm:text-base">Mapa da Inovação — Brasil</h1>
+          <p className="hidden shrink-0 text-xs text-muted-foreground sm:block">
+            UFPR/PPGPP · MCTI
             {ultimaColeta && <span> · última coleta em {ultimaColeta}</span>}
           </p>
         </div>
 
-        <div className="flex flex-col lg:h-[calc(100vh-4rem-2.6rem)] lg:flex-row">
+        <div className="flex flex-col lg:h-[calc(100vh-4rem-2.75rem)] lg:flex-row">
           {/* Coluna lateral de filtros */}
           <aside
             className={`${
@@ -1310,6 +1323,7 @@ export default function Mapa() {
               </>)}
 
               {aba === "camadas" && (<>
+              <CoropleticoMunicipal estado={coroEstado} onEstado={setCoroEstado} onCoropletico={onCoropletico} />
               {/* Camadas no mapa — Infraestrutura (Camadas de IA) */}
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -2275,6 +2289,7 @@ export default function Mapa() {
                     fundo={config.fundo}
                     mostrarNomes={config.mostrarNomes}
                     malhaMunicipal={config.malhaMunicipal}
+                    coropletico={visaoRegional ? null : coro.dados}
                     pontos={visaoRegional ? [] : pontos}
                     regional={regionalMapa}
                     ufSelecionada={ufFoco}
@@ -2351,6 +2366,13 @@ export default function Mapa() {
                       onSalvarPng={salvarPng}
                       onSalvarPdf={salvarPdf}
                       urlIssues={URL_ISSUES}
+                    />
+                  )}
+                  {!visaoRegional && coro.dados && coro.regua && (
+                    <ReguaTempo
+                      anos={coro.regua.rotulos}
+                      indice={coro.regua.indice}
+                      onIndice={(i) => setCoroEstado((e) => ({ ...e, indicePeriodo: i }))}
                     />
                   )}
                   {visaoRegional && serieRegionalQ.data && (

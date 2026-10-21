@@ -3676,6 +3676,14 @@ export type Database = {
         Args: { p_nome: string; p_raw_payload?: Json; p_tipo_raw: string }
         Returns: string
       }
+      mun_serie_periodos: {
+        Args: { p_indicador: string; p_segmento?: string }
+        Returns: { periodo_referencia: string; granularidade: string; municipios: number }[]
+      }
+      mun_serie_segmentos: {
+        Args: { p_indicador: string }
+        Returns: { segmento: string; periodos: number }[]
+      }
       cnpj_fila: {
         Args: { p_limite: number }
         Returns: {

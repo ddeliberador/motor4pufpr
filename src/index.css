@@ -66,6 +66,7 @@
   }
 
   .dark {
+    color-scheme: dark;
     --warning: 40 90% 65%;
     --background: 222 47% 8%;
     --foreground: 220 14% 96%;
