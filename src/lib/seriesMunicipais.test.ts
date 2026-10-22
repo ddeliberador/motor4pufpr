@@ -1,4 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
+
 import { cortesQuantis, periodoAteAno, porDezMilHabitantes, postoPercentual } from "./seriesMunicipais";
 
 describe("séries municipais", () => {
