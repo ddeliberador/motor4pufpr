@@ -18,7 +18,9 @@ e pinta os 5.570 municípios (ADR-0003). Código: `backend/app/services/series_m
 
 ## Como disparar
 
-No Railway (ou local, com `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`):
+No Railway (ou local, com `SUPABASE_URL` e `MCTI_API_KEY`; a gravação passa
+pela função `series-municipais` do Supabase, que valida a chave e escreve pela
+camada temporal compartilhada, então o backend não precisa da service role):
 
 ```
 # teste sem gravar, lendo só 200 mil linhas por arquivo

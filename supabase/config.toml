@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.coleta-cnpj]
 verify_jwt = false
+
+[functions.series-municipais]
+verify_jwt = false
