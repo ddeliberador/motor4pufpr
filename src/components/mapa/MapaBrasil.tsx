@@ -139,6 +139,8 @@ export interface CoropleticoMunicipal {
 /** Rampa sequencial para o coroplético (claro → escuro), legível nos dois temas. */
 export const CORES_COROPLETICO = ["#dbeafe", "#93c5fd", "#3b82f6", "#1d4ed8", "#172554"];
 export const COR_SEM_DADO = "rgba(128,128,128,0.18)";
+/** Cores das cinco faixas da síntese 0–100 (mesma rampa do coroplético). */
+export const CORTES_SINTESE_CORES = CORES_COROPLETICO;
 
 export function classeDoValor(v: number, cortes: number[]) {
   let k = 0;

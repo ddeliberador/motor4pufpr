@@ -13,7 +13,12 @@ import {
 } from "lucide-react";
 import Header from "@/components/Header";
 import MapaBrasil, { type AncoraPbia, type Ponto, type MapaBrasilHandle, FUNDOS, type FundoId, type CoropleticoMunicipal as Coro } from "@/components/mapa/MapaBrasil";
-import CoropleticoMunicipal, { ESTADO_COROPLETICO_INICIAL, type EstadoCoropletico } from "@/components/mapa/CoropleticoMunicipal";
+import MunicipiosDaCamada, { type SelecaoMunicipal } from "@/components/mapa/MunicipiosDaCamada";
+import { CORES_COROPLETICO, CORTES_SINTESE_CORES } from "@/components/mapa/MapaBrasil";
+import {
+  CORTES_SINTESE, INDICADORES_MUNICIPAIS, type CamadaIa, anoDoPeriodo, cortesQuantis, formatarValor, periodoAteAno, porDezMilHabitantes, rotuloPeriodo,
+  usePeriodosMunicipais, usePopulacaoMunicipal, useSinteseMunicipal, useValoresMunicipais,
+} from "@/lib/seriesMunicipais";
 import PainelConfiguracoes, { type ConfiguracoesMapa } from "@/components/mapa/PainelConfiguracoes";
 import { definirTema, temaAtual } from "@/lib/tema";
 
@@ -206,9 +211,20 @@ const ABAS: { id: Aba; rotulo: string; icone: string; titulo: string }[] = [
 const CHAVE_CONFIG = "mapa-inovacao-config";
 const URL_ISSUES = "https://github.com/ddeliberador/motor4pufpr/issues/new";
 
+function lerMunModoDaUrl(): "sintese" | "indicador" | "nenhum" {
+  const q = new URLSearchParams(window.location.search);
+  if (q.get("coro") === "nenhum") return "nenhum";
+  if (q.get("coro")) return "indicador";
+  return "sintese";
+}
+function lerMunSelDaUrl(): SelecaoMunicipal | null {
+  const q = new URLSearchParams(window.location.search);
+  const c = q.get("coro");
+  return c && c !== "nenhum" && INDICADORES_MUNICIPAIS.some((i) => i.id === c) ? { indicador: c, segmento: q.get("seg") || "" } : null;
+}
 function lerAbaDaUrl(): Aba {
   const v = new URLSearchParams(window.location.search).get("aba");
-  return ABAS.some((a) => a.id === v) ? (v as Aba) : "atores";
+  return ABAS.some((a) => a.id === v) ? (v as Aba) : "camadas";
 }
 function lerConfigSalva(): ConfiguracoesMapa {
   const base: ConfiguracoesMapa = { tema: temaAtual(), fundo: "sobrio", mostrarNomes: true, malhaMunicipal: true };
@@ -276,16 +292,17 @@ export default function Mapa() {
   const [configAberta, setConfigAberta] = useState(false);
   const [config, setConfig] = useState<ConfiguracoesMapa>(lerConfigSalva);
   const mapaRef = useRef<MapaBrasilHandle>(null);
-  // Coroplético municipal (séries das Camadas de IA).
-  const [coroEstado, setCoroEstado] = useState<EstadoCoropletico>(ESTADO_COROPLETICO_INICIAL);
-  const [coro, setCoro] = useState<{ dados: Coro | null; regua: { rotulos: string[]; indice: number } | null }>({ dados: null, regua: null });
-  const onCoropletico = useCallback((dados: Coro | null, regua: { rotulos: string[]; indice: number } | null) => setCoro({ dados, regua }), []);
+  // Nível municipal das Camadas de IA: "sintese" (média das camadas), um indicador de uma camada, ou nada.
+  const [munModo, setMunModo] = useState<"sintese" | "indicador" | "nenhum">(() => lerMunModoDaUrl());
+  const [munSel, setMunSel] = useState<SelecaoMunicipal | null>(() => lerMunSelDaUrl());
+  const [normalizarMun, setNormalizarMun] = useState<boolean>(() => new URLSearchParams(window.location.search).get("pop") === "1");
+  // Ano em foco da barra de série histórica (null = o mais recente). Vale para todas as visões temporais ao mesmo tempo.
+  const [anoFoco, setAnoFoco] = useState<number | null>(null);
+  const [interAcumulado, setInterAcumulado] = useState(true);
   // Camadas de IA — desligadas por padrão. Os locais físicos são pré-carregados
   // para que o total represente sempre o universo completo; a renderização só
   // ocorre quando a camada correspondente é ativada.
-  const [layer1Ativa, setLayer1Ativa] = useState(false);
-  // Régua de tempo da Layer 1: índice no vetor de anos de operação (null = o mais recente, todas as usinas).
-  const [idxAnoUsinas, setIdxAnoUsinas] = useState<number | null>(null);
+  const [layer1Ativa, setLayer1Ativa] = useState(true);
   const [layer1Carregando, setLayer1Carregando] = useState(false);
   const [dadosUsinas, setDadosUsinas] = useState<UsinaAneel[] | null>(null);
   // Subtipos de usina selecionados (vazio = todos os tipos).
@@ -294,7 +311,7 @@ export default function Mapa() {
   const [buscaUsina, setBuscaUsina] = useState("");
   const [usinaSel, setUsinaSel] = useState<UsinaAneel | null>(null);
   const [erroLayer1, setErroLayer1] = useState<string | null>(null);
-  const [layer2Ativa, setLayer2Ativa] = useState(false);
+  const [layer2Ativa, setLayer2Ativa] = useState(true);
   const [layer2Carregando, setLayer2Carregando] = useState(false);
   const [dadosCabos, setDadosCabos] = useState<DadosCabos | null>(null);
   // Sub-camadas da Layer 2 — cada uma com estado e carregamento independentes.
@@ -307,12 +324,12 @@ export default function Mapa() {
   const [dadosBackhaul, setDadosBackhaul] = useState<BackhaulMunicipio[] | null>(null);
   const [backhaulCarregando, setBackhaulCarregando] = useState(false);
   const [erroBackhaul, setErroBackhaul] = useState<string | null>(null);
-  const [layer3Ativa, setLayer3Ativa] = useState(false);
+  const [layer3Ativa, setLayer3Ativa] = useState(true);
   const [layer3Carregando, setLayer3Carregando] = useState(false);
   const [dadosDCs, setDadosDCs] = useState<Datacenter[] | null>(null);
   const [erroLayer3, setErroLayer3] = useState<string | null>(null);
   // Layer 7 — Governança: sem fetch externo por ora; controla apenas visibilidade.
-  const [layer7Ativa, setLayer7Ativa] = useState(false);
+  const [layer7Ativa, setLayer7Ativa] = useState(true);
   // PBIA ancorado na Layer 7: eixo ativo, destaque de atores e âncoras georreferenciadas.
   const [pbiaEixo, setPbiaEixo] = useState<number | null>(null);
   const [pbiaCor, setPbiaCor] = useState<string | null>(null);
@@ -340,9 +357,9 @@ export default function Mapa() {
   ];
   const desativadasCatalogo = CAMADAS_CATALOGO.filter(([k]) => offCat(k)).map(([, n]) => n);
   // Layers 4, 5, 6, 7 — enriquecimento de atores existentes
-  const [layer4Ativa, setLayer4Ativa] = useState(false);
-  const [layer5Ativa, setLayer5Ativa] = useState(false);
-  const [layer6Ativa, setLayer6Ativa] = useState(false);
+  const [layer4Ativa, setLayer4Ativa] = useState(true);
+  const [layer5Ativa, setLayer5Ativa] = useState(true);
+  const [layer6Ativa, setLayer6Ativa] = useState(true);
   const [enriquecimentoLayers, setEnriquecimentoLayers] = useState<EnriquecimentoLayers>({});
   const [layersEnrCarregando, setLayersEnrCarregando] = useState(false);
   const [erroLayersEnr, setErroLayersEnr] = useState<string | null>(null);
@@ -1040,14 +1057,11 @@ export default function Mapa() {
     if (uf && /^[A-Z]{2}$/.test(uf)) { setUfsSel(new Set([uf])); setUfFoco(uf); }
     const cat = q.get("cat");
     if (cat) setCamadas(new Set(cat.split(",").filter((k) => k in CATEGORIA_MAP) as CategoriaKey[]));
-    const coroUrl = q.get("coro");
-    if (coroUrl) setCoroEstado({ indicador: coroUrl, segmento: q.get("seg") || "", normalizar: q.get("pop") === "1", indicePeriodo: null });
     const l = new Set((q.get("l") || "").split(",").filter(Boolean));
     if (l.size) {
       setLayer1Ativa(l.has("1")); setLayer2Ativa(l.has("2")); setLayer3Ativa(l.has("3"));
       setLayer4Ativa(l.has("4")); setLayer5Ativa(l.has("5")); setLayer6Ativa(l.has("6")); setLayer7Ativa(l.has("7"));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const linkDoMapa = () => {
@@ -1058,15 +1072,14 @@ export default function Mapa() {
     const l = [layer1Ativa, layer2Ativa, layer3Ativa, layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa].map((v, i) => (v ? String(i + 1) : "")).filter(Boolean);
     if (l.length) q.set("l", l.join(","));
     if (config.fundo !== "sobrio") q.set("fundo", config.fundo);
-    if (coroEstado.indicador) {
-      q.set("coro", coroEstado.indicador);
-      if (coroEstado.segmento) q.set("seg", coroEstado.segmento);
-      if (coroEstado.normalizar) q.set("pop", "1");
-    }
+    if (munModo === "nenhum") q.set("coro", "nenhum");
+    else if (munModo === "indicador" && munSel) { q.set("coro", munSel.indicador); if (munSel.segmento) q.set("seg", munSel.segmento); }
+    if (normalizarMun) q.set("pop", "1");
+    if (anoFoco != null) q.set("ano", String(anoFoco));
     return `${window.location.origin}${window.location.pathname}?${q.toString()}`;
   };
 
-  const nomeArquivo = () => `mapa-inovacao-${aba}${ufFoco ? `-${ufFoco}` : ""}`;
+  const nomeArquivo = () => `mapa-inovacao-${aba}${ufFoco ? `-${ufFoco}` : ""}${anoFoco != null ? `-${anoFoco}` : ""}`;
   const salvarPng = async () => {
     const url = await mapaRef.current?.imagemPng();
     if (!url) return;
@@ -1085,6 +1098,40 @@ export default function Mapa() {
     pdf.save(`${nomeArquivo()}.pdf`);
   };
 
+  // ---------------------------------------------------------------- nível municipal
+  const munAtivo = !visaoRegional && munModo !== "nenhum";
+  const sintese = useSinteseMunicipal(anoFoco, normalizarMun, munAtivo && munModo === "sintese");
+  const munDef = munModo === "indicador" && munSel ? INDICADORES_MUNICIPAIS.find((i) => i.id === munSel.indicador) ?? null : null;
+  const munPeriodosQ = usePeriodosMunicipais(munAtivo && munDef ? munDef.id : null, munSel?.segmento ?? "");
+  const munPeriodos = useMemo(() => munPeriodosQ.data ?? [], [munPeriodosQ.data]);
+  const munPeriodo = periodoAteAno(munPeriodos, anoFoco);
+  const munValoresQ = useValoresMunicipais(munAtivo && munDef && munPeriodo ? munDef.id : null, munSel?.segmento ?? "", munPeriodo?.periodo ?? null);
+  const munPopQ = usePopulacaoMunicipal(munAtivo && normalizarMun && !!munDef?.normalizavel);
+
+  const coropletico = useMemo<Coro | null>(() => {
+    if (!munAtivo) return null;
+    if (munModo === "sintese") {
+      if (!sintese.camadas.length) return null;
+      const rotuloCamadas = sintese.camadas.map((c) => `${c.camada} ${rotuloPeriodo(c.periodo, c.granularidade)}`).join(" · ");
+      return {
+        valores: sintese.valores, cortes: CORTES_SINTESE, cores: CORTES_SINTESE_CORES,
+        rotulo: `Síntese das camadas (${sintese.camadas.length} de 7)${normalizarMun ? " · por habitante" : ""} · ${rotuloCamadas}`,
+        formatar: (v) => `${v.toFixed(0)} / 100`,
+      };
+    }
+    if (!munDef || !munPeriodo || !munValoresQ.data) return null;
+    const normalizado = normalizarMun && munDef.normalizavel && !!munPopQ.data;
+    const valores = normalizado ? porDezMilHabitantes(munValoresQ.data, munPopQ.data!.valores) : munValoresQ.data;
+    const cortes = cortesQuantis(valores);
+    const seg = munDef.segmentos.find((x) => x.id === (munSel?.segmento ?? ""))?.rotulo;
+    return {
+      valores, cortes, cores: CORES_COROPLETICO.slice(0, cortes.length + 1),
+      rotulo: `${munDef.rotulo}${seg && munSel?.segmento ? ` · ${seg}` : ""} · ${rotuloPeriodo(munPeriodo.periodo, munPeriodo.granularidade)}${normalizado ? " · por 10 mil hab." : ""}`,
+      formatar: (v) => formatarValor(v, munDef.unidade, normalizado),
+    };
+  }, [munAtivo, munModo, sintese, munDef, munPeriodo, munValoresQ.data, munPopQ.data, normalizarMun, munSel]);
+
+  // ---------------------------------------------------------------- eixo de tempo único
   // Anos de entrada em operação das usinas (Layer 1), de 1950 ao mais recente.
   const anosUsinas = useMemo(() => {
     const anos = (dadosUsinas ?? []).map((u) => u.ano_operacao).filter((a): a is number => a != null && a >= 1950);
@@ -1092,42 +1139,70 @@ export default function Mapa() {
     const [min, max] = [Math.min(...anos), Math.max(...anos)];
     return Array.from({ length: max - min + 1 }, (_, i) => min + i);
   }, [dadosUsinas]);
-  const anoMaximoUsinas = layer1Ativa && anosUsinas.length && idxAnoUsinas != null && idxAnoUsinas < anosUsinas.length - 1 ? anosUsinas[idxAnoUsinas] : null;
+  const anosInteracao = useMemo(
+    () => (interAtiva && interFluxos ? Array.from({ length: interAnos[1] - interAnos[0] + 1 }, (_, i) => interAnos[0] + i) : []),
+    [interAtiva, interFluxos, interAnos],
+  );
+  const anosMunicipais = useMemo(() => {
+    if (!munAtivo) return [] as number[];
+    if (munModo === "sintese") return sintese.anos;
+    return [...new Set(munPeriodos.map((p) => anoDoPeriodo(p.periodo)))].sort((a, b) => a - b);
+  }, [munAtivo, munModo, sintese.anos, munPeriodos]);
 
-  // A barra de série histórica segue a visão em foco, nesta ordem de prioridade.
-  const serieTempo: SerieTempo | null = (() => {
-    if (visaoRegional) {
-      return anosRegionais.length ? {
-        rotulos: anosRegionais, indice: Math.min(idxAnoRegional, Math.max(0, anosRegionais.length - 1)), onIndice: setIdxAnoRegional,
-        titulo: `${indicadorRegional.rotulo} por região`,
-      } : null;
+  // União dos anos de tudo que está ligado; a barra percorre esse eixo e cada visão lê o seu recorte.
+  const anosEixo = useMemo(() => {
+    const todos = new Set<number>();
+    if (visaoRegional) anosRegionais.forEach((a) => todos.add(a));
+    else {
+      anosMunicipais.forEach((a) => todos.add(a));
+      if (aba === "interacao") anosInteracao.forEach((a) => todos.add(a));
+      if (layer1Ativa) anosUsinas.forEach((a) => todos.add(a));
     }
-    if (coro.dados && coro.regua) {
-      return { rotulos: coro.regua.rotulos, indice: coro.regua.indice, onIndice: (i) => setCoroEstado((e) => ({ ...e, indicePeriodo: i })), titulo: coro.dados.rotulo };
-    }
-    if (aba === "interacao" && interAtiva && interFluxos) {
-      const anos = Array.from({ length: interAnos[1] - interAnos[0] + 1 }, (_, i) => interAnos[0] + i);
-      const idx = interAno == null ? anos.length - 1 : Math.max(0, anos.indexOf(interAno));
-      return {
-        rotulos: anos, indice: idx, onIndice: (i) => setInterAno(anos[i]), titulo: "Cooperação EMBRAPII por ano",
-        acumulado: { ativo: interAno == null, onAlternar: (v) => setInterAno(v ? null : anos[anos.length - 1]) },
-      };
-    }
-    if (layer1Ativa && anosUsinas.length) {
-      return { rotulos: anosUsinas, indice: idxAnoUsinas ?? anosUsinas.length - 1, onIndice: setIdxAnoUsinas, titulo: "Usinas em operação até o ano (ANEEL)" };
-    }
-    return null;
-  })();
-  const motivoSemSerie = aba === "atores"
-    ? "os atores não têm série; ligue uma camada de IA, o coroplético ou a visão regional"
-    : aba === "camadas" ? "escolha um coroplético municipal ou ligue a Layer 1 (usinas por ano de operação)"
-    : aba === "interacao" ? "ligue a cooperação EMBRAPII para percorrer os anos"
-    : "carregando a série regional…";
+    return [...todos].sort((a, b) => a - b);
+  }, [visaoRegional, anosRegionais, anosMunicipais, aba, anosInteracao, layer1Ativa, anosUsinas]);
+  const anoEfetivo = anosEixo.length ? (anoFoco != null && anosEixo.includes(anoFoco) ? anoFoco : anosEixo[anosEixo.length - 1]) : null;
+  const ultimoAno = anosEixo.length ? anosEixo[anosEixo.length - 1] : null;
+
+  // Recortes derivados do ano em foco.
+  useEffect(() => {
+    if (!anosRegionais.length || anoEfetivo == null) return;
+    let idx = anosRegionais.length - 1;
+    for (let i = 0; i < anosRegionais.length; i++) if (anosRegionais[i] <= anoEfetivo) idx = i;
+    setIdxAnoRegional(idx);
+  }, [anoEfetivo, anosRegionais]);
+  useEffect(() => {
+    if (!anosInteracao.length) return;
+    setInterAno(interAcumulado || anoEfetivo == null ? null : Math.min(Math.max(anoEfetivo, anosInteracao[0]), anosInteracao[anosInteracao.length - 1]));
+  }, [interAcumulado, anoEfetivo, anosInteracao]);
+  const anoMaximoUsinas = layer1Ativa && anoEfetivo != null && ultimoAno != null && anoEfetivo < ultimoAno ? anoEfetivo : null;
+
+  const serieTempo: SerieTempo | null = anosEixo.length ? {
+    rotulos: anosEixo,
+    indice: anoEfetivo != null ? anosEixo.indexOf(anoEfetivo) : anosEixo.length - 1,
+    onIndice: (i) => setAnoFoco(anosEixo[i]),
+    titulo: visaoRegional ? `${indicadorRegional.rotulo} por região`
+      : [coropletico?.rotulo.split(" · ")[0], aba === "interacao" && anosInteracao.length ? "cooperação EMBRAPII" : null, layer1Ativa && anosUsinas.length ? "usinas em operação" : null].filter(Boolean).join(" + "),
+    acumulado: aba === "interacao" && anosInteracao.length ? { ativo: interAcumulado, onAlternar: setInterAcumulado } : undefined,
+  } : null;
+  const motivoSemSerie = visaoRegional ? "carregando a série regional…"
+    : sintese.carregando || munPeriodosQ.isLoading ? "carregando as séries municipais…"
+    : munModo !== "nenhum" && !anosMunicipais.length ? "as séries municipais ainda não foram coletadas (Gestão da Pesquisa → Coletas); a Layer 1 ganha anos quando as usinas carregarem"
+    : aba === "atores" ? "os atores não têm série; abra Camadas de IA ou a visão regional"
+    : "ligue uma camada com série (municípios, usinas ou cooperação)";
+
+  const municipiosDaCamada = (camada: CamadaIa) => ({
+    camada,
+    selecao: munSel && INDICADORES_MUNICIPAIS.find((i) => i.id === munSel.indicador)?.camada === camada ? munSel : null,
+    onSelecionar: (sel: SelecaoMunicipal | null) => { setMunSel(sel); setMunModo(sel ? "indicador" : "sintese"); },
+    cobertura: munDef && munDef.camada === camada && munPeriodo ? { municipios: munPeriodo.municipios, periodo: rotuloPeriodo(munPeriodo.periodo, munPeriodo.granularidade) } : null,
+    carregando: munDef?.camada === camada && (munPeriodosQ.isLoading || munValoresQ.isLoading),
+  });
 
   const limpar = () => {
-    setAba("atores");
-    setIdxAnoUsinas(null);
-    setCoroEstado(ESTADO_COROPLETICO_INICIAL);
+    setAba("camadas");
+    setAnoFoco(null);
+    setMunModo("sintese");
+    setMunSel(null);
     setVisaoRegional(false);
     setRegiaoFoco(null);
     setInterAtiva(false);
@@ -1366,7 +1441,37 @@ export default function Mapa() {
               </>)}
 
               {aba === "camadas" && (<>
-              <CoropleticoMunicipal estado={coroEstado} onEstado={setCoroEstado} onCoropletico={onCoropletico} />
+              {/* Nível municipal: síntese das camadas (padrão), um indicador de uma camada (escolhido sob a camada) ou nada. */}
+              <div className="rounded-lg border border-border bg-card/60 p-2 text-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Preenchimento dos municípios</p>
+                  <label className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <input type="checkbox" checked={normalizarMun} onChange={(e) => setNormalizarMun(e.target.checked)} className="h-3 w-3 accent-primary" />
+                    por habitante
+                  </label>
+                </div>
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  <button type="button" onClick={() => { setMunModo("sintese"); setMunSel(null); }} aria-pressed={munModo === "sintese"}
+                    className={`rounded-full border px-2 py-0.5 text-[11px] ${munModo === "sintese" ? "border-foreground/40 bg-muted text-foreground" : "border-border text-muted-foreground"}`}>
+                    Síntese das 7 camadas
+                  </button>
+                  {munModo === "indicador" && munDef && (
+                    <span className="rounded-full border border-foreground/40 bg-muted px-2 py-0.5 text-[11px] text-foreground">{munDef.rotulo}</span>
+                  )}
+                  <button type="button" onClick={() => { setMunModo("nenhum"); setMunSel(null); }} aria-pressed={munModo === "nenhum"}
+                    className={`rounded-full border px-2 py-0.5 text-[11px] ${munModo === "nenhum" ? "border-foreground/40 bg-muted text-foreground" : "border-border text-muted-foreground"}`}>
+                    Só marcadores
+                  </button>
+                </div>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  {munModo === "sintese"
+                    ? sintese.carregando ? "carregando as camadas…"
+                      : sintese.camadas.length
+                        ? `Média dos postos (0–100) de cada município nas ${sintese.camadas.length} camadas com dado: ${sintese.camadas.map((c) => c.camada).join(", ")}. L4 e L7 não têm base municipal.`
+                        : "Nenhuma camada tem série municipal coletada ainda. Dispare as coletas em Gestão da Pesquisa → Coletas."
+                    : munModo === "indicador" ? "Um indicador de uma camada; escolha outro sob a camada correspondente." : "Os municípios ficam sem cor; só os marcadores das camadas aparecem."}
+                </p>
+              </div>
               {/* Camadas no mapa — Infraestrutura (Camadas de IA) */}
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -1457,6 +1562,7 @@ export default function Mapa() {
                   {erroLayer1 && layer1Ativa && (
                     <p className="px-2 text-[10px] text-destructive">ANEEL indisponível: {erroLayer1}</p>
                   )}
+                  {layer1Ativa && <MunicipiosDaCamada {...municipiosDaCamada("L1")} />}
                   {layer1Ativa && dadosUsinas && dadosUsinas.length > 0 && (
                     <div className="ml-6 space-y-0.5 border-l border-border pl-2">
                       <div className="flex items-center justify-between pr-1">
@@ -1620,6 +1726,7 @@ export default function Mapa() {
                       <span className="flex-1 truncate">Layer 2 — Infraestrutura Física</span>
                       {layer2Carregando && <span className="text-[10px] text-muted-foreground">carregando…</span>}
                     </label>
+                    {layer2Ativa && <MunicipiosDaCamada {...municipiosDaCamada("L2")} />}
                     {layer2Ativa && (
                       <div className="ml-6 mt-0.5 space-y-0.5 border-l border-border pl-2">
                         {/* 2a — Cabos submarinos */}
@@ -1729,6 +1836,7 @@ export default function Mapa() {
                   {erroLayer3 && layer3Ativa && (
                     <p className="px-2 text-[10px] text-destructive">PeeringDB indisponível: {erroLayer3}</p>
                   )}
+                  {layer3Ativa && <MunicipiosDaCamada {...municipiosDaCamada("L3")} />}
                   <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
                     <input type="checkbox" checked={layer4Ativa} onChange={() => setLayer4Ativa((v) => !v)}
                       className="h-3.5 w-3.5 shrink-0 accent-green-500" />
@@ -1740,6 +1848,7 @@ export default function Mapa() {
                       <span className="text-[10px] text-muted-foreground">{contagemEnr.l4.toLocaleString("pt-BR")} atores</span>
                     )}
                   </label>
+                  {layer4Ativa && <MunicipiosDaCamada {...municipiosDaCamada("L4")} />}
                   <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
                     <input type="checkbox" checked={layer5Ativa} onChange={() => setLayer5Ativa((v) => !v)}
                       className="h-3.5 w-3.5 shrink-0 accent-teal-500" />
@@ -1751,6 +1860,7 @@ export default function Mapa() {
                       <span className="text-[10px] text-muted-foreground">{contagemEnr.l5.toLocaleString("pt-BR")} atores</span>
                     )}
                   </label>
+                  {layer5Ativa && <MunicipiosDaCamada {...municipiosDaCamada("L5")} />}
                   <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
                     <input type="checkbox" checked={layer6Ativa} onChange={() => setLayer6Ativa((v) => !v)}
                       className="h-3.5 w-3.5 shrink-0 accent-cyan-500" />
@@ -1762,6 +1872,7 @@ export default function Mapa() {
                       <span className="text-[10px] text-muted-foreground">{contagemEnr.l6.toLocaleString("pt-BR")} atores</span>
                     )}
                   </label>
+                  {layer6Ativa && <MunicipiosDaCamada {...municipiosDaCamada("L6")} />}
                   <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
                     <input type="checkbox" checked={layer7Ativa} onChange={() => setLayer7Ativa((v) => !v)}
                       className="h-3.5 w-3.5 shrink-0 accent-violet-500" />
@@ -1773,6 +1884,7 @@ export default function Mapa() {
                       <span className="text-[10px] text-muted-foreground">{contagemEnr.l7.toLocaleString("pt-BR")} atores</span>
                     )}
                   </label>
+                  {layer7Ativa && <MunicipiosDaCamada {...municipiosDaCamada("L7")} />}
                   {layer7Ativa && (
                     <PbiaEixos
                       eixoSelecionado={pbiaEixo}
@@ -2325,7 +2437,7 @@ export default function Mapa() {
                     fundo={config.fundo}
                     mostrarNomes={config.mostrarNomes}
                     malhaMunicipal={config.malhaMunicipal}
-                    coropletico={visaoRegional ? null : coro.dados}
+                    coropletico={coropletico}
                     pontos={visaoRegional ? [] : pontos}
                     regional={regionalMapa}
                     ufSelecionada={ufFoco}

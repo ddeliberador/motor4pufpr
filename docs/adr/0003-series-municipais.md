@@ -46,3 +46,21 @@ IA, para popular o mapa ao máximo sem inventar cobertura.
   implementados pelo layout publicado e testados com arquivos sintéticos, e a
   primeira execução real deve ser feita com `--amostra --simular`.
 - Bases pesadas (CNPJ) levam horas: rodar mensalmente, fora do horário de uso.
+
+## Adendo (2026-10-22): nível municipal dentro das camadas, síntese e ano único
+
+- O controle "Coroplético municipal" à parte foi removido. Cada camada da
+  coluna lateral ganhou um bloco "Municípios" com os seus indicadores
+  (`MunicipiosDaCamada`); escolher um pinta os 5.570 municípios com ele.
+- O mapa abre na aba Camadas de IA com as 7 layers ligadas e os municípios
+  preenchidos pela **síntese das camadas**: para cada camada com base
+  municipal, o município recebe o posto percentual (0–100) no último período
+  até o ano em foco; a síntese é a média das camadas com dado. L4 e L7 não
+  entram (sem base municipal). Município sem dado em nenhuma camada fica cinza.
+  A síntese é um resumo de posição relativa, não uma medida absoluta de
+  maturidade; serve para leitura comparativa e precisa ser explicada assim.
+- A barra de série histórica passou a ter um **ano único** (`anoFoco`) para
+  tudo que está ligado; cada visão lê o seu recorte desse ano.
+- As coletas ganharam um painel em Gestão da Pesquisa → Coletas (só
+  administradores), via Edge Function `coletas-municipais`, que repassa ao
+  Railway com a `MCTI_API_KEY`. Não é mais preciso terminal para a carga.

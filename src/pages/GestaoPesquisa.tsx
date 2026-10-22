@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import ColetasMunicipais from "@/components/gestao/ColetasMunicipais";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
@@ -254,6 +255,7 @@ export default function GestaoPesquisa() {
             </>}
             <TabsTrigger value="fontes"><Database className="w-4 h-4 mr-1" /> Catálogo de Fontes</TabsTrigger>
             <TabsTrigger value="bi"><BarChart3 className="w-4 h-4 mr-1" /> Painéis e Gráficos</TabsTrigger>
+            {isAdmin && <TabsTrigger value="coletas"><Database className="w-4 h-4 mr-1" /> Coletas</TabsTrigger>}
             {!isColab && <TabsTrigger value="feedback">
               <MessageSquare className="w-4 h-4 mr-1" /> Sugestões
               {newFeedbackCount > 0 && (
@@ -373,6 +375,11 @@ export default function GestaoPesquisa() {
           </TabsContent>
 
           {/* BI — CONSTRUTOR DE GRÁFICOS E PAINÉIS */}
+          {isAdmin && (
+            <TabsContent value="coletas" className="mt-4">
+              <ColetasMunicipais />
+            </TabsContent>
+          )}
           <TabsContent value="bi" className="mt-4">
             <BiStudioTab userId={user.id} />
           </TabsContent>

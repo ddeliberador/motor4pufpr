@@ -3,7 +3,7 @@
 // (entidade_tipo = 'municipio', chave = código IBGE de 7 dígitos).
 // Os coletores rodam no Railway (backend/app/services/series_municipais).
 
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAll } from "@/lib/fetchAll";
 
@@ -151,3 +151,98 @@ export function rotuloPeriodo(periodo: string, granularidade: string): string {
   const [a, m] = periodo.split("-");
   return granularidade === "mes" ? `${m}/${a}` : a;
 }
+
+/** Indicador municipal padrão de cada camada (o que entra na síntese). */
+export const INDICADOR_PADRAO_POR_CAMADA: Partial<Record<CamadaIa, string>> = {
+  L1: "mun.gd_potencia_kw", L2: "mun.bl_acessos", L3: "mun.estab_dados", L5: "mun.estab_ti", L6: "mun.ppg",
+};
+export const CAMADAS_COM_MUNICIPIO = Object.keys(INDICADOR_PADRAO_POR_CAMADA) as CamadaIa[];
+
+export function indicadoresDaCamada(camada: CamadaIa): IndicadorMunicipal[] {
+  return INDICADORES_MUNICIPAIS.filter((i) => i.camada === camada);
+}
+
+export const anoDoPeriodo = (p: string) => Number(p.slice(0, 4));
+
+/** Último período cujo ano é ≤ ano (null quando não há nenhum até esse ano). */
+export function periodoAteAno(periodos: PeriodoMunicipal[], ano: number | null): PeriodoMunicipal | null {
+  if (!periodos.length) return null;
+  if (ano == null) return periodos[periodos.length - 1];
+  let escolhido: PeriodoMunicipal | null = null;
+  for (const p of periodos) if (anoDoPeriodo(p.periodo) <= ano) escolhido = p;
+  return escolhido;
+}
+
+/** Posição percentual (0–100) de cada município entre os que têm valor. */
+export function postoPercentual(valores: Record<string, number>): Record<string, number> {
+  const pares = Object.entries(valores).filter(([, v]) => Number.isFinite(v)).sort((a, b) => a[1] - b[1]);
+  const n = pares.length;
+  const out: Record<string, number> = {};
+  if (n === 0) return out;
+  // Empates recebem o mesmo posto (média das posições).
+  let i = 0;
+  while (i < n) {
+    let j = i;
+    while (j + 1 < n && pares[j + 1][1] === pares[i][1]) j++;
+    const posto = n === 1 ? 100 : ((i + j) / 2 / (n - 1)) * 100;
+    for (let k = i; k <= j; k++) out[pares[k][0]] = posto;
+    i = j + 1;
+  }
+  return out;
+}
+
+export interface SinteseMunicipal {
+  /** 0–100: média dos postos percentuais nas camadas com dado. */
+  valores: Record<string, number>;
+  /** Camadas que entraram, com o período usado em cada uma. */
+  camadas: { camada: CamadaIa; indicador: string; periodo: string; granularidade: string }[];
+  /** Anos em que alguma camada tem dado (eixo da barra de tempo). */
+  anos: number[];
+  carregando: boolean;
+  erro: string | null;
+}
+
+/**
+ * Síntese municipal das camadas: para o ano em foco, cada camada usa o último
+ * período até aquele ano, vira posto percentual (0–100) e a síntese é a média
+ * das camadas com dado. Município sem dado em nenhuma camada fica fora.
+ */
+export function useSinteseMunicipal(ano: number | null, normalizar: boolean, ativo: boolean): SinteseMunicipal {
+  const ids = CAMADAS_COM_MUNICIPIO.map((c) => INDICADOR_PADRAO_POR_CAMADA[c] as string);
+  const periodosQs = useQueries({
+    queries: ids.map((id) => ({ queryKey: ["mun-periodos", id, ""], queryFn: () => carregarPeriodos(id, ""), enabled: ativo, staleTime: 10 * 60_000 })),
+  });
+  const escolhidos = periodosQs.map((q) => periodoAteAno(q.data ?? [], ano));
+  const valoresQs = useQueries({
+    queries: ids.map((id, k) => ({
+      queryKey: ["mun-valores", id, "", escolhidos[k]?.periodo ?? null],
+      queryFn: () => carregarValores(id, "", escolhidos[k]!.periodo),
+      enabled: ativo && !!escolhidos[k], staleTime: 10 * 60_000,
+    })),
+  });
+  const popQ = usePopulacaoMunicipal(ativo && normalizar);
+  const carregando = periodosQs.some((q) => q.isLoading) || valoresQs.some((q) => q.isLoading) || (normalizar && popQ.isLoading);
+  const erro = [...periodosQs, ...valoresQs].find((q) => q.error)?.error as Error | undefined;
+  const anos = [...new Set(periodosQs.flatMap((q) => (q.data ?? []).map((p) => anoDoPeriodo(p.periodo))))].sort((a, b) => a - b);
+  const soma: Record<string, { s: number; n: number }> = {};
+  const camadas: SinteseMunicipal["camadas"] = [];
+  ids.forEach((id, k) => {
+    const dados = valoresQs[k].data;
+    const per = escolhidos[k];
+    if (!dados || !per) return;
+    const def = INDICADORES_MUNICIPAIS.find((i) => i.id === id);
+    const base = normalizar && popQ.data && def?.normalizavel ? porDezMilHabitantes(dados, popQ.data.valores) : dados;
+    const postos = postoPercentual(base);
+    for (const [ibge, p] of Object.entries(postos)) {
+      const acc = soma[ibge] ?? (soma[ibge] = { s: 0, n: 0 });
+      acc.s += p; acc.n += 1;
+    }
+    camadas.push({ camada: CAMADAS_COM_MUNICIPIO[k], indicador: id, periodo: per.periodo, granularidade: per.granularidade });
+  });
+  const valores: Record<string, number> = {};
+  for (const [ibge, { s, n }] of Object.entries(soma)) valores[ibge] = s / n;
+  return { valores, camadas, anos, carregando, erro: erro?.message ?? null };
+}
+
+/** Cortes fixos para a síntese 0–100 (cinco faixas iguais). */
+export const CORTES_SINTESE = [20, 40, 60, 80];
