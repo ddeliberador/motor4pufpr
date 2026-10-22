@@ -15,7 +15,7 @@ const TIPOS_VALIDOS = new Set(["UHE", "PCH", "EOL", "UFV", "UTE", "CGH", "UTN"])
 // (tabela aneel_usinas, atualizada por rotina no Postgres). Substitui a consulta
 // ao vivo, que parava em 6.000 registros e deixava de fora ~3/4 do parque.
 const ANEEL_TABELA = "aneel_usinas";
-const ANEEL_COLS = "aneel_id,ceg,nome,tipo,fonte_combustivel,potencia_kw,uf,municipio,latitude,longitude,data_conjunto";
+const ANEEL_COLS = "aneel_id,ceg,nome,tipo,fonte_combustivel,potencia_kw,uf,municipio,latitude,longitude,data_conjunto,data_entrada_operacao";
 
 async function paginaAneel(offset: number) {
   const res = await restServico(
@@ -45,6 +45,8 @@ async function carregarEnergia() {
       combustivel: String(r.fonte_combustivel ?? ""),
       potencia_kw: r.potencia_kw == null ? undefined : Number(r.potencia_kw),
       situacao: "Operação",
+      // Ano de entrada em operação: permite a régua de tempo da Layer 1 (usinas em operação até o ano X).
+      ano_operacao: (() => { const a = Number(String(r.data_entrada_operacao ?? "").slice(0, 4)); return a >= 1900 && a <= 2100 ? a : undefined; })(),
       municipio: String(r.municipio ?? ""),
       uf: String(r.uf ?? "").trim(),
       longitude,

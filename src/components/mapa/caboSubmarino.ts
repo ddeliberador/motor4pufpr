@@ -39,6 +39,8 @@ export interface UsinaAneel {
   combustivel?: string;
   potencia_kw?: number;
   situacao?: string;
+  /** Ano de entrada em operação (ANEEL); ausente quando a fonte não informa. */
+  ano_operacao?: number;
   latitude: number;
   longitude: number;
   uf?: string;
