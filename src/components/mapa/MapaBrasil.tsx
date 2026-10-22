@@ -87,6 +87,8 @@ interface Props {
   layer1Ativa?: boolean;
   dadosUsinas?: UsinaAneel[] | null;
   tiposUsina?: Set<string>;
+  /** Régua de tempo da Layer 1: mostra só usinas em operação até este ano (sem ano = sempre). */
+  anoMaximoUsinas?: number | null;
   usinaDestaque?: UsinaAneel | null;
   /** Layer 2 — Infraestrutura Física. */
   layer2Ativa?: boolean;
@@ -193,7 +195,7 @@ const VAZIO = fc<Point, Record<string, unknown>>([]);
 const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
   pontos, ufSelecionada, ufsSelecionadas, ufsFiltroAtivas, contagemPorUf,
   onSelecionarUf, onSelecionarCluster, pontoSelecionadoId, onSelecionarPonto, grupoIds,
-  layer1Ativa, dadosUsinas, tiposUsina, usinaDestaque,
+  layer1Ativa, dadosUsinas, tiposUsina, anoMaximoUsinas = null, usinaDestaque,
   layer2Ativa, dadosCabos, l2Cabos, l2Antenas, dadosAntenas, l2Backhaul, dadosBackhaul,
   layer3Ativa, dadosDCs,
   layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa, enriquecimentoLayers,
@@ -529,6 +531,7 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
       if (!Number.isFinite(u.latitude) || !Number.isFinite(u.longitude)) continue;
       if (u.longitude < BBOX_BRASIL[0] || u.longitude > BBOX_BRASIL[2] || u.latitude > BBOX_BRASIL[3] || u.latitude < BBOX_BRASIL[1]) continue;
       if (tiposUsina && tiposUsina.size > 0 && !tiposUsina.has(u.tipo)) continue;
+      if (anoMaximoUsinas != null && u.ano_operacao != null && u.ano_operacao > anoMaximoUsinas) continue;
       if (!pontoNaSelecaoGeografica(u.latitude, u.longitude, u.uf)) continue;
       const mw = Math.max(0, (u.potencia_kw ?? 0) / 1000);
       feats.push({
@@ -542,7 +545,7 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
       ...Object.entries(COR_CLASSE_USINA).flatMap(([t, c]) => [t, corDaClasse(c)]),
       corDaClasse("text-gray-400"),
     ]);
-  }, [layer1Ativa, dadosUsinas, tiposUsina, pontoNaSelecaoGeografica, versaoEstilo]);
+  }, [layer1Ativa, dadosUsinas, tiposUsina, anoMaximoUsinas, pontoNaSelecaoGeografica, versaoEstilo]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -864,7 +867,7 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
                 <span className="text-muted-foreground">{label}</span>
               </div>
             ))}
-            <p className="text-muted-foreground/60">Tamanho proporcional à potência</p>
+            <p className="text-muted-foreground/60">Tamanho proporcional à potência{anoMaximoUsinas != null ? ` · em operação até ${anoMaximoUsinas}` : ""}</p>
           </>)}
           {layer2Ativa && (<>
             <p className="font-medium text-orange-400">Layer 2 — Infra Física</p>

@@ -37,7 +37,8 @@ import { canonizar, passaLake, resumoLake, type SelecaoLake } from "@/components
 import { Button } from "@/components/ui/button";
 import { REGIAO_POR_UF, REGIOES, ROTULO_REGIAO, UFS_POR_REGIAO, type Regiao } from "@/lib/regioes";
 import { INDICADORES_REGIONAIS, corRegiao, formatarValorRegional, useSerieRegional } from "@/lib/seriesRegionais";
-import { FichaRegional, ReguaTempo } from "@/components/mapa/VisaoRegional";
+import { FichaRegional } from "@/components/mapa/VisaoRegional";
+import BarraTempo, { type SerieTempo } from "@/components/mapa/BarraTempo";
 import type { VisaoRegionalMapa } from "@/components/mapa/MapaBrasil";
 import {
   type AntenaERB,
@@ -283,6 +284,8 @@ export default function Mapa() {
   // para que o total represente sempre o universo completo; a renderização só
   // ocorre quando a camada correspondente é ativada.
   const [layer1Ativa, setLayer1Ativa] = useState(false);
+  // Régua de tempo da Layer 1: índice no vetor de anos de operação (null = o mais recente, todas as usinas).
+  const [idxAnoUsinas, setIdxAnoUsinas] = useState<number | null>(null);
   const [layer1Carregando, setLayer1Carregando] = useState(false);
   const [dadosUsinas, setDadosUsinas] = useState<UsinaAneel[] | null>(null);
   // Subtipos de usina selecionados (vazio = todos os tipos).
@@ -1082,8 +1085,48 @@ export default function Mapa() {
     pdf.save(`${nomeArquivo()}.pdf`);
   };
 
+  // Anos de entrada em operação das usinas (Layer 1), de 1950 ao mais recente.
+  const anosUsinas = useMemo(() => {
+    const anos = (dadosUsinas ?? []).map((u) => u.ano_operacao).filter((a): a is number => a != null && a >= 1950);
+    if (!anos.length) return [] as number[];
+    const [min, max] = [Math.min(...anos), Math.max(...anos)];
+    return Array.from({ length: max - min + 1 }, (_, i) => min + i);
+  }, [dadosUsinas]);
+  const anoMaximoUsinas = layer1Ativa && anosUsinas.length && idxAnoUsinas != null && idxAnoUsinas < anosUsinas.length - 1 ? anosUsinas[idxAnoUsinas] : null;
+
+  // A barra de série histórica segue a visão em foco, nesta ordem de prioridade.
+  const serieTempo: SerieTempo | null = (() => {
+    if (visaoRegional) {
+      return anosRegionais.length ? {
+        rotulos: anosRegionais, indice: Math.min(idxAnoRegional, Math.max(0, anosRegionais.length - 1)), onIndice: setIdxAnoRegional,
+        titulo: `${indicadorRegional.rotulo} por região`,
+      } : null;
+    }
+    if (coro.dados && coro.regua) {
+      return { rotulos: coro.regua.rotulos, indice: coro.regua.indice, onIndice: (i) => setCoroEstado((e) => ({ ...e, indicePeriodo: i })), titulo: coro.dados.rotulo };
+    }
+    if (aba === "interacao" && interAtiva && interFluxos) {
+      const anos = Array.from({ length: interAnos[1] - interAnos[0] + 1 }, (_, i) => interAnos[0] + i);
+      const idx = interAno == null ? anos.length - 1 : Math.max(0, anos.indexOf(interAno));
+      return {
+        rotulos: anos, indice: idx, onIndice: (i) => setInterAno(anos[i]), titulo: "Cooperação EMBRAPII por ano",
+        acumulado: { ativo: interAno == null, onAlternar: (v) => setInterAno(v ? null : anos[anos.length - 1]) },
+      };
+    }
+    if (layer1Ativa && anosUsinas.length) {
+      return { rotulos: anosUsinas, indice: idxAnoUsinas ?? anosUsinas.length - 1, onIndice: setIdxAnoUsinas, titulo: "Usinas em operação até o ano (ANEEL)" };
+    }
+    return null;
+  })();
+  const motivoSemSerie = aba === "atores"
+    ? "os atores não têm série; ligue uma camada de IA, o coroplético ou a visão regional"
+    : aba === "camadas" ? "escolha um coroplético municipal ou ligue a Layer 1 (usinas por ano de operação)"
+    : aba === "interacao" ? "ligue a cooperação EMBRAPII para percorrer os anos"
+    : "carregando a série regional…";
+
   const limpar = () => {
     setAba("atores");
+    setIdxAnoUsinas(null);
     setCoroEstado(ESTADO_COROPLETICO_INICIAL);
     setVisaoRegional(false);
     setRegiaoFoco(null);
@@ -1772,15 +1815,7 @@ export default function Mapa() {
                     {interErro && <p className="px-1 text-[10px] text-destructive">Falha: {interErro}</p>}
                     {interAtiva && interFluxos && (
                       <div className="space-y-2 px-1 pt-1 text-[11px]">
-                        <div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">Ano: <b className="text-foreground">{interAno ?? "acumulado"}</b></span>
-                            <label className="flex items-center gap-1"><input type="checkbox" checked={interAno == null}
-                              onChange={(e) => setInterAno(e.target.checked ? null : interAnos[1])} className="h-3 w-3 accent-amber-500" />acumulado</label>
-                          </div>
-                          <input type="range" min={interAnos[0]} max={interAnos[1]} value={interAno ?? interAnos[1]} disabled={interAno == null}
-                            onChange={(e) => setInterAno(Number(e.target.value))} className="w-full accent-amber-500 disabled:opacity-40" />
-                        </div>
+                        <p className="text-muted-foreground">Ano: <b className="text-foreground">{interAno ?? "acumulado"}</b> · percorra os anos na barra de série histórica, acima do mapa.</p>
                         <div className="flex flex-wrap gap-1">
                           <button onClick={() => setInterTecs(new Set([TEC_IA]))}
                             className={`rounded-full border px-2 py-0.5 font-bold ${interTecs.size === 1 && interTecs.has(TEC_IA) ? "border-amber-500 bg-amber-500/20" : "border-amber-500/50"}`}>Somente IA</button>
@@ -2262,6 +2297,7 @@ export default function Mapa() {
                 </div>
               </div>
             )}
+            {!isLoading && !error && <BarraTempo serie={serieTempo} motivoSemSerie={motivoSemSerie} />}
 
             {isLoading && (
               <div className="flex h-full items-center justify-center">
@@ -2308,6 +2344,7 @@ export default function Mapa() {
                     layer1Ativa={layer1Ativa}
                     dadosUsinas={dadosUsinas}
                     tiposUsina={tiposUsina}
+                    anoMaximoUsinas={anoMaximoUsinas}
                     usinaDestaque={usinaSel}
                     layer2Ativa={layer2Ativa}
                     dadosCabos={dadosCabos}
@@ -2366,20 +2403,6 @@ export default function Mapa() {
                       onSalvarPng={salvarPng}
                       onSalvarPdf={salvarPdf}
                       urlIssues={URL_ISSUES}
-                    />
-                  )}
-                  {!visaoRegional && coro.dados && coro.regua && (
-                    <ReguaTempo
-                      anos={coro.regua.rotulos}
-                      indice={coro.regua.indice}
-                      onIndice={(i) => setCoroEstado((e) => ({ ...e, indicePeriodo: i }))}
-                    />
-                  )}
-                  {visaoRegional && serieRegionalQ.data && (
-                    <ReguaTempo
-                      anos={anosRegionais}
-                      indice={Math.min(idxAnoRegional, Math.max(0, anosRegionais.length - 1))}
-                      onIndice={setIdxAnoRegional}
                     />
                   )}
                   <p className={`pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-center text-[11px] text-muted-foreground ${visaoRegional ? "hidden" : "hidden sm:block"}`}>
