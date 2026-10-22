@@ -315,7 +315,7 @@ export default function Mapa() {
   const [layer2Carregando, setLayer2Carregando] = useState(false);
   const [dadosCabos, setDadosCabos] = useState<DadosCabos | null>(null);
   // Sub-camadas da Layer 2 — cada uma com estado e carregamento independentes.
-  const [l2Cabos, setL2Cabos] = useState(true);
+  const [l2Cabos, setL2Cabos] = useState(false);
   const [l2Antenas, setL2Antenas] = useState(false);
   const [l2Backhaul, setL2Backhaul] = useState(false);
   const [dadosAntenas, setDadosAntenas] = useState<AntenaERB[] | null>(null);
@@ -329,7 +329,7 @@ export default function Mapa() {
   const [dadosDCs, setDadosDCs] = useState<Datacenter[] | null>(null);
   const [erroLayer3, setErroLayer3] = useState<string | null>(null);
   // Layer 7 — Governança: sem fetch externo por ora; controla apenas visibilidade.
-  const [layer7Ativa, setLayer7Ativa] = useState(true);
+  const [layer7Ativa, setLayer7Ativa] = useState(false);
   // PBIA ancorado na Layer 7: eixo ativo, destaque de atores e âncoras georreferenciadas.
   const [pbiaEixo, setPbiaEixo] = useState<number | null>(null);
   const [pbiaCor, setPbiaCor] = useState<string | null>(null);
@@ -357,9 +357,9 @@ export default function Mapa() {
   ];
   const desativadasCatalogo = CAMADAS_CATALOGO.filter(([k]) => offCat(k)).map(([, n]) => n);
   // Layers 4, 5, 6, 7 — enriquecimento de atores existentes
-  const [layer4Ativa, setLayer4Ativa] = useState(true);
-  const [layer5Ativa, setLayer5Ativa] = useState(true);
-  const [layer6Ativa, setLayer6Ativa] = useState(true);
+  const [layer4Ativa, setLayer4Ativa] = useState(false);
+  const [layer5Ativa, setLayer5Ativa] = useState(false);
+  const [layer6Ativa, setLayer6Ativa] = useState(false);
   const [enriquecimentoLayers, setEnriquecimentoLayers] = useState<EnriquecimentoLayers>({});
   const [layersEnrCarregando, setLayersEnrCarregando] = useState(false);
   const [erroLayersEnr, setErroLayersEnr] = useState<string | null>(null);
