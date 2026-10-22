@@ -1,8 +1,11 @@
 """
-Cliente mínimo do PostgREST (Supabase) com a service role, espelhando a
-semântica de supabase/functions/_shared/temporal.ts: abre a coleta em
-ingest_runs, garante o indicador no catálogo, grava observações em lotes e
-fecha a coleta. Só httpx, sem SDK.
+Cliente da função `series-municipais` do Supabase, que grava as séries
+municipais pela camada temporal compartilhada (_shared/temporal.ts).
+
+O backend não toca o banco: manda lotes para a função, autenticado pela
+MCTI_API_KEY (a chave institucional que o backend já tem). Só precisa da
+SUPABASE_URL (pública). O nome do módulo é histórico: a primeira versão
+falava PostgREST com a service role, dispensada por este desenho.
 """
 from __future__ import annotations
 
@@ -16,7 +19,7 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-LOTE = 500
+LOTE = 1000
 
 
 @dataclass
@@ -34,6 +37,13 @@ class Observacao:
 
     def chave(self) -> str:
         return "|".join([self.indicador_id, self.entidade_tipo, self.entidade_chave, self.segmento, self.periodo_referencia])
+
+    def linha(self) -> dict[str, Any]:
+        return {
+            "indicador_id": self.indicador_id, "entidade_tipo": self.entidade_tipo, "entidade_chave": self.entidade_chave,
+            "segmento": self.segmento, "periodo_referencia": self.periodo_referencia, "granularidade": self.granularidade,
+            "valor": self.valor, "origem_temporal": self.origem_temporal, "metadados": self.metadados, "versao_metodo": self.versao_metodo,
+        }
 
 
 @dataclass
@@ -60,83 +70,77 @@ class Coleta:
 
 class SupabaseServico:
     def __init__(self, url: str | None = None, chave: str | None = None):
-        self.url = (url or os.environ.get("SUPABASE_URL") or "").rstrip("/")
-        self.chave = chave or os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or ""
-        if not self.url or not self.chave:
-            raise RuntimeError("SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórios para gravar séries municipais")
+        base = (url or os.environ.get("SUPABASE_URL") or "").rstrip("/")
+        self.chave = chave or os.environ.get("MCTI_API_KEY") or ""
+        if not base or not self.chave:
+            raise RuntimeError("SUPABASE_URL e MCTI_API_KEY são obrigatórios para gravar séries municipais")
         self.http = httpx.Client(
-            base_url=f"{self.url}/rest/v1",
-            headers={"apikey": self.chave, "Authorization": f"Bearer {self.chave}", "Content-Type": "application/json"},
-            timeout=httpx.Timeout(120.0),
+            base_url=f"{base}/functions/v1/series-municipais",
+            headers={"x-api-key": self.chave, "Content-Type": "application/json"},
+            timeout=httpx.Timeout(180.0),
         )
 
-    # ---- leitura genérica, paginada -------------------------------------
+    def _chamar(self, acao: str, **corpo: Any) -> dict:
+        for tentativa in range(3):
+            r = self.http.post("", json={"acao": acao, **corpo})
+            if r.status_code < 500:
+                break
+            time.sleep(2 * (tentativa + 1))
+        if r.status_code != 200:
+            raise RuntimeError(f"series-municipais/{acao}: HTTP {r.status_code} {r.text[:300]}")
+        return r.json()
+
+    # ---- leitura ----------------------------------------------------------
     def listar(self, tabela: str, select: str, filtros: dict[str, str] | None = None, ordem: str | None = None, pagina: int = 1000) -> list[dict]:
+        """Só a tabela de municípios é exposta pela função; a assinatura é mantida para os coletores."""
+        if tabela != "infra_backhaul_municipio":
+            raise RuntimeError(f"leitura de {tabela} não é exposta pela função series-municipais")
         linhas: list[dict] = []
         de = 0
         while True:
-            params = {"select": select, **(filtros or {})}
-            if ordem:
-                params["order"] = ordem
-            r = self.http.get(f"/{tabela}", params=params, headers={"Range": f"{de}-{de + pagina - 1}", "Range-Unit": "items"})
-            if r.status_code not in (200, 206):
-                raise RuntimeError(f"{tabela}: HTTP {r.status_code} {r.text[:200]}")
-            lote = r.json()
+            lote = self._chamar("municipios", de=de).get("linhas", [])
             linhas.extend(lote)
-            if len(lote) < pagina:
+            if len(lote) < 1000:
                 return linhas
-            de += pagina
+            de += 1000
 
     # ---- catálogo e coletas ---------------------------------------------
     def garantir_indicador(self, ind: Indicador) -> None:
-        corpo = {k: v for k, v in ind.__dict__.items() if v is not None}
-        r = self.http.post("/indicadores", json=corpo, headers={"Prefer": "resolution=ignore-duplicates,return=minimal"}, params={"on_conflict": "id"})
-        if r.status_code not in (200, 201):
-            raise RuntimeError(f"indicadores({ind.id}): HTTP {r.status_code} {r.text[:200]}")
+        self._chamar("indicador", indicador={k: v for k, v in ind.__dict__.items() if v is not None})
 
     def iniciar_coleta(self, job_id: str, fonte: str, versao: str, escopo: dict | None = None, hash_: str | None = None) -> Coleta:
-        corpo = {"job_id": job_id, "fonte": fonte, "ok": False, "found": 0, "inserted": 0, "escopo": escopo, "versao_conector": versao, "resposta_hash": hash_}
-        r = self.http.post("/ingest_runs", json=corpo, headers={"Prefer": "return=representation"})
-        if r.status_code not in (200, 201):
-            raise RuntimeError(f"ingest_runs: HTTP {r.status_code} {r.text[:200]}")
-        return Coleta(id=r.json()[0]["id"])
+        return Coleta(id=self._chamar("iniciar", job_id=job_id, fonte=fonte, versao=versao, escopo=escopo, hash=hash_)["coleta_id"])
 
     def finalizar_coleta(self, c: Coleta, ok: bool, erro: str | None = None) -> None:
-        corpo = {"ok": ok, "found": c.encontrados, "inserted": c.inseridos, "error": (erro or None) and erro[:2000], "duration_ms": int((time.monotonic() - c.inicio) * 1000)}
-        r = self.http.patch("/ingest_runs", json=corpo, params={"id": f"eq.{c.id}"}, headers={"Prefer": "return=minimal"})
-        if r.status_code not in (200, 204):
-            logger.warning("ingest_runs(%s) não atualizado: HTTP %s", c.id, r.status_code)
+        try:
+            self._chamar("finalizar", coleta_id=c.id, ok=ok, found=c.encontrados, inserted=c.inseridos, error=(erro or "")[:2000] or None)
+        except RuntimeError as e:
+            logger.warning("ingest_runs(%s) não atualizado: %s", c.id, e)
 
     def ultima_coleta_ok(self, job_id: str) -> dict | None:
-        linhas = self.listar("ingest_runs", "id,resposta_hash,started_at", {"job_id": f"eq.{job_id}", "ok": "eq.true"}, ordem="started_at.desc", pagina=1)
-        return linhas[0] if linhas else None
+        return self._chamar("ultima_coleta_ok", job_id=job_id).get("coleta")
 
     def registrar_observacoes(self, c: Coleta, linhas: Iterable[Observacao]) -> tuple[int, int]:
-        """Append-only e idempotente dentro da coleta (como em temporal.ts)."""
+        """Lotes de até LOTE linhas; a idempotência dentro da coleta é da função (temporal.ts)."""
         unicas: dict[str, Observacao] = {}
         for l in linhas:
             if l.valor is None:
                 continue
             unicas[l.chave()] = l
-        existentes = {
-            "|".join([r["indicador_id"], r["entidade_tipo"], r["entidade_chave"], r.get("segmento") or "", r["periodo_referencia"]])
-            for r in self.listar("observacoes", "indicador_id,entidade_tipo,entidade_chave,segmento,periodo_referencia", {"coleta_id": f"eq.{c.id}"})
-        }
-        novas = [l for k, l in unicas.items() if k not in existentes]
-        corpo = [{
-            "indicador_id": l.indicador_id, "entidade_tipo": l.entidade_tipo, "entidade_chave": l.entidade_chave,
-            "segmento": l.segmento, "periodo_referencia": l.periodo_referencia, "granularidade": l.granularidade,
-            "valor": l.valor, "origem_temporal": l.origem_temporal, "metadados": l.metadados, "versao_metodo": l.versao_metodo,
-            "coleta_id": c.id,
-        } for l in novas]
-        for i in range(0, len(corpo), LOTE):
-            r = self.http.post("/observacoes", json=corpo[i:i + LOTE], headers={"Prefer": "return=minimal"})
-            if r.status_code not in (200, 201):
-                raise RuntimeError(f"observacoes (lote {i // LOTE}): HTTP {r.status_code} {r.text[:300]}")
-        c.encontrados += len(unicas)
-        c.inseridos += len(novas)
-        return len(novas), len(unicas) - len(novas)
+        todas = list(unicas.values())
+        inseridas = ignoradas = 0
+        for i in range(0, len(todas), LOTE):
+            r = self._chamar("observacoes", coleta_id=c.id, linhas=[l.linha() for l in todas[i:i + LOTE]])
+            inseridas += int(r.get("inseridas", 0))
+            ignoradas += int(r.get("ignoradas", 0))
+            if (i // LOTE) % 20 == 0:
+                logger.info("gravadas %d/%d observações", min(i + LOTE, len(todas)), len(todas))
+        c.encontrados += len(todas)
+        c.inseridos += inseridas
+        return inseridas, ignoradas
 
     def atualizar_agenda(self, job: str, status: str, mensagem: str) -> None:
-        corpo = {"ultima_execucao": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "ultimo_status": status, "ultima_mensagem": mensagem[:500]}
-        self.http.patch("/agenda_coletas", json=corpo, params={"job": f"eq.{job}"}, headers={"Prefer": "return=minimal"})
+        try:
+            self._chamar("agenda", job=job, status=status, mensagem=mensagem[:500])
+        except RuntimeError as e:
+            logger.warning("agenda_coletas(%s) não atualizada: %s", job, e)

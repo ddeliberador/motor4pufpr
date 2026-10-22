@@ -18,8 +18,11 @@ IA, para popular o mapa ao máximo sem inventar cobertura.
    `agenda_coletas` como as séries por UF. O Mapa lê `v_series_validas`.
 2. **Coletores no Railway, não em Edge Function.** Os arquivos têm de
    centenas de MB (ANATEL, CAPES) a dezenas de GB (CNPJ); o backend Python
-   baixa em disco, agrega em streaming e grava só o resultado via PostgREST
-   com a service role (`backend/app/services/series_municipais`). Disparo por
+   baixa em disco, agrega em streaming e entrega só o resultado, em lotes, à
+   Edge Function `series-municipais`, autenticado pela `MCTI_API_KEY`; a
+   função grava pela camada temporal compartilhada (`_shared/temporal.ts`),
+   então o Railway não precisa da service role do banco
+   (`backend/app/services/series_municipais`). Disparo por
    CLI ou `POST /api/v1/coletas/municipal/{fonte}`; `agenda_coletas` registra
    `funcao = 'railway'`.
 3. **Uma base por camada onde há base aberta**: ANEEL GD (L1), ANATEL banda
@@ -38,8 +41,8 @@ IA, para popular o mapa ao máximo sem inventar cobertura.
 
 - O mapa ganha cobertura municipal real em cinco camadas, com série histórica
   (pedido do Prof. Shima) e normalização por população.
-- A primeira carga precisa ser disparada no Railway com `SUPABASE_URL` e
-  `SUPABASE_SERVICE_ROLE_KEY` configurados; os formatos das fontes foram
+- A primeira carga precisa ser disparada no Railway com `SUPABASE_URL`
+  configurada (a `MCTI_API_KEY` já existe lá); os formatos das fontes foram
   implementados pelo layout publicado e testados com arquivos sintéticos, e a
   primeira execução real deve ser feita com `--amostra --simular`.
 - Bases pesadas (CNPJ) levam horas: rodar mensalmente, fora do horário de uso.
