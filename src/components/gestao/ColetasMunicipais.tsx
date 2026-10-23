@@ -10,10 +10,11 @@ import { Button } from "@/components/ui/button";
 type Fontes = Record<string, { job: string; tipo?: string; indicadores: string[]; doc: string }>;
 interface Estado { fontes: Fontes; em_andamento: Record<string, number>; ultimos: Record<string, Record<string, unknown>> }
 
-const ORDEM = ["ibge_pop", "capes_ppg", "anatel_bl", "aneel_gd", "cnpj_cnae", "openalex_coautoria"];
+const ORDEM = ["ibge_pop", "capes_ppg", "anatel_bl", "aneel_gd", "cnpj_cnae", "openalex_coautoria", "antaq_portos", "anac_aero"];
 const DURACAO: Record<string, string> = {
   ibge_pop: "minutos", capes_ppg: "minutos", anatel_bl: "dezenas de minutos", aneel_gd: "dezenas de minutos", cnpj_cnae: "uma a duas horas (dez arquivos de ~1 GB)",
   openalex_coautoria: "dezenas de minutos (uma consulta por instituição e ano)",
+  antaq_portos: "dezenas de minutos (dois arquivos por ano desde 2010)", anac_aero: "uma a duas horas (um arquivo por mês desde 2010)",
 };
 
 export default function ColetasMunicipais() {
@@ -27,7 +28,7 @@ export default function ColetasMunicipais() {
     const { data, error } = await supabase.functions.invoke("coletas-municipais", { body: {} });
     if (error || data?.error) { setErro(error?.message ?? String(data?.error)); return; }
     setEstado(data as Estado);
-    const { data: ag } = await supabase.from("agenda_coletas").select("job,ultima_execucao,ultimo_status,ultima_mensagem").or("job.like.series-municipais:%,job.like.interacoes:%");
+    const { data: ag } = await supabase.from("agenda_coletas").select("job,ultima_execucao,ultimo_status,ultima_mensagem").or("job.like.series-municipais:%,job.like.interacoes:%,job.like.series-uf:%");
     setAgenda(ag ?? []);
   }, []);
 

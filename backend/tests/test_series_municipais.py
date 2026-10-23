@@ -162,3 +162,34 @@ def test_openalex_pares_simetricos_e_limiar(monkeypatch):
     l = linhas[0]
     assert l["id"] == "openalex|2020|I1|I2" and l["metadados"]["peso"] == 7
     assert (l["origem_uf"], l["destino_uf"]) == ("PR", "SP") and l["dimensao"] == "resultado"
+
+
+# ---- Transporte por UF (ANTAQ, ANAC): zips sintéticos ----------------------
+def test_antaq_soma_por_uf(tmp_path, municipios):
+    from app.services.series_municipais.coletores import antaq_portos as ap
+    atr = tmp_path / "2020Atracacao.zip"
+    with zipfile.ZipFile(atr, "w") as z:
+        z.writestr("2020Atracacao.txt", "IDAtracacao;Porto Atracação;UF\n1;Santos;SP\n2;Paranaguá;PR\n3;Fora;XX\n".encode("latin-1"))
+    carga = tmp_path / "2020Carga.zip"
+    with zipfile.ZipFile(carga, "w") as z:
+        z.writestr("2020Carga.txt", "IDCarga;IDAtracacao;VLPesoCargaBruta\n10;1;1000,5\n11;1;2000\n12;2;300\n13;3;999\n14;9;5\n".encode("latin-1"))
+    soma = ap._ano(atr, carga, None)
+    assert soma == {"SP": 3000.5, "PR": 300.0}
+
+
+def test_anac_passageiros_por_uf(tmp_path, monkeypatch, municipios):
+    from app.services.series_municipais.coletores import anac_aero as an
+    z = tmp_path / "basica2020-01.zip"
+    with zipfile.ZipFile(z, "w") as zf:
+        zf.writestr("basica2020-01.csv", "sg_uf_origem;nr_passag_pagos;nr_passag_gratis\nPR;100;5\nPR;50;0\nSP;10;1\nZZ;7;7\n".encode("utf-8"))
+    monkeypatch.setattr(an, "ANO_INICIO", 2020)
+    monkeypatch.setattr(an, "baixar", lambda url: z if url.endswith("basica2020-01.zip") else (_ for _ in ()).throw(RuntimeError("404")))
+    import datetime as dt
+    class D(dt.date):
+        @classmethod
+        def today(cls): return cls(2021, 6, 1)
+    monkeypatch.setattr(an, "date", D)
+    obs, escopo = an.coletar(municipios)
+    por = {(o.entidade_chave, o.periodo_referencia): o.valor for o in obs}
+    assert por[("PR", "2020-01-01")] == 155 and por[("SP", "2020-01-01")] == 11
+    assert all(o.entidade_tipo == "uf" for o in obs) and len(escopo["faltas"]) == 11 and not escopo["completo"]

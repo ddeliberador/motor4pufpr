@@ -12,7 +12,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import Header from "@/components/Header";
-import MapaBrasil, { type AncoraPbia, type Ponto, type MapaBrasilHandle, type MunicipioClicado, FUNDOS, type FundoId, type CoropleticoMunicipal as Coro } from "@/components/mapa/MapaBrasil";
+import MapaBrasil, { type AncoraPbia, type Ponto, type MapaBrasilHandle, type MunicipioClicado, type TransporteMapa, CORES_TRANSPORTE, FUNDOS, type FundoId, type CoropleticoMunicipal as Coro } from "@/components/mapa/MapaBrasil";
 import { PainelEstado, PainelMunicipio, atoresDoMunicipio, type AtorDoPainel } from "@/components/mapa/PaineisLocais";
 import { normalizarNome } from "@/lib/paineisLocais";
 import MunicipiosDaCamada, { type SelecaoMunicipal } from "@/components/mapa/MunicipiosDaCamada";
@@ -293,6 +293,8 @@ export default function Mapa() {
   const [indicadorRegionalId, setIndicadorRegionalId] = useState(INDICADORES_REGIONAIS[0].id);
   const [idxAnoRegional, setIdxAnoRegional] = useState(0);
   const [regiaoFoco, setRegiaoFoco] = useState<Regiao | null>(null);
+  // Camada de transporte da visão regional (public/transporte): ligada ao entrar na aba Regional.
+  const [transporte, setTransporte] = useState<TransporteMapa>({ rodovias: true, ferrovias: true, portos: true, aeroportos: true });
   // Camadas de dados exibidas no mapa (todas ligadas por padrão).
   const [camadas, setCamadas] = useState<Set<CategoriaKey>>(
     () => new Set(CATEGORIAS.map((c) => c.key)),
@@ -1954,12 +1956,33 @@ export default function Mapa() {
               )}
 
               {aba === "regional" && (
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Visão regional</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    O mapa se preenche com o indicador escolhido no painel ao lado, somado por macrorregião, e a régua de tempo sob o mapa percorre os anos da série.
-                    Clique numa região para destacá-la.
-                  </p>
+                <div className="space-y-3">
+                  <div>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Visão regional</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      O mapa se preenche com o indicador escolhido no painel ao lado, somado por macrorregião, e a régua de tempo sob o mapa percorre os anos da série.
+                      Clique numa região para destacá-la.
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-card/60 p-2">
+                    <p className="px-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transporte</p>
+                    {([
+                      ["rodovias", "Rodovias", "road", "Natural Earth 1:10m (traçado principal)"],
+                      ["ferrovias", "Ferrovias", "train", "Natural Earth 1:10m"],
+                      ["portos", "Portos organizados", "anchor", "ANTAQ · posição aproximada"],
+                      ["aeroportos", "Aeroportos (grandes e médios)", "flight", "OurAirports"],
+                    ] as [keyof TransporteMapa, string, string, string][]).map(([k, rotulo, icone, fonte]) => (
+                      <label key={k} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1 text-xs hover:bg-muted">
+                        <input type="checkbox" checked={transporte[k]} onChange={(e) => setTransporte((t) => ({ ...t, [k]: e.target.checked }))} className="h-3.5 w-3.5 shrink-0" style={{ accentColor: CORES_TRANSPORTE[k] }} />
+                        <span className="material-symbols-outlined shrink-0 text-base leading-none" style={{ color: CORES_TRANSPORTE[k] }} aria-hidden>{icone}</span>
+                        <span className="flex-1">{rotulo}</span>
+                        <span className="text-[10px] text-muted-foreground">{fonte}</span>
+                      </label>
+                    ))}
+                    <p className="px-1 pt-1 text-[10px] leading-snug text-muted-foreground">
+                      A geometria é a atual; a evolução no tempo vem das séries por UF (movimentação portuária ANTAQ, passageiros ANAC) no painel ao lado, somadas por região e percorridas pela barra de tempo.
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -2302,6 +2325,7 @@ export default function Mapa() {
                     coropletico={coropletico}
                     pontos={visaoRegional ? [] : pontos}
                     regional={regionalMapa}
+                    transporte={visaoRegional ? transporte : null}
                     ufSelecionada={ufFoco}
                     ufsSelecionadas={ufsSel}
                     ufsFiltroAtivas={ufsFiltroAtivas}

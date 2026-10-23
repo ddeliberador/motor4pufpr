@@ -48,7 +48,11 @@ Deno.serve(async (req) => {
       case "observacoes": {
         const linhas = Array.isArray(p.linhas) ? (p.linhas as LinhaObservacao[]) : [];
         if (linhas.length > MAX_LINHAS) return json({ error: `no máximo ${MAX_LINHAS} linhas por lote` }, 413);
-        for (const l of linhas) if (l.entidade_tipo !== "municipio" || !/^\d{7}$/.test(l.entidade_chave)) return json({ error: "só entidade_tipo=municipio com código IBGE de 7 dígitos" }, 400);
+        // Municípios (IBGE 7 dígitos) e, para as séries de transporte, UFs (sigla).
+        for (const l of linhas) {
+          const ok = (l.entidade_tipo === "municipio" && /^\d{7}$/.test(l.entidade_chave)) || (l.entidade_tipo === "uf" && /^[A-Z]{2}$/.test(l.entidade_chave));
+          if (!ok) return json({ error: "só entidade_tipo=municipio (IBGE de 7 dígitos) ou uf (sigla)" }, 400);
+        }
         const coletaId = String(p.coleta_id);
         // Caminho rápido: inserção direta (o backend já deduplica no lote). Se um
         // reenvio esbarrar no índice de idempotência (23505), cai no caminho que

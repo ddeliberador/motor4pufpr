@@ -57,6 +57,7 @@ function Demo() {
   const [inter, setInter] = useState(false);
   const [fundo, setFundo] = useState<FundoId>("sobrio");
   const [coro, setCoro] = useState(false);
+  const [transp, setTransp] = useState(false);
   const coropletico = useMemo(() => {
     if (!coro) return null;
     // valores sintéticos: cresce com o código IBGE dentro da UF, com lacunas
@@ -85,7 +86,7 @@ function Demo() {
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
       <div className="flex gap-3 border-b border-border p-2 text-xs">
-        {[["Layer 1", l1, setL1], ["Regional", reg, setReg], ["Interação", inter, setInter], ["Coroplético", coro, setCoro]].map(([r, v, s]) => (
+        {[["Layer 1", l1, setL1], ["Regional", reg, setReg], ["Interação", inter, setInter], ["Coroplético", coro, setCoro], ["Transporte", transp, setTransp]].map(([r, v, s]) => (
           <label key={String(r)} className="flex items-center gap-1"><input type="checkbox" checked={v as boolean} onChange={(e) => (s as (b: boolean) => void)(e.target.checked)} />{String(r)}</label>
         ))}
         <button className="rounded border px-2" onClick={() => document.documentElement.classList.toggle("dark")}>tema</button>
@@ -95,7 +96,7 @@ function Demo() {
         <span className="text-muted-foreground">UF: {uf ?? "—"} · ponto: {sel ?? "—"} · {pontos.length} pontos</span>
       </div>
       <div className="relative" style={{ height: "calc(100vh - 41px)" }}>
-        <MapaBrasil fundo={fundo} coropletico={coropletico} pontos={reg ? [] : pontos} regional={regional} ufSelecionada={uf} ufsSelecionadas={new Set(uf ? [uf] : [])} ufsFiltroAtivas={new Set()} contagemPorUf={contagem}
+        <MapaBrasil fundo={fundo} coropletico={coropletico} pontos={reg ? [] : pontos} regional={regional} transporte={transp ? { rodovias: true, ferrovias: true, portos: true, aeroportos: true } : null} ufSelecionada={uf} ufsSelecionadas={new Set(uf ? [uf] : [])} ufsFiltroAtivas={new Set()} contagemPorUf={contagem}
           onSelecionarUf={(u) => { setUf((x) => (x === u ? null : u)); setPainel({ tipo: "uf", uf: u }); }} onSelecionarMunicipio={(m) => setPainel({ tipo: "municipio", ...m })} onSelecionarCluster={(ps, t) => console.log("cluster", t, ps.length)}
           pontoSelecionadoId={sel} onSelecionarPonto={setSel}
           layer1Ativa={l1} dadosUsinas={usinas}
