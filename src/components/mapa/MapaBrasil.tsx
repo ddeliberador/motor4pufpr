@@ -227,6 +227,7 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
   const [rotulosMun, setRotulosMun] = useState<Feature<Point, { id: string; name: string; uf: string }>[] | null>(null);
   const carregandoRef = useRef(new Set<string>());
   const [tipoCabo, setTipoCabo] = useState<Record<string, ClasseCabo>>({});
+  const [legendaAberta, setLegendaAberta] = useState(false);
 
   // Callbacks mais recentes acessíveis pelos handlers do mapa (registrados uma vez).
   const cb = useRef({ onSelecionarUf, onSelecionarCluster, onSelecionarPonto, onSelecionarAncora, interacao, regional, coropletico });
@@ -914,9 +915,17 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
         </p>
       )}
 
-      {temLegenda && (
-        <div className="absolute bottom-8 left-3 max-h-[45%] space-y-1.5 overflow-y-auto rounded-lg border border-border bg-card/90 p-2.5 text-[10px] shadow-sm backdrop-blur">
-          <p className="font-semibold text-foreground">Camadas de IA ativas</p>
+      {temLegenda && !legendaAberta && (
+        <button type="button" onClick={() => setLegendaAberta(true)} className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full border border-border bg-card/90 px-2.5 py-1 text-[11px] text-muted-foreground shadow-sm backdrop-blur hover:text-foreground" aria-expanded={false}>
+          <span className="material-symbols-outlined text-sm leading-none" aria-hidden>info</span> Legenda
+        </button>
+      )}
+      {temLegenda && legendaAberta && (
+        <div className="absolute bottom-3 left-3 max-h-[40%] w-56 space-y-1.5 overflow-y-auto rounded-lg border border-border bg-card/90 p-2.5 text-[10px] shadow-sm backdrop-blur">
+          <div className="flex items-center justify-between">
+            <p className="font-semibold text-foreground">Legenda</p>
+            <button type="button" onClick={() => setLegendaAberta(false)} aria-label="Recolher legenda" className="text-muted-foreground hover:text-foreground">×</button>
+          </div>
           {coropletico && (<>
             <p className="font-medium text-foreground">{coropletico.rotulo}</p>
             {coropletico.cores.map((cor, k) => {

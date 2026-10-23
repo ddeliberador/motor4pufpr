@@ -50,7 +50,7 @@ export default function BarraTempo({ serie, motivoSemSerie }: Props) {
     return Array.from({ length: k + 1 }, (_, j) => { const i = Math.round((j / k) * ultimo); return { a: serie.rotulos[i], i }; });
   }, [serie, n, ultimo]);
 
-  const base = "mb-2 flex h-11 items-center gap-3 rounded-lg border border-border bg-card px-3";
+  const base = "flex h-9 items-center gap-2.5 rounded-lg border border-border bg-card px-2.5";
 
   if (!serie || n === 0) {
     return (
@@ -64,7 +64,7 @@ export default function BarraTempo({ serie, motivoSemSerie }: Props) {
   return (
     <div className={base} role="group" aria-label="Série histórica">
       <span className="material-symbols-outlined text-base leading-none text-muted-foreground" aria-hidden>timeline</span>
-      <span className="hidden max-w-[16rem] truncate text-[11px] text-muted-foreground lg:inline" title={serie.titulo}>{serie.titulo}</span>
+      <span className="hidden max-w-[12rem] truncate text-[11px] text-muted-foreground 2xl:inline" title={serie.titulo}>{serie.titulo}</span>
       <button
         type="button"
         disabled={n < 2 || acumulado}
@@ -74,7 +74,7 @@ export default function BarraTempo({ serie, motivoSemSerie }: Props) {
           setTocando(true);
         }}
         aria-label={tocando ? "Pausar" : "Reproduzir a evolução"}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border hover:bg-muted disabled:opacity-40"
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-border hover:bg-muted disabled:opacity-40"
       >
         {tocando ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
       </button>
@@ -91,7 +91,7 @@ export default function BarraTempo({ serie, motivoSemSerie }: Props) {
           ))}
         </div>
       </div>
-      <span className="w-16 shrink-0 text-right text-base font-bold tabular-nums">{acumulado ? "todos" : serie.rotulos[indice]}</span>
+      <span className="w-12 shrink-0 text-right text-sm font-bold tabular-nums">{acumulado ? "todos" : serie.rotulos[indice]}</span>
       {serie.acumulado && (
         <label className="flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground">
           <input type="checkbox" checked={acumulado} onChange={(e) => serie.acumulado?.onAlternar(e.target.checked)} className="h-3 w-3 accent-primary" />
