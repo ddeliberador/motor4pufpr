@@ -69,25 +69,45 @@ export function bboxesIntersectam(a: Bbox, b: Bbox) {
   return a[0] <= b[2] && a[2] >= b[0] && a[1] <= b[3] && a[3] >= b[1];
 }
 
+export type NivelMalha = "sd" | "hd";
 const cacheMun = new Map<string, Promise<FeatureCollection<Polygon | MultiPolygon, FeatureMun["properties"]>>>();
 
-/** Carrega (e memoriza) a malha municipal de uma UF. */
-export function carregarMunicipios(uf: string) {
+/**
+ * Carrega (e memoriza) a malha municipal de uma UF. "sd" (public/br-mun, ~12%
+ * dos vértices) serve ao país inteiro; "hd" (public/br-mun-hd, ~30%) entra
+ * quando o usuário aproxima, para as divisas ficarem precisas.
+ */
+export function carregarMunicipios(uf: string, nivel: NivelMalha = "sd") {
   const cod = CODIGO_IBGE_UF[uf];
   if (!cod) return Promise.reject(new Error(`UF desconhecida: ${uf}`));
-  let p = cacheMun.get(uf);
+  const chave = `${uf}|${nivel}`;
+  let p = cacheMun.get(chave);
   if (!p) {
-    p = fetch(`/br-mun/${cod}.geojson`)
+    p = fetch(`/${nivel === "hd" ? "br-mun-hd" : "br-mun"}/${cod}.geojson`)
       .then((r) => { if (!r.ok) throw new Error(`malha municipal de ${uf} indisponível (HTTP ${r.status})`); return r.json(); })
       .then((fc: FeatureCollection<Polygon | MultiPolygon, { id: string; name: string }>) => ({
         type: "FeatureCollection" as const,
         features: fc.features.map((f) => ({ ...f, id: Number(f.properties.id), properties: { ...f.properties, uf } })),
       }));
-    cacheMun.set(uf, p);
-    p.catch(() => cacheMun.delete(uf));
+    cacheMun.set(chave, p);
+    p.catch(() => cacheMun.delete(chave));
   }
   return p;
 }
+
+const cacheUnico = new Map<string, Promise<FeatureCollection>>();
+/** Arquivo único memorizado (contorno HD das UFs, pontos de rótulo dos municípios). */
+export function carregarGeojson<T extends FeatureCollection = FeatureCollection>(url: string): Promise<T> {
+  let p = cacheUnico.get(url);
+  if (!p) {
+    p = fetch(url).then((r) => { if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`); return r.json(); });
+    cacheUnico.set(url, p);
+    p.catch(() => cacheUnico.delete(url));
+  }
+  return p as Promise<T>;
+}
+
+export const SIGLA_POR_CODIGO: Record<string, string> = Object.fromEntries(Object.entries(CODIGO_IBGE_UF).map(([s, c]) => [c, s]));
 
 /** Curva suave entre dois pontos (quadrática, deslocada à esquerda), amostrada em N segmentos. */
 export function arcoCurvo(o: [number, number], d: [number, number], n = 24): [number, number][] {
