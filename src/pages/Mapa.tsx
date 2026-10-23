@@ -8,7 +8,7 @@ import { useCatalogo, inativaNoCatalogo } from "@/lib/catalogo";
 import { geocodeLote } from "@/utils/geocodeMunicipio";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Search, X, ExternalLink, MapPin, Loader2, Filter, List, Database,
+  Search, X, ExternalLink, Loader2, Filter, List, Database,
   SlidersHorizontal,
 } from "lucide-react";
 import Header from "@/components/Header";
@@ -295,6 +295,16 @@ export default function Mapa() {
   // Abas da barra superior (uma por intenção de uso); cada uma mostra só o que lhe diz respeito.
   const [aba, setAba] = useState<Aba>(() => lerAbaDaUrl());
   const [configAberta, setConfigAberta] = useState(false);
+  // Coluna lateral recolhível: o mapa é o protagonista; a coluna abre quando se precisa dela.
+  const [colunaAberta, setColunaAberta] = useState<boolean>(() => { try { return localStorage.getItem("mapa-coluna") !== "fechada"; } catch { return true; } });
+  useEffect(() => { try { localStorage.setItem("mapa-coluna", colunaAberta ? "aberta" : "fechada"); } catch { /* sem armazenamento */ } }, [colunaAberta]);
+  const secaoMapaRef = useRef<HTMLElement>(null);
+  const alternarTelaCheia = () => {
+    const el = secaoMapaRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) document.exitFullscreen?.();
+    else el.requestFullscreen?.();
+  };
   const [config, setConfig] = useState<ConfiguracoesMapa>(lerConfigSalva);
   const mapaRef = useRef<MapaBrasilHandle>(null);
   // Nível municipal das Camadas de IA: "sintese" (média das camadas), um indicador de uma camada, ou nada.
@@ -1335,20 +1345,14 @@ export default function Mapa() {
 
       <main className="pt-16">
         {/* Cabeçalho institucional */}
-        <div className="flex h-11 items-center justify-between gap-4 border-b border-border bg-muted/30 px-4 sm:px-6">
-          <h1 className="truncate text-sm font-semibold tracking-tight sm:text-base">Mapa da Inovação — Brasil</h1>
-          <p className="hidden shrink-0 text-xs text-muted-foreground sm:block">
-            UFPR/PPGPP · MCTI
-            {ultimaColeta && <span> · última coleta em {ultimaColeta}</span>}
-          </p>
-        </div>
 
-        <div className="flex flex-col lg:h-[calc(100vh-4rem-2.75rem)] lg:flex-row">
+
+        <div className="flex flex-col lg:h-[calc(100vh-4rem)] lg:flex-row">
           {/* Coluna lateral de filtros */}
           <aside
             className={`${
               filtrosMobileAbertos ? "fixed inset-0 z-50 flex" : "hidden"
-            } w-full flex-col overflow-y-auto border-border bg-background p-5 lg:static lg:z-auto lg:flex lg:w-80 lg:shrink-0 lg:border-r lg:bg-muted/20`}
+            } w-full flex-col overflow-y-auto border-border bg-background p-4 lg:static lg:z-auto lg:shrink-0 lg:border-r lg:bg-muted/20 ${colunaAberta ? "lg:flex lg:w-72" : "lg:hidden"}`}
             aria-label="Filtros do mapa"
           >
             <div className="space-y-6">
@@ -2069,7 +2073,7 @@ export default function Mapa() {
           </aside>
 
           {/* Mapa */}
-          <section className="relative flex h-[calc(100dvh-9.75rem)] min-h-[34rem] flex-1 flex-col overflow-hidden bg-background p-3 sm:p-4 lg:h-auto lg:min-h-0">
+          <section ref={secaoMapaRef} className="relative flex h-[calc(100dvh-9.75rem)] min-h-[34rem] flex-1 flex-col overflow-hidden bg-background p-2 lg:h-auto lg:min-h-0">
             <div className="mb-3 flex gap-2 lg:hidden">
               <div className="relative min-w-0 flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -2099,8 +2103,18 @@ export default function Mapa() {
 
             {/* Barra superior: abas por intenção + painéis à direita (no espírito do Global Election Simulator) */}
             {!isLoading && !error && (
-              <div className="mb-2 flex items-center gap-2">
-                <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto rounded-lg border border-border bg-card p-0.5">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setColunaAberta((v) => !v)}
+                  title={colunaAberta ? "Recolher a coluna de filtros" : "Abrir a coluna de filtros"}
+                  aria-label={colunaAberta ? "Recolher filtros" : "Abrir filtros"}
+                  aria-pressed={colunaAberta}
+                  className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground lg:flex"
+                >
+                  <span className="material-symbols-outlined text-base leading-none" aria-hidden>{colunaAberta ? "left_panel_close" : "left_panel_open"}</span>
+                </button>
+                <div className="flex min-w-0 shrink-0 items-center gap-1 overflow-x-auto rounded-lg border border-border bg-card p-0.5">
                   {ABAS.map((a) => (
                     <button
                       key={a.id}
@@ -2117,8 +2131,11 @@ export default function Mapa() {
                     </button>
                   ))}
                 </div>
-                <span className="hidden whitespace-nowrap text-xs text-muted-foreground md:inline">
-                  <strong className="font-semibold text-foreground">{selecionados.length.toLocaleString("pt-BR")}</strong> de {totalLocais.toLocaleString("pt-BR")} locais
+                <div className="min-w-[18rem] flex-1">
+                  <BarraTempo serie={serieTempo} motivoSemSerie={motivoSemSerie} />
+                </div>
+                <span className="hidden whitespace-nowrap text-xs text-muted-foreground xl:inline" title={`${pontos.length.toLocaleString("pt-BR")} pontos georreferenciados${ultimaColeta ? ` · última coleta em ${ultimaColeta}` : ""} · clique num estado para aproximar, num ícone para ver a ficha · aproxime para ver os municípios`}>
+                  <strong className="font-semibold text-foreground">{selecionados.length.toLocaleString("pt-BR")}</strong> de {totalLocais.toLocaleString("pt-BR")}
                 </span>
                 <div className="inline-flex shrink-0 items-center rounded-lg border border-border bg-card p-0.5">
                   <button
@@ -2172,10 +2189,17 @@ export default function Mapa() {
                   >
                     <span className="material-symbols-outlined text-base leading-none" aria-hidden>settings</span>
                   </button>
+                  <button
+                    onClick={alternarTelaCheia}
+                    title="Mapa em tela cheia (Esc para sair)"
+                    aria-label="Mapa em tela cheia"
+                    className="flex h-8 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted sm:h-auto sm:px-2.5 sm:py-1.5"
+                  >
+                    <span className="material-symbols-outlined text-base leading-none" aria-hidden>fullscreen</span>
+                  </button>
                 </div>
               </div>
             )}
-            {!isLoading && !error && <BarraTempo serie={serieTempo} motivoSemSerie={motivoSemSerie} />}
 
             {isLoading && (
               <div className="flex h-full items-center justify-center">
@@ -2283,11 +2307,6 @@ export default function Mapa() {
                       urlIssues={URL_ISSUES}
                     />
                   )}
-                  <p className={`pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-center text-[11px] text-muted-foreground ${visaoRegional ? "hidden" : "hidden sm:block"}`}>
-                    <MapPin className="mr-1 inline h-3 w-3" />
-                    {pontos.length.toLocaleString("pt-BR")} pontos georreferenciados · clique num
-                    estado para aproximar, num ícone para ver a ficha · aproxime para ver os municípios
-                  </p>
                 </div>
                 {visaoRegional && (
                   <FichaRegional
