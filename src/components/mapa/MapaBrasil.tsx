@@ -181,7 +181,7 @@ const COR_ANEL = { l4: "#4ade80", l5: "#2dd4bf", l6: "#22d3ee", l7: "#a78bfa" } 
 const ZOOM_MUNICIPIOS = 5.5;
 
 // Escala dos ícones por zoom: crescem menos que o mapa, como no mapa anterior.
-const ESCALA_ICONE: [number, number][] = [[3, 0.6], [6, 0.85], [10, 1.1]];
+const ESCALA_ICONE: [number, number][] = [[3, 0.38], [5, 0.55], [7, 0.8], [10, 1.05]];
 /** Interpolação por zoom cujo resultado é multiplicado por um fator (constante ou expressão de dado).
  *  O MapLibre só aceita ["zoom"] no topo de "interpolate"/"step", por isso o fator entra em cada parada. */
 function porZoom(paradas: [number, number][], fator: number | ExpressionSpecification = 1): ExpressionSpecification {
@@ -613,7 +613,7 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
       const anatel = a.fonte === "anatel";
       feats.push({
         type: "Feature", geometry: { type: "Point", coordinates: [a.lon, a.lat] },
-        properties: { icone: anatel ? ic.anatel : a.radio === "NR" ? ic.nr : ic.lte, tam: anatel ? 0.55 : 0.75, dica: a.operadora || `${a.net} · ${a.radio === "NR" ? "5G" : "4G"}` },
+        properties: { icone: anatel ? ic.anatel : a.radio === "NR" ? ic.nr : ic.lte, tam: anatel ? 0.45 : 0.6, dica: a.operadora || `${a.net} · ${a.radio === "NR" ? "5G" : "4G"}` },
       });
     }
     (map.getSource("antenas") as GeoJSONSource | undefined)?.setData(fc(feats));
@@ -980,10 +980,10 @@ function montarCamadas(map: MapLibre) {
   // Layer 2c — backhaul
   geo("backhaul");
   map.addLayer({ id: "backhaul-sem", type: "circle", source: "backhaul", filter: ["!", ["get", "fibra"]], layout: oculto, paint: {
-    "circle-color": "#9ca3af", "circle-opacity": 0.4, "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 1, 8, 3],
+    "circle-color": "#9ca3af", "circle-opacity": 0.4, "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 0.7, 8, 2.5],
   } });
   map.addLayer({ id: "backhaul-fibra", type: "symbol", source: "backhaul", filter: ["get", "fibra"], layout: {
-    ...oculto, "icon-image": ["get", "icone"], "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.35, 8, 0.6], "icon-allow-overlap": true,
+    ...oculto, "icon-image": ["get", "icone"], "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.22, 8, 0.5], "icon-allow-overlap": true,
   }, paint: { "icon-opacity": 0.85 } });
 
   // Layer 2b — antenas
@@ -1002,7 +1002,7 @@ function montarCamadas(map: MapLibre) {
       paint: { "line-color": est.cor, "line-width": 2.4, "line-opacity": 0.95, ...(est.traco ? { "line-dasharray": est.traco } : {}) } });
   }
   geo("landing");
-  map.addLayer({ id: "landing", type: "symbol", source: "landing", layout: { ...oculto, "icon-image": ["get", "icone"], "icon-size": porZoom(ESCALA_ICONE, 0.85), "icon-allow-overlap": true }, paint: { "icon-opacity": 0.85 } });
+  map.addLayer({ id: "landing", type: "symbol", source: "landing", layout: { ...oculto, "icon-image": ["get", "icone"], "icon-size": porZoom(ESCALA_ICONE, 0.75), "icon-allow-overlap": true }, paint: { "icon-opacity": 0.85 } });
 
   // Layer 1 — usinas (raio cresce com a raiz da potência)
   geo("usinas");
@@ -1012,7 +1012,7 @@ function montarCamadas(map: MapLibre) {
     "circle-stroke-color": "#000",
     "circle-stroke-width": 0.3,
     "circle-stroke-opacity": 0.4,
-    "circle-radius": porZoom([[3, 0.8], [6, 1.6], [10, 4]], ["min", 6, ["+", 1, ["/", ["sqrt", ["get", "mw"]], 12]]]),
+    "circle-radius": porZoom([[3, 0.55], [6, 1.2], [10, 3.5]], ["min", 5, ["+", 1, ["/", ["sqrt", ["get", "mw"]], 12]]]),
   } });
   geo("usina-destaque");
   map.addLayer({ id: "usina-destaque-halo", type: "circle", source: "usina-destaque", paint: { "circle-color": "#ec4899", "circle-opacity": 0.15, "circle-radius": 16, "circle-stroke-color": "#ec4899", "circle-stroke-width": 2.5 } });
@@ -1020,7 +1020,7 @@ function montarCamadas(map: MapLibre) {
 
   // Layer 3 — datacenters
   geo("dcs");
-  map.addLayer({ id: "dcs", type: "symbol", source: "dcs", layout: { ...oculto, "icon-image": ["get", "icone"], "icon-size": porZoom(ESCALA_ICONE, 0.85), "icon-allow-overlap": true }, paint: { "icon-opacity": 0.85 } });
+  map.addLayer({ id: "dcs", type: "symbol", source: "dcs", layout: { ...oculto, "icon-image": ["get", "icone"], "icon-size": porZoom(ESCALA_ICONE, 0.75), "icon-allow-overlap": true }, paint: { "icon-opacity": 0.85 } });
 
   // Interação EMBRAPII
   geo("inter-arcos");
@@ -1042,13 +1042,13 @@ function montarCamadas(map: MapLibre) {
   // Atores por categoria, com cluster nativo do MapLibre
   for (const c of CATEGORIAS) {
     const src = `atores-${c.key}`;
-    geo(src, { cluster: true, clusterRadius: 28, clusterMaxZoom: 13 });
+    geo(src, { cluster: true, clusterRadius: 18, clusterMaxZoom: 13 });
     map.addLayer({ id: `${src}-cluster`, type: "symbol", source: src, filter: ["has", "point_count"], layout: {
       "icon-image": "", "icon-size": TAMANHO_ICONE, "icon-allow-overlap": true, "icon-ignore-placement": true,
     } });
     // Contador do cluster como imagem (ver garantirBadge), deslocado para o canto superior direito do ícone.
     map.addLayer({ id: `${src}-badge`, type: "symbol", source: src, filter: ["has", "point_count"], layout: {
-      "icon-image": "", "icon-size": porZoom(ESCALA_ICONE, 0.75), "icon-offset": [12, -12], "icon-allow-overlap": true, "icon-ignore-placement": true,
+      "icon-image": "", "icon-size": porZoom(ESCALA_ICONE, 0.7), "icon-offset": [11, -11], "icon-allow-overlap": true, "icon-ignore-placement": true,
     } });
     map.addLayer({ id: `${src}-ponto`, type: "symbol", source: src, filter: ["!", ["has", "point_count"]], layout: {
       "icon-image": "", "icon-size": TAMANHO_ICONE, "icon-allow-overlap": true,
@@ -1060,7 +1060,7 @@ function montarCamadas(map: MapLibre) {
   const anel = (id: string, flag: string, cor: string, offset: number) =>
     map.addLayer({ id, type: "circle", source: "enriquecidos", filter: ["get", flag], layout: oculto, paint: {
       "circle-color": "rgba(0,0,0,0)", "circle-stroke-color": cor, "circle-stroke-width": 1.4, "circle-stroke-opacity": 0.9,
-      "circle-radius": porZoom([[3, 9], [8, 14]], 0.78 + offset * 0.18),
+      "circle-radius": porZoom([[3, 6], [8, 12]], 0.78 + offset * 0.18),
     } });
   anel("aneis-l7", "l7", COR_ANEL.l7, 3);
   anel("aneis-l6", "l6", COR_ANEL.l6, 2);
@@ -1068,14 +1068,14 @@ function montarCamadas(map: MapLibre) {
   anel("aneis-l4", "l4", COR_ANEL.l4, 0);
   map.addLayer({ id: "enriquecidos-ponto", type: "circle", source: "enriquecidos", layout: oculto, paint: {
     "circle-color": ["get", "cor"], "circle-opacity": 0.95, "circle-stroke-color": "#fff", "circle-stroke-width": 0.5,
-    "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 3, 8, 5],
+    "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 2, 8, 4.5],
   } });
 
   // Âncoras PBIA (Layer 7), acima dos atores
   geo("ancoras");
   map.addLayer({ id: "ancoras-halo", type: "circle", source: "ancoras", layout: oculto, paint: {
     "circle-color": "#a78bfa", "circle-opacity": 0.14, "circle-stroke-color": "#a78bfa", "circle-stroke-width": 1.2, "circle-stroke-opacity": 0.85,
-    "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 12, 8, 18],
+    "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 8, 8, 16],
   } });
   map.addLayer({ id: "ancoras-icone", type: "symbol", source: "ancoras", layout: { ...oculto, "icon-image": ["get", "icone"], "icon-size": porZoom(ESCALA_ICONE, 0.8), "icon-allow-overlap": true } });
 
