@@ -38,7 +38,7 @@ def _rodar(fonte: str, amostra: int | None, simular: bool) -> None:
 async def listar_fontes():
     """Fontes disponíveis, o que está rodando e o último resultado de cada uma."""
     return {
-        "fontes": {k: {"job": m.JOB, "indicadores": [i.id for i in m.INDICADORES], "doc": (m.__doc__ or "").strip().splitlines()[0]} for k, m in COLETORES.items()},
+        "fontes": {k: {"job": m.JOB, "tipo": getattr(m, "TIPO_COLETA", "observacoes"), "indicadores": [i.id for i in getattr(m, "INDICADORES", [])], "doc": (m.__doc__ or "").strip().splitlines()[0]} for k, m in COLETORES.items()},
         "em_andamento": {k: round(time.time() - t) for k, t in _em_andamento.items()},
         "ultimos": _ultimos,
     }

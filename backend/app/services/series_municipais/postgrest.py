@@ -139,6 +139,16 @@ class SupabaseServico:
         c.inseridos += inseridas
         return inseridas, ignoradas
 
+    def registrar_interacoes(self, c: Coleta, linhas: list[dict]) -> int:
+        """Interações entre atores (tabela interacoes), em lotes; o upsert por id é da função interacoes_upsert."""
+        gravadas = 0
+        for i in range(0, len(linhas), LOTE):
+            r = self._chamar("interacoes", linhas=linhas[i:i + LOTE])
+            gravadas += int(r.get("gravadas", 0))
+        c.encontrados += len(linhas)
+        c.inseridos += gravadas
+        return gravadas
+
     def atualizar_agenda(self, job: str, status: str, mensagem: str) -> None:
         try:
             self._chamar("agenda", job=job, status=status, mensagem=mensagem[:500])

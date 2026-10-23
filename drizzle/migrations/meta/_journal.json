@@ -190,6 +190,13 @@
       "when": 1792626436627,
       "tag": "0026_series_municipais",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1792764611491,
+      "tag": "0027_interacoes_tipos",
+      "breakpoints": true
     }
   ]
 }

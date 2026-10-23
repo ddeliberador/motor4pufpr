@@ -1,5 +1,5 @@
 """
-Uso (no Railway ou local, com SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY):
+Uso (no Railway ou local, com SUPABASE_URL e MCTI_API_KEY):
   python -m app.services.series_municipais.cli ibge_pop
   python -m app.services.series_municipais.cli anatel_bl --amostra 200000 --simular
   python -m app.services.series_municipais.cli todas

@@ -64,3 +64,7 @@ IA, para popular o mapa ao máximo sem inventar cobertura.
 - As coletas ganharam um painel em Gestão da Pesquisa → Coletas (só
   administradores), via Edge Function `coletas-municipais`, que repassa ao
   Railway com a `MCTI_API_KEY`. Não é mais preciso terminal para a carga.
+
+## Adendo 2 (out/2026): interações entre atores pelo mesmo canal
+
+O canal Railway → função `series-municipais` ganhou a ação `interacoes`, que recebe lotes de linhas da tabela `interacoes` e grava via `interacoes_upsert(jsonb)` (upsert por id, UF validada por regex). O primeiro coletor é `openalex_coautoria` (ver `docs/fontes/interacoes.md`). A decisão de reaproveitar o canal, em vez de criar outra função, mantém uma só porta autenticada pela `MCTI_API_KEY` para tudo que o Railway escreve no banco.

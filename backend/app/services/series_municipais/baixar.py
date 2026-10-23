@@ -12,7 +12,7 @@ from typing import IO, Iterator
 import httpx
 
 logger = logging.getLogger(__name__)
-UA = {"User-Agent": "Motor4PUFPR/1.0 (motorinovacao.com.br; séries municipais)"}
+UA = {"User-Agent": "Motor4PUFPR/1.0 (motorinovacao.com.br; series municipais)"}  # só ASCII: httpx rejeita acentos em cabeçalhos
 PASTA = Path(os.environ.get("SERIES_MUNICIPAIS_CACHE", os.path.join(tempfile.gettempdir(), "series-municipais")))
 
 

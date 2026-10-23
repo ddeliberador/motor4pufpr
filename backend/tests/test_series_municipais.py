@@ -119,3 +119,46 @@ def test_simular_nao_grava(monkeypatch, municipios):
     monkeypatch.setitem(registro.COLETORES, "x", Mod)
     r = registro.executar_coleta("x", simular=True, sb=SbFalso())
     assert r["simulado"] and r["observacoes"] == 1 and r["indicadores"] == ["mun.x"]
+
+
+# ---- OpenAlex (coautoria): sem rede, com transporte falso -------------------
+def test_openalex_uf_da_regiao():
+    from app.services.series_municipais.coletores import openalex_coautoria as oa
+    assert oa.uf_da_regiao("São Paulo") == "SP"
+    assert oa.uf_da_regiao("State of Paraná") == "PR"
+    assert oa.uf_da_regiao("Federal District") == "DF"
+    assert oa.uf_da_regiao(None) is None
+    assert oa.uf_da_regiao("Lisboa") is None
+
+
+def test_openalex_pares_simetricos_e_limiar(monkeypatch):
+    import httpx
+    from app.services.series_municipais.coletores import openalex_coautoria as oa
+
+    inst = {"results": [
+        {"id": "https://openalex.org/I1", "display_name": "UFPR", "type": "education", "geo": {"region": "Paraná", "city": "Curitiba"}, "works_count": 1000},
+        {"id": "https://openalex.org/I2", "display_name": "USP", "type": "education", "geo": {"region": "São Paulo", "city": "São Paulo"}, "works_count": 9000},
+        {"id": "https://openalex.org/I3", "display_name": "Embrapa", "type": "facility", "geo": {}, "works_count": 500},
+    ], "meta": {"next_cursor": None}}
+    grupos = {
+        "I1": [{"key": "https://openalex.org/I2", "count": 5}, {"key": "https://openalex.org/I3", "count": 2}, {"key": "https://openalex.org/I9", "count": 50}],
+        "I2": [{"key": "https://openalex.org/I1", "count": 7}],
+        "I3": [{"key": "https://openalex.org/I1", "count": 2}],
+    }
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        if req.url.path == "/institutions":
+            return httpx.Response(200, json=inst)
+        oid = req.url.params["filter"].split("lineage:")[1].split(",")[0]
+        return httpx.Response(200, json={"group_by": grupos[oid]})
+
+    monkeypatch.setattr(oa, "PAUSA", 0)
+    real = httpx.Client
+    monkeypatch.setattr(oa.httpx, "Client", lambda **kw: real(transport=httpx.MockTransport(handler), **kw))
+    linhas, escopo = oa.coletar_interacoes(ano_inicio=2020, ano_fim=2020)
+    assert escopo["instituicoes"] == 3
+    # I1–I2 fica com o maior dos dois lados (7); I1–I3 (2) cai no limiar; I9 não é instituição listada.
+    assert len(linhas) == 1
+    l = linhas[0]
+    assert l["id"] == "openalex|2020|I1|I2" and l["metadados"]["peso"] == 7
+    assert (l["origem_uf"], l["destino_uf"]) == ("PR", "SP") and l["dimensao"] == "resultado"
