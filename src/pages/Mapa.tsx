@@ -1965,7 +1965,7 @@ export default function Mapa() {
                     </p>
                   </div>
                   <div className="rounded-lg border border-border bg-card/60 p-2">
-                    <p className="px-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transporte</p>
+                    <p className="px-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">L2 · Infraestrutura física: transporte</p>
                     {([
                       ["rodovias", "Rodovias", "road", "Natural Earth 1:10m (traçado principal)"],
                       ["ferrovias", "Ferrovias", "train", "Natural Earth 1:10m"],
@@ -1980,7 +1980,7 @@ export default function Mapa() {
                       </label>
                     ))}
                     <p className="px-1 pt-1 text-[10px] leading-snug text-muted-foreground">
-                      A geometria é a atual; a evolução no tempo vem das séries por UF (movimentação portuária ANTAQ, passageiros ANAC) no painel ao lado, somadas por região e percorridas pela barra de tempo.
+                      A geometria é a atual; a evolução no tempo vem das séries por UF da camada L2 no painel ao lado (portos ANTAQ, aeroportos ANAC, ferrovias e rodovias concedidas ANTT), somadas por região e percorridas pela barra de tempo.
                     </p>
                   </div>
                 </div>

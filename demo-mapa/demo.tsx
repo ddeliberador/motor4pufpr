@@ -9,6 +9,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { PainelEstado, PainelMunicipio } from "@/components/mapa/PaineisLocais";
 import type { MunicipioClicado } from "@/components/mapa/MapaBrasil";
+import { FichaRegional } from "@/components/mapa/VisaoRegional";
+import { INDICADORES_REGIONAIS } from "@/lib/seriesRegionais";
 
 // Cache pré-semeado para os painéis de estado/município renderizarem sem Supabase.
 const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -95,13 +97,16 @@ function Demo() {
         <button className="rounded border px-2" onClick={() => setPainel({ tipo: "municipio", ibge: "4106902", nome: "Curitiba", uf: "PR" })}>painel Curitiba</button>
         <span className="text-muted-foreground">UF: {uf ?? "—"} · ponto: {sel ?? "—"} · {pontos.length} pontos</span>
       </div>
-      <div className="relative" style={{ height: "calc(100vh - 41px)" }}>
+      <div className="relative flex" style={{ height: "calc(100vh - 41px)" }}>
+        <div className="relative flex-1">
         <MapaBrasil fundo={fundo} coropletico={coropletico} pontos={reg ? [] : pontos} regional={regional} transporte={transp ? { rodovias: true, ferrovias: true, portos: true, aeroportos: true } : null} ufSelecionada={uf} ufsSelecionadas={new Set(uf ? [uf] : [])} ufsFiltroAtivas={new Set()} contagemPorUf={contagem}
           onSelecionarUf={(u) => { setUf((x) => (x === u ? null : u)); setPainel({ tipo: "uf", uf: u }); }} onSelecionarMunicipio={(m) => setPainel({ tipo: "municipio", ...m })} onSelecionarCluster={(ps, t) => console.log("cluster", t, ps.length)}
           pontoSelecionadoId={sel} onSelecionarPonto={setSel}
           layer1Ativa={l1} dadosUsinas={usinas}
           interacao={inter ? { arcos, unidades, onArco: (a) => console.log("arco", a.chave), onUnidade: (u) => console.log("unidade", u.sigla) } : null} />
         {painel?.tipo === "uf" && <PainelEstado uf={painel.uf} anoFoco={2022} atores={atoresPainel.filter((a) => a.uf === painel.uf)} usinas={usinas.filter((u) => u.uf === painel.uf)} datacenters={[]} backhaul={[{ municipio: "Curitiba", uf: "PR", latitude: 0, longitude: 0, temBackhaul: true }, { municipio: "Pinhais", uf: "PR", latitude: 0, longitude: 0, temBackhaul: false }]} sintese={{ "4106902": 81, "4119152": 55, "4104808": 40 }} onFechar={() => setPainel(null)} onEnquadrar={() => undefined} onAbrirMunicipio={(m) => setPainel({ tipo: "municipio", ...m })} onSelecionarPonto={setSel} />}
+        </div>
+        {reg && <FichaRegional indicador={INDICADORES_REGIONAIS[4]} onIndicador={() => undefined} dados={undefined} carregando={false} erro={null} ano={null} regiaoFoco={null} onRegiaoFoco={() => undefined} onFechar={() => setReg(false)} />}
         {painel?.tipo === "municipio" && <PainelMunicipio municipio={painel} anoFoco={2022} atores={atoresPainel.filter((a) => a.uf === painel.uf).slice(0, 14)} usinas={usinas.filter((u) => u.uf === painel.uf).slice(0, 6)} datacenters={[{ id: 1, nome: "Equinix CU1", org: "Equinix", uf: "PR", cidade: "Curitiba" }]} backhaul={{ municipio: "Curitiba", uf: "PR", latitude: 0, longitude: 0, temBackhaul: true }} antenas={312} sintese={81} onFechar={() => setPainel(null)} onEnquadrar={() => undefined} onAbrirEstado={(u) => setPainel({ tipo: "uf", uf: u })} onSelecionarPonto={setSel} />}
       </div>
     </div>

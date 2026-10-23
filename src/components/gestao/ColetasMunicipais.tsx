@@ -10,11 +10,12 @@ import { Button } from "@/components/ui/button";
 type Fontes = Record<string, { job: string; tipo?: string; indicadores: string[]; doc: string }>;
 interface Estado { fontes: Fontes; em_andamento: Record<string, number>; ultimos: Record<string, Record<string, unknown>> }
 
-const ORDEM = ["ibge_pop", "capes_ppg", "anatel_bl", "aneel_gd", "cnpj_cnae", "openalex_coautoria", "antaq_portos", "anac_aero"];
+const ORDEM = ["ibge_pop", "capes_ppg", "anatel_bl", "aneel_gd", "cnpj_cnae", "openalex_coautoria", "antaq_portos", "anac_aero", "antt_ferro", "antt_rodo"];
 const DURACAO: Record<string, string> = {
   ibge_pop: "minutos", capes_ppg: "minutos", anatel_bl: "dezenas de minutos", aneel_gd: "dezenas de minutos", cnpj_cnae: "uma a duas horas (dez arquivos de ~1 GB)",
   openalex_coautoria: "dezenas de minutos (uma consulta por instituição e ano)",
   antaq_portos: "dezenas de minutos (dois arquivos por ano desde 2010)", anac_aero: "uma a duas horas (um arquivo por mês desde 2010)",
+  antt_ferro: "minutos (CSVs anuais do CKAN da ANTT)", antt_rodo: "minutos (CSVs anuais do CKAN da ANTT)",
 };
 
 export default function ColetasMunicipais() {

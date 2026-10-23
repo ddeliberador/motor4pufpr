@@ -193,3 +193,12 @@ def test_anac_passageiros_por_uf(tmp_path, monkeypatch, municipios):
     por = {(o.entidade_chave, o.periodo_referencia): o.valor for o in obs}
     assert por[("PR", "2020-01-01")] == 155 and por[("SP", "2020-01-01")] == 11
     assert all(o.entidade_tipo == "uf" for o in obs) and len(escopo["faltas"]) == 11 and not escopo["completo"]
+
+
+def test_antt_ferro_e_rodo_somam_por_uf(tmp_path, municipios):
+    from app.services.series_municipais.coletores import antt_ferro as af, antt_rodo as ar
+    f = zipar(tmp_path, "ferro", "Mes_Ano;Ferrovia;Mercadoria;UF_Origem;UF_Destino;TU;TKU\n01/2021;MRS;Minério;MG;RJ;1000,5;5\n02/2021;MRS;Minério;MG;RJ;500;2\n01/2021;RMN;Soja;MT;PR;10;1\n")
+    assert af.somar_csv(f) == {("MG", 2021): 1500.5, ("MT", 2021): 10.0}
+    r = zipar(tmp_path, "rodo", "mes_ano;concessionaria;praca;sentido;categoria;volume_total\n2020-01;CCR;Praça 3 - BR-116/SP;N;1;100\n2020-02;CCR;Praça 3 - BR-116/SP;S;2;50\n2020-01;ECO;P2 - BR-101/RS;N;1;7\n")
+    assert ar.somar_csv(r) == {("SP", 2020): 150.0, ("RS", 2020): 7.0}
+    assert ar.uf_da_praca("Praça 1 - BR-040/MG/RJ") == "RJ" and ar.uf_da_praca("sem uf") is None

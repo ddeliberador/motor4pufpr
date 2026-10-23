@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ExternalLink, Loader2, Pause, Play, X } from "lucide-react";
 import { REGIOES, type Regiao } from "@/lib/regioes";
 import {
+  CAMADAS_REGIONAIS,
   INDICADORES_REGIONAIS,
   base100,
   formatarValorRegional,
@@ -58,23 +59,38 @@ export function FichaRegional({
         </button>
       </div>
 
-      <div className="space-y-1" role="radiogroup" aria-label="Indicador">
-        {INDICADORES_REGIONAIS.map((i) => (
-          <button
-            key={i.id}
-            role="radio"
-            aria-checked={i.id === indicador.id}
-            onClick={() => onIndicador(i.id)}
-            className={`flex w-full items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-left text-xs transition-colors ${
-              i.id === indicador.id
-                ? "border-primary/50 bg-primary/10 text-foreground"
-                : "border-transparent bg-card text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <span className="truncate">{i.rotulo}</span>
-            <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{i.camada}</span>
-          </button>
-        ))}
+      {/* Indicadores agrupados pelas sete camadas de IA; camada sem série por estado fica dita, não escondida. */}
+      <div className="space-y-2" role="radiogroup" aria-label="Indicador">
+        {CAMADAS_REGIONAIS.map((c) => {
+          const itens = INDICADORES_REGIONAIS.filter((i) => i.camadaId === c.id);
+          return (
+            <div key={c.id}>
+              <p className="px-1 pb-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{c.rotulo}</p>
+              {itens.length === 0 ? (
+                <p className="px-2.5 py-1 text-[11px] text-muted-foreground/70">ainda sem série por estado</p>
+              ) : (
+                <div className="space-y-0.5">
+                  {itens.map((i) => (
+                    <button
+                      key={i.id}
+                      role="radio"
+                      aria-checked={i.id === indicador.id}
+                      onClick={() => onIndicador(i.id)}
+                      className={`flex w-full items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-left text-xs transition-colors ${
+                        i.id === indicador.id
+                          ? "border-primary/50 bg-primary/10 text-foreground"
+                          : "border-transparent bg-card text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      <span className="truncate">{i.rotulo}</span>
+                      {i.tema && <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{i.tema}</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {carregando && (
