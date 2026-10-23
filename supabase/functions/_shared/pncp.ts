@@ -68,21 +68,57 @@ export function normalizarContrato(item: Record<string, unknown>, termo: string)
   };
 }
 
-/** Contratos publicados no PNCP que mencionam os termos, mais recentes primeiro. */
-export async function buscarContratosPNCP(termos: string[], opcoes: OpcoesBusca = {}): Promise<ContratoPNCP[]> {
+export interface EditalPNCP {
+  objeto: string;
+  orgao: string;
+  modalidade: string;
+  valor: number;
+  situacao: string;
+  dataPublicacao: string;
+  /** Fim do prazo de propostas; vazio quando o edital não informa. */
+  dataEncerramento: string;
+  uf: string;
+  url: string;
+  termo: string;
+}
+
+export interface FornecedorPNCP {
+  nome: string;
+  cnpj: string;
+  contratos: number;
+  valorTotal: number;
+}
+
+export function normalizarEdital(item: Record<string, unknown>, termo: string): EditalPNCP {
+  // No índice, o edital vem como /compras/{cnpj}/{ano}/{seq}; a página pública é /app/editais/...
+  const caminho = String(item.item_url || "").replace(/^\/compras\//, "/");
+  return {
+    objeto: String(item.description || item.title || ""),
+    orgao: String(item.orgao_nome || ""),
+    modalidade: String(item.modalidade_licitacao_nome || ""),
+    valor: Number(item.valor_global || 0),
+    situacao: String(item.situacao_nome || ""),
+    dataPublicacao: String(item.data_publicacao_pncp || ""),
+    dataEncerramento: String(item.data_fim_vigencia || ""),
+    uf: String(item.uf || ""),
+    url: item.item_url ? `https://pncp.gov.br/app/editais${caminho}` : "https://pncp.gov.br/app/editais",
+    termo,
+  };
+}
+
+// Busca cada termo no índice, um de cada vez, e devolve os itens sem repetição.
+async function buscarItens(
+  termos: string[],
+  filtros: Record<string, string>,
+  opcoes: OpcoesBusca,
+): Promise<{ item: Record<string, unknown>; termo: string }[]> {
   const { uf = "", porTermo = 10, timeoutMs = 20000 } = opcoes;
   const vistos = new Set<string>();
-  const contratos: ContratoPNCP[] = [];
+  const achados: { item: Record<string, unknown>; termo: string }[] = [];
 
   // Sequencial: rajadas de chamadas paralelas fazem o PNCP fechar a conexão.
   for (const termo of termos) {
-    const params = new URLSearchParams({
-      q: termo,
-      tipos_documento: "contrato",
-      ordenacao: "-data",
-      pagina: "1",
-      tam_pagina: String(porTermo),
-    });
+    const params = new URLSearchParams({ q: termo, ...filtros, pagina: "1", tam_pagina: String(porTermo) });
     if (uf) params.set("ufs", uf);
     const data = await buscarJson(`${PNCP_SEARCH}?${params}`, timeoutMs);
     const items = (Array.isArray(data?.items) ? data.items : []) as Record<string, unknown>[];
@@ -90,8 +126,39 @@ export async function buscarContratosPNCP(termos: string[], opcoes: OpcoesBusca 
       const id = String(item.item_url || item.numero_controle_pncp || item.id || "");
       if (!id || vistos.has(id)) continue;
       vistos.add(id);
-      contratos.push(normalizarContrato(item, termo));
+      achados.push({ item, termo });
     }
   }
-  return contratos;
+  return achados;
+}
+
+/** Contratos publicados no PNCP que mencionam os termos, mais recentes primeiro. */
+export async function buscarContratosPNCP(termos: string[], opcoes: OpcoesBusca = {}): Promise<ContratoPNCP[]> {
+  const achados = await buscarItens(termos, { tipos_documento: "contrato", ordenacao: "-data" }, opcoes);
+  return achados.map(({ item, termo }) => normalizarContrato(item, termo));
+}
+
+/**
+ * Editais do PNCP ainda recebendo propostas, por relevância. Ordenar por data
+ * põe no topo editais que só casam com parte do termo.
+ */
+export async function buscarEditaisAbertosPNCP(termos: string[], opcoes: OpcoesBusca = {}): Promise<EditalPNCP[]> {
+  const achados = await buscarItens(termos, { tipos_documento: "edital", status: "recebendo_proposta" }, opcoes);
+  return achados.map(({ item, termo }) => normalizarEdital(item, termo));
+}
+
+/**
+ * Empresas que mais assinaram os contratos, por CNPJ. Fornecedor pessoa física
+ * (CPF) fica de fora: não é empresa e não deve circular como referência.
+ */
+export function agruparFornecedores(contratos: ContratoPNCP[]): FornecedorPNCP[] {
+  const porCnpj = new Map<string, FornecedorPNCP>();
+  for (const c of contratos) {
+    if (c.fornecedorCnpj.length !== 14) continue;
+    const f = porCnpj.get(c.fornecedorCnpj) ?? { nome: c.fornecedor || c.fornecedorCnpj, cnpj: c.fornecedorCnpj, contratos: 0, valorTotal: 0 };
+    f.contratos++;
+    f.valorTotal += c.valor;
+    porCnpj.set(c.fornecedorCnpj, f);
+  }
+  return [...porCnpj.values()].sort((a, b) => b.contratos - a.contratos || b.valorTotal - a.valorTotal);
 }
