@@ -4,6 +4,7 @@ from __future__ import annotations
 import csv
 import io
 import logging
+import re
 import unicodedata
 from typing import IO, Callable, Iterator
 
@@ -87,3 +88,12 @@ def numero(v: str) -> float | None:
         return float(t)
     except ValueError:
         return None
+
+
+_ANO = re.compile(r"(?<!\d)(19\d{2}|20\d{2})(?!\d)")
+
+
+def ano_de(texto: str) -> int | None:
+    """Primeiro ano de quatro dígitos num texto de data ("01/2021", "2020-01", "2019")."""
+    m = _ANO.search(str(texto or ""))
+    return int(m.group(1)) if m else None

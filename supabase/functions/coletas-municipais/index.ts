@@ -7,7 +7,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 const RAILWAY_API_URL = Deno.env.get("RAILWAY_API_URL") || "https://motor4pufpr-copy-production-5681.up.railway.app/api/v1";
 const MCTI_API_KEY = Deno.env.get("MCTI_API_KEY") || "";
-const FONTES = new Set(["ibge_pop", "anatel_bl", "aneel_gd", "cnpj_cnae", "capes_ppg", "openalex_coautoria", "antaq_portos", "anac_aero"]);
+const FONTES = new Set(["ibge_pop", "anatel_bl", "aneel_gd", "cnpj_cnae", "capes_ppg", "openalex_coautoria", "antaq_portos", "anac_aero", "antt_ferro", "antt_rodo"]);
 const json = (b: unknown, status = 200) =>
   new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 

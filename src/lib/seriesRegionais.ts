@@ -8,12 +8,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchAll } from "@/lib/fetchAll";
 import { REGIOES, REGIAO_POR_UF, UFS_POR_REGIAO, type Regiao } from "@/lib/regioes";
 
+/** As sete camadas de IA, na ordem do Mapa; a visão regional se organiza por elas. */
+export const CAMADAS_REGIONAIS = [
+  { id: "L1", rotulo: "L1 · Energia" },
+  { id: "L2", rotulo: "L2 · Infraestrutura física" },
+  { id: "L3", rotulo: "L3 · Infraestrutura lógica" },
+  { id: "L4", rotulo: "L4 · Modelos" },
+  { id: "L5", rotulo: "L5 · Aplicações" },
+  { id: "L6", rotulo: "L6 · Pesquisa" },
+  { id: "L7", rotulo: "L7 · Governança" },
+] as const;
+export type CamadaRegional = (typeof CAMADAS_REGIONAIS)[number]["id"];
+
 export interface IndicadorRegional {
   id: string;
   rotulo: string;
   unidade: string;
-  /** Camada de IA do Mapa a que o indicador se refere. */
+  /** Camada de IA do Mapa a que o indicador se refere (rótulo curto, para listas compactas). */
   camada: string;
+  /** Camada de IA em que a ficha regional agrupa o indicador. */
+  camadaId: CamadaRegional;
+  /** Subgrupo dentro da camada (ex.: "Transporte" na L2). */
+  tema?: string;
   /** Como a série nasceu: reconstruída a partir do estoque atual ou publicada pela fonte. */
   origem: "reconstruida" | "serie_da_fonte";
   /** Limitação que precisa aparecer junto do dado. */
@@ -26,6 +42,7 @@ export const INDICADORES_REGIONAIS: IndicadorRegional[] = [
     rotulo: "Capacidade elétrica instalada",
     unidade: "MW",
     camada: "L1 Energia",
+    camadaId: "L1",
     origem: "reconstruida",
     limitacao:
       "Série reconstruída pela data de entrada em operação das usinas ativas hoje (ANEEL). Usinas já desativadas não entram, então os anos antigos tendem a ficar subestimados.",
@@ -35,6 +52,7 @@ export const INDICADORES_REGIONAIS: IndicadorRegional[] = [
     rotulo: "Doutores titulados",
     unidade: "titulados no ano",
     camada: "L6 Pesquisa",
+    camadaId: "L6",
     origem: "serie_da_fonte",
   },
   {
@@ -42,6 +60,7 @@ export const INDICADORES_REGIONAIS: IndicadorRegional[] = [
     rotulo: "Mestres titulados",
     unidade: "titulados no ano",
     camada: "L6 Pesquisa",
+    camadaId: "L6",
     origem: "serie_da_fonte",
   },
   {
@@ -49,15 +68,17 @@ export const INDICADORES_REGIONAIS: IndicadorRegional[] = [
     rotulo: "Pedidos de patente de residentes",
     unidade: "pedidos no ano",
     camada: "L6 Pesquisa",
+    camadaId: "L6",
     origem: "serie_da_fonte",
   },
-  // Transporte (camada da visão regional, fora das 7 camadas de IA): séries por UF
-  // coletadas no Railway (series-uf:antaq_portos, series-uf:anac_aero).
+  // L2 · Infraestrutura física, tema Transporte: séries por UF coletadas no Railway (series-uf:*).
   {
     id: "uf.porto_toneladas",
     rotulo: "Movimentação portuária",
     unidade: "toneladas no ano",
-    camada: "Transporte",
+    camada: "L2 Transporte",
+    camadaId: "L2",
+    tema: "Transporte",
     origem: "serie_da_fonte",
     limitacao: "Carga bruta das atracações por UF (ANTAQ, portos organizados e terminais privados). Sem dado até a coleta antaq_portos rodar em Gestão da Pesquisa → Coletas.",
   },
@@ -65,9 +86,31 @@ export const INDICADORES_REGIONAIS: IndicadorRegional[] = [
     id: "uf.aero_passageiros",
     rotulo: "Passageiros embarcados",
     unidade: "passageiros no ano",
-    camada: "Transporte",
+    camada: "L2 Transporte",
+    camadaId: "L2",
+    tema: "Transporte",
     origem: "serie_da_fonte",
     limitacao: "Embarques nos aeroportos da UF (microdados ANAC, voos regulares e não regulares). Sem dado até a coleta anac_aero rodar em Gestão da Pesquisa → Coletas.",
+  },
+  {
+    id: "uf.ferro_tu",
+    rotulo: "Carga ferroviária originada",
+    unidade: "toneladas úteis no ano",
+    camada: "L2 Transporte",
+    camadaId: "L2",
+    tema: "Transporte",
+    origem: "serie_da_fonte",
+    limitacao: "Toneladas úteis com origem na UF (ANTT, produção origem–destino das concessionárias). Sem dado até a coleta antt_ferro rodar.",
+  },
+  {
+    id: "uf.rodo_veiculos",
+    rotulo: "Veículos em rodovias concedidas",
+    unidade: "veículos equivalentes no ano",
+    camada: "L2 Transporte",
+    camadaId: "L2",
+    tema: "Transporte",
+    origem: "serie_da_fonte",
+    limitacao: "Volume nas praças de pedágio das concessões federais da UF (ANTT). Cobre só rodovias concedidas, não a malha inteira. Sem dado até a coleta antt_rodo rodar.",
   },
 ];
 
