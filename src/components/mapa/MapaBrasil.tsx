@@ -27,8 +27,8 @@ import { aguardarFonteMaterial, badgesDeCluster, corDaClasse, corDoTema, garanti
 import { ATRIBUICAO_FUNDO, type FundoId, URL_ESTILO_FUNDO, estiloSatelite, estiloSobrio } from "./maplibre/fundos";
 export { FUNDOS, type FundoId } from "./maplibre/fundos";
 import {
-  BBOX_BRASIL, type Bbox, type FeatureMun, type FeatureUf,
-  arcoCurvo, bboxDaFeature, bboxesIntersectam, carregarMunicipios, dentroDaFeature,
+  BBOX_BRASIL, type Bbox, type FeatureMun, type FeatureUf, type NivelMalha, SIGLA_POR_CODIGO,
+  arcoCurvo, bboxDaFeature, bboxesIntersectam, carregarGeojson, carregarMunicipios, dentroDaFeature,
 } from "./maplibre/geo";
 
 export interface Ponto {
@@ -179,6 +179,9 @@ const ROTULO_USINA: Record<string, string> = {
 
 const COR_ANEL = { l4: "#4ade80", l5: "#2dd4bf", l6: "#22d3ee", l7: "#a78bfa" } as const;
 const ZOOM_MUNICIPIOS = 5.5;
+// A partir daqui a malha municipal troca para a versão detalhada (br-mun-hd) e o contorno das UFs vem dela.
+const ZOOM_HD = 7.5;
+const ZOOM_ROTULOS_MUN = 7;
 
 // Escala dos ícones por zoom: crescem menos que o mapa, como no mapa anterior.
 const ESCALA_ICONE: [number, number][] = [[3, 0.38], [5, 0.55], [7, 0.8], [10, 1.05]];
@@ -219,7 +222,10 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
   const camadasBaseRef = useRef<string[]>([]);
   const [tema, setTema] = useState(0);
   const [zoom, setZoom] = useState(3);
-  const [municipios, setMunicipios] = useState<Record<string, FeatureMun[]>>({});
+  const [municipios, setMunicipios] = useState<Record<string, { nivel: NivelMalha; features: FeatureMun[] }>>({});
+  const [ufsHd, setUfsHd] = useState<FeatureUf[] | null>(null);
+  const [rotulosMun, setRotulosMun] = useState<Feature<Point, { id: string; name: string; uf: string }>[] | null>(null);
+  const carregandoRef = useRef(new Set<string>());
   const [tipoCabo, setTipoCabo] = useState<Record<string, ClasseCabo>>({});
 
   // Callbacks mais recentes acessíveis pelos handlers do mapa (registrados uma vez).
@@ -303,7 +309,7 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
       ...CATEGORIAS.map((c) => `atores-${c.key}-ponto`), "enriquecidos-ponto",
       ...CATEGORIAS.flatMap((c) => [`atores-${c.key}-badge`, `atores-${c.key}-cluster`]),
       "inter-unidades", "inter-loops", "inter-arcos",
-      "ufs-fill",
+      "ufs-fill", "ufs-hd-fill",
     ];
     const camadasDica = [
       "ancoras-icone", ...CATEGORIAS.map((c) => `atores-${c.key}-ponto`), "enriquecidos-ponto",
@@ -311,7 +317,7 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
       "inter-unidades", "inter-loops", "inter-arcos",
       "dcs", "landing", "antenas", "backhaul-fibra", "backhaul-sem",
       "cabos-internacional", "cabos-costeiro", "cabos-fluvial", "usinas",
-      "mun-fill", "ufs-fill",
+      "mun-fill", "ufs-fill", "ufs-hd-fill",
     ];
     const existentes = (ids: string[]) => ids.filter((id) => map.getLayer(id));
     let hoverUf: string | number | null = null;
@@ -337,10 +343,14 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
       const interativo = fts.some((f) => camadasClique.includes(f.layer.id));
       map.getCanvas().style.cursor = interativo ? "pointer" : "";
 
-      const uf = fts.find((f) => f.layer.id === "ufs-fill")?.id ?? null;
+      const ufFt = fts.find((f) => f.layer.id === "ufs-fill" || f.layer.id === "ufs-hd-fill");
+      const uf = ufFt?.id ?? null;
       if (uf !== hoverUf) {
-        if (hoverUf != null && map.getSource("ufs")) map.setFeatureState({ source: "ufs", id: hoverUf }, { hover: false });
-        if (uf != null) map.setFeatureState({ source: "ufs", id: uf }, { hover: true });
+        for (const src of ["ufs", "ufs-hd"]) {
+          if (!map.getSource(src)) continue;
+          if (hoverUf != null) map.setFeatureState({ source: src, id: hoverUf }, { hover: false });
+          if (uf != null) map.setFeatureState({ source: src, id: uf }, { hover: true });
+        }
         hoverUf = uf;
       }
       const mun = fts.find((f) => f.layer.id === "mun-fill")?.id ?? null;
@@ -360,7 +370,7 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
       if (!f) { c.onSelecionarPonto?.(null); return; }
       const id = f.layer.id;
       const p = f.properties ?? {};
-      if (id === "ufs-fill") {
+      if (id === "ufs-fill" || id === "ufs-hd-fill") {
         (c.regional ? c.regional.onSelecionarUf : c.onSelecionarUf)(String(p.sigla));
         return;
       }
@@ -429,10 +439,25 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
       };
     }));
     (map.getSource("ufs") as GeoJSONSource | undefined)?.setData(data);
-    map.setPaintProperty("ufs-line", "line-color", ["case", ["get", "realce"], corRealce, corBorda]);
-    map.setPaintProperty("ufs-line", "line-width", ["case", ["get", "realce"], 2.2, 1.2]);
+    if (ufsHd) {
+      const porSigla = new Map(data.features.map((f) => [f.properties.sigla, f.properties]));
+      (map.getSource("ufs-hd") as GeoJSONSource | undefined)?.setData(fc(ufsHd.map((f) => ({ ...f, id: f.properties.sigla, properties: porSigla.get(f.properties.sigla) ?? { sigla: f.properties.sigla, fill: corMuted, realce: false, dica: f.properties.sigla } }))));
+    }
+    for (const id of ["ufs-line", "ufs-hd-line"]) {
+      map.setPaintProperty(id, "line-color", ["case", ["get", "realce"], corRealce, corBorda]);
+      map.setPaintProperty(id, "line-width", ["case", ["get", "realce"], 2.2, 1.2]);
+    }
     map.setPaintProperty("ufs-sombra", "line-color", corDoTema("--foreground", 0.45));
-  }, [features, contagemPorUf, ufsSelecionadas, regional, versaoEstilo, tema]);
+    map.setPaintProperty("rotulos-uf", "text-color", corDoTema("--foreground", 0.7));
+    map.setPaintProperty("rotulos-uf", "text-halo-color", corDoTema("--background"));
+    map.setPaintProperty("rotulos-mun", "text-color", corDoTema("--foreground", 0.85));
+    map.setPaintProperty("rotulos-mun", "text-halo-color", corDoTema("--background"));
+    // Siglas das UFs no centro da bbox (zoom intermediário).
+    (map.getSource("rotulos-uf") as GeoJSONSource | undefined)?.setData(fc(features.map((f) => {
+      const b = bboxes[f.properties.sigla];
+      return { type: "Feature" as const, geometry: { type: "Point" as const, coordinates: [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2] }, properties: { sigla: f.properties.sigla } };
+    })));
+  }, [features, bboxes, ufsHd, contagemPorUf, ufsSelecionadas, regional, versaoEstilo, tema]);
 
   // ---------- rótulos regionais ----------
   useEffect(() => {
@@ -462,20 +487,69 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
     if (!map || !features || (!malhaMunicipal && !coropletico)) return;
     let vivo = true;
     const carregar = () => {
-      const alvo = new Set(ufsVisiveis());
-      if (ufSelecionada && map.getZoom() >= ZOOM_MUNICIPIOS - 0.5) alvo.add(ufSelecionada);
-      if (coropletico) for (const f of features) alvo.add(f.properties.sigla);
-      for (const uf of alvo) {
-        if (municipios[uf]) continue;
-        carregarMunicipios(uf)
-          .then((d) => vivo && setMunicipios((m) => (m[uf] ? m : { ...m, [uf]: d.features })))
-          .catch((e) => console.warn(e.message));
+      const zoom = map.getZoom();
+      const visiveis = ufsVisiveis();
+      // Nível desejado por UF: HD só para as UFs em vista quando bem aproximado; SD para o resto.
+      const desejado = new Map<string, NivelMalha>();
+      if (coropletico) for (const f of features) desejado.set(f.properties.sigla, "sd");
+      for (const uf of visiveis) desejado.set(uf, zoom >= ZOOM_HD ? "hd" : "sd");
+      if (ufSelecionada && zoom >= ZOOM_MUNICIPIOS - 0.5) desejado.set(ufSelecionada, zoom >= ZOOM_HD ? "hd" : "sd");
+      const pendentes: [string, NivelMalha][] = [];
+      for (const [uf, nivel] of desejado) {
+        const atual = municipios[uf];
+        if (atual && (atual.nivel === nivel || atual.nivel === "hd")) continue;
+        const chave = `${uf}|${nivel}`;
+        if (carregandoRef.current.has(chave)) continue;
+        carregandoRef.current.add(chave);
+        pendentes.push([uf, nivel]);
       }
+      if (!pendentes.length) return;
+      // Um só setData para o lote inteiro, em vez de um por UF.
+      Promise.all(pendentes.map(([uf, nivel]) =>
+        carregarMunicipios(uf, nivel).then((d) => [uf, nivel, d.features] as const).catch((e) => { console.warn(e.message); return null; })
+          .finally(() => carregandoRef.current.delete(`${uf}|${nivel}`)),
+      )).then((res) => {
+        if (!vivo) return;
+        setMunicipios((m) => {
+          const novo = { ...m };
+          for (const r of res) if (r && !(novo[r[0]]?.nivel === "hd" && r[1] === "sd")) novo[r[0]] = { nivel: r[1], features: r[2] };
+          return novo;
+        });
+      });
     };
     carregar();
     map.on("moveend", carregar);
     return () => { vivo = false; map.off("moveend", carregar); };
   }, [features, ufSelecionada, municipios, ufsVisiveis, malhaMunicipal, coropletico]);
+
+  // Contorno detalhado das UFs e pontos de rótulo dos municípios: um arquivo cada, carregados ao aproximar.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    let vivo = true;
+    const checar = () => {
+      const z = map.getZoom();
+      if (z >= ZOOM_MUNICIPIOS - 0.5 && !ufsHd) {
+        carregarGeojson<FeatureCollection<Polygon | MultiPolygon, { uf: string }>>("/br-uf-hd.geojson")
+          .then((d) => vivo && setUfsHd(d.features.map((f) => ({ ...f, properties: { sigla: SIGLA_POR_CODIGO[f.properties.uf] ?? f.properties.uf } }))))
+          .catch((e) => console.warn(e.message));
+      }
+      if (z >= ZOOM_ROTULOS_MUN - 0.5 && !rotulosMun) {
+        carregarGeojson<FeatureCollection<Point, { id: string; name: string; uf: string }>>("/br-mun-pontos.geojson")
+          .then((d) => vivo && setRotulosMun(d.features))
+          .catch((e) => console.warn(e.message));
+      }
+    };
+    checar();
+    map.on("moveend", checar);
+    return () => { vivo = false; map.off("moveend", checar); };
+  }, [ufsHd, rotulosMun]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !versaoEstilo || !estiloOkRef.current || !rotulosMun) return;
+    (map.getSource("rotulos-mun") as GeoJSONSource | undefined)?.setData(fc(rotulosMun));
+  }, [rotulosMun, versaoEstilo]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -486,7 +560,7 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
     }
     map.setLayerZoomRange("mun-coro", 0, 24);
     map.setLayoutProperty("mun-coro", "visibility", coropletico ? "visible" : "none");
-    const todos = Object.values(municipios).flat().map((f) => ({
+    const todos = Object.values(municipios).flatMap((m) => m.features).map((f) => ({
       ...f, properties: { ...f.properties, dica: `${f.properties.name} (${f.properties.uf})` },
     }));
     (map.getSource("municipios") as GeoJSONSource | undefined)?.setData(fc(todos));
@@ -501,10 +575,10 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
     const src = map.getSource("municipios") as GeoJSONSource | undefined;
     if (!src) return;
     // A UF some por baixo do coroplético, mas o contorno continua.
-    map.setPaintProperty("ufs-fill", "fill-opacity", coropletico ? 0 : ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.85]);
+    for (const id of ["ufs-fill", "ufs-hd-fill"]) map.setPaintProperty(id, "fill-opacity", coropletico ? 0 : ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.85]);
     map.setPaintProperty("mun-line", "line-color", coropletico ? corDoTema("--background", 0.9) : corDoTema("--foreground", 0.22));
     map.setPaintProperty("mun-line", "line-width", coropletico ? ["interpolate", ["linear"], ["zoom"], 3, 0.15, 7, 0.5, 9, 0.9] : ["interpolate", ["linear"], ["zoom"], ZOOM_MUNICIPIOS, 0.3, 9, 0.8]);
-    for (const f of Object.values(municipios).flat()) {
+    for (const f of Object.values(municipios).flatMap((m) => m.features)) {
       const id = Number(f.properties.id);
       if (!coropletico) { map.removeFeatureState({ source: "municipios", id }); continue; }
       const v = coropletico.valores[f.properties.id];
@@ -956,17 +1030,21 @@ function montarCamadas(map: MapLibre) {
   };
   const oculto = { visibility: "none" as const };
 
-  // UFs
-  geo("ufs", { promoteId: "sigla" });
-  map.addLayer({ id: "ufs-fill", type: "fill", source: "ufs", paint: {
+  // UFs: contorno simplificado até o zoom ZOOM_MUNICIPIOS, detalhado (dissolvido da malha municipal) depois.
+  geo("ufs", { promoteId: "sigla", tolerance: 0.3 });
+  geo("ufs-hd", { promoteId: "sigla", tolerance: 0.2, buffer: 32 });
+  map.addLayer({ id: "ufs-fill", type: "fill", source: "ufs", maxzoom: ZOOM_MUNICIPIOS, paint: {
     "fill-color": ["get", "fill"],
     "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.85],
   } });
-  map.addLayer({ id: "ufs-sombra", type: "line", source: "ufs", paint: { "line-color": "#000", "line-width": 3, "line-opacity": 0.35, "line-blur": 2 } });
-  map.addLayer({ id: "ufs-line", type: "line", source: "ufs", layout: { "line-join": "round" }, paint: { "line-color": "#888", "line-width": 1.2 } });
+  map.addLayer({ id: "ufs-hd-fill", type: "fill", source: "ufs-hd", minzoom: ZOOM_MUNICIPIOS, paint: {
+    "fill-color": ["get", "fill"],
+    "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.85],
+  } });
+  map.addLayer({ id: "ufs-sombra", type: "line", source: "ufs", maxzoom: ZOOM_MUNICIPIOS, paint: { "line-color": "#000", "line-width": 3, "line-opacity": 0.35, "line-blur": 2 } });
 
   // Municípios (sob demanda, só ao aproximar)
-  geo("municipios");
+  geo("municipios", { tolerance: 0.25, buffer: 32 });
   map.addLayer({ id: "mun-fill", type: "fill", source: "municipios", minzoom: ZOOM_MUNICIPIOS, paint: {
     "fill-color": "#000", "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.12, 0],
   } });
@@ -976,6 +1054,21 @@ function montarCamadas(map: MapLibre) {
   map.addLayer({ id: "mun-line", type: "line", source: "municipios", minzoom: ZOOM_MUNICIPIOS, paint: {
     "line-color": "#888", "line-width": ["interpolate", ["linear"], ["zoom"], ZOOM_MUNICIPIOS, 0.3, 9, 0.8], "line-opacity": ["interpolate", ["linear"], ["zoom"], ZOOM_MUNICIPIOS, 0.3, 7, 1],
   } });
+  // Divisas das UFs por cima das municipais: simplificada longe, detalhada perto.
+  map.addLayer({ id: "ufs-line", type: "line", source: "ufs", maxzoom: ZOOM_MUNICIPIOS, layout: { "line-join": "round" }, paint: { "line-color": "#888", "line-width": 1.2 } });
+  map.addLayer({ id: "ufs-hd-line", type: "line", source: "ufs-hd", minzoom: ZOOM_MUNICIPIOS, layout: { "line-join": "round" }, paint: { "line-color": "#888", "line-width": 1.2 } });
+  // Rótulos: siglas das UFs no zoom intermediário e nomes dos municípios ao aproximar.
+  // Fontes separadas das malhas: se o servidor de glifos falhar, só os rótulos somem.
+  geo("rotulos-uf");
+  map.addLayer({ id: "rotulos-uf", type: "symbol", source: "rotulos-uf", minzoom: 4, maxzoom: ZOOM_ROTULOS_MUN, layout: {
+    "text-field": ["get", "sigla"], "text-font": ["Noto Sans Bold"], "text-size": ["interpolate", ["linear"], ["zoom"], 4, 11, 7, 15], "text-allow-overlap": true,
+  }, paint: { "text-color": "#888", "text-halo-color": "#000", "text-halo-width": 1.5, "text-opacity": 0.8 } });
+  geo("rotulos-mun", { tolerance: 0 });
+  map.addLayer({ id: "rotulos-mun", type: "symbol", source: "rotulos-mun", minzoom: ZOOM_ROTULOS_MUN, layout: {
+    "text-field": ["get", "name"], "text-font": ["Noto Sans Regular"],
+    "text-size": ["interpolate", ["linear"], ["zoom"], ZOOM_ROTULOS_MUN, 9, 10, 12, 13, 15],
+    "text-padding": 4, "text-optional": true, "text-max-width": 8,
+  }, paint: { "text-color": "#ccc", "text-halo-color": "#000", "text-halo-width": 1.2 } });
 
   // Layer 2c — backhaul
   geo("backhaul");
