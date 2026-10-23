@@ -33,7 +33,10 @@ function Barras({ dados, uf, dinheiro = false, onBarra }: { dados: { nome: strin
 }
 
 export default function Cenario6SistemasEstaduais() {
-  const [uf, setUf] = useState(UF_INICIAL);
+  const [uf, setUf] = useState(() => {
+    const q = (new URLSearchParams(window.location.search).get("uf") ?? "").toUpperCase();
+    return q in ESTADOS ? q : UF_INICIAL;
+  });
   const [perfis, setPerfis] = useState<ViewRow<"vw_uf_relacoes_perfil">[]>([]);
   const [camadas, setCamadas] = useState<Camada[]>([]);
   const [regras, setRegras] = useState<Regra[]>([]);

@@ -61,3 +61,4 @@ Thumbs.db
 
 # Harness visual do mapa
 demo-mapa/dist
+.cache-transporte/

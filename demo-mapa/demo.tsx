@@ -5,6 +5,26 @@ import MapaBrasil, { type Ponto, type VisaoRegionalMapa, type FundoId, FUNDOS, C
 import { cortesQuantis } from "@/lib/seriesMunicipais";
 import { CATEGORIAS } from "@/components/mapa/tipos";
 import { REGIAO_POR_UF, REGIOES } from "@/lib/regioes";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
+import { PainelEstado, PainelMunicipio } from "@/components/mapa/PaineisLocais";
+import type { MunicipioClicado } from "@/components/mapa/MapaBrasil";
+
+// Cache pré-semeado para os painéis de estado/município renderizarem sem Supabase.
+const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+qc.setQueryData(["painel-uf-perfil", "PR"], { uf: "PR", perfil: "Exportador de competência", unidades_ativas: 7, lacos_empresas_locais: 310, lacos_unidades_locais: 540, pct_empresas_buscam_fora: 41.2, uf_principal_origem_externa: "SP", unidade_principal: "Instituto Senai", pct_unidade_principal: 38 });
+qc.setQueryData(["painel-uf-atores", "PR"], [{ uf: "PR", categoria: "ict", atores: 120 }, { uf: "PR", categoria: "empresa", atores: 900 }]);
+qc.setQueryData(["painel-uf-interacoes", "PR"], [
+  { fonte: "embrapii", tipo: "cooperacao_pdi", ano: 2020, origem_uf: "PR", destino_uf: "SP", lacos: 40 }, { fonte: "embrapii", tipo: "cooperacao_pdi", ano: 2021, origem_uf: "PR", destino_uf: "PR", lacos: 120 },
+  { fonte: "embrapii", tipo: "financiamento_publico", ano: 2022, origem_uf: null, destino_uf: "PR", lacos: 300 }, { fonte: "desafios", tipo: "desafio_solucao", ano: 2023, origem_uf: "DF", destino_uf: "PR", lacos: 3 },
+]);
+qc.setQueryData(["painel-uf-series", "PR"], { "uf.doutores_titulados": Array.from({ length: 12 }, (_, i) => ({ ano: 2012 + i, valor: 600 + i * 45 })), "energia.capacidade_acumulada_mw": Array.from({ length: 30 }, (_, i) => ({ ano: 1995 + i, valor: 9000 + i * 300 })) });
+qc.setQueryData(["painel-mun-series", "4106902"], [
+  ...Array.from({ length: 8 }, (_, i) => ({ indicador_id: "mun.bl_acessos", segmento: "", periodo_referencia: `${2017 + i}-12-01`, granularidade: "mes", valor: 400000 + i * 30000 })),
+  ...Array.from({ length: 8 }, (_, i) => ({ indicador_id: "mun.bl_acessos", segmento: "fibra", periodo_referencia: `${2017 + i}-12-01`, granularidade: "mes", valor: 100000 + i * 50000 })),
+  { indicador_id: "mun.ppg", segmento: "", periodo_referencia: "2023-01-01", granularidade: "ano", valor: 112 },
+  { indicador_id: "mun.populacao", segmento: "", periodo_referencia: "2024-01-01", granularidade: "ano", valor: 1829225 },
+]);
 
 // Dados sintéticos só para exercitar o mapa (capitais + ruído), sem Supabase.
 const CAPITAIS: Record<string, [number, number]> = {
@@ -37,6 +57,7 @@ function Demo() {
   const [inter, setInter] = useState(false);
   const [fundo, setFundo] = useState<FundoId>("sobrio");
   const [coro, setCoro] = useState(false);
+  const [transp, setTransp] = useState(false);
   const coropletico = useMemo(() => {
     if (!coro) return null;
     // valores sintéticos: cresce com o código IBGE dentro da UF, com lacunas
@@ -58,26 +79,32 @@ function Demo() {
     rotulos: [["Norte", -60, -4], ["Nordeste", -41, -8], ["Centro-Oeste", -54, -15], ["Sudeste", -45, -20.5], ["Sul", -51.5, -27.5]].map(([t, lon, lat]) => ({ titulo: String(t), valor: "R$ 1,2 bi", lon: Number(lon), lat: Number(lat), ativo: t === "Sul" })),
     onSelecionarUf: (u) => setUf((x) => (x === u ? null : u)),
   } : null;
-  const arcos = ["SP", "MG", "RJ", "RS", "PE", "AM"].map((d) => ({ chave: `PR>${d}`, origem: "PR", destino: d, o: CAPITAIS.PR as [number, number], d: CAPITAIS[d] as [number, number], lacos: 5 + Math.floor(rnd() * 80), projetos: 3, empresas: 2, valor: 1e6 }));
+  const arcos = ["SP", "MG", "RJ", "RS", "PE", "AM"].map((d, i) => ({ chave: `embrapii:cooperacao_pdi|PR>${d}`, tipoId: "embrapii:cooperacao_pdi", cor: i % 2 ? "#f59e0b" : "#3b82f6", origem: "PR", destino: d, o: CAPITAIS.PR as [number, number], d: CAPITAIS[d] as [number, number], interno: false, lacos: 5 + Math.floor(rnd() * 80), projetos: 3, destinos: 2, valor: 1e6 }));
+  const [painel, setPainel] = useState<{ tipo: "uf"; uf: string } | ({ tipo: "municipio" } & MunicipioClicado) | null>(null);
+  const atoresPainel = pontos.map((p) => ({ id: p.id, nome: p.nome, categoria: p.categoria, municipio: "Curitiba", uf: p.id.split("-")[0], latitude: p.latitude, longitude: p.longitude }));
   const unidades = ["PR", "SP", "BA"].map((u, i) => ({ co_unidade: i, unidade_embrapii: `Unidade ${u}`, sigla: u, tipo_instituicao: "ICT", uf: u, cidade: "Capital", status_credenciamento: "Ativa", lat: CAPITAIS[u][1], lon: CAPITAIS[u][0], coordenada_aproximada: i === 2, projetos: 10 * (i + 1), valor_total_ipca: 1e7, empresas: 5, ufs_alcancadas: 4 }));
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
       <div className="flex gap-3 border-b border-border p-2 text-xs">
-        {[["Layer 1", l1, setL1], ["Regional", reg, setReg], ["Interação", inter, setInter], ["Coroplético", coro, setCoro]].map(([r, v, s]) => (
+        {[["Layer 1", l1, setL1], ["Regional", reg, setReg], ["Interação", inter, setInter], ["Coroplético", coro, setCoro], ["Transporte", transp, setTransp]].map(([r, v, s]) => (
           <label key={String(r)} className="flex items-center gap-1"><input type="checkbox" checked={v as boolean} onChange={(e) => (s as (b: boolean) => void)(e.target.checked)} />{String(r)}</label>
         ))}
         <button className="rounded border px-2" onClick={() => document.documentElement.classList.toggle("dark")}>tema</button>
         <select aria-label="Fundo do mapa" value={fundo} onChange={(e) => setFundo(e.target.value as FundoId)} className="rounded border bg-background px-1">{FUNDOS.map((f) => <option key={f.id} value={f.id}>{f.rotulo}</option>)}</select>
+        <button className="rounded border px-2" onClick={() => setPainel({ tipo: "uf", uf: "PR" })}>painel PR</button>
+        <button className="rounded border px-2" onClick={() => setPainel({ tipo: "municipio", ibge: "4106902", nome: "Curitiba", uf: "PR" })}>painel Curitiba</button>
         <span className="text-muted-foreground">UF: {uf ?? "—"} · ponto: {sel ?? "—"} · {pontos.length} pontos</span>
       </div>
       <div className="relative" style={{ height: "calc(100vh - 41px)" }}>
-        <MapaBrasil fundo={fundo} coropletico={coropletico} pontos={reg ? [] : pontos} regional={regional} ufSelecionada={uf} ufsSelecionadas={new Set(uf ? [uf] : [])} ufsFiltroAtivas={new Set()} contagemPorUf={contagem}
-          onSelecionarUf={(u) => setUf((x) => (x === u ? null : u))} onSelecionarCluster={(ps, t) => console.log("cluster", t, ps.length)}
+        <MapaBrasil fundo={fundo} coropletico={coropletico} pontos={reg ? [] : pontos} regional={regional} transporte={transp ? { rodovias: true, ferrovias: true, portos: true, aeroportos: true } : null} ufSelecionada={uf} ufsSelecionadas={new Set(uf ? [uf] : [])} ufsFiltroAtivas={new Set()} contagemPorUf={contagem}
+          onSelecionarUf={(u) => { setUf((x) => (x === u ? null : u)); setPainel({ tipo: "uf", uf: u }); }} onSelecionarMunicipio={(m) => setPainel({ tipo: "municipio", ...m })} onSelecionarCluster={(ps, t) => console.log("cluster", t, ps.length)}
           pontoSelecionadoId={sel} onSelecionarPonto={setSel}
           layer1Ativa={l1} dadosUsinas={usinas}
           interacao={inter ? { arcos, unidades, onArco: (a) => console.log("arco", a.chave), onUnidade: (u) => console.log("unidade", u.sigla) } : null} />
+        {painel?.tipo === "uf" && <PainelEstado uf={painel.uf} anoFoco={2022} atores={atoresPainel.filter((a) => a.uf === painel.uf)} usinas={usinas.filter((u) => u.uf === painel.uf)} datacenters={[]} backhaul={[{ municipio: "Curitiba", uf: "PR", latitude: 0, longitude: 0, temBackhaul: true }, { municipio: "Pinhais", uf: "PR", latitude: 0, longitude: 0, temBackhaul: false }]} sintese={{ "4106902": 81, "4119152": 55, "4104808": 40 }} onFechar={() => setPainel(null)} onEnquadrar={() => undefined} onAbrirMunicipio={(m) => setPainel({ tipo: "municipio", ...m })} onSelecionarPonto={setSel} />}
+        {painel?.tipo === "municipio" && <PainelMunicipio municipio={painel} anoFoco={2022} atores={atoresPainel.filter((a) => a.uf === painel.uf).slice(0, 14)} usinas={usinas.filter((u) => u.uf === painel.uf).slice(0, 6)} datacenters={[{ id: 1, nome: "Equinix CU1", org: "Equinix", uf: "PR", cidade: "Curitiba" }]} backhaul={{ municipio: "Curitiba", uf: "PR", latitude: 0, longitude: 0, temBackhaul: true }} antenas={312} sintese={81} onFechar={() => setPainel(null)} onEnquadrar={() => undefined} onAbrirEstado={(u) => setPainel({ tipo: "uf", uf: u })} onSelecionarPonto={setSel} />}
       </div>
     </div>
   );
 }
-createRoot(document.getElementById("root")!).render(<Demo />);
+createRoot(document.getElementById("root")!).render(<QueryClientProvider client={qc}><MemoryRouter><Demo /></MemoryRouter></QueryClientProvider>);

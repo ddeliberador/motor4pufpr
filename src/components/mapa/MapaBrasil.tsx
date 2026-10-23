@@ -62,6 +62,10 @@ export interface AncoraPbia {
   url?: string;
 }
 
+/** Camada de transporte (visão regional): quais ativos desenhar. Dados em public/transporte/. */
+export interface TransporteMapa { rodovias: boolean; ferrovias: boolean; portos: boolean; aeroportos: boolean }
+export const CORES_TRANSPORTE = { rodovias: "#d97706", ferrovias: "#a16207", portos: "#0284c7", aeroportos: "#7c3aed" } as const;
+
 export interface VisaoRegionalMapa {
   preenchimento: Record<string, string>;
   dica: Record<string, string>;
@@ -78,6 +82,8 @@ interface Props {
   ufsFiltroAtivas: Set<string>;
   contagemPorUf: Record<string, number>;
   onSelecionarUf: (uf: string) => void;
+  /** Clique num município da malha (só a partir do zoom municipal). */
+  onSelecionarMunicipio?: (m: MunicipioClicado) => void;
   onSelecionarCluster: (pontos: Ponto[], total: number) => void;
   pontoSelecionadoId?: string | null;
   onSelecionarPonto?: (id: string | null) => void;
@@ -113,6 +119,7 @@ interface Props {
   onSelecionarAncora?: (a: AncoraPbia) => void;
   /** Camada de interação (cooperação EMBRAPII): arcos UF→UF e unidades. */
   interacao?: CamadaInteracaoProps | null;
+  transporte?: TransporteMapa | null;
   /** Visão regional: preenche cada UF com a cor da sua região e rotula as regiões. */
   regional?: VisaoRegionalMapa | null;
   /** Fundo cartográfico (ver FUNDOS). Padrão: sóbrio. */
@@ -153,7 +160,11 @@ export interface MapaBrasilHandle {
   /** PNG do mapa como data URL. */
   imagemPng(): Promise<string>;
   enquadrar(): void;
+  /** Aproxima o mapa de um município já carregado na malha (código IBGE de 7 dígitos). */
+  enquadrarMunicipio(ibge: string): void;
 }
+
+export interface MunicipioClicado { ibge: string; nome: string; uf: string }
 
 /** Estilo dos cabos por classificação de `cabos_lista` (tipo + internacional). */
 const ESTILO_CABO = {
@@ -199,13 +210,13 @@ const VAZIO = fc<Point, Record<string, unknown>>([]);
 
 const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
   pontos, ufSelecionada, ufsSelecionadas, ufsFiltroAtivas, contagemPorUf,
-  onSelecionarUf, onSelecionarCluster, pontoSelecionadoId, onSelecionarPonto, grupoIds,
+  onSelecionarUf, onSelecionarMunicipio, onSelecionarCluster, pontoSelecionadoId, onSelecionarPonto, grupoIds,
   layer1Ativa, dadosUsinas, tiposUsina, anoMaximoUsinas = null, usinaDestaque,
   layer2Ativa, dadosCabos, l2Cabos, l2Antenas, dadosAntenas, l2Backhaul, dadosBackhaul,
   layer3Ativa, dadosDCs,
   layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa, enriquecimentoLayers,
   ancorasPbia, corEixoPbia, onSelecionarAncora,
-  interacao, regional,
+  interacao, regional, transporte,
   fundo = "sobrio", mostrarNomes = true, malhaMunicipal = true, coropletico = null,
 }, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -223,6 +234,7 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
   const [tema, setTema] = useState(0);
   const [zoom, setZoom] = useState(3);
   const [municipios, setMunicipios] = useState<Record<string, { nivel: NivelMalha; features: FeatureMun[] }>>({});
+  const municipiosRef = useRef<Record<string, { nivel: NivelMalha; features: FeatureMun[] }>>({});
   const [ufsHd, setUfsHd] = useState<FeatureUf[] | null>(null);
   const [rotulosMun, setRotulosMun] = useState<Feature<Point, { id: string; name: string; uf: string }>[] | null>(null);
   const carregandoRef = useRef(new Set<string>());
@@ -230,8 +242,8 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
   const [legendaAberta, setLegendaAberta] = useState(false);
 
   // Callbacks mais recentes acessíveis pelos handlers do mapa (registrados uma vez).
-  const cb = useRef({ onSelecionarUf, onSelecionarCluster, onSelecionarPonto, onSelecionarAncora, interacao, regional, coropletico });
-  cb.current = { onSelecionarUf, onSelecionarCluster, onSelecionarPonto, onSelecionarAncora, interacao, regional, coropletico };
+  const cb = useRef({ onSelecionarUf, onSelecionarMunicipio, onSelecionarCluster, onSelecionarPonto, onSelecionarAncora, interacao, regional, coropletico });
+  cb.current = { onSelecionarUf, onSelecionarMunicipio, onSelecionarCluster, onSelecionarPonto, onSelecionarAncora, interacao, regional, coropletico };
   const pontosPorId = useRef(new Map<string, Ponto>());
   const arcosPorChave = useRef(new Map<string, ArcoAgregado>());
   const unidadesPorId = useRef(new Map<string, UnidadeEmbrapii>());
@@ -310,13 +322,14 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
       ...CATEGORIAS.map((c) => `atores-${c.key}-ponto`), "enriquecidos-ponto",
       ...CATEGORIAS.flatMap((c) => [`atores-${c.key}-badge`, `atores-${c.key}-cluster`]),
       "inter-unidades", "inter-loops", "inter-arcos",
-      "ufs-fill", "ufs-hd-fill",
+      "mun-fill", "ufs-fill", "ufs-hd-fill",
     ];
     const camadasDica = [
       "ancoras-icone", ...CATEGORIAS.map((c) => `atores-${c.key}-ponto`), "enriquecidos-ponto",
       ...CATEGORIAS.flatMap((c) => [`atores-${c.key}-badge`, `atores-${c.key}-cluster`]),
       "inter-unidades", "inter-loops", "inter-arcos",
       "dcs", "landing", "antenas", "backhaul-fibra", "backhaul-sem",
+      "transp-portos", "transp-aeroportos", "transp-rodovias", "transp-ferrovias",
       "cabos-internacional", "cabos-costeiro", "cabos-fluvial", "usinas",
       "mun-fill", "ufs-fill", "ufs-hd-fill",
     ];
@@ -373,6 +386,14 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
       const p = f.properties ?? {};
       if (id === "ufs-fill" || id === "ufs-hd-fill") {
         (c.regional ? c.regional.onSelecionarUf : c.onSelecionarUf)(String(p.sigla));
+        return;
+      }
+      if (id === "mun-fill") {
+        // Longe (zoom nacional) o clique vale pelo estado, mesmo com o coroplético ligado; na
+        // visão regional continua escolhendo a região; perto, abre o município.
+        if (c.regional) { c.regional.onSelecionarUf(String(p.uf)); return; }
+        if (map.getZoom() >= ZOOM_MUNICIPIOS && c.onSelecionarMunicipio) c.onSelecionarMunicipio({ ibge: String(p.id), nome: String(p.name ?? ""), uf: String(p.uf ?? "") });
+        else c.onSelecionarUf(String(p.uf));
         return;
       }
       if (id === "ancoras-icone") { const a = ancorasPorId.current.get(String(p.id)); if (a) c.onSelecionarAncora?.(a); return; }
@@ -561,6 +582,7 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
     }
     map.setLayerZoomRange("mun-coro", 0, 24);
     map.setLayoutProperty("mun-coro", "visibility", coropletico ? "visible" : "none");
+    municipiosRef.current = municipios;
     const todos = Object.values(municipios).flatMap((m) => m.features).map((f) => ({
       ...f, properties: { ...f.properties, dica: `${f.properties.name} (${f.properties.uf})` },
     }));
@@ -736,6 +758,48 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
     (map.getSource("dcs") as GeoJSONSource | undefined)?.setData(fc(feats));
   }, [layer3Ativa, dadosDCs, pontoNaSelecaoGeografica, versaoEstilo]);
 
+  // ---------- Transporte: rodovias, ferrovias, portos e aeroportos (public/transporte) ----------
+  const [transpDados, setTranspDados] = useState<Partial<Record<keyof TransporteMapa, FeatureCollection>>>({});
+  useEffect(() => {
+    if (!transporte) return;
+    for (const k of Object.keys(CORES_TRANSPORTE) as (keyof TransporteMapa)[]) {
+      if (!transporte[k] || transpDados[k]) continue;
+      carregarGeojson(`/transporte/${k}.geojson`).then((d) => setTranspDados((x) => (x[k] ? x : { ...x, [k]: d }))).catch((e) => console.warn(e.message));
+    }
+  }, [transporte, transpDados]);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !versaoEstilo || !estiloOkRef.current) return;
+    const t = transporte;
+    map.setLayoutProperty("transp-rodovias", "visibility", t?.rodovias && transpDados.rodovias ? "visible" : "none");
+    map.setLayoutProperty("transp-ferrovias", "visibility", t?.ferrovias && transpDados.ferrovias ? "visible" : "none");
+    map.setLayoutProperty("transp-portos", "visibility", t?.portos && transpDados.portos ? "visible" : "none");
+    map.setLayoutProperty("transp-aeroportos", "visibility", t?.aeroportos && transpDados.aeroportos ? "visible" : "none");
+    if (!t) return;
+    if (t.rodovias && transpDados.rodovias) {
+      (map.getSource("transp-rodovias") as GeoJSONSource | undefined)?.setData({ ...transpDados.rodovias, features: transpDados.rodovias.features.map((f) => ({
+        ...f, properties: { ...f.properties, dica: `${f.properties?.nome ?? "Rodovia"} (${f.properties?.uf})` },
+      })) });
+    }
+    if (t.ferrovias && transpDados.ferrovias) {
+      (map.getSource("transp-ferrovias") as GeoJSONSource | undefined)?.setData({ ...transpDados.ferrovias, features: transpDados.ferrovias.features.map((f) => ({
+        ...f, properties: { ...f.properties, dica: `Ferrovia (${f.properties?.uf})${f.properties?.eletrica ? " · eletrificada" : ""}` },
+      })) });
+    }
+    if (t.portos && transpDados.portos) {
+      const icone = garantirIcone(map, "anchor", CORES_TRANSPORTE.portos);
+      (map.getSource("transp-portos") as GeoJSONSource | undefined)?.setData({ ...transpDados.portos, features: transpDados.portos.features.map((f) => ({
+        ...f, properties: { ...f.properties, icone, dica: `Porto de ${f.properties?.nome} (${f.properties?.uf}) · ${f.properties?.tipo}${f.properties?.aproximado ? " · posição aproximada" : ""}` },
+      })) });
+    }
+    if (t.aeroportos && transpDados.aeroportos) {
+      const icone = garantirIcone(map, "flight", CORES_TRANSPORTE.aeroportos);
+      (map.getSource("transp-aeroportos") as GeoJSONSource | undefined)?.setData({ ...transpDados.aeroportos, features: transpDados.aeroportos.features.map((f) => ({
+        ...f, properties: { ...f.properties, icone, grande: f.properties?.porte === "grande", dica: `${f.properties?.nome}${f.properties?.iata ? ` (${f.properties.iata})` : ""} · ${f.properties?.uf}${f.properties?.regular ? "" : " · sem voo regular"}` },
+      })) });
+    }
+  }, [transporte, transpDados, versaoEstilo, tema]);
+
   // ---------- Interação entre atores (arcos UF→UF por tipo, unidades EMBRAPII) ----------
   useEffect(() => {
     const map = mapRef.current;
@@ -881,6 +945,13 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
       map.triggerRepaint();
     }),
     enquadrar,
+    enquadrarMunicipio: (ibge: string) => {
+      const map = mapRef.current;
+      if (!map) return;
+      const f = Object.values(municipiosRef.current).flatMap((m) => m.features).find((x) => String(x.properties.id) === ibge);
+      if (!f) return;
+      map.fitBounds(bboxDaFeature(f), { padding: 48, duration: 500, maxZoom: 11 });
+    },
   }), [enquadrar]);
 
   if (erroMalha) {
@@ -1120,6 +1191,22 @@ function montarCamadas(map: MapLibre) {
   geo("usina-destaque");
   map.addLayer({ id: "usina-destaque-halo", type: "circle", source: "usina-destaque", paint: { "circle-color": "#ec4899", "circle-opacity": 0.15, "circle-radius": 16, "circle-stroke-color": "#ec4899", "circle-stroke-width": 2.5 } });
   map.addLayer({ id: "usina-destaque-rotulo", type: "symbol", source: "usina-destaque", layout: { "icon-image": ["get", "icone"], "icon-anchor": "bottom", "icon-offset": [0, -22], "icon-allow-overlap": true, "icon-ignore-placement": true } });
+
+  // Transporte (visão regional): linhas sob os pontos, ícones por cima
+  geo("transp-rodovias", { tolerance: 0.5 });
+  map.addLayer({ id: "transp-rodovias", type: "line", source: "transp-rodovias", layout: { ...oculto, "line-cap": "round", "line-join": "round" }, paint: {
+    "line-color": CORES_TRANSPORTE.rodovias,
+    "line-opacity": ["case", ["==", ["get", "tipo"], "Major Highway"], 0.8, ["==", ["get", "tipo"], "Road"], 0.6, 0.4],
+    "line-width": porZoom([[3, 0.6], [6, 1.2], [9, 2.4]], ["case", ["==", ["get", "tipo"], "Major Highway"], 1.6, ["==", ["get", "tipo"], "Road"], 1, 0.6]),
+  } });
+  geo("transp-ferrovias", { tolerance: 0.5 });
+  map.addLayer({ id: "transp-ferrovias", type: "line", source: "transp-ferrovias", layout: { ...oculto, "line-join": "round" }, paint: {
+    "line-color": CORES_TRANSPORTE.ferrovias, "line-opacity": 0.85, "line-dasharray": [3, 2], "line-width": porZoom([[3, 0.8], [6, 1.4], [9, 2.4]], 1),
+  } });
+  geo("transp-portos");
+  map.addLayer({ id: "transp-portos", type: "symbol", source: "transp-portos", layout: { ...oculto, "icon-image": ["get", "icone"], "icon-size": porZoom(ESCALA_ICONE, 0.8), "icon-allow-overlap": true }, paint: { "icon-opacity": 0.9 } });
+  geo("transp-aeroportos");
+  map.addLayer({ id: "transp-aeroportos", type: "symbol", source: "transp-aeroportos", layout: { ...oculto, "icon-image": ["get", "icone"], "icon-size": porZoom(ESCALA_ICONE, ["case", ["get", "grande"], 0.85, 0.6]), "icon-allow-overlap": true }, paint: { "icon-opacity": ["case", ["get", "regular"], 0.9, 0.5] } });
 
   // Layer 3 — datacenters
   geo("dcs");

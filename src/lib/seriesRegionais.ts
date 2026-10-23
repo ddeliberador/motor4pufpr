@@ -51,6 +51,24 @@ export const INDICADORES_REGIONAIS: IndicadorRegional[] = [
     camada: "L6 Pesquisa",
     origem: "serie_da_fonte",
   },
+  // Transporte (camada da visão regional, fora das 7 camadas de IA): séries por UF
+  // coletadas no Railway (series-uf:antaq_portos, series-uf:anac_aero).
+  {
+    id: "uf.porto_toneladas",
+    rotulo: "Movimentação portuária",
+    unidade: "toneladas no ano",
+    camada: "Transporte",
+    origem: "serie_da_fonte",
+    limitacao: "Carga bruta das atracações por UF (ANTAQ, portos organizados e terminais privados). Sem dado até a coleta antaq_portos rodar em Gestão da Pesquisa → Coletas.",
+  },
+  {
+    id: "uf.aero_passageiros",
+    rotulo: "Passageiros embarcados",
+    unidade: "passageiros no ano",
+    camada: "Transporte",
+    origem: "serie_da_fonte",
+    limitacao: "Embarques nos aeroportos da UF (microdados ANAC, voos regulares e não regulares). Sem dado até a coleta anac_aero rodar em Gestão da Pesquisa → Coletas.",
+  },
 ];
 
 export interface LinhaSerieUf {

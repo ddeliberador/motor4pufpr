@@ -5,13 +5,13 @@ import logging
 import time
 from types import ModuleType
 
-from .coletores import anatel_bl, aneel_gd, capes_ppg, cnpj_cnae, ibge_pop, openalex_coautoria
+from .coletores import anac_aero, anatel_bl, aneel_gd, antaq_portos, capes_ppg, cnpj_cnae, ibge_pop, openalex_coautoria
 from .municipios import TabelaMunicipios
 from .postgrest import SupabaseServico
 
 logger = logging.getLogger(__name__)
 
-COLETORES: dict[str, ModuleType] = {m.ID: m for m in (ibge_pop, anatel_bl, aneel_gd, cnpj_cnae, capes_ppg, openalex_coautoria)}
+COLETORES: dict[str, ModuleType] = {m.ID: m for m in (ibge_pop, anatel_bl, aneel_gd, cnpj_cnae, capes_ppg, openalex_coautoria, antaq_portos, anac_aero)}
 
 
 def _executar_interacoes(mod: ModuleType, fonte: str, amostra: int | None, simular: bool, sb: SupabaseServico | None) -> dict:
