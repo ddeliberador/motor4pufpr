@@ -29,7 +29,11 @@ const CENARIOS = [
 type CenarioId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export default function Analise() {
-  const [cenarioAtivo, setCenarioAtivo] = useState<CenarioId>(1);
+  // ?cenario=6&uf=PR abre direto num cenário (o painel de estado do Mapa linka para cá).
+  const [cenarioAtivo, setCenarioAtivo] = useState<CenarioId>(() => {
+    const n = Number(new URLSearchParams(window.location.search).get("cenario"));
+    return n >= 1 && n <= 7 ? (n as CenarioId) : 1;
+  });
   const cfg = CENARIOS.find(c => c.id === cenarioAtivo) ?? CENARIOS[0];
   const corFundo = (cor: string, alpha: string) => cor.startsWith("hsl") ? `hsl(var(--sistema-local) / ${parseInt(alpha, 16) / 255})` : cor + alpha;
 

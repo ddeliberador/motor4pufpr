@@ -12,7 +12,9 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import Header from "@/components/Header";
-import MapaBrasil, { type AncoraPbia, type Ponto, type MapaBrasilHandle, FUNDOS, type FundoId, type CoropleticoMunicipal as Coro } from "@/components/mapa/MapaBrasil";
+import MapaBrasil, { type AncoraPbia, type Ponto, type MapaBrasilHandle, type MunicipioClicado, FUNDOS, type FundoId, type CoropleticoMunicipal as Coro } from "@/components/mapa/MapaBrasil";
+import { PainelEstado, PainelMunicipio, atoresDoMunicipio, type AtorDoPainel } from "@/components/mapa/PaineisLocais";
+import { normalizarNome } from "@/lib/paineisLocais";
 import MunicipiosDaCamada, { type SelecaoMunicipal } from "@/components/mapa/MunicipiosDaCamada";
 import { CORES_COROPLETICO, CORTES_SINTESE_CORES } from "@/components/mapa/MapaBrasil";
 import {
@@ -282,6 +284,8 @@ export default function Mapa() {
   const [lakeSel, setLakeSel] = useState<SelecaoLake>({});
   const [selecao, setSelecao] = useState<{ pontos: Ponto[]; total: number } | null>(null);
   const [pontoSelecionadoId, setPontoSelecionadoId] = useState<string | null>(null);
+  // Painel do lugar clicado: estado (zoom nacional) ou município (zoom municipal).
+  const [painelLocal, setPainelLocal] = useState<{ tipo: "uf"; uf: string } | ({ tipo: "municipio" } & MunicipioClicado) | null>(null);
   const [listaAberta, setListaAberta] = useState(false);
   const [painelPoliticasAberto, setPainelPoliticasAberto] = useState(false);
   // Visão regional: macrorregiões coloridas pela série histórica + régua do tempo.
@@ -758,6 +762,12 @@ export default function Mapa() {
   const comCategoria = useMemo(
     () => locais.map((l) => ({ ...l, categoria: categorizar(l.tipo) })),
     [locais],
+  );
+
+  // Atores no formato dos painéis de estado/município (todas as bases carregadas, sem os filtros da coluna).
+  const atoresPainel: AtorDoPainel[] = useMemo(
+    () => comCategoria.map((l) => ({ id: l.id, nome: l.nome, categoria: l.categoria, municipio: l.municipio ?? null, uf: l.uf ?? null, latitude: l.latitude == null ? null : Number(l.latitude), longitude: l.longitude == null ? null : Number(l.longitude) })),
+    [comCategoria],
   );
 
   const comCanon = useMemo(
@@ -1263,6 +1273,7 @@ export default function Mapa() {
     setLakeSel({});
     setSelecao(null);
     setPontoSelecionadoId(null);
+    setPainelLocal(null);
     setTiposUsina(new Set());
     setUsinaSel(null);
     // Volta ao estado de abertura do mapa: Layers 1–3 ligadas, sem cabos, síntese municipal.
@@ -2299,7 +2310,10 @@ export default function Mapa() {
                       const removendo = ufsSel.has(u);
                       alternar(ufsSel, u, setUfsSel);
                       setUfFoco(removendo ? null : u);
+                      setPainelLocal(removendo ? null : { tipo: "uf", uf: u });
+                      setInterSel(null);
                     }}
+                    onSelecionarMunicipio={(m) => { setPainelLocal({ tipo: "municipio", ...m }); setInterSel(null); }}
                     onSelecionarCluster={(pontos, total) => setSelecao({ pontos, total })}
                     pontoSelecionadoId={pontoSelecionadoId}
                     onSelecionarPonto={setPontoSelecionadoId}
@@ -2328,9 +2342,40 @@ export default function Mapa() {
                     onSelecionarAncora={setAncoraSel}
                     interacao={interAtiva && interFluxos ? {
                       arcos: interArcos, unidades: interComUnidades ? (interUnidades ?? []) : [],
-                      onArco: (a) => setInterSel({ arco: a }), onUnidade: (u) => setInterSel({ unidade: u }),
+                      onArco: (a) => { setInterSel({ arco: a }); setPainelLocal(null); }, onUnidade: (u) => { setInterSel({ unidade: u }); setPainelLocal(null); },
                     } : null}
                   />
+                  {painelLocal?.tipo === "uf" && !visaoRegional && (
+                    <PainelEstado
+                      uf={painelLocal.uf}
+                      anoFoco={anoEfetivo}
+                      atores={atoresPainel.filter((a) => a.uf === painelLocal.uf)}
+                      usinas={(dadosUsinas ?? []).filter((u) => u.uf === painelLocal.uf)}
+                      datacenters={(dadosDCs ?? []).filter((d) => d.uf === painelLocal.uf)}
+                      backhaul={(dadosBackhaul ?? []).filter((b) => b.uf === painelLocal.uf)}
+                      sintese={munAtivo && munModo === "sintese" ? sintese.valores : null}
+                      onFechar={() => setPainelLocal(null)}
+                      onEnquadrar={() => mapaRef.current?.enquadrar()}
+                      onAbrirMunicipio={(m) => { setPainelLocal({ tipo: "municipio", ...m }); mapaRef.current?.enquadrarMunicipio(m.ibge); }}
+                      onSelecionarPonto={(id) => setPontoSelecionadoId(id)}
+                    />
+                  )}
+                  {painelLocal?.tipo === "municipio" && !visaoRegional && (() => { const m = painelLocal; const nomeN = normalizarNome(m.nome); return (
+                    <PainelMunicipio
+                      municipio={m}
+                      anoFoco={anoEfetivo}
+                      atores={atoresDoMunicipio(atoresPainel, m.nome, m.uf)}
+                      usinas={(dadosUsinas ?? []).filter((u) => u.uf === m.uf && normalizarNome(u.municipio) === nomeN)}
+                      datacenters={(dadosDCs ?? []).filter((d) => d.uf === m.uf && normalizarNome(d.cidade) === nomeN)}
+                      backhaul={(dadosBackhaul ?? []).find((b) => b.uf === m.uf && normalizarNome(b.municipio) === nomeN) ?? null}
+                      antenas={dadosAntenas ? dadosAntenas.filter((a) => a.uf === m.uf && normalizarNome(a.municipio) === nomeN).length : null}
+                      sintese={munAtivo && munModo === "sintese" ? sintese.valores[m.ibge] ?? null : null}
+                      onFechar={() => setPainelLocal(null)}
+                      onEnquadrar={() => mapaRef.current?.enquadrarMunicipio(m.ibge)}
+                      onAbrirEstado={(uf) => { setPainelLocal({ tipo: "uf", uf }); setUfFoco(uf); }}
+                      onSelecionarPonto={(id) => setPontoSelecionadoId(id)}
+                    />
+                  ); })()}
                   {interSel && (
                     <div className="absolute right-3 top-3 z-20 w-72 rounded-lg border border-border bg-card p-3 text-xs shadow-lg">
                       <div className="mb-2 flex items-start justify-between gap-2">
