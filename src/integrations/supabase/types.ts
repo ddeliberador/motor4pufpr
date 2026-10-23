@@ -3383,6 +3383,42 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_interacao_fluxo_uf_tipos: {
+        Row: {
+          ano: number | null
+          destino_helice: string | null
+          destino_lat: number | null
+          destino_lon: number | null
+          destino_uf: string | null
+          destinos: number | null
+          dimensao: string | null
+          fonte: string | null
+          lacos: number | null
+          origem_helice: string | null
+          origem_lat: number | null
+          origem_lon: number | null
+          origem_uf: string | null
+          projetos: number | null
+          tecnologia: string | null
+          tipo: string | null
+          valor_rateado: number | null
+        }
+        Relationships: []
+      }
+      vw_interacao_catalogo: {
+        Row: {
+          ano_max: number | null
+          ano_min: number | null
+          destino_helice: string | null
+          dimensao: string | null
+          fonte: string | null
+          lacos: number | null
+          origem_helice: string | null
+          tecnologias: number | null
+          tipo: string | null
+        }
+        Relationships: []
+      }
       vw_interacao_indicadores_ano: {
         Row: {
           ano: number | null
@@ -3683,6 +3719,14 @@ export type Database = {
       mun_serie_segmentos: {
         Args: { p_indicador: string }
         Returns: { segmento: string; periodos: number }[]
+      }
+      desafios_derivar_interacoes: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      interacoes_upsert: {
+        Args: { p_linhas: Json }
+        Returns: number
       }
       cnpj_fila: {
         Args: { p_limite: number }
