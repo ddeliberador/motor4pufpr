@@ -7,12 +7,13 @@ import { Loader2, Play, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
-type Fontes = Record<string, { job: string; indicadores: string[]; doc: string }>;
+type Fontes = Record<string, { job: string; tipo?: string; indicadores: string[]; doc: string }>;
 interface Estado { fontes: Fontes; em_andamento: Record<string, number>; ultimos: Record<string, Record<string, unknown>> }
 
-const ORDEM = ["ibge_pop", "capes_ppg", "anatel_bl", "aneel_gd", "cnpj_cnae"];
+const ORDEM = ["ibge_pop", "capes_ppg", "anatel_bl", "aneel_gd", "cnpj_cnae", "openalex_coautoria"];
 const DURACAO: Record<string, string> = {
   ibge_pop: "minutos", capes_ppg: "minutos", anatel_bl: "dezenas de minutos", aneel_gd: "dezenas de minutos", cnpj_cnae: "uma a duas horas (dez arquivos de ~1 GB)",
+  openalex_coautoria: "dezenas de minutos (uma consulta por instituição e ano)",
 };
 
 export default function ColetasMunicipais() {
@@ -26,7 +27,7 @@ export default function ColetasMunicipais() {
     const { data, error } = await supabase.functions.invoke("coletas-municipais", { body: {} });
     if (error || data?.error) { setErro(error?.message ?? String(data?.error)); return; }
     setEstado(data as Estado);
-    const { data: ag } = await supabase.from("agenda_coletas").select("job,ultima_execucao,ultimo_status,ultima_mensagem").like("job", "series-municipais:%");
+    const { data: ag } = await supabase.from("agenda_coletas").select("job,ultima_execucao,ultimo_status,ultima_mensagem").or("job.like.series-municipais:%,job.like.interacoes:%");
     setAgenda(ag ?? []);
   }, []);
 
@@ -73,7 +74,7 @@ export default function ColetasMunicipais() {
               <div key={f} className="flex flex-col gap-2 p-3 md:flex-row md:items-start md:justify-between">
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{info.doc} <span className="font-mono text-[11px] text-muted-foreground">{f}</span></p>
-                  <p className="text-xs text-muted-foreground">Indicadores: {info.indicadores.join(", ")} · duração típica: {DURACAO[f]}</p>
+                  <p className="text-xs text-muted-foreground">{info.tipo === "interacoes" ? "Grava na tabela de interações (aba Interação do Mapa)" : `Indicadores: ${info.indicadores.join(", ")}`} · duração típica: {DURACAO[f]}</p>
                   <p className="text-xs text-muted-foreground">
                     Última execução: {fmt(ag?.ultima_execucao ?? null)}{ag?.ultimo_status ? ` · ${ag.ultimo_status}` : ""}{ag?.ultima_mensagem ? ` · ${ag.ultima_mensagem}` : ""}
                   </p>

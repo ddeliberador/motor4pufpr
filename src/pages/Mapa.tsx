@@ -32,7 +32,7 @@ import { type ResearchLocation } from "@/lib/researchLocations";
 import { safeHttpUrl } from "@/lib/utils";
 import PainelDataLake from "@/components/mapa/PainelDataLake";
 import PainelPoliticas from "@/components/mapa/PainelPoliticas";
-import { agregarArcos, type FluxoUf, type UnidadeEmbrapii, type ArcoAgregado } from "@/components/mapa/CamadaInteracao";
+import { agregarArcos, TIPOS_INTERACAO, TIPO_PADRAO, tipoPorId, HELICE_ROTULO, DIMENSAO_ROTULO, ORIGEM_NACIONAL, type FluxoUf, type UnidadeEmbrapii, type ArcoAgregado } from "@/components/mapa/CamadaInteracao";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAll } from "@/lib/fetchAll";
 import { TEC_IA } from "@/lib/interacao";
@@ -205,7 +205,7 @@ type Aba = "atores" | "camadas" | "interacao" | "regional";
 const ABAS: { id: Aba; rotulo: string; icone: string; titulo: string }[] = [
   { id: "atores", rotulo: "Atores", icone: "groups", titulo: "Atores do SNI: universidades, ICTs, empresas, hubs" },
   { id: "camadas", rotulo: "Camadas de IA", icone: "layers", titulo: "As 7 camadas de IA: energia, infraestrutura, modelos, aplicações, pesquisa e governança" },
-  { id: "interacao", rotulo: "Interação", icone: "share", titulo: "Cooperação ICT–empresa (EMBRAPII)" },
+  { id: "interacao", rotulo: "Interação", icone: "share", titulo: "Interações entre ICTs, empresas e governo" },
   { id: "regional", rotulo: "Regional", icone: "public", titulo: "As 5 macrorregiões com evolução histórica" },
 ];
 const CHAVE_CONFIG = "mapa-inovacao-config";
@@ -263,8 +263,14 @@ export default function Mapa() {
   const [segmentosSel, setSegmentosSel] = useState<Set<string>>(new Set());
   const [soEmbrapii, setSoEmbrapii] = useState(false);
   const [soPbia, setSoPbia] = useState(false);
-  // Camada temática: cooperação ICT–empresa (EMBRAPII). Não é uma das 7 camadas de IA.
+  // Camada temática: interações entre atores (tabela interacoes, catálogo em CamadaInteracao). Não é uma das 7 camadas de IA.
   const [interAtiva, setInterAtiva] = useState(false);
+  const [interTipos, setInterTipos] = useState<Set<string>>(() => {
+    const v = new URLSearchParams(window.location.search).get("inter");
+    const ids = (v ?? "").split(",").filter((id) => tipoPorId(id));
+    return new Set(ids.length ? ids : [TIPO_PADRAO]);
+  });
+  const [interCatalogo, setInterCatalogo] = useState<Record<string, { lacos: number; ano_min: number | null; ano_max: number | null }> | null>(null);
   const [interFluxos, setInterFluxos] = useState<FluxoUf[] | null>(null);
   const [interUnidades, setInterUnidades] = useState<UnidadeEmbrapii[] | null>(null);
   const [interErro, setInterErro] = useState<string | null>(null);
@@ -991,21 +997,38 @@ export default function Mapa() {
   useEffect(() => {
     if (!interAtiva || interFluxos) return;
     Promise.all([
-      fetchAll<FluxoUf>(supabase.from("vw_interacao_fluxo_uf").select("ano,tecnologia,origem_uf,origem_lat,origem_lon,destino_uf,destino_lat,destino_lon,lacos,projetos,destinos,valor_rateado").eq("fonte", "embrapii").eq("tipo", "cooperacao_pdi")),
+      fetchAll<FluxoUf>(supabase.from("vw_interacao_fluxo_uf_tipos").select("fonte,tipo,ano,tecnologia,origem_uf,origem_lat,origem_lon,destino_uf,destino_lat,destino_lon,lacos,projetos,destinos,valor_rateado")),
       fetchAll<UnidadeEmbrapii>(supabase.from("vw_embrapii_unidades_mapa").select("*")),
-    ]).then(([f, u]) => { setInterFluxos(f); setInterUnidades(u); })
-      .catch((e) => setInterErro((e as Error).message));
+      supabase.from("vw_interacao_catalogo").select("fonte,tipo,lacos,ano_min,ano_max").then(({ data, error }) => { if (error) throw error; return data ?? []; }),
+    ]).then(([f, u, c]) => {
+      setInterFluxos(f); setInterUnidades(u);
+      const cat: Record<string, { lacos: number; ano_min: number | null; ano_max: number | null }> = {};
+      for (const r of c as { fonte: string; tipo: string; lacos: number | string; ano_min: number | null; ano_max: number | null }[]) {
+        const k = `${r.fonte}:${r.tipo}`;
+        const atual = cat[k] ?? { lacos: 0, ano_min: null, ano_max: null };
+        cat[k] = {
+          lacos: atual.lacos + Number(r.lacos ?? 0),
+          ano_min: atual.ano_min == null ? r.ano_min : r.ano_min == null ? atual.ano_min : Math.min(atual.ano_min, r.ano_min),
+          ano_max: atual.ano_max == null ? r.ano_max : r.ano_max == null ? atual.ano_max : Math.max(atual.ano_max, r.ano_max),
+        };
+      }
+      setInterCatalogo(cat);
+    }).catch((e) => setInterErro((e as Error).message));
   }, [interAtiva, interFluxos]);
+  // Linhas dos tipos ligados; tecnologias e anos derivam só delas.
+  const interFluxosTipos = useMemo(() => (interFluxos ?? []).filter((r) => interTipos.has(`${r.fonte}:${r.tipo}`)), [interFluxos, interTipos]);
   const interTecnologias = useMemo(
-    () => [...new Set((interFluxos ?? []).map((r) => r.tecnologia).filter(Boolean) as string[])].sort((a, b) => a.localeCompare(b, "pt-BR")),
-    [interFluxos],
+    () => [...new Set(interFluxosTipos.map((r) => r.tecnologia).filter(Boolean) as string[])].sort((a, b) => a.localeCompare(b, "pt-BR")),
+    [interFluxosTipos],
   );
   const interAnos = useMemo(() => {
-    const a = (interFluxos ?? []).map((r) => r.ano).filter((x): x is number => x != null);
+    const a = interFluxosTipos.map((r) => r.ano).filter((x): x is number => x != null);
     return a.length ? [Math.min(...a), Math.max(...a)] : [2014, 2026];
-  }, [interFluxos]);
-  const interArcos = useMemo(() => agregarArcos((interFluxos ?? []).filter((r) =>
-    (interAno == null || r.ano === interAno) && (interTecs.size === 0 || (r.tecnologia != null && interTecs.has(r.tecnologia))))), [interFluxos, interAno, interTecs]);
+  }, [interFluxosTipos]);
+  const interArcos = useMemo(() => agregarArcos(interFluxosTipos.filter((r) =>
+    (interAno == null || r.ano === interAno) && (interTecs.size === 0 || (r.tecnologia != null && interTecs.has(r.tecnologia))))), [interFluxosTipos, interAno, interTecs]);
+  const interComUnidades = useMemo(() => [...interTipos].some((id) => tipoPorId(id)?.comUnidades), [interTipos]);
+  const interTiposSel = useMemo(() => TIPOS_INTERACAO.filter((t) => interTipos.has(t.id)), [interTipos]);
 
   const indicadorRegional =
     INDICADORES_REGIONAIS.find((i) => i.id === indicadorRegionalId) ?? INDICADORES_REGIONAIS[0];
@@ -1095,6 +1118,7 @@ export default function Mapa() {
     else if (munModo === "indicador" && munSel) { q.set("coro", munSel.indicador); if (munSel.segmento) q.set("seg", munSel.segmento); }
     if (normalizarMun) q.set("pop", "1");
     if (anoFoco != null) q.set("ano", String(anoFoco));
+    if (aba === "interacao") q.set("inter", [...interTipos].join(","));
     return `${window.location.origin}${window.location.pathname}?${q.toString()}`;
   };
 
@@ -1200,14 +1224,14 @@ export default function Mapa() {
     indice: anoEfetivo != null ? anosEixo.indexOf(anoEfetivo) : anosEixo.length - 1,
     onIndice: (i) => setAnoFoco(anosEixo[i]),
     titulo: visaoRegional ? `${indicadorRegional.rotulo} por região`
-      : [coropletico?.rotulo.split(" · ")[0], aba === "interacao" && anosInteracao.length ? "cooperação EMBRAPII" : null, layer1Ativa && anosUsinas.length ? "usinas em operação" : null].filter(Boolean).join(" + "),
+      : [coropletico?.rotulo.split(" · ")[0], aba === "interacao" && anosInteracao.length ? (interTiposSel.length === 1 ? interTiposSel[0].rotulo.toLowerCase() : "interações entre atores") : null, layer1Ativa && anosUsinas.length ? "usinas em operação" : null].filter(Boolean).join(" + "),
     acumulado: aba === "interacao" && anosInteracao.length ? { ativo: interAcumulado, onAlternar: setInterAcumulado } : undefined,
   } : null;
   const motivoSemSerie = visaoRegional ? "carregando a série regional…"
     : sintese.carregando || munPeriodosQ.isLoading ? "carregando as séries municipais…"
     : munModo !== "nenhum" && !anosMunicipais.length ? "as séries municipais ainda não foram coletadas (Gestão da Pesquisa → Coletas); a Layer 1 ganha anos quando as usinas carregarem"
     : aba === "atores" ? "os atores não têm série; abra Camadas de IA ou a visão regional"
-    : "ligue uma camada com série (municípios, usinas ou cooperação)";
+    : "ligue uma camada com série (municípios, usinas ou interações)";
 
   const municipiosDaCamada = (camada: CamadaIa) => ({
     camada,
@@ -1844,36 +1868,73 @@ export default function Mapa() {
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Interação entre atores</p>
                   <p className="mb-2 text-[11px] text-muted-foreground">
-                    Fluxos de cooperação entre unidades EMBRAPII e empresas, por UF de origem e destino. Clique num arco ou numa unidade para ver os números.
+                    Laços entre ICTs e universidades, empresas e governo, agregados por UF de origem e destino. Ligue um ou mais tipos; cada um tem a sua cor. Clique num arco ou numa unidade para ver os números.
                   </p>
                   <div className="mt-2 rounded-lg border border-border bg-card/60 p-2">
-                    <p className="px-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Cooperação ICT–empresa</p>
                     <label className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1 text-xs hover:bg-muted">
                       <input type="checkbox" checked={interAtiva} onChange={() => { setInterAtiva((v) => !v); setInterSel(null); }}
                         className="h-3.5 w-3.5 shrink-0 accent-amber-500" />
                       <span className="material-symbols-outlined shrink-0 text-base leading-none text-amber-500" style={{ fontVariationSettings: '"FILL" 1' }}>share</span>
-                      <span className="flex-1">Cooperação ICT–empresa (EMBRAPII)</span>
+                      <span className="flex-1 font-semibold">Mostrar interações no mapa</span>
                       {interAtiva && !interFluxos && !interErro && <span className="text-[10px] text-muted-foreground">carregando…</span>}
                     </label>
                     {interErro && <p className="px-1 text-[10px] text-destructive">Falha: {interErro}</p>}
+                    {interAtiva && (
+                      <div className="mt-1 space-y-0.5 border-t border-border pt-1.5">
+                        {(["acao", "recurso", "resultado"] as const).map((dim) => (
+                          <div key={dim}>
+                            <p className="px-1 pt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{DIMENSAO_ROTULO[dim]}</p>
+                            {TIPOS_INTERACAO.filter((t) => t.dimensao === dim).map((t) => {
+                              const n = interCatalogo?.[t.id]?.lacos ?? 0;
+                              const semDado = interCatalogo != null && n === 0;
+                              const ligado = interTipos.has(t.id);
+                              return (
+                                <label key={t.id} title={t.descricao}
+                                  className={`flex cursor-pointer items-start gap-2 rounded-lg px-1 py-1 text-[11px] hover:bg-muted ${semDado ? "opacity-50" : ""}`}>
+                                  <input type="checkbox" checked={ligado} disabled={semDado}
+                                    onChange={() => { setInterTipos((s) => { const x = new Set(s); if (!x.delete(t.id)) x.add(t.id); return x; }); setInterSel(null); setInterTecs(new Set()); }}
+                                    className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ accentColor: t.cor }} />
+                                  <span className="mt-1 inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: t.cor }} />
+                                  <span className="min-w-0 flex-1">
+                                    <span className="block leading-tight">{t.rotulo}</span>
+                                    <span className="block text-[10px] text-muted-foreground">
+                                      {HELICE_ROTULO[t.origem]} → {HELICE_ROTULO[t.destino]}
+                                      {interCatalogo && (n > 0
+                                        ? ` · ${n.toLocaleString("pt-BR")} laços · ${interCatalogo[t.id]?.ano_min ?? "?"}–${interCatalogo[t.id]?.ano_max ?? "?"}`
+                                        : t.planejado ? ` · sem dado ainda: ${t.planejado}` : " · sem dado")}
+                                    </span>
+                                  </span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {interAtiva && interFluxos && (
-                      <div className="space-y-2 px-1 pt-1 text-[11px]">
+                      <div className="space-y-2 px-1 pt-2 text-[11px]">
+                        {interTiposSel.length === 1 && <p className="text-muted-foreground">{interTiposSel[0].descricao}</p>}
+                        {interTiposSel.length === 0 && <p className="text-muted-foreground">Nenhum tipo ligado: marque pelo menos um acima.</p>}
                         <p className="text-muted-foreground">Ano: <b className="text-foreground">{interAno ?? "acumulado"}</b> · percorra os anos na barra de série histórica, acima do mapa.</p>
-                        <div className="flex flex-wrap gap-1">
-                          <button onClick={() => setInterTecs(new Set([TEC_IA]))}
-                            className={`rounded-full border px-2 py-0.5 font-bold ${interTecs.size === 1 && interTecs.has(TEC_IA) ? "border-amber-500 bg-amber-500/20" : "border-amber-500/50"}`}>Somente IA</button>
-                          <button onClick={() => setInterTecs(new Set())}
-                            className={`rounded-full border px-2 py-0.5 ${interTecs.size === 0 ? "border-foreground/40 bg-muted" : "border-border"}`}>Todas</button>
-                          {interTecnologias.map((t) => (
-                            <button key={t} onClick={() => setInterTecs((s) => { const x = new Set(s); x.has(t) ? x.delete(t) : x.add(t); return x; })}
-                              className={`rounded-full border px-2 py-0.5 ${interTecs.has(t) ? "border-foreground/40 bg-muted text-foreground" : "border-border text-muted-foreground"}`}>{t}</button>
-                          ))}
-                        </div>
+                        {interTecnologias.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {interTecnologias.includes(TEC_IA) && (
+                              <button onClick={() => setInterTecs(new Set([TEC_IA]))}
+                                className={`rounded-full border px-2 py-0.5 font-bold ${interTecs.size === 1 && interTecs.has(TEC_IA) ? "border-amber-500 bg-amber-500/20" : "border-amber-500/50"}`}>Somente IA</button>
+                            )}
+                            <button onClick={() => setInterTecs(new Set())}
+                              className={`rounded-full border px-2 py-0.5 ${interTecs.size === 0 ? "border-foreground/40 bg-muted" : "border-border"}`}>Todas</button>
+                            {interTecnologias.map((t) => (
+                              <button key={t} onClick={() => setInterTecs((s) => { const x = new Set(s); if (!x.delete(t)) x.add(t); return x; })}
+                                className={`rounded-full border px-2 py-0.5 ${interTecs.has(t) ? "border-foreground/40 bg-muted text-foreground" : "border-border text-muted-foreground"}`}>{t}</button>
+                            ))}
+                          </div>
+                        )}
                         <div className="space-y-0.5 text-muted-foreground">
-                          <p><span className="inline-block h-1 w-4 rounded bg-amber-500 align-middle" /> arco: UF da unidade → UF da empresa (espessura = laços)</p>
-                          <p><span className="inline-block h-2.5 w-2.5 rounded-full border border-amber-500 bg-amber-500/20 align-middle" /> círculo na capital: laços dentro da UF</p>
-                          <p><span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500 align-middle" /> unidade (tamanho = projetos) · <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-amber-500 align-middle" /> posição aproximada</p>
-                          <p>Unidades não variam com ano/tecnologia (totais da unidade). {interArcos.length.toLocaleString("pt-BR")} pares de UF no filtro.</p>
+                          <p><span className="inline-block h-1 w-4 rounded bg-foreground/60 align-middle" /> arco: UF de origem → UF de destino (espessura = laços; cor = tipo)</p>
+                          <p><span className="inline-block h-2.5 w-2.5 rounded-full border border-foreground/60 bg-foreground/20 align-middle" /> círculo na capital: laços dentro da UF ou de origem nacional (governo federal, desafio nacional)</p>
+                          {interComUnidades && <p><span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500 align-middle" /> unidade EMBRAPII (tamanho = projetos) · <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-amber-500 align-middle" /> posição aproximada. Unidades não variam com ano/tecnologia.</p>}
+                          <p>{interArcos.length.toLocaleString("pt-BR")} pares de UF no filtro.</p>
                         </div>
                       </div>
                     )}
@@ -2266,14 +2327,16 @@ export default function Mapa() {
                     corEixoPbia={layer7Ativa ? pbiaCor : null}
                     onSelecionarAncora={setAncoraSel}
                     interacao={interAtiva && interFluxos ? {
-                      arcos: interArcos, unidades: interUnidades ?? [],
+                      arcos: interArcos, unidades: interComUnidades ? (interUnidades ?? []) : [],
                       onArco: (a) => setInterSel({ arco: a }), onUnidade: (u) => setInterSel({ unidade: u }),
                     } : null}
                   />
                   {interSel && (
                     <div className="absolute right-3 top-3 z-20 w-72 rounded-lg border border-border bg-card p-3 text-xs shadow-lg">
                       <div className="mb-2 flex items-start justify-between gap-2">
-                        <span className="rounded border border-amber-500/40 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-500">Cooperação EMBRAPII</span>
+                        {(() => { const t = interSel.arco ? tipoPorId(interSel.arco.tipoId) : TIPOS_INTERACAO[0]; const cor = t?.cor ?? "#f59e0b"; return (
+                          <span className="rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider" style={{ borderColor: `${cor}66`, color: cor }}>{interSel.unidade ? "Unidade EMBRAPII" : t?.rotulo}</span>
+                        ); })()}
                         <button onClick={() => setInterSel(null)} aria-label="Fechar" className="text-muted-foreground hover:text-foreground">✕</button>
                       </div>
                       {interSel.unidade && (() => { const u = interSel.unidade; return (
@@ -2286,12 +2349,13 @@ export default function Mapa() {
                           <p>Valor total (IPCA): <b>{Number(u.valor_total_ipca ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}</b></p>
                           {u.coordenada_aproximada && <p className="mt-1 rounded bg-muted px-2 py-1 text-muted-foreground">Posição aproximada: o ponto está na capital da UF, não no endereço da unidade.</p>}
                         </div>); })()}
-                      {interSel.arco && (() => { const a = interSel.arco; return (
+                      {interSel.arco && (() => { const a = interSel.arco; const t = tipoPorId(a.tipoId); return (
                         <div className="space-y-1">
-                          <p className="text-sm font-bold text-foreground">{a.origem} → {a.destino}{a.origem === a.destino ? " (dentro da UF)" : ""}</p>
+                          <p className="text-sm font-bold text-foreground">{a.origem} → {a.destino}{a.origem === a.destino ? " (dentro da UF)" : a.origem === ORIGEM_NACIONAL ? " (origem nacional)" : ""}</p>
+                          {t && <p className="text-muted-foreground">{HELICE_ROTULO[t.origem]} → {HELICE_ROTULO[t.destino]} · {DIMENSAO_ROTULO[t.dimensao].toLowerCase()}</p>}
                           <p>Laços: <b>{a.lacos.toLocaleString("pt-BR")}</b> · Projetos: <b>{a.projetos.toLocaleString("pt-BR")}</b></p>
-                          <p>Empresas: <b>{a.empresas.toLocaleString("pt-BR")}</b>{interAno == null || interTecs.size !== 1 ? <span className="text-muted-foreground"> (soma por ano e tecnologia; a mesma empresa pode contar mais de uma vez)</span> : null}</p>
-                          <p>Valor rateado (IPCA): <b>{a.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}</b></p>
+                          <p>{t?.rotuloDestinos ?? "Destinos"}: <b>{a.destinos.toLocaleString("pt-BR")}</b>{interAno == null || interTecs.size !== 1 ? <span className="text-muted-foreground"> (soma por ano e tecnologia; o mesmo ator pode contar mais de uma vez)</span> : null}</p>
+                          {a.valor > 0 && <p>Valor rateado (IPCA): <b>{a.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}</b></p>}
                           <p className="text-muted-foreground">{interAno ?? "Acumulado"} · {interTecs.size === 0 ? "todas as tecnologias" : [...interTecs].join(", ")}</p>
                         </div>); })()}
                     </div>

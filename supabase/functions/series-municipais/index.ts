@@ -59,6 +59,21 @@ Deno.serve(async (req) => {
         if (error.code !== "23505") throw new Error(`observacoes: ${error.message}`);
         return json(await registrarObservacoes(sb, { coletaId, linhas }));
       }
+      case "interacoes": {
+        // Interações entre atores (tabela interacoes) agregadas no Railway, como a
+        // coautoria OpenAlex. A função interacoes_upsert valida UF e faz o upsert por id.
+        const linhas = Array.isArray(p.linhas) ? (p.linhas as Record<string, unknown>[]) : [];
+        if (linhas.length > MAX_LINHAS) return json({ error: `no máximo ${MAX_LINHAS} linhas por lote` }, 413);
+        for (const l of linhas) {
+          if (typeof l.id !== "string" || !l.id || typeof l.fonte !== "string" || typeof l.tipo !== "string") return json({ error: "cada linha precisa de id, fonte e tipo" }, 400);
+          if (!["acao", "recurso", "resultado"].includes(String(l.dimensao))) return json({ error: `dimensao inválida em ${l.id}` }, 400);
+          for (const h of [l.origem_helice, l.destino_helice]) if (!["ict", "empresa", "governo"].includes(String(h))) return json({ error: `hélice inválida em ${l.id}` }, 400);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(String(l.data_evento))) return json({ error: `data_evento inválida em ${l.id}` }, 400);
+        }
+        const { data, error } = await sb.rpc("interacoes_upsert", { p_linhas: linhas });
+        if (error) throw new Error(`interacoes_upsert: ${error.message}`);
+        return json({ gravadas: Number(data ?? 0) });
+      }
       case "finalizar":
         await finalizarColeta(sb, String(p.coleta_id), { ok: !!p.ok, found: Number(p.found ?? 0), inserted: Number(p.inserted ?? 0), error: p.error ? String(p.error) : null });
         return json({ ok: true });

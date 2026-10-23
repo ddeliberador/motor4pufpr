@@ -736,7 +736,7 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
     (map.getSource("dcs") as GeoJSONSource | undefined)?.setData(fc(feats));
   }, [layer3Ativa, dadosDCs, pontoNaSelecaoGeografica, versaoEstilo]);
 
-  // ---------- Interação EMBRAPII ----------
+  // ---------- Interação entre atores (arcos UF→UF por tipo, unidades EMBRAPII) ----------
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !versaoEstilo || !estiloOkRef.current) return;
@@ -752,8 +752,9 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
     for (const a of arcos) {
       const peso = Math.sqrt(a.lacos / maxL);
       const dica = `${a.origem} → ${a.destino} · ${a.lacos.toLocaleString("pt-BR")} laços`;
-      if (a.origem === a.destino) loops.push({ type: "Feature", geometry: { type: "Point", coordinates: a.o }, properties: { chave: a.chave, peso, dica } });
-      else linhas.push({ type: "Feature", geometry: { type: "LineString", coordinates: arcoCurvo(a.o, a.d) }, properties: { chave: a.chave, peso, dica } });
+      const props = { chave: a.chave, peso, dica, cor: a.cor };
+      if (a.interno) loops.push({ type: "Feature", geometry: { type: "Point", coordinates: a.d }, properties: props });
+      else linhas.push({ type: "Feature", geometry: { type: "LineString", coordinates: arcoCurvo(a.o, a.d) }, properties: props });
     }
     (map.getSource("inter-arcos") as GeoJSONSource | undefined)?.setData(fc(linhas));
     (map.getSource("inter-loops") as GeoJSONSource | undefined)?.setData(fc(loops));
@@ -1124,14 +1125,14 @@ function montarCamadas(map: MapLibre) {
   geo("dcs");
   map.addLayer({ id: "dcs", type: "symbol", source: "dcs", layout: { ...oculto, "icon-image": ["get", "icone"], "icon-size": porZoom(ESCALA_ICONE, 0.75), "icon-allow-overlap": true }, paint: { "icon-opacity": 0.85 } });
 
-  // Interação EMBRAPII
+  // Interação entre atores (cor por tipo vem na feature)
   geo("inter-arcos");
   map.addLayer({ id: "inter-arcos", type: "line", source: "inter-arcos", layout: { ...oculto, "line-cap": "round" }, paint: {
-    "line-color": COR_INTERACAO, "line-opacity": 0.45, "line-width": ["+", 0.6, ["*", 7, ["get", "peso"]]],
+    "line-color": ["coalesce", ["get", "cor"], COR_INTERACAO], "line-opacity": 0.45, "line-width": ["+", 0.6, ["*", 7, ["get", "peso"]]],
   } });
   geo("inter-loops");
   map.addLayer({ id: "inter-loops", type: "circle", source: "inter-loops", layout: oculto, paint: {
-    "circle-color": COR_INTERACAO, "circle-opacity": 0.18, "circle-stroke-color": COR_INTERACAO, "circle-stroke-width": 0.8,
+    "circle-color": ["coalesce", ["get", "cor"], COR_INTERACAO], "circle-opacity": 0.18, "circle-stroke-color": ["coalesce", ["get", "cor"], COR_INTERACAO], "circle-stroke-width": 0.8,
     "circle-radius": ["+", 2, ["*", 14, ["get", "peso"]]],
   } });
   geo("inter-unidades");
