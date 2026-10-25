@@ -41,9 +41,24 @@ export default function Analise() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Menu de cenários em botões */}
-      <div className="pt-20 border-b border-border bg-background/95 backdrop-blur sticky top-0 z-40">
-        <div className="px-4 py-3 max-w-7xl mx-auto grid grid-cols-2 gap-2 lg:grid-cols-7">
+      {/* Menu de cenários: cartões em tela larga; no celular, uma fila de pílulas que rola na horizontal
+          (o cenário atual sempre visível), para o conteúdo começar logo abaixo do cabeçalho. */}
+      <div className="pt-16 md:pt-20 border-b border-border bg-background/95 backdrop-blur sticky top-0 z-40">
+        <div className="flex gap-2 overflow-x-auto px-4 py-2 md:hidden [scrollbar-width:none]" role="tablist" aria-label="Cenários">
+          {CENARIOS.map(c => {
+            const ativo = cenarioAtivo === c.id;
+            return (
+              <button key={c.id} type="button" role="tab" aria-selected={ativo} ref={ativo ? (el) => el?.scrollIntoView({ inline: "center", block: "nearest" }) : undefined}
+                onClick={() => setCenarioAtivo(c.id as CenarioId)}
+                className={`toque flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold ${ativo ? "text-foreground" : "border-border bg-card text-muted-foreground"}`}
+                style={ativo ? { borderColor: c.cor, background: corFundo(c.cor, "26") } : {}}>
+                <span className="material-symbols-outlined text-base leading-none" style={{ color: c.cor, fontVariationSettings: ativo ? '"FILL" 1' : undefined }} aria-hidden>{c.icone}</span>
+                {c.id}. {c.titulo}
+              </button>
+            );
+          })}
+        </div>
+        <div className="hidden px-4 py-3 max-w-7xl mx-auto md:grid grid-cols-2 gap-2 lg:grid-cols-7">
           {CENARIOS.map(c => {
             const ativo = cenarioAtivo === c.id;
             return (
@@ -66,25 +81,25 @@ export default function Analise() {
 
       {/* Hero narrativo: pergunta + resposta curta */}
       <div className="border-b border-border bg-card">
-        <div className="max-w-7xl mx-auto px-4 py-6 flex items-start gap-4 flex-wrap">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl" style={{ background: corFundo(cfg.cor, "20") }}>
+        <div className="max-w-7xl mx-auto px-4 py-4 md:py-6 flex items-start gap-3 md:gap-4 flex-wrap">
+          <div className="hidden md:flex h-12 w-12 shrink-0 items-center justify-center rounded-xl" style={{ background: corFundo(cfg.cor, "20") }}>
             <span className="material-symbols-outlined text-2xl leading-none" style={{ fontVariationSettings: '"FILL" 1', color: cfg.cor }}>{cfg.icone}</span>
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold uppercase tracking-widest" style={{ color: cfg.cor }}>Cenário {cenarioAtivo} de {CENARIOS.length} · {cfg.titulo}</p>
-            <h1 className="text-3xl font-extrabold text-foreground mt-1">{cfg.subtitulo}</h1>
-            <p className="text-base text-muted-foreground mt-2 max-w-3xl">{cfg.descricao}</p>
+            <h1 className="text-xl md:text-3xl font-extrabold text-foreground mt-1">{cfg.subtitulo}</h1>
+            <p className="text-sm md:text-base text-muted-foreground mt-2 max-w-3xl">{cfg.descricao}</p>
           </div>
-          <div className="flex gap-2 shrink-0 self-center">
+          <div className="flex w-full gap-2 md:w-auto md:self-center">
             {cenarioAtivo > 1 && (
               <button onClick={() => setCenarioAtivo((cenarioAtivo - 1) as CenarioId)}
-                className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted transition-colors">
+                className="toque flex flex-1 items-center justify-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted transition-colors md:flex-none">
                 <span className="material-symbols-outlined text-sm leading-none">arrow_back</span> Anterior
               </button>
             )}
             {cenarioAtivo < CENARIOS.length && (
               <button onClick={() => setCenarioAtivo((cenarioAtivo + 1) as CenarioId)}
-                className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-colors"
+                className="toque flex flex-1 items-center justify-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-colors md:flex-none"
                 style={{ backgroundColor: cfg.cor }}>
                 Próximo <span className="material-symbols-outlined text-sm leading-none">arrow_forward</span>
               </button>

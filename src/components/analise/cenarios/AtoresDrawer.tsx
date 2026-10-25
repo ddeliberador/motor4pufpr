@@ -1,3 +1,5 @@
+import { GavetaInferior } from "@/components/GavetaInferior";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAll } from "@/lib/fetchAll";
@@ -61,10 +63,9 @@ export default function AtoresDrawer({ uf, titulo: tit, subtitulo, cor, categori
 
   const corDe = (id: string) => [...CATEGORIAS, OUTROS].find(c => c.id === id)?.cor || OUTROS.cor;
 
-  return (
-    <div className="fixed inset-0 z-50 flex" onClick={onClose}>
-      <div className="flex-1 bg-foreground/30 backdrop-blur-[2px]" />
-      <aside className="flex h-full w-full max-w-lg flex-col border-l border-border bg-background shadow-2xl" onClick={e => e.stopPropagation()}>
+  const movel = useIsMobile();
+  const conteudo = (
+      <aside className={movel ? "flex h-full w-full flex-col" : "flex h-full w-full max-w-lg flex-col border-l border-border bg-background shadow-2xl"} onClick={e => e.stopPropagation()}>
         {/* Cabeçalho */}
         <div className="shrink-0 border-b border-border p-5" style={{ background: cor + "12" }}>
           <div className="flex items-start justify-between gap-3">
@@ -138,6 +139,18 @@ export default function AtoresDrawer({ uf, titulo: tit, subtitulo, cor, categori
           {lista.length.toLocaleString("pt-BR")} na seleção · <a href="/mapa" className="font-semibold text-primary hover:underline">ver no Mapa</a>
         </div>
       </aside>
+  );
+  if (movel) {
+    return (
+      <GavetaInferior aberta onAberta={(v) => { if (!v) onClose(); }} alturas={[0.6, 0.96]} cabecalho={<span className="sr-only">{tit}</span>}>
+        {conteudo}
+      </GavetaInferior>
+    );
+  }
+  return (
+    <div className="fixed inset-0 z-50 flex" onClick={onClose}>
+      <div className="flex-1 bg-foreground/30 backdrop-blur-[2px]" />
+      {conteudo}
     </div>
   );
 }

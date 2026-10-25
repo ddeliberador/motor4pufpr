@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Cable, Network, Server, Zap, TriangleAlert, ArrowUpRight, Info, Banknote, Clock, TrendingUp } from "lucide-react";
+import { GavetaInferior } from "@/components/GavetaInferior";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
@@ -115,12 +117,8 @@ export default function PainelEstadoInfraestrutura({ estado, detalhe, onClose }:
     </div> },
   ] : [];
 
-  return <Dialog open={estado != null} onOpenChange={open => !open && onClose()}>
-    <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] max-w-5xl overflow-y-auto p-5 sm:p-6">
-      <DialogHeader className="pr-6 text-left">
-        <DialogTitle className="text-2xl leading-tight">{estado && ESTADOS[estado.uf]} · Infraestrutura de IA</DialogTitle>
-        <DialogDescription>{estado?.situacao ?? "Balanço indisponível"} · {fraseBalanco(estado?.razao ?? null)}. Referência Brasil: {estado?.brasil == null ? "indisponível" : `${estado.brasil.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}×`}.</DialogDescription>
-      </DialogHeader>
+  const movel = useIsMobile();
+  const corpo = <>
       <div className="grid gap-5 md:grid-cols-3">
         <section className="min-w-0 border-t-2 border-primary pt-3">
           <h3 className="text-base font-bold">Energia</h3>
@@ -167,6 +165,21 @@ export default function PainelEstadoInfraestrutura({ estado, detalhe, onClose }:
         {detalhe?.datacenters == null ? <p className="mt-3 text-sm text-muted-foreground">Fonte indisponível.</p> : detalhe.datacenters.length === 0 ? <p className="mt-3 text-sm text-muted-foreground">Nenhuma instalação registrada na fonte para este estado.</p> : <ul className="mt-3 divide-y divide-border">{detalhe.datacenters.map((x, i) => <li key={`${x.nome}-${i}`} className="py-2 text-sm"><strong>{x.nome}</strong><p className="text-xs text-muted-foreground">{x.cidade} · {x.org}</p></li>)}</ul>}
       </details>
       <p className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground"><Network size={16} className="shrink-0" />Fontes: EPE (balanço, consumo e DEC/FEC), ANEEL (usinas, tarifas, CFURH e unidades consumidoras), ONS (intercâmbio entre subsistemas), ANATEL (backhaul), TeleGeography (cabos) e PeeringDB (instalações).</p>
+  </>;
+  if (movel) {
+    return <GavetaInferior aberta={estado != null} onAberta={open => !open && onClose()} alturas={[0.6, 0.96]}
+      titulo={`${estado ? ESTADOS[estado.uf] : ""} · Infraestrutura de IA`}
+      descricao={`${estado?.situacao ?? "Balanço indisponível"} · ${fraseBalanco(estado?.razao ?? null)}`}>
+      <div className="space-y-5 px-4 pb-4">{corpo}</div>
+    </GavetaInferior>;
+  }
+  return <Dialog open={estado != null} onOpenChange={open => !open && onClose()}>
+    <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] max-w-5xl overflow-y-auto p-5 sm:p-6">
+      <DialogHeader className="pr-6 text-left">
+        <DialogTitle className="text-2xl leading-tight">{estado && ESTADOS[estado.uf]} · Infraestrutura de IA</DialogTitle>
+        <DialogDescription>{estado?.situacao ?? "Balanço indisponível"} · {fraseBalanco(estado?.razao ?? null)}. Referência Brasil: {estado?.brasil == null ? "indisponível" : `${estado.brasil.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}×`}.</DialogDescription>
+      </DialogHeader>
+      {corpo}
     </DialogContent>
   </Dialog>;
 }
