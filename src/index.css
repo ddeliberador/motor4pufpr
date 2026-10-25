@@ -336,3 +336,16 @@
 .dark .home-textual { --muted-foreground: 220 9% 65%; }
 .home-title { font-size: 34px; letter-spacing: 0; }
 @media (min-width: 640px) { .home-title { font-size: 56px; } }
+
+/* Telas estreitas: a navegação inferior (NavInferior) ocupa o rodapé, então o
+   conteúdo ganha espaço embaixo para a última linha não ficar escondida. */
+@media (max-width: 767px) {
+  body:has(nav[data-nav-inferior]) {
+    padding-bottom: calc(3.75rem + env(safe-area-inset-bottom));
+  }
+  /* Alvos de toque: botões e links pequenos ganham área mínima sem mudar o visual. */
+  .toque {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
