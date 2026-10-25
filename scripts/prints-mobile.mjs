@@ -18,6 +18,9 @@ for (const [w, h] of larguras) {
   const ctx = await b.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: w < 500 ? 2 : 1, isMobile: w < 500, hasTouch: w < 500 });
   for (const rota of rotas) {
     const p = await ctx.newPage();
+    // As páginas de perfil só montam depois de uma busca (sessionStorage); simula uma.
+    const persona = rota.match(/^\/(pesquisador|universidade|empresa|governo)/)?.[1];
+    if (persona) await p.addInitScript((per) => { sessionStorage.setItem("motor4p_query", "inteligência artificial"); sessionStorage.setItem("motor4p_persona", per); }, persona);
     if (stub) {
       await p.route("**/rest/v1/**", (r) => r.fulfill({ status: 200, contentType: "application/json", body: "[]" }));
       await p.route("**/functions/v1/**", (r) => r.fulfill({ status: 200, contentType: "application/json", body: "{}" }));

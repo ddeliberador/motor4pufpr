@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { ExternalLink, BookOpen, Users, FileText, Globe, GitBranch, Building2, Landmark } from "lucide-react";
 import { safeHttpUrl } from "@/lib/utils";
 import { track } from "@/lib/telemetry";
@@ -371,6 +372,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const DataDetailSheet = ({ open, onClose, item }: DataDetailSheetProps) => {
+  const movel = useIsMobile();
   // Telemetria: apenas o TIPO do resultado aberto, nunca o conteúdo.
   useEffect(() => {
     if (open && item?.type) {
@@ -403,7 +405,8 @@ const DataDetailSheet = ({ open, onClose, item }: DataDetailSheetProps) => {
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+      {/* No celular o detalhe sobe de baixo (gaveta); em tela larga continua lateral. */}
+      <SheetContent side={movel ? "bottom" : "right"} className={movel ? "h-[88dvh] w-full overflow-y-auto rounded-t-2xl" : "w-full sm:max-w-lg overflow-y-auto"}>
         <SheetHeader className="pb-4 border-b border-border">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium uppercase tracking-wider">

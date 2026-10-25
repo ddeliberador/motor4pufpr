@@ -190,7 +190,7 @@ const GovernoPanel = () => {
                 </div>
                 {policy.contracts && policy.contracts.length > 0 ? (
                   <div className="space-y-2">
-                    <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="grid grid-cols-1 gap-3 mb-4 sm:grid-cols-3">
                       <div className="bg-muted/30 rounded-lg p-3 text-center">
                         <p className="text-xl font-bold font-mono text-foreground">{(policy as any).total_contracts}</p>
                         <p className="text-[10px] text-muted-foreground">contratos</p>
@@ -328,7 +328,7 @@ const GovernoPanel = () => {
                         : "agregado nacional";
                       return (
                         <>
-                          <div className="grid grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                             <div className="bg-muted/30 rounded-lg p-3 text-center">
                               <p className="text-xl font-bold font-mono text-emerald-500">
                                 {adm != null ? `+${adm.toLocaleString("pt-BR")}` : "—"}
