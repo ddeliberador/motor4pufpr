@@ -18,6 +18,8 @@ import {
   usePainelEstado, usePainelMunicipio, type PontoSerie,
 } from "@/lib/paineisLocais";
 import { useQuery } from "@tanstack/react-query";
+import { GavetaInferior } from "@/components/GavetaInferior";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { FeatureCollection, Point } from "geojson";
 
 export type AtorDoPainel = { id: string; nome: string; categoria: CategoriaKey; municipio: string | null; uf: string | null; latitude: number | null; longitude: number | null };
@@ -59,7 +61,7 @@ function Faisca({ pontos, ano }: { pontos: PontoSerie[]; ano: number | null }) {
     </svg>
   );
 }
-function Cabecalho({ titulo, sub, onFechar, onEnquadrar }: { titulo: string; sub: ReactNode; onFechar: () => void; onEnquadrar?: () => void }) {
+function Cabecalho({ titulo, sub, onFechar, onEnquadrar, onVizinho }: { titulo: string; sub: ReactNode; onFechar: () => void; onEnquadrar?: () => void; onVizinho?: (dir: -1 | 1) => void }) {
   return (
     <div className="mb-2 flex items-start justify-between gap-2">
       <div className="min-w-0">
@@ -67,6 +69,10 @@ function Cabecalho({ titulo, sub, onFechar, onEnquadrar }: { titulo: string; sub
         <p className="text-[11px] text-muted-foreground">{sub}</p>
       </div>
       <div className="flex shrink-0 items-center gap-1">
+        {onVizinho && (<>
+          <button type="button" onClick={() => onVizinho(-1)} title="Estado anterior" aria-label="Estado anterior" className="toque flex h-6 w-6 items-center justify-center rounded-md border border-border hover:bg-muted">‹</button>
+          <button type="button" onClick={() => onVizinho(1)} title="Próximo estado" aria-label="Próximo estado" className="toque flex h-6 w-6 items-center justify-center rounded-md border border-border hover:bg-muted">›</button>
+        </>)}
         {onEnquadrar && (
           <button type="button" onClick={onEnquadrar} title="Enquadrar no mapa" aria-label="Enquadrar no mapa"
             className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-md border border-border hover:bg-muted">
@@ -114,6 +120,19 @@ function ListaAtores({ atores, onSelecionarPonto, limite = 8 }: { atores: AtorDo
 
 const painelClasse = "absolute bottom-3 right-3 top-3 z-20 flex w-[22rem] max-w-[calc(100%-1.5rem)] flex-col overflow-y-auto rounded-lg border border-border bg-card/95 p-3 text-xs shadow-lg backdrop-blur";
 
+/** Lateral sobre o mapa no desktop; gaveta inferior sem bloqueio (o mapa continua respondendo) no celular. */
+function Recipiente({ rotulo, onFechar, children }: { rotulo: string; onFechar: () => void; children: ReactNode }) {
+  const movel = useIsMobile();
+  if (movel) {
+    return (
+      <GavetaInferior aberta onAberta={(v) => { if (!v) onFechar(); }} semBloqueio alturas={[0.22, 0.55, 0.94]} cabecalho={<span className="sr-only">{rotulo}</span>} className="text-xs">
+        <div className="px-3 pb-3">{children}</div>
+      </GavetaInferior>
+    );
+  }
+  return <aside className={painelClasse} aria-label={rotulo}>{children}</aside>;
+}
+
 // =====================================================================
 // Estado
 // =====================================================================
@@ -130,9 +149,11 @@ export interface PainelEstadoProps {
   onEnquadrar: () => void;
   onAbrirMunicipio: (m: { ibge: string; nome: string; uf: string }) => void;
   onSelecionarPonto?: (id: string) => void;
+  /** Passa ao estado anterior/seguinte sem voltar ao mapa (ordem por região e nome). */
+  onVizinho?: (dir: -1 | 1) => void;
 }
 
-export function PainelEstado({ uf, anoFoco, atores, usinas, datacenters, backhaul, sintese, onFechar, onEnquadrar, onAbrirMunicipio, onSelecionarPonto }: PainelEstadoProps) {
+export function PainelEstado({ uf, anoFoco, atores, usinas, datacenters, backhaul, sintese, onFechar, onEnquadrar, onAbrirMunicipio, onSelecionarPonto, onVizinho }: PainelEstadoProps) {
   const { perfil, atores: atoresQ, interacoes, series } = usePainelEstado(uf);
   const pontosMun = useQuery({
     queryKey: ["br-mun-pontos"], staleTime: Infinity,
@@ -161,8 +182,8 @@ export function PainelEstado({ uf, anoFoco, atores, usinas, datacenters, backhau
   const totalAtoresView = (atoresQ.data ?? []).reduce((s, r) => s + (r.atores ?? 0), 0);
 
   return (
-    <aside className={painelClasse} aria-label={`Visão do estado ${ESTADOS[uf] ?? uf}`}>
-      <Cabecalho titulo={ESTADOS[uf] ?? uf} onFechar={onFechar} onEnquadrar={onEnquadrar}
+    <Recipiente rotulo={`Visão do estado ${ESTADOS[uf] ?? uf}`} onFechar={onFechar}>
+      <Cabecalho titulo={ESTADOS[uf] ?? uf} onFechar={onFechar} onEnquadrar={onEnquadrar} onVizinho={onVizinho}
         sub={<>
           <span className="rounded border border-border px-1 font-mono">{uf}</span>
           {" · "}
@@ -254,7 +275,7 @@ export function PainelEstado({ uf, anoFoco, atores, usinas, datacenters, backhau
           </Link>
         </div>
       </div>
-    </aside>
+    </Recipiente>
   );
 }
 
@@ -292,7 +313,7 @@ export function PainelMunicipio({ municipio, anoFoco, atores, usinas, datacenter
   const temSerie = series.some((s) => s.indicador !== INDICADOR_POPULACAO);
 
   return (
-    <aside className={painelClasse} aria-label={`Visão do município ${municipio.nome}`}>
+    <Recipiente rotulo={`Visão do município ${municipio.nome}`} onFechar={onFechar}>
       <Cabecalho titulo={municipio.nome || municipio.ibge} onFechar={onFechar} onEnquadrar={onEnquadrar}
         sub={<>
           <button type="button" onClick={() => onAbrirEstado(municipio.uf)} className="font-semibold text-primary hover:underline">{ESTADOS[municipio.uf] ?? municipio.uf}</button>
@@ -357,7 +378,7 @@ export function PainelMunicipio({ municipio, anoFoco, atores, usinas, datacenter
           <ListaAtores atores={atores} onSelecionarPonto={onSelecionarPonto} limite={10} />
         </Secao>
       </div>
-    </aside>
+    </Recipiente>
   );
 }
 

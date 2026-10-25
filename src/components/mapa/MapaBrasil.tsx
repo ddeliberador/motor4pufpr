@@ -22,6 +22,7 @@ import {
   type Datacenter,
   type UsinaAneel,
 } from "./caboSubmarino";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { COR_INTERACAO, type CamadaInteracaoProps, type ArcoAgregado, type UnidadeEmbrapii } from "./CamadaInteracao";
 import { aguardarFonteMaterial, badgesDeCluster, corDaClasse, corDoTema, garantirIcone, garantirRotulo, resolverCorCss } from "./maplibre/icones";
 import { ATRIBUICAO_FUNDO, type FundoId, URL_ESTILO_FUNDO, estiloSatelite, estiloSobrio } from "./maplibre/fundos";
@@ -162,6 +163,8 @@ export interface MapaBrasilHandle {
   enquadrar(): void;
   /** Aproxima o mapa de um município já carregado na malha (código IBGE de 7 dígitos). */
   enquadrarMunicipio(ibge: string): void;
+  /** Voa até uma UF (ou até o Brasil, sem argumento). */
+  enquadrarUf(uf: string | null): void;
 }
 
 export interface MunicipioClicado { ibge: string; nome: string; uf: string }
@@ -190,6 +193,7 @@ const ROTULO_USINA: Record<string, string> = {
 
 const COR_ANEL = { l4: "#4ade80", l5: "#2dd4bf", l6: "#22d3ee", l7: "#a78bfa" } as const;
 const ZOOM_MUNICIPIOS = 5.5;
+const UFS_CHIP = ["RN", "PB", "PE", "AL", "SE", "ES", "RJ", "DF"];
 // A partir daqui a malha municipal troca para a versão detalhada (br-mun-hd) e o contorno das UFs vem dela.
 const ZOOM_HD = 7.5;
 const ZOOM_ROTULOS_MUN = 7;
@@ -233,6 +237,7 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
   const camadasBaseRef = useRef<string[]>([]);
   const [tema, setTema] = useState(0);
   const [zoom, setZoom] = useState(3);
+  const movel = useIsMobile();
   const [municipios, setMunicipios] = useState<Record<string, { nivel: NivelMalha; features: FeatureMun[] }>>({});
   const municipiosRef = useRef<Record<string, { nivel: NivelMalha; features: FeatureMun[] }>>({});
   const [ufsHd, setUfsHd] = useState<FeatureUf[] | null>(null);
@@ -945,6 +950,9 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
       map.triggerRepaint();
     }),
     enquadrar,
+    enquadrarUf: (uf: string | null) => {
+      mapRef.current?.fitBounds((uf && bboxes[uf]) || BBOX_BRASIL, { padding: uf ? 32 : 16, duration: 700, maxZoom: 9 });
+    },
     enquadrarMunicipio: (ibge: string) => {
       const map = mapRef.current;
       if (!map) return;
@@ -952,7 +960,7 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
       if (!f) return;
       map.fitBounds(bboxDaFeature(f), { padding: 48, duration: 500, maxZoom: 11 });
     },
-  }), [enquadrar]);
+  }), [enquadrar, bboxes]);
 
   if (erroMalha) {
     return (
@@ -980,6 +988,16 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
       </div>
 
       <p className="pointer-events-none absolute bottom-1 right-2 text-[9px] text-muted-foreground/70">{ATRIBUICAO_FUNDO[fundo]}</p>
+      {/* Celular, zoom nacional: os estados pequenos do litoral (e o DF) são impossíveis de tocar;
+          viram chips na borda, como no cartograma do seuimposto. */}
+      {movel && zoom < ZOOM_MUNICIPIOS && !regional && !ufSelecionada && (
+        <div className="absolute right-2 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-1" role="group" aria-label="Estados pequenos">
+          {UFS_CHIP.map((u) => (
+            <button key={u} type="button" onClick={() => cb.current.onSelecionarUf(u)}
+              className={`h-8 w-11 rounded-md border text-xs font-bold shadow-sm ${ufSelecionada === u ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card/90 text-foreground"}`}>{u}</button>
+          ))}
+        </div>
+      )}
 
       {malhaMunicipal && zoom >= ZOOM_MUNICIPIOS && (
         <p className="pointer-events-none absolute right-3 top-3 rounded-md border border-border bg-card/80 px-2 py-1 text-[10px] text-muted-foreground backdrop-blur">
