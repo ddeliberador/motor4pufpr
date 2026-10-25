@@ -4,6 +4,7 @@ import PbiaEixos, { CATEGORIAS_POR_EIXO } from "@/components/mapa/PbiaEixos";
 // com filtros funcionais e lista exportável dos registros filtrados.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { FeatureCollection, Point } from "geojson";
 import { useCatalogo, inativaNoCatalogo } from "@/lib/catalogo";
 import { geocodeLote } from "@/utils/geocodeMunicipio";
 import { useQuery } from "@tanstack/react-query";
@@ -15,6 +16,10 @@ import Header from "@/components/Header";
 import MapaBrasil, { type AncoraPbia, type Ponto, type MapaBrasilHandle, type MunicipioClicado, type TransporteMapa, CORES_TRANSPORTE, FUNDOS, type FundoId, type CoropleticoMunicipal as Coro } from "@/components/mapa/MapaBrasil";
 import { PainelEstado, PainelMunicipio, atoresDoMunicipio, type AtorDoPainel } from "@/components/mapa/PaineisLocais";
 import { normalizarNome } from "@/lib/paineisLocais";
+import { GavetaInferior } from "@/components/GavetaInferior";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ESTADOS } from "@/lib/sistemasEstaduais";
+import { carregarGeojson } from "@/components/mapa/maplibre/geo";
 import MunicipiosDaCamada, { type SelecaoMunicipal } from "@/components/mapa/MunicipiosDaCamada";
 import { CORES_COROPLETICO, CORTES_SINTESE_CORES } from "@/components/mapa/MapaBrasil";
 import {
@@ -203,6 +208,23 @@ function mensagemFalhaInfra(falha: unknown): string {
   return "fonte temporariamente indisponível";
 }
 
+// Lugar na URL: #parana (estado) ou #curitiba-pr (município), em minúsculas sem acento.
+export const slug = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const UF_POR_SLUG: Record<string, string> = Object.fromEntries(Object.entries(ESTADOS).map(([uf, nome]) => [slug(nome), uf]));
+function lerLugarDaUrl(): { tipo: "uf"; uf: string } | { tipo: "municipio"; uf: string; slug: string } | null {
+  const h = decodeURIComponent(window.location.hash.replace(/^#/, ""));
+  if (!h) return null;
+  if (UF_POR_SLUG[h]) return { tipo: "uf", uf: UF_POR_SLUG[h] };
+  const m = h.match(/^(.+)-([a-z]{2})$/);
+  if (m && ESTADOS[m[2].toUpperCase()]) return { tipo: "municipio", uf: m[2].toUpperCase(), slug: m[1] };
+  return null;
+}
+function escreverLugarNaUrl(lugar: { tipo: "uf"; uf: string } | { tipo: "municipio"; uf: string; nome: string } | null) {
+  const hash = !lugar ? "" : lugar.tipo === "uf" ? `#${slug(ESTADOS[lugar.uf] ?? lugar.uf)}` : `#${slug(lugar.nome)}-${lugar.uf.toLowerCase()}`;
+  const url = `${window.location.pathname}${window.location.search}${hash}`;
+  if (url !== `${window.location.pathname}${window.location.search}${window.location.hash}`) window.history.pushState(null, "", url);
+}
+
 type Aba = "atores" | "camadas" | "interacao" | "regional";
 const ABAS: { id: Aba; rotulo: string; icone: string; titulo: string }[] = [
   { id: "atores", rotulo: "Atores", icone: "groups", titulo: "Atores do SNI: universidades, ICTs, empresas, hubs" },
@@ -286,6 +308,49 @@ export default function Mapa() {
   const [pontoSelecionadoId, setPontoSelecionadoId] = useState<string | null>(null);
   // Painel do lugar clicado: estado (zoom nacional) ou município (zoom municipal).
   const [painelLocal, setPainelLocal] = useState<{ tipo: "uf"; uf: string } | ({ tipo: "municipio" } & MunicipioClicado) | null>(null);
+  const movel = useIsMobile();
+  // Navegação por lugar: Brasil → estado → município, com a câmera voando a cada nível,
+  // trilho sobre o mapa e o lugar na URL (#parana, #curitiba-pr) para compartilhar e para o
+  // botão voltar do navegador subir um nível.
+  const ORDEM_UFS = useMemo(() => REGIOES.flatMap((r) => [...UFS_POR_REGIAO[r]].sort((a, b) => (ESTADOS[a] ?? a).localeCompare(ESTADOS[b] ?? b, "pt-BR"))), []);
+  const irParaUf = useCallback((uf: string | null, opcoes?: { semHistorico?: boolean }) => {
+    setInterSel(null);
+    if (!uf) { setPainelLocal(null); setUfFoco(null); setUfsSel(new Set()); mapaRef.current?.enquadrarUf(null); }
+    else { setPainelLocal({ tipo: "uf", uf }); setUfFoco(uf); setUfsSel(new Set([uf])); mapaRef.current?.enquadrarUf(uf); }
+    if (!opcoes?.semHistorico) escreverLugarNaUrl(uf ? { tipo: "uf", uf } : null);
+  }, []);
+  const irParaMunicipio = useCallback((m: MunicipioClicado, opcoes?: { semHistorico?: boolean; lonLat?: [number, number] }) => {
+    setInterSel(null);
+    setPainelLocal({ tipo: "municipio", ...m });
+    setUfFoco(m.uf); setUfsSel(new Set([m.uf]));
+    mapaRef.current?.enquadrarMunicipio(m.ibge);
+    if (!opcoes?.semHistorico) escreverLugarNaUrl({ tipo: "municipio", ...m });
+  }, []);
+  const voltarUmNivel = useCallback(() => {
+    if (painelLocal?.tipo === "municipio") irParaUf(painelLocal.uf);
+    else irParaUf(null);
+  }, [painelLocal, irParaUf]);
+  // Lugar vindo da URL ao abrir, e botão voltar do navegador.
+  useEffect(() => {
+    let vivo = true;
+    const aplicar = async (semHistorico: boolean) => {
+      const lugar = lerLugarDaUrl();
+      if (!lugar) { if (painelLocalRef.current) irParaUf(null, { semHistorico: true }); return; }
+      if (lugar.tipo === "uf") { irParaUf(lugar.uf, { semHistorico }); return; }
+      const pontos = await carregarGeojson<FeatureCollection<Point, { id: string; name: string; uf: string }>>("/br-mun-pontos.geojson").catch(() => null);
+      if (!vivo || !pontos) return;
+      const f = pontos.features.find((x) => x.properties.uf === lugar.uf && slug(x.properties.name) === lugar.slug);
+      if (!f) { irParaUf(lugar.uf, { semHistorico }); return; }
+      irParaMunicipio({ ibge: String(f.properties.id), nome: f.properties.name, uf: lugar.uf }, { semHistorico });
+      // A malha da UF pode ainda não estar carregada: tenta enquadrar de novo quando chegar.
+      setTimeout(() => mapaRef.current?.enquadrarMunicipio(String(f.properties.id)), 1500);
+    };
+    const t = setTimeout(() => aplicar(true), 800);
+    const onPop = () => aplicar(true);
+    window.addEventListener("popstate", onPop);
+    return () => { vivo = false; clearTimeout(t); window.removeEventListener("popstate", onPop); };
+  }, [irParaUf, irParaMunicipio]);
+  const painelLocalRef = useRef(painelLocal); painelLocalRef.current = painelLocal;
   const [listaAberta, setListaAberta] = useState(false);
   const [painelPoliticasAberto, setPainelPoliticasAberto] = useState(false);
   // Visão regional: macrorregiões coloridas pela série histórica + régua do tempo.
@@ -1276,6 +1341,7 @@ export default function Mapa() {
     setSelecao(null);
     setPontoSelecionadoId(null);
     setPainelLocal(null);
+    escreverLugarNaUrl(null);
     setTiposUsina(new Set());
     setUsinaSel(null);
     // Volta ao estado de abertura do mapa: Layers 1–3 ligadas, sem cabos, síntese municipal.
@@ -1376,20 +1442,9 @@ export default function Mapa() {
     return [];
   }, [selecao, pontoSelecionadoId, selecionados]);
 
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Header />
-
-      <main className="pt-16">
-        {/* Cabeçalho institucional */}
-
-
-        <div className="flex flex-col lg:h-[calc(100vh-4rem)] lg:flex-row">
-          {/* Coluna lateral de filtros */}
+  const colunaFiltros = (
           <aside
-            className={`${
-              filtrosMobileAbertos ? "fixed inset-0 z-50 flex" : "hidden"
-            } w-full flex-col overflow-y-auto border-border bg-background p-4 lg:static lg:z-auto lg:shrink-0 lg:border-r lg:bg-muted/20 ${colunaAberta ? "lg:flex lg:w-72" : "lg:hidden"}`}
+            className={`${movel ? "flex w-full flex-col p-4" : `hidden w-full flex-col overflow-y-auto border-border bg-background p-4 lg:static lg:z-auto lg:shrink-0 lg:border-r lg:bg-muted/20 ${colunaAberta ? "lg:flex lg:w-72" : "lg:hidden"}`}`}
             aria-label="Filtros do mapa"
           >
             <div className="space-y-6">
@@ -2166,9 +2221,23 @@ export default function Mapa() {
               </Button>
             </div>
           </aside>
+  );
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <Header />
+
+      <main className="pt-16">
+        {/* Cabeçalho institucional */}
+
+
+        <div className="flex flex-col lg:h-[calc(100vh-4rem)] lg:flex-row">
+          {/* Coluna lateral de filtros */}
+          {/* Coluna de filtros: lateral no desktop; no celular vai para uma gaveta inferior (abaixo). */}
+          {!movel && colunaFiltros}
 
           {/* Mapa */}
-          <section ref={secaoMapaRef} className="relative flex h-[calc(100dvh-9.75rem)] min-h-[34rem] flex-1 flex-col overflow-hidden bg-background p-2 lg:h-auto lg:min-h-0">
+          <section ref={secaoMapaRef} className="relative flex h-[calc(100dvh-7.75rem)] min-h-[28rem] flex-none flex-col overflow-hidden bg-background p-2 lg:h-auto lg:min-h-0 lg:flex-1">
             <div className="mb-3 flex gap-2 lg:hidden">
               <div className="relative min-w-0 flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -2195,6 +2264,11 @@ export default function Mapa() {
                 Filtros{filtrosAtivos.length ? ` (${filtrosAtivos.length})` : ""}
               </Button>
             </div>
+            {movel && (
+              <GavetaInferior aberta={filtrosMobileAbertos} onAberta={setFiltrosMobileAbertos} alturas={[0.6, 0.96]} cabecalho={<span className="sr-only">Filtros do mapa</span>}>
+                {colunaFiltros}
+              </GavetaInferior>
+            )}
 
             {/* Barra superior: abas por intenção + painéis à direita (no espírito do Global Election Simulator) */}
             {!isLoading && !error && (
@@ -2330,14 +2404,8 @@ export default function Mapa() {
                     ufsSelecionadas={ufsSel}
                     ufsFiltroAtivas={ufsFiltroAtivas}
                     contagemPorUf={contagemPorUf}
-                    onSelecionarUf={(u) => {
-                      const removendo = ufsSel.has(u);
-                      alternar(ufsSel, u, setUfsSel);
-                      setUfFoco(removendo ? null : u);
-                      setPainelLocal(removendo ? null : { tipo: "uf", uf: u });
-                      setInterSel(null);
-                    }}
-                    onSelecionarMunicipio={(m) => { setPainelLocal({ tipo: "municipio", ...m }); setInterSel(null); }}
+                    onSelecionarUf={(u) => irParaUf(painelLocal?.tipo === "uf" && painelLocal.uf === u ? null : u)}
+                    onSelecionarMunicipio={(m) => irParaMunicipio(m)}
                     onSelecionarCluster={(pontos, total) => setSelecao({ pontos, total })}
                     pontoSelecionadoId={pontoSelecionadoId}
                     onSelecionarPonto={setPontoSelecionadoId}
@@ -2369,6 +2437,17 @@ export default function Mapa() {
                       onArco: (a) => { setInterSel({ arco: a }); setPainelLocal(null); }, onUnidade: (u) => { setInterSel({ unidade: u }); setPainelLocal(null); },
                     } : null}
                   />
+                  {painelLocal && !visaoRegional && (
+                    <nav aria-label="Lugar" className="absolute left-14 top-3 z-20 flex max-w-[calc(100%-1.5rem)] items-center gap-1 rounded-lg border border-border bg-card/95 px-1.5 py-1 text-xs shadow backdrop-blur">
+                      <button type="button" onClick={voltarUmNivel} aria-label="Voltar um nível" className="toque flex h-7 w-7 items-center justify-center rounded-md hover:bg-muted">
+                        <span className="material-symbols-outlined text-base leading-none" aria-hidden>arrow_back</span>
+                      </button>
+                      <button type="button" onClick={() => irParaUf(null)} className="rounded px-1 text-muted-foreground hover:bg-muted hover:text-foreground">Brasil</button>
+                      <span className="text-muted-foreground">›</span>
+                      <button type="button" onClick={() => irParaUf(painelLocal.uf)} className={`truncate rounded px-1 ${painelLocal.tipo === "uf" ? "font-semibold text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>{ESTADOS[painelLocal.uf] ?? painelLocal.uf}</button>
+                      {painelLocal.tipo === "municipio" && (<><span className="text-muted-foreground">›</span><span className="truncate px-1 font-semibold">{painelLocal.nome}</span></>)}
+                    </nav>
+                  )}
                   {painelLocal?.tipo === "uf" && !visaoRegional && (
                     <PainelEstado
                       uf={painelLocal.uf}
@@ -2378,10 +2457,11 @@ export default function Mapa() {
                       datacenters={(dadosDCs ?? []).filter((d) => d.uf === painelLocal.uf)}
                       backhaul={(dadosBackhaul ?? []).filter((b) => b.uf === painelLocal.uf)}
                       sintese={munAtivo && munModo === "sintese" ? sintese.valores : null}
-                      onFechar={() => setPainelLocal(null)}
-                      onEnquadrar={() => mapaRef.current?.enquadrar()}
-                      onAbrirMunicipio={(m) => { setPainelLocal({ tipo: "municipio", ...m }); mapaRef.current?.enquadrarMunicipio(m.ibge); }}
+                      onFechar={() => irParaUf(null)}
+                      onEnquadrar={() => mapaRef.current?.enquadrarUf(painelLocal.uf)}
+                      onAbrirMunicipio={(m) => irParaMunicipio(m)}
                       onSelecionarPonto={(id) => setPontoSelecionadoId(id)}
+                      onVizinho={(dir) => { const i = ORDEM_UFS.indexOf(painelLocal.uf); irParaUf(ORDEM_UFS[(i + dir + ORDEM_UFS.length) % ORDEM_UFS.length]); }}
                     />
                   )}
                   {painelLocal?.tipo === "municipio" && !visaoRegional && (() => { const m = painelLocal; const nomeN = normalizarNome(m.nome); return (
@@ -2394,9 +2474,9 @@ export default function Mapa() {
                       backhaul={(dadosBackhaul ?? []).find((b) => b.uf === m.uf && normalizarNome(b.municipio) === nomeN) ?? null}
                       antenas={dadosAntenas ? dadosAntenas.filter((a) => a.uf === m.uf && normalizarNome(a.municipio) === nomeN).length : null}
                       sintese={munAtivo && munModo === "sintese" ? sintese.valores[m.ibge] ?? null : null}
-                      onFechar={() => setPainelLocal(null)}
+                      onFechar={() => irParaUf(m.uf)}
                       onEnquadrar={() => mapaRef.current?.enquadrarMunicipio(m.ibge)}
-                      onAbrirEstado={(uf) => { setPainelLocal({ tipo: "uf", uf }); setUfFoco(uf); }}
+                      onAbrirEstado={(uf) => irParaUf(uf)}
                       onSelecionarPonto={(id) => setPontoSelecionadoId(id)}
                     />
                   ); })()}
