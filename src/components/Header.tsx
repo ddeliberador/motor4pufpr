@@ -1,4 +1,5 @@
 import { Link, NavLink } from "react-router-dom";
+import NavInferior from "@/components/NavInferior";
 
 const navigation = [
   ["/", "Início"], ["/mapa", "Mapa"], ["/analise", "Análise"],
@@ -14,7 +15,8 @@ const Header = () => (
         <span className="material-symbols-outlined text-[22px] leading-none text-accent" style={{ fontVariationSettings: '"FILL" 1' }} aria-hidden>hub</span>
         Motor da Inovação
       </Link>
-      <nav aria-label="Navegação principal" className="flex h-full items-center gap-4 overflow-x-auto sm:gap-6">
+      {/* Em tela estreita a navegação vai para o rodapé (NavInferior); aqui fica só a marca. */}
+      <nav aria-label="Navegação principal" className="hidden h-full items-center gap-4 md:flex md:gap-6">
         {navigation.map(([to, label]) => (
           <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) =>
             `flex h-full items-center border-b-2 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent ${isActive ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`
@@ -22,6 +24,7 @@ const Header = () => (
         ))}
       </nav>
     </div>
+    <NavInferior />
   </header>
 );
 
