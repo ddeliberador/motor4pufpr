@@ -117,7 +117,7 @@ export default function StrategicIndices({ indices }: StrategicIndicesProps) {
 
                   <p className="text-[11px] text-muted-foreground mb-3 leading-relaxed">{pergunta}</p>
 
-                  <p className="text-4xl font-bold text-foreground mb-1">
+                  <p className="text-3xl md:text-4xl font-bold text-foreground mb-1">
                     {idx.value}
                     <span className="text-base font-normal text-muted-foreground ml-1">
                       {key === "cd" || key === "aue" ? "%" : "/100"}

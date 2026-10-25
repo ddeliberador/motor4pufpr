@@ -300,7 +300,7 @@ const EmpresaPanel = () => {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                     <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 text-center">
                       <p className="text-lg font-bold text-emerald-500">
                         {displayAdm != null ? `+${displayAdm.toLocaleString("pt-BR")}` : "—"}
