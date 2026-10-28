@@ -29,6 +29,15 @@ const Carregando = () => (
 
 const queryClient = new QueryClient();
 
+// O /mapa é o pedaço mais pesado (MapLibre). Quem entra por outra página já baixa esse
+// pedaço em segundo plano, quando o navegador está ocioso, para o primeiro acesso ao mapa
+// não esperar o download.
+if (typeof window !== "undefined") {
+  const prefetch = () => { import("./pages/Mapa").catch(() => undefined); };
+  if ("requestIdleCallback" in window) (window as Window & { requestIdleCallback: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback(prefetch, { timeout: 4000 });
+  else setTimeout(prefetch, 2500);
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
