@@ -1,6 +1,13 @@
 // Rodar com: deno test supabase/functions/_shared/pncp_test.ts
 import { assertEquals } from "jsr:@std/assert@1";
-import { buscarContratosPNCP, normalizarContrato, USER_AGENT } from "./pncp.ts";
+import {
+  agruparFornecedores,
+  buscarContratosPNCP,
+  buscarEditaisAbertosPNCP,
+  normalizarContrato,
+  normalizarEdital,
+  USER_AGENT,
+} from "./pncp.ts";
 
 const realFetch = globalThis.fetch;
 
@@ -173,4 +180,101 @@ Deno.test("item sem identificador é descartado", async () => {
   } finally {
     restaurar();
   }
+});
+
+// Edital no formato devolvido por /api/search?tipos_documento=edital.
+function edital(seq: number, extra: Record<string, unknown> = {}) {
+  return {
+    item_url: `/compras/18137082000186/2026/${seq}`,
+    description: `Solução de inteligência artificial ${seq}`,
+    orgao_nome: "AUTARQUIA MUNICIPAL DE TURISMO - GRAMADOTUR",
+    modalidade_licitacao_nome: "Pregão - Eletrônico",
+    valor_global: null,
+    situacao_nome: "Divulgada no PNCP",
+    data_publicacao_pncp: "2026-10-09T16:03:59",
+    data_fim_vigencia: "2026-10-27T08:29",
+    uf: "RS",
+    ...extra,
+  };
+}
+
+Deno.test("editais: busca só os que recebem proposta, por relevância", async () => {
+  const { urls } = mockFetch([{ items: [edital(1)] }]);
+  try {
+    await buscarEditaisAbertosPNCP(["inovação"], { uf: "RS", porTermo: 8 });
+    const u = new URL(urls[0]);
+    assertEquals(u.origin + u.pathname, "https://pncp.gov.br/api/search/");
+    assertEquals(u.searchParams.get("q"), "inovação");
+    assertEquals(u.searchParams.get("tipos_documento"), "edital");
+    assertEquals(u.searchParams.get("status"), "recebendo_proposta");
+    assertEquals(u.searchParams.has("ordenacao"), false);
+    assertEquals(u.searchParams.get("ufs"), "RS");
+    assertEquals(u.searchParams.get("tam_pagina"), "8");
+  } finally {
+    restaurar();
+  }
+});
+
+Deno.test("editais: normaliza campos, prazo e link da página pública", () => {
+  assertEquals(normalizarEdital(edital(124), "ia"), {
+    objeto: "Solução de inteligência artificial 124",
+    orgao: "AUTARQUIA MUNICIPAL DE TURISMO - GRAMADOTUR",
+    modalidade: "Pregão - Eletrônico",
+    valor: 0,
+    situacao: "Divulgada no PNCP",
+    dataPublicacao: "2026-10-09T16:03:59",
+    dataEncerramento: "2026-10-27T08:29",
+    uf: "RS",
+    url: "https://pncp.gov.br/app/editais/18137082000186/2026/124",
+    termo: "ia",
+  });
+});
+
+Deno.test("editais: sem prazo nem link, campos vazios", () => {
+  const e = normalizarEdital({}, "ia");
+  assertEquals(e.dataEncerramento, "");
+  assertEquals(e.url, "https://pncp.gov.br/app/editais");
+});
+
+Deno.test("editais: remove repetidos entre termos", async () => {
+  mockFetch([{ items: [edital(1), edital(2)] }, { items: [edital(2)] }]);
+  try {
+    const r = await buscarEditaisAbertosPNCP(["a", "b"]);
+    assertEquals(r.map((e) => e.url.split("/").pop()), ["1", "2"]);
+  } finally {
+    restaurar();
+  }
+});
+
+Deno.test("fornecedores: agrupa por CNPJ e ordena por número de contratos", () => {
+  const contratos = [
+    normalizarContrato(item(1, { fornecedor_ni: "11.111.111/0001-11", fornecedor_nome: "A LTDA", valor_global: 100 }), "ia"),
+    normalizarContrato(item(2, { fornecedor_ni: "22222222000122", fornecedor_nome: "B LTDA", valor_global: 900 }), "ia"),
+    normalizarContrato(item(3, { fornecedor_ni: "11111111000111", fornecedor_nome: "A LTDA", valor_global: 50 }), "ia"),
+  ];
+  assertEquals(agruparFornecedores(contratos), [
+    { nome: "A LTDA", cnpj: "11111111000111", contratos: 2, valorTotal: 150 },
+    { nome: "B LTDA", cnpj: "22222222000122", contratos: 1, valorTotal: 900 },
+  ]);
+});
+
+Deno.test("fornecedores: empate em contratos desempata pelo valor", () => {
+  const contratos = [
+    normalizarContrato(item(1, { fornecedor_ni: "11111111000111", valor_global: 10 }), "ia"),
+    normalizarContrato(item(2, { fornecedor_ni: "22222222000122", valor_global: 20 }), "ia"),
+  ];
+  assertEquals(agruparFornecedores(contratos).map((f) => f.cnpj), ["22222222000122", "11111111000111"]);
+});
+
+Deno.test("fornecedores: pessoa física (CPF) e contrato sem fornecedor ficam de fora", () => {
+  const contratos = [
+    normalizarContrato(item(1, { fornecedor_ni: "123.456.789-09", fornecedor_nome: "FULANO" }), "ia"),
+    normalizarContrato(item(2, { fornecedor_ni: null, fornecedor_nome: null }), "ia"),
+  ];
+  assertEquals(agruparFornecedores(contratos), []);
+});
+
+Deno.test("fornecedores: sem nome, usa o CNPJ", () => {
+  const c = normalizarContrato(item(1, { fornecedor_ni: "11111111000111", fornecedor_nome: "" }), "ia");
+  assertEquals(agruparFornecedores([c])[0].nome, "11111111000111");
 });
