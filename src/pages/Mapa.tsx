@@ -109,20 +109,23 @@ async function aplicarCoordenadasCnpj(locais: ResearchLocation[]) {
   }
 }
 
-/** Busca paginada — a base tem mais linhas do que o limite por requisição. */
+/**
+ * Busca paginada — a base tem mais linhas do que o limite por requisição. A primeira
+ * página traz a contagem total e as demais vêm em paralelo, em vez de uma após a outra.
+ */
 async function carregarLocais(): Promise<ResearchLocation[]> {
   const passo = 1000;
-  const todos: ResearchLocation[] = [];
-  for (let de = 0; de < 20000; de += passo) {
-    const { data, error } = await safeSupabase
-      .from("research_locations")
-      .select(COLUNAS)
-      .order("id", { ascending: true })
-      .range(de, de + passo - 1);
-    if (error) throw error;
-    const lote = (data || []) as unknown as ResearchLocation[];
-    todos.push(...lote);
-    if (lote.length < passo) break;
+  const pagina = (de: number) => safeSupabase.from("research_locations").select(COLUNAS, de === 0 ? { count: "exact" } : undefined)
+    .order("id", { ascending: true }).range(de, de + passo - 1);
+  const primeira = await pagina(0);
+  if (primeira.error) throw primeira.error;
+  const todos = [...((primeira.data || []) as unknown as ResearchLocation[])];
+  const total = Math.min(primeira.count ?? 0, 20000);
+  const restantes = [];
+  for (let de = passo; de < total; de += passo) restantes.push(pagina(de));
+  for (const r of await Promise.all(restantes)) {
+    if (r.error) throw r.error;
+    todos.push(...((r.data || []) as unknown as ResearchLocation[]));
   }
   await aplicarCoordenadasCnpj(todos);
   // Defesa: descarta coordenadas fora do território nacional (dado incorreto na fonte).
@@ -2271,7 +2274,7 @@ export default function Mapa() {
             )}
 
             {/* Barra superior: abas por intenção + painéis à direita (no espírito do Global Election Simulator) */}
-            {!isLoading && !error && (
+            {(
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -2370,26 +2373,20 @@ export default function Mapa() {
               </div>
             )}
 
-            {isLoading && (
-              <div className="flex h-full items-center justify-center">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Carregando os registros da base…
-                </div>
-              </div>
-            )}
-
-            {error && (
-              <div className="flex h-full items-center justify-center px-6 text-center">
-                <p className="text-sm text-destructive">
-                  Falha ao consultar a base de locais de pesquisa:{" "}
-                  {(error as Error).message}
-                </p>
-              </div>
-            )}
-
-            {!isLoading && !error && (
+            {/* O mapa aparece de imediato; os registros da base chegam depois e entram como pontos.
+                Carregamento e falha são avisos sobre o mapa, não substituem o mapa. */}
+            {(
               <div className={`relative flex min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-background shadow-sm ${visaoRegional ? "flex-col sm:flex-row" : ""}`}>
+                {isLoading && (
+                  <div className="pointer-events-none absolute left-1/2 top-3 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card/95 px-3 py-1.5 text-xs text-muted-foreground shadow backdrop-blur">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando os registros da base…
+                  </div>
+                )}
+                {!!error && (
+                  <div className="absolute left-1/2 top-3 z-30 max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-lg border border-destructive/40 bg-card/95 px-3 py-2 text-xs text-destructive shadow backdrop-blur">
+                    Falha ao consultar a base de locais de pesquisa: {(error as Error).message}
+                  </div>
+                )}
                 <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-background transition-[width] duration-300">
                   <MapaBrasil
                     ref={mapaRef}

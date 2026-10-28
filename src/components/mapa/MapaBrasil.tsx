@@ -479,12 +479,33 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
     map.setPaintProperty("rotulos-uf", "text-halo-color", corDoTema("--background"));
     map.setPaintProperty("rotulos-mun", "text-color", corDoTema("--foreground", 0.85));
     map.setPaintProperty("rotulos-mun", "text-halo-color", corDoTema("--background"));
+    map.setPaintProperty("paises-fill", "fill-color", corDoTema("--foreground"));
+    map.setPaintProperty("paises-line", "line-color", corDoTema("--foreground", 0.35));
+    map.setPaintProperty("paises-rotulos", "text-color", corDoTema("--foreground", 0.55));
+    map.setPaintProperty("paises-rotulos", "text-halo-color", corDoTema("--background"));
     // Siglas das UFs no centro da bbox (zoom intermediário).
     (map.getSource("rotulos-uf") as GeoJSONSource | undefined)?.setData(fc(features.map((f) => {
       const b = bboxes[f.properties.sigla];
       return { type: "Feature" as const, geometry: { type: "Point" as const, coordinates: [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2] }, properties: { sigla: f.properties.sigla } };
     })));
   }, [features, bboxes, ufsHd, contagemPorUf, ufsSelecionadas, regional, versaoEstilo, tema]);
+
+  // ---------- países vizinhos (uma vez por estilo) ----------
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !versaoEstilo || !estiloOkRef.current) return;
+    let vivo = true;
+    carregarGeojson<FeatureCollection<Polygon | MultiPolygon, { iso: string; nome: string; lon: number | null; lat: number | null }>>("/america-do-sul.geojson")
+      .then((d) => {
+        if (!vivo || !mapRef.current) return;
+        (map.getSource("paises") as GeoJSONSource | undefined)?.setData(d);
+        (map.getSource("paises-rotulos") as GeoJSONSource | undefined)?.setData(fc(d.features
+          .filter((f) => f.properties.lon != null && f.properties.lat != null && !["ABW", "CUW", "TTO", "FLK"].includes(f.properties.iso))
+          .map((f) => ({ type: "Feature" as const, geometry: { type: "Point" as const, coordinates: [f.properties.lon as number, f.properties.lat as number] }, properties: { nome: f.properties.nome } }))));
+      })
+      .catch((e) => console.warn(e.message));
+    return () => { vivo = false; };
+  }, [versaoEstilo]);
 
   // ---------- rótulos regionais ----------
   useEffect(() => {
@@ -1128,6 +1149,16 @@ function montarCamadas(map: MapLibre) {
     if (!map.getSource(id)) map.addSource(id, { type: "geojson", data: VAZIO, ...extra });
   };
   const oculto = { visibility: "none" as const };
+
+  // Vizinhança: países da América do Sul (public/america-do-sul.geojson) sob o Brasil, para o
+  // fundo sóbrio situar o país no continente; preenchimento apagado, divisas finas, nome no zoom nacional.
+  geo("paises", { tolerance: 0.4 });
+  map.addLayer({ id: "paises-fill", type: "fill", source: "paises", paint: { "fill-color": "#888", "fill-opacity": 0.07 } });
+  map.addLayer({ id: "paises-line", type: "line", source: "paises", layout: { "line-join": "round" }, paint: { "line-color": "#888", "line-width": 0.8, "line-opacity": 0.6 } });
+  geo("paises-rotulos");
+  map.addLayer({ id: "paises-rotulos", type: "symbol", source: "paises-rotulos", maxzoom: 6, layout: {
+    "text-field": ["get", "nome"], "text-font": ["Noto Sans Regular"], "text-size": ["interpolate", ["linear"], ["zoom"], 2, 9, 5, 12], "text-transform": "uppercase", "text-letter-spacing": 0.1, "text-optional": true,
+  }, paint: { "text-color": "#888", "text-halo-color": "#000", "text-halo-width": 1, "text-opacity": 0.7 } });
 
   // UFs: contorno simplificado até o zoom ZOOM_MUNICIPIOS, detalhado (dissolvido da malha municipal) depois.
   geo("ufs", { promoteId: "sigla", tolerance: 0.3 });
