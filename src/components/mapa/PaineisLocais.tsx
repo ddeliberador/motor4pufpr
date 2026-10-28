@@ -121,8 +121,10 @@ function ListaAtores({ atores, onSelecionarPonto, limite = 8 }: { atores: AtorDo
 const painelClasse = "absolute bottom-3 right-3 top-3 z-20 flex w-[22rem] max-w-[calc(100%-1.5rem)] flex-col overflow-y-auto rounded-lg border border-border bg-card/95 p-3 text-xs shadow-lg backdrop-blur";
 
 /** Lateral sobre o mapa no desktop; gaveta inferior sem bloqueio (o mapa continua respondendo) no celular. */
-function Recipiente({ rotulo, onFechar, children }: { rotulo: string; onFechar: () => void; children: ReactNode }) {
+function Recipiente({ rotulo, onFechar, embutido, children }: { rotulo: string; onFechar: () => void; embutido?: boolean; children: ReactNode }) {
   const movel = useIsMobile();
+  // Embutido: dentro da coluna do Mapa (que já é lateral no desktop e gaveta no celular).
+  if (embutido) return <section className="text-xs" aria-label={rotulo}>{children}</section>;
   if (movel) {
     return (
       <GavetaInferior aberta onAberta={(v) => { if (!v) onFechar(); }} semBloqueio alturas={[0.22, 0.55, 0.94]} cabecalho={<span className="sr-only">{rotulo}</span>} className="text-xs">
@@ -151,9 +153,11 @@ export interface PainelEstadoProps {
   onSelecionarPonto?: (id: string) => void;
   /** Passa ao estado anterior/seguinte sem voltar ao mapa (ordem por região e nome). */
   onVizinho?: (dir: -1 | 1) => void;
+  /** Renderiza sem recipiente próprio (dentro da coluna do Mapa). */
+  embutido?: boolean;
 }
 
-export function PainelEstado({ uf, anoFoco, atores, usinas, datacenters, backhaul, sintese, onFechar, onEnquadrar, onAbrirMunicipio, onSelecionarPonto, onVizinho }: PainelEstadoProps) {
+export function PainelEstado({ uf, anoFoco, atores, usinas, datacenters, backhaul, sintese, onFechar, onEnquadrar, onAbrirMunicipio, onSelecionarPonto, onVizinho, embutido }: PainelEstadoProps) {
   const { perfil, atores: atoresQ, interacoes, series } = usePainelEstado(uf);
   const pontosMun = useQuery({
     queryKey: ["br-mun-pontos"], staleTime: Infinity,
@@ -182,7 +186,7 @@ export function PainelEstado({ uf, anoFoco, atores, usinas, datacenters, backhau
   const totalAtoresView = (atoresQ.data ?? []).reduce((s, r) => s + (r.atores ?? 0), 0);
 
   return (
-    <Recipiente rotulo={`Visão do estado ${ESTADOS[uf] ?? uf}`} onFechar={onFechar}>
+    <Recipiente rotulo={`Visão do estado ${ESTADOS[uf] ?? uf}`} onFechar={onFechar} embutido={embutido}>
       <Cabecalho titulo={ESTADOS[uf] ?? uf} onFechar={onFechar} onEnquadrar={onEnquadrar} onVizinho={onVizinho}
         sub={<>
           <span className="rounded border border-border px-1 font-mono">{uf}</span>
@@ -296,11 +300,12 @@ export interface PainelMunicipioProps {
   onEnquadrar: () => void;
   onAbrirEstado: (uf: string) => void;
   onSelecionarPonto?: (id: string) => void;
+  embutido?: boolean;
 }
 
 const CAMADAS: CamadaIa[] = ["L1", "L2", "L3", "L4", "L5", "L6", "L7"];
 
-export function PainelMunicipio({ municipio, anoFoco, atores, usinas, datacenters, backhaul, antenas, sintese, onFechar, onEnquadrar, onAbrirEstado, onSelecionarPonto }: PainelMunicipioProps) {
+export function PainelMunicipio({ municipio, anoFoco, atores, usinas, datacenters, backhaul, antenas, sintese, onFechar, onEnquadrar, onAbrirEstado, onSelecionarPonto, embutido }: PainelMunicipioProps) {
   const seriesQ = usePainelMunicipio(municipio.ibge);
   const series = useMemo(() => agruparSeriesMunicipio(seriesQ.data ?? []), [seriesQ.data]);
   const pop = useMemo(() => {
@@ -313,7 +318,7 @@ export function PainelMunicipio({ municipio, anoFoco, atores, usinas, datacenter
   const temSerie = series.some((s) => s.indicador !== INDICADOR_POPULACAO);
 
   return (
-    <Recipiente rotulo={`Visão do município ${municipio.nome}`} onFechar={onFechar}>
+    <Recipiente rotulo={`Visão do município ${municipio.nome}`} onFechar={onFechar} embutido={embutido}>
       <Cabecalho titulo={municipio.nome || municipio.ibge} onFechar={onFechar} onEnquadrar={onEnquadrar}
         sub={<>
           <button type="button" onClick={() => onAbrirEstado(municipio.uf)} className="font-semibold text-primary hover:underline">{ESTADOS[municipio.uf] ?? municipio.uf}</button>

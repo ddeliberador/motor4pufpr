@@ -16,6 +16,7 @@ import Header from "@/components/Header";
 import MapaBrasil, { type AncoraPbia, type Ponto, type MapaBrasilHandle, type MunicipioClicado, type TransporteMapa, CORES_TRANSPORTE, FUNDOS, type FundoId, type CoropleticoMunicipal as Coro } from "@/components/mapa/MapaBrasil";
 import { PainelEstado, PainelMunicipio, atoresDoMunicipio, type AtorDoPainel } from "@/components/mapa/PaineisLocais";
 import { normalizarNome } from "@/lib/paineisLocais";
+import { useCamadasAtores, camadasDoRegistro } from "@/lib/camadasAtores";
 import { GavetaInferior } from "@/components/GavetaInferior";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
@@ -228,14 +229,16 @@ function escreverLugarNaUrl(lugar: { tipo: "uf"; uf: string } | { tipo: "municip
   if (url !== `${window.location.pathname}${window.location.search}${window.location.hash}`) window.history.pushState(null, "", url);
 }
 
-type Aba = "atores" | "camadas" | "interacao" | "regional";
+// Modos do mapa: uma pergunta por vez; cada modo mostra só o que lhe diz respeito.
+type Aba = "camadas" | "lugar" | "interacao" | "regional";
 const ABAS: { id: Aba; rotulo: string; icone: string; titulo: string }[] = [
-  { id: "atores", rotulo: "Atores", icone: "groups", titulo: "Atores do SNI: universidades, ICTs, empresas, hubs" },
-  { id: "camadas", rotulo: "Camadas de IA", icone: "layers", titulo: "As 7 camadas de IA: energia, infraestrutura, modelos, aplicações, pesquisa e governança" },
-  { id: "interacao", rotulo: "Interação", icone: "share", titulo: "Interações entre ICTs, empresas e governo" },
-  { id: "regional", rotulo: "Regional", icone: "public", titulo: "As 5 macrorregiões com evolução histórica" },
+  { id: "camadas", rotulo: "O que existe", icone: "layers", titulo: "Atores e infraestrutura, todos nas sete camadas de IA" },
+  { id: "lugar", rotulo: "Como está cada lugar", icone: "map", titulo: "Municípios pintados pela síntese das camadas ou por um indicador, com a evolução no tempo" },
+  { id: "interacao", rotulo: "Quem coopera", icone: "share", titulo: "Interações entre ICTs, empresas e governo" },
+  { id: "regional", rotulo: "Comparar regiões", icone: "public", titulo: "As 5 macrorregiões com evolução histórica" },
 ];
 const CHAVE_CONFIG = "mapa-inovacao-config";
+const CAMADA_POR_INFRA: Partial<Record<CategoriaKey, CamadaIa>> = { energia: "L1", cabo: "L2", backhaul: "L2", datacenter: "L3", supercomputacao: "L2" };
 const URL_ISSUES = "https://github.com/ddeliberador/motor4pufpr/issues/new";
 
 function lerMunModoDaUrl(): "sintese" | "indicador" | "nenhum" {
@@ -312,6 +315,9 @@ export default function Mapa() {
   // Painel do lugar clicado: estado (zoom nacional) ou município (zoom municipal).
   const [painelLocal, setPainelLocal] = useState<{ tipo: "uf"; uf: string } | ({ tipo: "municipio" } & MunicipioClicado) | null>(null);
   const movel = useIsMobile();
+  // Alguma camada ligada? Lido no clique do estado para acender as sete só quando o mapa está vazio.
+  const algumaLayerRef = useRef(false);
+  const setLayersTodas = (f: (todas: boolean) => boolean) => f(algumaLayerRef.current);
   // Navegação por lugar: Brasil → estado → município, com a câmera voando a cada nível,
   // trilho sobre o mapa e o lugar na URL (#parana, #curitiba-pr) para compartilhar e para o
   // botão voltar do navegador subir um nível.
@@ -319,7 +325,11 @@ export default function Mapa() {
   const irParaUf = useCallback((uf: string | null, opcoes?: { semHistorico?: boolean }) => {
     setInterSel(null);
     if (!uf) { setPainelLocal(null); setUfFoco(null); setUfsSel(new Set()); mapaRef.current?.enquadrarUf(null); }
-    else { setPainelLocal({ tipo: "uf", uf }); setUfFoco(uf); setUfsSel(new Set([uf])); mapaRef.current?.enquadrarUf(uf); }
+    else {
+      setPainelLocal({ tipo: "uf", uf }); setUfFoco(uf); setUfsSel(new Set([uf])); mapaRef.current?.enquadrarUf(uf);
+      // Ao entrar num estado, as sete camadas acendem se nenhuma estava ligada (o Brasil abre vazio).
+      setLayersTodas((todas) => { if (!todas) [setLayer1Ativa, setLayer2Ativa, setLayer3Ativa, setLayer4Ativa, setLayer5Ativa, setLayer6Ativa, setLayer7Ativa].forEach((f) => f(true)); return true; });
+    }
     if (!opcoes?.semHistorico) escreverLugarNaUrl(uf ? { tipo: "uf", uf } : null);
   }, []);
   const irParaMunicipio = useCallback((m: MunicipioClicado, opcoes?: { semHistorico?: boolean; lonLat?: [number, number] }) => {
@@ -372,6 +382,8 @@ export default function Mapa() {
     [camadas],
   );
   const [filtrosMobileAbertos, setFiltrosMobileAbertos] = useState(false);
+  const [filtrosAbertos, setFiltrosAbertos] = useState(false);
+  const [colunaMovelAberta, setColunaMovelAberta] = useState(false);
   // Abas da barra superior (uma por intenção de uso); cada uma mostra só o que lhe diz respeito.
   const [aba, setAba] = useState<Aba>(() => lerAbaDaUrl());
   const [configAberta, setConfigAberta] = useState(false);
@@ -397,7 +409,7 @@ export default function Mapa() {
   // Camadas de IA — desligadas por padrão. Os locais físicos são pré-carregados
   // para que o total represente sempre o universo completo; a renderização só
   // ocorre quando a camada correspondente é ativada.
-  const [layer1Ativa, setLayer1Ativa] = useState(true);
+  const [layer1Ativa, setLayer1Ativa] = useState(false);
   const [layer1Carregando, setLayer1Carregando] = useState(false);
   const [dadosUsinas, setDadosUsinas] = useState<UsinaAneel[] | null>(null);
   // Subtipos de usina selecionados (vazio = todos os tipos).
@@ -410,7 +422,7 @@ export default function Mapa() {
     return dadosUsinas.filter((u) => u.nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(q)).slice(0, 6);
   }, [busca, dadosUsinas]);
   const [erroLayer1, setErroLayer1] = useState<string | null>(null);
-  const [layer2Ativa, setLayer2Ativa] = useState(true);
+  const [layer2Ativa, setLayer2Ativa] = useState(false);
   const [layer2Carregando, setLayer2Carregando] = useState(false);
   const [dadosCabos, setDadosCabos] = useState<DadosCabos | null>(null);
   // Sub-camadas da Layer 2 — cada uma com estado e carregamento independentes.
@@ -423,7 +435,10 @@ export default function Mapa() {
   const [dadosBackhaul, setDadosBackhaul] = useState<BackhaulMunicipio[] | null>(null);
   const [backhaulCarregando, setBackhaulCarregando] = useState(false);
   const [erroBackhaul, setErroBackhaul] = useState<string | null>(null);
-  const [layer3Ativa, setLayer3Ativa] = useState(true);
+  const [layer3Ativa, setLayer3Ativa] = useState(false);
+  // Registros fora de qualquer regra de camada: contados e ligáveis, nunca escondidos em silêncio.
+  const [semCamadaAtiva, setSemCamadaAtiva] = useState(false);
+  const camadasAtoresQ = useCamadasAtores();
   const [layer3Carregando, setLayer3Carregando] = useState(false);
   const [dadosDCs, setDadosDCs] = useState<Datacenter[] | null>(null);
   const [erroLayer3, setErroLayer3] = useState<string | null>(null);
@@ -459,6 +474,7 @@ export default function Mapa() {
   const [layer4Ativa, setLayer4Ativa] = useState(false);
   const [layer5Ativa, setLayer5Ativa] = useState(false);
   const [layer6Ativa, setLayer6Ativa] = useState(false);
+  algumaLayerRef.current = layer1Ativa || layer2Ativa || layer3Ativa || layer4Ativa || layer5Ativa || layer6Ativa || layer7Ativa;
   const [enriquecimentoLayers, setEnriquecimentoLayers] = useState<EnriquecimentoLayers>({});
   const [layersEnrCarregando, setLayersEnrCarregando] = useState(false);
   const [erroLayersEnr, setErroLayersEnr] = useState<string | null>(null);
@@ -829,9 +845,31 @@ export default function Mapa() {
     };
   }, [enriquecimentoLayers]);
 
+  // Toda linha do mapa pertence a uma camada de IA: atores pela classificação do banco
+  // (camadasAtores), infraestrutura pela própria natureza (usina L1, cabo/backhaul L2, datacenter L3).
   const comCategoria = useMemo(
-    () => locais.map((l) => ({ ...l, categoria: categorizar(l.tipo) })),
-    [locais],
+    () => locais.map((l) => {
+      const categoria = categorizar(l.tipo);
+      const cls = camadasDoRegistro(l.id, l.tipo, camadasAtoresQ.data);
+      const camadaIa: CamadaIa | null = cls?.principal ?? CAMADA_POR_INFRA[categoria] ?? null;
+      return { ...l, categoria, camadaIa, camadasIa: cls?.camadas ?? (camadaIa ? [camadaIa] : []) };
+    }),
+    [locais, camadasAtoresQ.data],
+  );
+  const contagemSemCamada = useMemo(() => comCategoria.filter((l) => !l.camadaIa).length, [comCategoria]);
+  // Quantos registros de cada camada há no lugar em foco (Brasil, estado ou município): a coluna lê esse recorte.
+  const contagemCamadaLugar = useMemo(() => {
+    const out: Record<CamadaIa, number> = { L1: 0, L2: 0, L3: 0, L4: 0, L5: 0, L6: 0, L7: 0 };
+    const nomeMun = painelLocal?.tipo === "municipio" ? normalizarNome(painelLocal.nome) : null;
+    for (const l of comCategoria) {
+      if (painelLocal && l.uf !== painelLocal.uf) continue;
+      if (nomeMun && normalizarNome(l.municipio) !== nomeMun) continue;
+      for (const c of l.camadasIa) out[c] += 1;
+    }
+    return out;
+  }, [comCategoria, painelLocal]);
+  const ContagemCamada = ({ c }: { c: CamadaIa }) => (
+    <span className="shrink-0 font-mono text-[10px] text-muted-foreground" title={painelLocal ? "registros neste lugar" : "registros no Brasil"}>{contagemCamadaLugar[c].toLocaleString("pt-BR")}</span>
   );
 
   // Atores no formato dos painéis de estado/município (todas as bases carregadas, sem os filtros da coluna).
@@ -862,7 +900,6 @@ export default function Mapa() {
     }
     const grupos: ((l: (typeof comCategoria)[number]) => boolean)[] = [];
     if (fontesSel.size) grupos.push((l) => fontesSel.has(l.fonte));
-    if (catsSel.size) grupos.push((l) => catsSel.has(l.categoria));
     if (ufsSel.size) grupos.push((l) => !!l.uf && ufsSel.has(l.uf));
     if (regioesSel.size)
       grupos.push((l) => !!l.uf && regioesSel.has(REGIAO_POR_UF[l.uf] || ""));
@@ -886,15 +923,11 @@ export default function Mapa() {
 
   // Atores vinculados às Layers 4–7 ativas entram sempre, mesmo com a
   // categoria SNI desmarcada em "Camadas no mapa".
+  // Um ponto entra quando alguma das suas camadas está ligada; sem camada, só com "Sem camada" ligado.
   const selecionados = useMemo(() => {
-    const temEnr = layer4Ativa || layer5Ativa || layer6Ativa || layer7Ativa;
-    return filtrados.filter((l) => {
-      if (camadas.has(l.categoria)) return true;
-      if (!temEnr) return false;
-      const v = enriquecimentoLayers[l.id];
-      return !!v && !!((layer4Ativa && v.l4) || (layer5Ativa && v.l5) || (layer6Ativa && v.l6) || (layer7Ativa && v.l7));
-    });
-  }, [filtrados, camadas, layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa, enriquecimentoLayers]);
+    const ativa: Record<CamadaIa, boolean> = { L1: layer1Ativa, L2: layer2Ativa, L3: layer3Ativa, L4: layer4Ativa, L5: layer5Ativa, L6: layer6Ativa, L7: layer7Ativa };
+    return filtrados.filter((l) => (l.camadasIa.length ? l.camadasIa.some((c) => ativa[c]) : semCamadaAtiva));
+  }, [filtrados, layer1Ativa, layer2Ativa, layer3Ativa, layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa, semCamadaAtiva]);
 
   // Destaque PBIA: com um eixo ativo, restringe os pontos às categorias de atores
   // associadas àquele eixo (curadoria Motor 4P).
@@ -1222,7 +1255,7 @@ export default function Mapa() {
   };
 
   // ---------------------------------------------------------------- nível municipal
-  const munAtivo = !visaoRegional && munModo !== "nenhum";
+  const munAtivo = aba === "lugar" && !visaoRegional && munModo !== "nenhum";
   const sintese = useSinteseMunicipal(anoFoco, normalizarMun, munAtivo && munModo === "sintese");
   const munDef = munModo === "indicador" && munSel ? INDICADORES_MUNICIPAIS.find((i) => i.id === munSel.indicador) ?? null : null;
   const munPeriodosQ = usePeriodosMunicipais(munAtivo && munDef ? munDef.id : null, munSel?.segmento ?? "");
@@ -1310,7 +1343,7 @@ export default function Mapa() {
   const motivoSemSerie = visaoRegional ? "carregando a série regional…"
     : sintese.carregando || munPeriodosQ.isLoading ? "carregando as séries municipais…"
     : munModo !== "nenhum" && !anosMunicipais.length ? "as séries municipais ainda não foram coletadas (Gestão da Pesquisa → Coletas); a Layer 1 ganha anos quando as usinas carregarem"
-    : aba === "atores" ? "os atores não têm série; abra Camadas de IA ou a visão regional"
+    : aba === "camadas" ? "o modo O que existe não tem tempo; veja Como está cada lugar ou Comparar regiões"
     : "ligue uma camada com série (municípios, usinas ou interações)";
 
   const municipiosDaCamada = (camada: CamadaIa) => ({
@@ -1347,10 +1380,12 @@ export default function Mapa() {
     escreverLugarNaUrl(null);
     setTiposUsina(new Set());
     setUsinaSel(null);
-    // Volta ao estado de abertura do mapa: Layers 1–3 ligadas, sem cabos, síntese municipal.
-    setLayer1Ativa(true);
-    setLayer2Ativa(true);
-    setLayer3Ativa(true);
+    // Volta ao estado de abertura do mapa: Brasil sem pontos; as camadas acendem ao entrar num estado.
+    setLayer1Ativa(false);
+    setLayer2Ativa(false);
+    setLayer3Ativa(false);
+    setSemCamadaAtiva(false);
+    irParaUf(null);
     setLayer4Ativa(false);
     setLayer5Ativa(false);
     setLayer6Ativa(false);
@@ -1445,165 +1480,250 @@ export default function Mapa() {
     return [];
   }, [selecao, pontoSelecionadoId, selecionados]);
 
+  // Filtros do mapa (Buscar, Mais filtros, Fonte dos dados): abrem pelo botão Filtros da barra do mapa.
+  const painelFiltros = (
+    <div className="space-y-4 p-4">
+        {/* Buscar: uma caixa só, para atores e usinas (quando a Layer 1 está ligada). */}
+        {aba !== "regional" && (
+          <div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={busca}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setBusca(v);
+                  if (v.trim()) { setListaAberta(true); setPainelPoliticasAberto(false); }
+                }}
+                placeholder={layer1Ativa ? "Ator, cidade ou usina" : "Ator ou cidade"}
+                className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
+              />
+            </div>
+            {busca.trim().length >= 3 && layer1Ativa && usinasEncontradas.length > 0 && (
+              <div className="mt-1 rounded-lg border border-border bg-card p-1">
+                <p className="px-1 text-[10px] uppercase tracking-wider text-muted-foreground">Usinas</p>
+                {usinasEncontradas.map((u) => (
+                  <button
+                    key={u.id}
+                    onClick={() => {
+                      setUsinaSel(u);
+                      setTiposUsina((atual) => {
+                        if (atual.size === 0 || atual.has(u.tipo)) return atual;
+                        const novo = new Set(atual); novo.delete("__nenhum__"); novo.add(u.tipo); return novo;
+                      });
+                    }}
+                    className={`flex w-full items-center gap-1.5 rounded px-1 py-0.5 text-left text-[11px] hover:bg-muted ${usinaSel?.id === u.id ? "bg-pink-500/15" : ""}`}
+                  >
+                    <span className="material-symbols-outlined text-sm leading-none text-pink-500" style={{ fontVariationSettings: '"FILL" 1' }} aria-hidden>bolt</span>
+                    <span className="flex-1 truncate">{u.nome}</span>
+                    <span className="text-muted-foreground">{u.tipo} · {u.uf}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+
+        {/* Mais filtros: tipo bruto e filtros por base, recolhidos. */}
+        <details className="rounded-lg border border-border bg-card/60 px-2 py-1.5" open={tiposSel.size > 0 || Object.values(granular).some((v) => v && v.size > 0)}>
+          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-muted-foreground">Mais filtros</summary>
+          <div className="mt-2 space-y-4">
+        {/* Tipo, como vem da base */}
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Tipo, como vem da base
+          </p>
+          <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
+            {Object.entries(contagemTipo)
+              .sort((a, b) => b[1] - a[1])
+              .map(([t, n]) => {
+                const ativo = tiposSel.has(t);
+                const esmaecido = tiposSel.size > 0 && !ativo;
+                return (
+                  <button
+                    key={t}
+                    onClick={() => alternar(tiposSel, t, setTiposSel)}
+                    className={`flex w-full items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted ${
+                      ativo
+                        ? "border-primary bg-primary/15"
+                        : "border-transparent bg-card"
+                    } ${esmaecido ? "opacity-40" : ""}`}
+                  >
+                    <span className="flex-1 truncate">{t}</span>
+                    <span className="font-mono text-muted-foreground">
+                      {n.toLocaleString("pt-BR")}
+                    </span>
+                  </button>
+                );
+              })}
+          </div>
+        </div>
+
+        {/* Filtros detalhados por base (checkbox, lista suspensa ou opção única) */}
+        <FiltrosPorBase
+          itens={comCategoria}
+          enriquecimento={enriquecimento}
+          selecao={granular}
+          fontesSel={fontesSel}
+          onChange={(id, valores) =>
+            setGranular((prev) => ({ ...prev, [id]: valores }))
+          }
+        />
+
+          </div>
+        </details>
+
+        {/* Fonte dos dados: modo de leitura e bases, no rodapé. */}
+        <details className="rounded-lg border border-border bg-card/60 px-2 py-1.5" open={fontesSel.size > 0 || modo === "lake"}>
+          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fonte dos dados</summary>
+          <div className="mt-2 space-y-3">
+            <div className="flex rounded-lg border border-border bg-card p-0.5">
+              <button onClick={() => setModo("bases")} className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-medium transition-colors ${modo === "bases" ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-muted"}`}>
+                <Filter className="h-3.5 w-3.5" /> Bases de origem
+              </button>
+              <button onClick={() => setModo("lake")} className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-medium transition-colors ${modo === "lake" ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-muted"}`}>
+                <Database className="h-3.5 w-3.5" /> Data Lake Cruzado
+              </button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">Bases de origem filtra pela fonte de cada registro; Data Lake Cruzado usa a classificação canônica do Motor, que cruza as fontes.</p>
+
+        {modo === "bases" && (<>
+
+        {/* Bases de origem */}
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Base de origem
+          </p>
+          <div className="space-y-1">
+            {Object.entries(contagemFonte)
+              .sort((a, b) => b[1] - a[1])
+              .map(([f, n]) => {
+                const ativo = fontesSel.has(f);
+                const esmaecido = fontesSel.size > 0 && !ativo;
+                return (
+                  <button
+                    key={f}
+                    onClick={() => alternar(fontesSel, f, setFontesSel)}
+                    className={`flex w-full items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted ${
+                      ativo
+                        ? "border-primary bg-primary/15"
+                        : "border-transparent bg-card"
+                    } ${esmaecido ? "opacity-40" : ""}`}
+                  >
+                    <span className="flex-1 truncate">{fonteLabel(f)}</span>
+                    <span className="font-mono text-muted-foreground">
+                      {n.toLocaleString("pt-BR")}
+                    </span>
+                  </button>
+                );
+              })}
+          </div>
+        </div>
+        </>)}
+
+        {modo === "lake" && (
+          <PainelDataLake
+            itens={comCanon}
+            selecao={lakeSel}
+            onChange={(id, vals) => setLakeSel((prev) => ({ ...prev, [id]: vals }))}
+          />
+        )}
+          </div>
+        </details>
+
+    </div>
+  );
   const colunaFiltros = (
           <aside
-            className={`${movel ? "flex w-full flex-col p-4" : `hidden w-full flex-col overflow-y-auto border-border bg-background p-4 lg:static lg:z-auto lg:shrink-0 lg:border-r lg:bg-muted/20 ${colunaAberta ? "lg:flex lg:w-72" : "lg:hidden"}`}`}
-            aria-label="Filtros do mapa"
+            className={`${movel ? "flex w-full flex-col p-4" : `hidden w-full flex-col overflow-y-auto border-border bg-background p-3 lg:static lg:z-auto lg:order-2 lg:shrink-0 lg:border-l lg:bg-muted/20 ${colunaAberta ? "lg:flex lg:w-[22rem]" : "lg:hidden"}`}`}
+            aria-label="Lugar e camadas"
           >
-            <div className="space-y-6">
-              {/* Total + limpar */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold leading-none">
-                    {selecionados.length.toLocaleString("pt-BR")}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    selecionados de {totalLocais.toLocaleString("pt-BR")} locais
-                  </p>
+            <div className="space-y-4">
+              {/* O lugar em foco: Brasil, estado ou município. A coluna inteira lê esse recorte. */}
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  {!painelLocal && (<>
+                    <p className="text-base font-bold leading-tight">Brasil</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      <strong className="font-semibold text-foreground">{selecionados.length.toLocaleString("pt-BR")}</strong> de {totalLocais.toLocaleString("pt-BR")} registros no mapa · clique num estado para aproximar
+                    </p>
+                  </>)}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={limpar} title="Limpar filtros, camadas e seleções" className="h-8 gap-1 px-2.5 text-xs">
+                <div className="flex shrink-0 items-center gap-1">
+                  {aba !== "regional" && (
+                    <button type="button" onClick={() => { setListaAberta((v) => !v); setPainelPoliticasAberto(false); setConfigAberta(false); }} aria-pressed={listaAberta} title="Listagem do que está no mapa" aria-label="Listagem"
+                      className={`toque flex h-8 w-8 items-center justify-center rounded-md border border-border ${listaAberta ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-muted"}`}>
+                      <List className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  {layersIaAtivas.length > 0 && aba !== "regional" && (
+                    <button type="button" onClick={() => { setPainelPoliticasAberto((v) => !v); setListaAberta(false); setConfigAberta(false); }} aria-pressed={painelPoliticasAberto} title="Políticas públicas por camada" aria-label="Políticas"
+                      className={`toque flex h-8 w-8 items-center justify-center rounded-md border border-border ${painelPoliticasAberto ? "bg-violet-500/15 text-violet-400" : "text-muted-foreground hover:bg-muted"}`}>
+                      <span className="material-symbols-outlined text-base leading-none" style={{ fontVariationSettings: '"FILL" 1' }} aria-hidden>policy</span>
+                    </button>
+                  )}
+                  <Button type="button" variant="outline" size="sm" onClick={limpar} title="Voltar ao estado de abertura" className="h-8 gap-1 px-2 text-xs">
                     <X className="h-3.5 w-3.5" /> Limpar
                   </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="lg:hidden"
-                    onClick={() => setFiltrosMobileAbertos(false)}
-                    aria-label="Fechar filtros"
-                  >
+                  <Button type="button" variant="ghost" size="icon" className="lg:hidden" onClick={() => setFiltrosMobileAbertos(false)} aria-label="Fechar">
                     <X />
                   </Button>
                 </div>
               </div>
-
-              {/* Buscar: uma caixa só, para atores e usinas (quando a Layer 1 está ligada). */}
-              {aba !== "regional" && (
-                <div>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                      value={busca}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        setBusca(v);
-                        if (v.trim() && aba === "atores") { setListaAberta(true); setPainelPoliticasAberto(false); }
-                      }}
-                      placeholder={layer1Ativa ? "Ator, cidade ou usina" : "Ator ou cidade"}
-                      className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
-                    />
-                  </div>
-                  {busca.trim().length >= 3 && layer1Ativa && usinasEncontradas.length > 0 && (
-                    <div className="mt-1 rounded-lg border border-border bg-card p-1">
-                      <p className="px-1 text-[10px] uppercase tracking-wider text-muted-foreground">Usinas</p>
-                      {usinasEncontradas.map((u) => (
-                        <button
-                          key={u.id}
-                          onClick={() => {
-                            setUsinaSel(u);
-                            setTiposUsina((atual) => {
-                              if (atual.size === 0 || atual.has(u.tipo)) return atual;
-                              const novo = new Set(atual); novo.delete("__nenhum__"); novo.add(u.tipo); return novo;
-                            });
-                          }}
-                          className={`flex w-full items-center gap-1.5 rounded px-1 py-0.5 text-left text-[11px] hover:bg-muted ${usinaSel?.id === u.id ? "bg-pink-500/15" : ""}`}
-                        >
-                          <span className="material-symbols-outlined text-sm leading-none text-pink-500" style={{ fontVariationSettings: '"FILL" 1' }} aria-hidden>bolt</span>
-                          <span className="flex-1 truncate">{u.nome}</span>
-                          <span className="text-muted-foreground">{u.tipo} · {u.uf}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Onde: regiões como chips e estados por seletor (clicar no mapa também seleciona). */}
-              {aba !== "regional" && (
-                <div>
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Onde</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {REGIOES.map((r) => {
-                      const ativo = regioesSel.has(r);
-                      return (
-                        <button
-                          key={r}
-                          onClick={() => { setUfFoco(null); alternar(regioesSel, r, setRegioesSel); }}
-                          className={`rounded-md border px-2 py-1 text-[11px] font-medium transition-colors ${ativo ? "border-primary bg-primary/15 text-foreground" : "border-border bg-card hover:bg-muted"} ${regioesSel.size > 0 && !ativo ? "opacity-40" : ""}`}
-                        >
-                          {r}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                    <select
-                      value=""
-                      onChange={(e) => { const u = e.target.value; if (!u) return; if (!ufsSel.has(u)) alternar(ufsSel, u, setUfsSel); setUfFoco(u); }}
-                      aria-label="Adicionar estado"
-                      className="rounded-md border border-border bg-background px-2 py-1 text-[11px]"
-                    >
-                      <option value="">+ estado…</option>
-                      {ufs.filter((u) => !ufsSel.has(u)).map((u) => <option key={u} value={u}>{u}</option>)}
-                    </select>
-                    {[...ufsSel].map((u) => (
-                      <button key={u} onClick={() => { alternar(ufsSel, u, setUfsSel); setUfFoco(null); }} title="Remover"
-                        className="rounded-md border border-primary bg-primary/15 px-2 py-1 text-[11px] font-medium">
-                        {u} ×
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {aba === "atores" && (<>
-              {/* Camadas no mapa — Atores do SNI */}
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Quem · atores do SNI
-                  </p>
-                  <button
-                    onClick={() =>
-                      setCamadas(
-                        CATEGORIAS_SNI.every((c) => camadas.has(c))
-                          ? new Set([...camadas].filter((k) => !CATEGORIAS_SNI.includes(k)))
-                          : new Set([...camadas, ...CATEGORIAS_SNI]),
-                      )
-                    }
-                    className="text-[11px] text-primary hover:underline"
-                  >
-                    {CATEGORIAS_SNI.every((c) => camadas.has(c)) ? "nenhuma" : "todas"}
+              {painelLocal && !visaoRegional && (
+                <nav aria-label="Lugar" className="flex max-w-full items-center gap-1 rounded-lg border border-border bg-card px-1.5 py-1 text-xs">
+                  <button type="button" onClick={voltarUmNivel} aria-label="Voltar um nível" className="toque flex h-7 w-7 items-center justify-center rounded-md hover:bg-muted">
+                    <span className="material-symbols-outlined text-base leading-none" aria-hidden>arrow_back</span>
                   </button>
-                </div>
-                <div className="space-y-1">
-                  {CATEGORIAS.filter((c) => CATEGORIAS_SNI.includes(c.key)).map((c) => (
-                    <label
-                      key={c.key}
-                      className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={camadas.has(c.key)}
-                        onChange={() => alternar(camadas, c.key, setCamadas)}
-                        className="h-3.5 w-3.5 shrink-0 accent-primary"
-                      />
-                      <span className={`material-symbols-outlined shrink-0 text-base leading-none ${c.cor}`} aria-hidden>
-                        {c.icon}
-                      </span>
-                      <span className="flex-1 truncate">{c.label}</span>
-                      <span className="font-mono text-[10px] text-muted-foreground">
-                        {(contagemCat[c.key] || 0).toLocaleString("pt-BR")}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+                  <button type="button" onClick={() => irParaUf(null)} className="rounded px-1 text-muted-foreground hover:bg-muted hover:text-foreground">Brasil</button>
+                  <span className="text-muted-foreground">›</span>
+                  <button type="button" onClick={() => irParaUf(painelLocal.uf)} className={`truncate rounded px-1 ${painelLocal.tipo === "uf" ? "font-semibold text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>{ESTADOS[painelLocal.uf] ?? painelLocal.uf}</button>
+                  {painelLocal.tipo === "municipio" && (<><span className="text-muted-foreground">›</span><span className="truncate px-1 font-semibold">{painelLocal.nome}</span></>)}
+                </nav>
+              )}
+              {painelLocal?.tipo === "uf" && !visaoRegional && (
+                <PainelEstado
+                  uf={painelLocal.uf}
+                  anoFoco={anoEfetivo}
+                  atores={atoresPainel.filter((a) => a.uf === painelLocal.uf)}
+                  usinas={(dadosUsinas ?? []).filter((u) => u.uf === painelLocal.uf)}
+                  datacenters={(dadosDCs ?? []).filter((d) => d.uf === painelLocal.uf)}
+                  backhaul={(dadosBackhaul ?? []).filter((b) => b.uf === painelLocal.uf)}
+                  sintese={munAtivo && munModo === "sintese" ? sintese.valores : null}
+                  onFechar={() => irParaUf(null)}
+                  onEnquadrar={() => mapaRef.current?.enquadrarUf(painelLocal.uf)}
+                  onAbrirMunicipio={(m) => irParaMunicipio(m)}
+                  onSelecionarPonto={(id) => setPontoSelecionadoId(id)}
+                  embutido
+                  onVizinho={(dir) => { const i = ORDEM_UFS.indexOf(painelLocal.uf); irParaUf(ORDEM_UFS[(i + dir + ORDEM_UFS.length) % ORDEM_UFS.length]); }}
+                />
+              )}
+              {painelLocal?.tipo === "municipio" && !visaoRegional && (() => { const m = painelLocal; const nomeN = normalizarNome(m.nome); return (
+                <PainelMunicipio
+                  municipio={m}
+                  anoFoco={anoEfetivo}
+                  atores={atoresDoMunicipio(atoresPainel, m.nome, m.uf)}
+                  usinas={(dadosUsinas ?? []).filter((u) => u.uf === m.uf && normalizarNome(u.municipio) === nomeN)}
+                  datacenters={(dadosDCs ?? []).filter((d) => d.uf === m.uf && normalizarNome(d.cidade) === nomeN)}
+                  backhaul={(dadosBackhaul ?? []).find((b) => b.uf === m.uf && normalizarNome(b.municipio) === nomeN) ?? null}
+                  antenas={dadosAntenas ? dadosAntenas.filter((a) => a.uf === m.uf && normalizarNome(a.municipio) === nomeN).length : null}
+                  sintese={munAtivo && munModo === "sintese" ? sintese.valores[m.ibge] ?? null : null}
+                  onFechar={() => irParaUf(m.uf)}
+                  onEnquadrar={() => mapaRef.current?.enquadrarMunicipio(m.ibge)}
+                  embutido
+                  onAbrirEstado={(uf) => irParaUf(uf)}
+                  onSelecionarPonto={(id) => setPontoSelecionadoId(id)}
+                />
+              ); })()}
+              {!painelLocal && aba === "camadas" && !layersIaAtivas.length && !layer1Ativa && !layer2Ativa && !layer3Ativa && (
+                <p className="rounded-lg border border-dashed border-border px-3 py-2 text-[11px] text-muted-foreground">
+                  O mapa abre sem pontos. Ligue uma camada abaixo para ver o que existe, ou clique num estado: ao entrar nele as sete camadas acendem.
+                </p>
+              )}
 
-              </>)}
-
-              {aba === "camadas" && (<>
+              {/* Preenchimento dos municípios: só no modo "Como está cada lugar". */}
+              {aba === "lugar" && (<>
               {/* Nível municipal: síntese das camadas (padrão), um indicador de uma camada (escolhido sob a camada) ou nada. */}
               <div className="rounded-lg border border-border bg-card/60 p-2 text-xs">
                 <div className="flex items-center justify-between gap-2">
@@ -1635,6 +1755,9 @@ export default function Mapa() {
                     : munModo === "indicador" ? "Um indicador de uma camada; escolha outro sob a camada correspondente." : "Os municípios ficam sem cor; só os marcadores das camadas aparecem."}
                 </p>
               </div>
+              </>)}
+
+              {(aba === "camadas" || aba === "lugar") && (<>
               {/* Camadas de IA */}
               <div>
                 <div className="mb-2 flex items-center justify-between">
@@ -1665,7 +1788,8 @@ export default function Mapa() {
                       className="h-3.5 w-3.5 shrink-0 accent-pink-500"
                     />
                     <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-pink-400" aria-hidden />
-                    <span className="flex-1 truncate">Layer 1 — Energia</span>
+                    <span className="flex-1 truncate">L1 · Energia</span>
+                    <ContagemCamada c="L1" />
                     {layer1Carregando && <span className="text-[10px] text-muted-foreground">carregando…</span>}
                   </label>
                   {erroLayer1 && layer1Ativa && (
@@ -1749,7 +1873,8 @@ export default function Mapa() {
                         className="h-3.5 w-3.5 shrink-0 accent-orange-500"
                       />
                       <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-orange-400" aria-hidden />
-                      <span className="flex-1 truncate">Layer 2 — Infraestrutura Física</span>
+                      <span className="flex-1 truncate">L2 · Infraestrutura Física</span>
+                    <ContagemCamada c="L2" />
                       {layer2Carregando && <span className="text-[10px] text-muted-foreground">carregando…</span>}
                     </label>
                     {layer2Ativa && <MunicipiosDaCamada {...municipiosDaCamada("L2")} />}
@@ -1856,7 +1981,8 @@ export default function Mapa() {
                       className="h-3.5 w-3.5 shrink-0 accent-yellow-500"
                     />
                     <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-yellow-400" aria-hidden />
-                    <span className="flex-1 truncate">Layer 3 — Infraestrutura Lógica</span>
+                    <span className="flex-1 truncate">L3 · Infraestrutura Lógica</span>
+                    <ContagemCamada c="L3" />
                     {layer3Carregando && <span className="text-[10px] text-muted-foreground">carregando…</span>}
                   </label>
                   {erroLayer3 && layer3Ativa && (
@@ -1868,7 +1994,8 @@ export default function Mapa() {
                       className="h-3.5 w-3.5 shrink-0 accent-green-500" />
                     <span className="material-symbols-outlined shrink-0 text-base leading-none text-green-400"
                       style={{ fontVariationSettings: '"FILL" 1' }}>model_training</span>
-                    <span className="flex-1 truncate">Layer 4 — Modelos</span>
+                    <span className="flex-1 truncate">L4 · Modelos</span>
+                    <ContagemCamada c="L4" />
                     {layersEnrCarregando && layer4Ativa && <span className="text-[10px] text-muted-foreground">cruzando…</span>}
                     {!layersEnrCarregando && layer4Ativa && (
                       <span className="text-[10px] text-muted-foreground">{contagemEnr.l4.toLocaleString("pt-BR")} atores</span>
@@ -1880,7 +2007,8 @@ export default function Mapa() {
                       className="h-3.5 w-3.5 shrink-0 accent-teal-500" />
                     <span className="material-symbols-outlined shrink-0 text-base leading-none text-teal-400"
                       style={{ fontVariationSettings: '"FILL" 1' }}>rocket_launch</span>
-                    <span className="flex-1 truncate">Layer 5 — Aplicações</span>
+                    <span className="flex-1 truncate">L5 · Aplicações</span>
+                    <ContagemCamada c="L5" />
                     {layersEnrCarregando && layer5Ativa && <span className="text-[10px] text-muted-foreground">cruzando…</span>}
                     {!layersEnrCarregando && layer5Ativa && (
                       <span className="text-[10px] text-muted-foreground">{contagemEnr.l5.toLocaleString("pt-BR")} atores</span>
@@ -1892,7 +2020,8 @@ export default function Mapa() {
                       className="h-3.5 w-3.5 shrink-0 accent-cyan-500" />
                     <span className="material-symbols-outlined shrink-0 text-base leading-none text-cyan-400"
                       style={{ fontVariationSettings: '"FILL" 1' }}>science</span>
-                    <span className="flex-1 truncate">Layer 6 — Pesquisa</span>
+                    <span className="flex-1 truncate">L6 · Pesquisa</span>
+                    <ContagemCamada c="L6" />
                     {layersEnrCarregando && layer6Ativa && <span className="text-[10px] text-muted-foreground">cruzando…</span>}
                     {!layersEnrCarregando && layer6Ativa && (
                       <span className="text-[10px] text-muted-foreground">{contagemEnr.l6.toLocaleString("pt-BR")} atores</span>
@@ -1904,7 +2033,8 @@ export default function Mapa() {
                       className="h-3.5 w-3.5 shrink-0 accent-violet-500" />
                     <span className="material-symbols-outlined shrink-0 text-base leading-none text-violet-400"
                       style={{ fontVariationSettings: '"FILL" 1' }}>policy</span>
-                    <span className="flex-1 truncate">Layer 7 — Governança</span>
+                    <span className="flex-1 truncate">L7 · Governança</span>
+                    <ContagemCamada c="L7" />
                     {layersEnrCarregando && layer7Ativa && <span className="text-[10px] text-muted-foreground">cruzando…</span>}
                     {!layersEnrCarregando && layer7Ativa && (
                       <span className="text-[10px] text-muted-foreground">{contagemEnr.l7.toLocaleString("pt-BR")} atores</span>
@@ -1930,10 +2060,21 @@ export default function Mapa() {
                   )}
                 </div>
                 <p className="mt-1.5 text-[11px] text-muted-foreground">
-                  Infraestrutura de IA no Brasil. Desligadas por padrão.
+                  Todo ponto do mapa pertence a uma camada, pela classificação do banco (Análise → Como classificamos).
                 </p>
               </div>
               </>)}
+
+              {/* Sem camada: o que a classificação do banco ainda não alcança; visível, nunca escondido. */}
+              {aba === "camadas" && (
+                <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-dashed border-border px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted">
+                  <input type="checkbox" checked={semCamadaAtiva} onChange={(e) => setSemCamadaAtiva(e.target.checked)} className="h-3.5 w-3.5 shrink-0 accent-muted-foreground" />
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-sm border border-muted-foreground/60" aria-hidden />
+                  <span className="flex-1 truncate">Sem camada (fora das regras)</span>
+                  <span className="font-mono text-[10px]">{contagemSemCamada.toLocaleString("pt-BR")}</span>
+                </label>
+              )}
+
 
               {aba === "interacao" && (
                 <div>
@@ -2015,6 +2156,21 @@ export default function Mapa() {
 
               {aba === "regional" && (
                 <div className="space-y-3">
+                  {visaoRegional && (
+                    <div className="[&>aside]:max-h-none [&>aside]:w-full [&>aside]:border-0 [&>aside]:bg-transparent [&>aside]:p-0">
+                      <FichaRegional
+                        indicador={indicadorRegional}
+                        onIndicador={(id) => { setIndicadorRegionalId(id); }}
+                        dados={serieRegionalQ.data}
+                        carregando={serieRegionalQ.isLoading}
+                        erro={serieRegionalQ.error}
+                        ano={anoRegional}
+                        regiaoFoco={regiaoFoco}
+                        onRegiaoFoco={setRegiaoFoco}
+                        onFechar={() => setAba("camadas")}
+                      />
+                    </div>
+                  )}
                   <div>
                     <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Visão regional</p>
                     <p className="text-[11px] text-muted-foreground">
@@ -2044,116 +2200,6 @@ export default function Mapa() {
                 </div>
               )}
 
-              {aba === "atores" && (<>
-
-              {/* Mais filtros: tipo bruto e filtros por base, recolhidos. */}
-              <details className="rounded-lg border border-border bg-card/60 px-2 py-1.5" open={tiposSel.size > 0 || Object.values(granular).some((v) => v && v.size > 0)}>
-                <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-muted-foreground">Mais filtros</summary>
-                <div className="mt-2 space-y-4">
-              {/* Tipo, como vem da base */}
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Tipo, como vem da base
-                </p>
-                <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
-                  {Object.entries(contagemTipo)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([t, n]) => {
-                      const ativo = tiposSel.has(t);
-                      const esmaecido = tiposSel.size > 0 && !ativo;
-                      return (
-                        <button
-                          key={t}
-                          onClick={() => alternar(tiposSel, t, setTiposSel)}
-                          className={`flex w-full items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted ${
-                            ativo
-                              ? "border-primary bg-primary/15"
-                              : "border-transparent bg-card"
-                          } ${esmaecido ? "opacity-40" : ""}`}
-                        >
-                          <span className="flex-1 truncate">{t}</span>
-                          <span className="font-mono text-muted-foreground">
-                            {n.toLocaleString("pt-BR")}
-                          </span>
-                        </button>
-                      );
-                    })}
-                </div>
-              </div>
-
-              {/* Filtros detalhados por base (checkbox, lista suspensa ou opção única) */}
-              <FiltrosPorBase
-                itens={comCategoria}
-                enriquecimento={enriquecimento}
-                selecao={granular}
-                fontesSel={fontesSel}
-                onChange={(id, valores) =>
-                  setGranular((prev) => ({ ...prev, [id]: valores }))
-                }
-              />
-
-                </div>
-              </details>
-
-              {/* Fonte dos dados: modo de leitura e bases, no rodapé. */}
-              <details className="rounded-lg border border-border bg-card/60 px-2 py-1.5" open={fontesSel.size > 0 || modo === "lake"}>
-                <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fonte dos dados</summary>
-                <div className="mt-2 space-y-3">
-                  <div className="flex rounded-lg border border-border bg-card p-0.5">
-                    <button onClick={() => setModo("bases")} className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-medium transition-colors ${modo === "bases" ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-muted"}`}>
-                      <Filter className="h-3.5 w-3.5" /> Bases de origem
-                    </button>
-                    <button onClick={() => setModo("lake")} className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-medium transition-colors ${modo === "lake" ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-muted"}`}>
-                      <Database className="h-3.5 w-3.5" /> Data Lake Cruzado
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">Bases de origem filtra pela fonte de cada registro; Data Lake Cruzado usa a classificação canônica do Motor, que cruza as fontes.</p>
-
-              {modo === "bases" && (<>
-
-              {/* Bases de origem */}
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Base de origem
-                </p>
-                <div className="space-y-1">
-                  {Object.entries(contagemFonte)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([f, n]) => {
-                      const ativo = fontesSel.has(f);
-                      const esmaecido = fontesSel.size > 0 && !ativo;
-                      return (
-                        <button
-                          key={f}
-                          onClick={() => alternar(fontesSel, f, setFontesSel)}
-                          className={`flex w-full items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted ${
-                            ativo
-                              ? "border-primary bg-primary/15"
-                              : "border-transparent bg-card"
-                          } ${esmaecido ? "opacity-40" : ""}`}
-                        >
-                          <span className="flex-1 truncate">{fonteLabel(f)}</span>
-                          <span className="font-mono text-muted-foreground">
-                            {n.toLocaleString("pt-BR")}
-                          </span>
-                        </button>
-                      );
-                    })}
-                </div>
-              </div>
-              </>)}
-
-              {modo === "lake" && (
-                <PainelDataLake
-                  itens={comCanon}
-                  selecao={lakeSel}
-                  onChange={(id, vals) => setLakeSel((prev) => ({ ...prev, [id]: vals }))}
-                />
-              )}
-                </div>
-              </details>
-
-              </>)}
 
               {/* Ficha do ponto/agrupamento selecionado */}
               {detalhados.length > 0 && (
@@ -2266,27 +2312,33 @@ export default function Mapa() {
                 <SlidersHorizontal />
                 Filtros{filtrosAtivos.length ? ` (${filtrosAtivos.length})` : ""}
               </Button>
+              <Button type="button" variant="outline" className="h-11 shrink-0 px-3" onClick={() => setColunaMovelAberta(true)} aria-label="Lugar e camadas">
+                <span className="material-symbols-outlined text-base leading-none" aria-hidden>layers</span>
+              </Button>
             </div>
-            {movel && (
-              <GavetaInferior aberta={filtrosMobileAbertos} onAberta={setFiltrosMobileAbertos} alturas={[0.6, 0.96]} cabecalho={<span className="sr-only">Filtros do mapa</span>}>
+            {movel && (<>
+              <GavetaInferior aberta={filtrosMobileAbertos} onAberta={setFiltrosMobileAbertos} alturas={[0.6, 0.96]} titulo="Filtros">
+                {painelFiltros}
+              </GavetaInferior>
+              <GavetaInferior aberta={colunaMovelAberta || !!painelLocal} onAberta={(v) => { setColunaMovelAberta(v); if (!v && painelLocal) irParaUf(null); }} semBloqueio alturas={[0.22, 0.55, 0.94]} cabecalho={<span className="sr-only">Lugar e camadas</span>}>
                 {colunaFiltros}
               </GavetaInferior>
-            )}
+            </>)}
 
             {/* Barra superior: abas por intenção + painéis à direita (no espírito do Global Election Simulator) */}
             {(
-              <div className="mb-2 flex flex-wrap items-center gap-2">
+              <div className="mb-2 flex flex-nowrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setColunaAberta((v) => !v)}
-                  title={colunaAberta ? "Recolher a coluna de filtros" : "Abrir a coluna de filtros"}
-                  aria-label={colunaAberta ? "Recolher filtros" : "Abrir filtros"}
+                  title={colunaAberta ? "Recolher a coluna do lugar" : "Abrir a coluna do lugar"}
+                  aria-label={colunaAberta ? "Recolher coluna" : "Abrir coluna"}
                   aria-pressed={colunaAberta}
                   className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground lg:flex"
                 >
-                  <span className="material-symbols-outlined text-base leading-none" aria-hidden>{colunaAberta ? "left_panel_close" : "left_panel_open"}</span>
+                  <span className="material-symbols-outlined text-base leading-none" aria-hidden>{colunaAberta ? "right_panel_close" : "right_panel_open"}</span>
                 </button>
-                <div className="flex min-w-0 shrink-0 items-center gap-1 overflow-x-auto rounded-lg border border-border bg-card p-0.5">
+                <div className="flex min-w-0 shrink items-center gap-1 overflow-x-auto rounded-lg border border-border bg-card p-0.5 [scrollbar-width:none]">
                   {ABAS.map((a) => (
                     <button
                       key={a.id}
@@ -2303,53 +2355,16 @@ export default function Mapa() {
                     </button>
                   ))}
                 </div>
-                <div className="min-w-[18rem] flex-1">
-                  <BarraTempo serie={serieTempo} motivoSemSerie={motivoSemSerie} />
-                </div>
+                <div className="flex-1" />
+                {/* Filtros (Buscar, Mais filtros, Fonte): popover no desktop, gaveta no celular. */}
+                <button type="button" onClick={() => setFiltrosAbertos((v) => !v)} aria-pressed={filtrosAbertos} aria-label="Filtros"
+                  className={`hidden h-9 shrink-0 items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-[11px] font-medium lg:flex ${filtrosAtivos.length ? "text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+                  <SlidersHorizontal className="h-3.5 w-3.5" /> Filtros{filtrosAtivos.length ? ` (${filtrosAtivos.length})` : ""}
+                </button>
                 <span className="hidden whitespace-nowrap text-xs text-muted-foreground xl:inline" title={`${pontos.length.toLocaleString("pt-BR")} pontos georreferenciados${ultimaColeta ? ` · última coleta em ${ultimaColeta}` : ""} · clique num estado para aproximar, num ícone para ver a ficha · aproxime para ver os municípios`}>
                   <strong className="font-semibold text-foreground">{selecionados.length.toLocaleString("pt-BR")}</strong> de {totalLocais.toLocaleString("pt-BR")}
                 </span>
                 <div className="inline-flex shrink-0 items-center rounded-lg border border-border bg-card p-0.5">
-                  <button
-                    onClick={() => {
-                      setListaAberta((v) => !v);
-                      setPainelPoliticasAberto(false);
-                      setConfigAberta(false);
-                      if (aba === "regional") setAba("atores");
-                    }}
-                    aria-pressed={listaAberta}
-                    title="Listagem filtrada"
-                    aria-label="Listagem filtrada"
-                    className={`flex h-8 w-9 items-center justify-center rounded-md text-[11px] font-medium transition-colors sm:h-auto sm:w-auto sm:gap-1.5 sm:px-2.5 sm:py-1.5 ${
-                      listaAberta ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <List className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Listagem</span>
-                  </button>
-                  {layersIaAtivas.length > 0 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => {
-                        setPainelPoliticasAberto((valor) => !valor);
-                        setListaAberta(false);
-                        setConfigAberta(false);
-                        if (aba === "regional") setAba("camadas");
-                      }}
-                      aria-pressed={painelPoliticasAberto}
-                      title="Políticas públicas por layer"
-                      aria-label="Políticas públicas por layer"
-                      className={`h-8 w-9 gap-0 px-0 text-[11px] sm:h-auto sm:w-auto sm:gap-1.5 sm:px-2.5 sm:py-1.5 ${
-                        painelPoliticasAberto
-                          ? "bg-violet-500/15 text-violet-400 hover:bg-violet-500/20 hover:text-violet-400"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-base leading-none" style={{ fontVariationSettings: '"FILL" 1' }} aria-hidden>policy</span>
-                      <span className="hidden sm:inline">Políticas</span>
-                    </Button>
-                  )}
                   <button
                     onClick={() => { setConfigAberta((v) => !v); setListaAberta(false); setPainelPoliticasAberto(false); }}
                     aria-pressed={configAberta}
@@ -2373,6 +2388,15 @@ export default function Mapa() {
               </div>
             )}
 
+            {filtrosAbertos && !movel && (
+              <div className="absolute right-3 top-14 z-40 max-h-[70vh] w-[22rem] overflow-y-auto rounded-lg border border-border bg-card shadow-xl" role="dialog" aria-label="Filtros">
+                <div className="flex items-center justify-between border-b border-border px-4 py-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Filtros</p>
+                  <button type="button" onClick={() => setFiltrosAbertos(false)} aria-label="Fechar" className="text-muted-foreground hover:text-foreground">✕</button>
+                </div>
+                {painelFiltros}
+              </div>
+            )}
             {/* O mapa aparece de imediato; os registros da base chegam depois e entram como pontos.
                 Carregamento e falha são avisos sobre o mapa, não substituem o mapa. */}
             {(
@@ -2394,7 +2418,7 @@ export default function Mapa() {
                     mostrarNomes={config.mostrarNomes}
                     malhaMunicipal={config.malhaMunicipal}
                     coropletico={coropletico}
-                    pontos={visaoRegional ? [] : pontos}
+                    pontos={visaoRegional || aba === "lugar" ? [] : pontos}
                     regional={regionalMapa}
                     transporte={visaoRegional ? transporte : null}
                     ufSelecionada={ufFoco}
@@ -2434,49 +2458,6 @@ export default function Mapa() {
                       onArco: (a) => { setInterSel({ arco: a }); setPainelLocal(null); }, onUnidade: (u) => { setInterSel({ unidade: u }); setPainelLocal(null); },
                     } : null}
                   />
-                  {painelLocal && !visaoRegional && (
-                    <nav aria-label="Lugar" className="absolute left-14 top-3 z-20 flex max-w-[calc(100%-1.5rem)] items-center gap-1 rounded-lg border border-border bg-card/95 px-1.5 py-1 text-xs shadow backdrop-blur">
-                      <button type="button" onClick={voltarUmNivel} aria-label="Voltar um nível" className="toque flex h-7 w-7 items-center justify-center rounded-md hover:bg-muted">
-                        <span className="material-symbols-outlined text-base leading-none" aria-hidden>arrow_back</span>
-                      </button>
-                      <button type="button" onClick={() => irParaUf(null)} className="rounded px-1 text-muted-foreground hover:bg-muted hover:text-foreground">Brasil</button>
-                      <span className="text-muted-foreground">›</span>
-                      <button type="button" onClick={() => irParaUf(painelLocal.uf)} className={`truncate rounded px-1 ${painelLocal.tipo === "uf" ? "font-semibold text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>{ESTADOS[painelLocal.uf] ?? painelLocal.uf}</button>
-                      {painelLocal.tipo === "municipio" && (<><span className="text-muted-foreground">›</span><span className="truncate px-1 font-semibold">{painelLocal.nome}</span></>)}
-                    </nav>
-                  )}
-                  {painelLocal?.tipo === "uf" && !visaoRegional && (
-                    <PainelEstado
-                      uf={painelLocal.uf}
-                      anoFoco={anoEfetivo}
-                      atores={atoresPainel.filter((a) => a.uf === painelLocal.uf)}
-                      usinas={(dadosUsinas ?? []).filter((u) => u.uf === painelLocal.uf)}
-                      datacenters={(dadosDCs ?? []).filter((d) => d.uf === painelLocal.uf)}
-                      backhaul={(dadosBackhaul ?? []).filter((b) => b.uf === painelLocal.uf)}
-                      sintese={munAtivo && munModo === "sintese" ? sintese.valores : null}
-                      onFechar={() => irParaUf(null)}
-                      onEnquadrar={() => mapaRef.current?.enquadrarUf(painelLocal.uf)}
-                      onAbrirMunicipio={(m) => irParaMunicipio(m)}
-                      onSelecionarPonto={(id) => setPontoSelecionadoId(id)}
-                      onVizinho={(dir) => { const i = ORDEM_UFS.indexOf(painelLocal.uf); irParaUf(ORDEM_UFS[(i + dir + ORDEM_UFS.length) % ORDEM_UFS.length]); }}
-                    />
-                  )}
-                  {painelLocal?.tipo === "municipio" && !visaoRegional && (() => { const m = painelLocal; const nomeN = normalizarNome(m.nome); return (
-                    <PainelMunicipio
-                      municipio={m}
-                      anoFoco={anoEfetivo}
-                      atores={atoresDoMunicipio(atoresPainel, m.nome, m.uf)}
-                      usinas={(dadosUsinas ?? []).filter((u) => u.uf === m.uf && normalizarNome(u.municipio) === nomeN)}
-                      datacenters={(dadosDCs ?? []).filter((d) => d.uf === m.uf && normalizarNome(d.cidade) === nomeN)}
-                      backhaul={(dadosBackhaul ?? []).find((b) => b.uf === m.uf && normalizarNome(b.municipio) === nomeN) ?? null}
-                      antenas={dadosAntenas ? dadosAntenas.filter((a) => a.uf === m.uf && normalizarNome(a.municipio) === nomeN).length : null}
-                      sintese={munAtivo && munModo === "sintese" ? sintese.valores[m.ibge] ?? null : null}
-                      onFechar={() => irParaUf(m.uf)}
-                      onEnquadrar={() => mapaRef.current?.enquadrarMunicipio(m.ibge)}
-                      onAbrirEstado={(uf) => irParaUf(uf)}
-                      onSelecionarPonto={(id) => setPontoSelecionadoId(id)}
-                    />
-                  ); })()}
                   {interSel && (
                     <div className="absolute right-3 top-3 z-20 w-72 rounded-lg border border-border bg-card p-3 text-xs shadow-lg">
                       <div className="mb-2 flex items-start justify-between gap-2">
@@ -2506,6 +2487,11 @@ export default function Mapa() {
                         </div>); })()}
                     </div>
                   )}
+                  {(aba === "lugar" || aba === "regional") && (
+                    <div className="absolute bottom-3 left-1/2 z-20 w-[min(40rem,calc(100%-7rem))] -translate-x-1/2">
+                      <BarraTempo serie={serieTempo} motivoSemSerie={motivoSemSerie} />
+                    </div>
+                  )}
                   {configAberta && (
                     <PainelConfiguracoes
                       config={config}
@@ -2518,19 +2504,6 @@ export default function Mapa() {
                     />
                   )}
                 </div>
-                {visaoRegional && (
-                  <FichaRegional
-                    indicador={indicadorRegional}
-                    onIndicador={(id) => { setIndicadorRegionalId(id); }}
-                    dados={serieRegionalQ.data}
-                    carregando={serieRegionalQ.isLoading}
-                    erro={serieRegionalQ.error}
-                    ano={anoRegional}
-                    regiaoFoco={regiaoFoco}
-                    onRegiaoFoco={setRegiaoFoco}
-                    onFechar={() => setVisaoRegional(false)}
-                  />
-                )}
                 {listaAberta && (
                   <ListaFiltrados
                      itens={[...((grupoIds ? selecionadosOrdenados.filter((l) => grupoIds.has(l.id)) : selecionadosOrdenados).filter((l) => !catsEixoPbia || catsEixoPbia.has(l.categoria))), ...pbiaItens]}
