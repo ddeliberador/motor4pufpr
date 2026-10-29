@@ -320,6 +320,10 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
       setVersaoEstilo((v) => v + 1);
     });
     map.on("zoom", () => setZoom(map.getZoom()));
+    // O recipiente muda de largura (coluna abre/fecha, gaveta, tela cheia): o MapLibre precisa saber.
+    const ro = new ResizeObserver(() => map.resize());
+    if (containerRef.current) ro.observe(containerRef.current);
+    map.once("remove", () => ro.disconnect());
 
     // ---- interação: ponteiro, dica e clique ----
     const camadasClique = [
