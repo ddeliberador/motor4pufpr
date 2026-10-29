@@ -64,7 +64,8 @@ export default function BarraTempo({ serie, motivoSemSerie }: Props) {
   return (
     <div className={base} role="group" aria-label="Série histórica">
       <span className="material-symbols-outlined text-base leading-none text-muted-foreground" aria-hidden>timeline</span>
-      <span className="hidden max-w-[12rem] truncate text-[11px] text-muted-foreground 2xl:inline" title={serie.titulo}>{serie.titulo}</span>
+      {/* O que a barra percorre, sempre visível: o mesmo texto da série escolhida na coluna. */}
+      <span className="max-w-[45%] truncate text-[11px] font-medium text-foreground/80" title={serie.titulo}>{serie.titulo}</span>
       <button
         type="button"
         disabled={n < 2 || acumulado}
