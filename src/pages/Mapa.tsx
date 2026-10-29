@@ -1343,7 +1343,7 @@ export default function Mapa() {
   const motivoSemSerie = visaoRegional ? "carregando a série regional…"
     : sintese.carregando || munPeriodosQ.isLoading ? "carregando as séries municipais…"
     : munModo !== "nenhum" && !anosMunicipais.length ? "as séries municipais ainda não foram coletadas (Gestão da Pesquisa → Coletas); a Layer 1 ganha anos quando as usinas carregarem"
-    : aba === "camadas" ? "o modo O que existe não tem tempo; veja Como está cada lugar ou Comparar regiões"
+    : aba === "camadas" ? "ligue a L1 Energia (usinas por ano de operação) ou veja Como está cada lugar e Comparar regiões"
     : "ligue uma camada com série (municípios, usinas ou interações)";
 
   const municipiosDaCamada = (camada: CamadaIa) => ({
@@ -2487,11 +2487,10 @@ export default function Mapa() {
                         </div>); })()}
                     </div>
                   )}
-                  {(aba === "lugar" || aba === "regional") && (
-                    <div className="absolute bottom-3 left-1/2 z-20 w-[min(40rem,calc(100%-7rem))] -translate-x-1/2">
-                      <BarraTempo serie={serieTempo} motivoSemSerie={motivoSemSerie} />
-                    </div>
-                  )}
+                  {/* Barra de série histórica: fixa em todos os modos (quando a visão não tem tempo, diz o motivo). */}
+                  <div className="absolute bottom-3 left-1/2 z-20 w-[min(40rem,calc(100%-7rem))] -translate-x-1/2">
+                    <BarraTempo serie={serieTempo} motivoSemSerie={motivoSemSerie} />
+                  </div>
                   {configAberta && (
                     <PainelConfiguracoes
                       config={config}
