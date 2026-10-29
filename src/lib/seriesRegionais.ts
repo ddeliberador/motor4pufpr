@@ -258,3 +258,32 @@ export function corRegiao(valor: number | null, maximo: number): string {
 const fmt = (n: number) => Math.round(n).toLocaleString("pt-BR");
 
 export const formatarValorRegional = (valor: number | null) => (valor == null ? "sem dado" : fmt(valor));
+
+/** Base 100 de uma UF (mesma regra do base100 regional: primeiro ano positivo nos `janela` anos anteriores). */
+export function base100Uf(serie: SerieRegional, ano: number, uf: string, janela = 10): { indice: number; anoBase: number } | null {
+  const regiao = (Object.keys(serie.celulas[ano] ?? {}) as Regiao[]).find((r) => serie.celulas[ano][r].porUf[uf] != null);
+  if (!regiao) return null;
+  const atual = serie.celulas[ano][regiao].porUf[uf];
+  for (const a of serie.anos) {
+    if (a >= ano) break;
+    if (a < ano - janela) continue;
+    const v = serie.celulas[a]?.[regiao]?.porUf[uf];
+    if (v != null && v > 0) return { indice: (atual / v) * 100, anoBase: a };
+  }
+  return null;
+}
+
+/** Variação em % a partir do índice base 100 (110 → +10%). */
+export const variacaoPct = (indice: number) => indice - 100;
+export const formatarVariacao = (pct: number) => `${pct >= 0 ? "+" : ""}${Math.round(pct).toLocaleString("pt-BR")}%`;
+
+/**
+ * Cor do crescimento: verde mais forte quanto mais cresceu (escala fixa até o maior crescimento
+ * do ano), cinza-avermelhado para queda, apagado sem base de comparação.
+ */
+export function corCrescimento(pct: number | null, maximo: number): string {
+  if (pct == null) return "hsl(var(--muted) / 0.35)";
+  if (pct < 0) return `hsla(0, 60%, 55%, ${(0.15 + Math.min(1, -pct / 50) * 0.35).toFixed(3)})`;
+  const t = maximo > 0 ? Math.max(0, Math.min(1, pct / maximo)) : 0;
+  return `hsla(152, 60%, 45%, ${(0.12 + 0.68 * t).toFixed(3)})`;
+}
