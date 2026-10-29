@@ -6,7 +6,7 @@
 
 import { useMemo } from "react";
 import { REGIOES, type Regiao, UFS_POR_REGIAO } from "@/lib/regioes";
-import { INDICADORES_REGIONAIS, base100, formatarValorRegional, participacao, type DadosSerieRegional, type IndicadorRegional } from "@/lib/seriesRegionais";
+import { INDICADORES_REGIONAIS, base100, base100Uf, formatarValorRegional, formatarVariacao, participacao, variacaoPct, type DadosSerieRegional, type IndicadorRegional } from "@/lib/seriesRegionais";
 import { INDICADORES_MUNICIPAIS, ROTULO_CAMADA, type IndicadorMunicipal } from "@/lib/seriesMunicipais";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
 import { serieDisponivel, type SerieCatalogada } from "@/lib/catalogoSeries";
@@ -77,6 +77,9 @@ export interface EvolucaoProps {
   onNormalizar: (v: boolean) => void;
   sinteseCamadas: string[];
   sinteseCarregando: boolean;
+  /** Ver o valor do ano ou o crescimento desde o ano-base (regiões e estados). */
+  crescimento: boolean;
+  onCrescimento: (v: boolean) => void;
   admin?: boolean;
 }
 
@@ -87,12 +90,16 @@ export default function Evolucao(p: EvolucaoProps) {
   const linha = serie && p.ano != null ? serie.celulas[p.ano] : null;
 
   const ranking = useMemo(() => {
-    if (!linha) return [];
-    if (p.recorte === "regioes") return REGIOES.map((r) => ({ id: r as string, nome: r as string, valor: linha[r].valor, parcial: linha[r].ufsComDado < linha[r].ufsTotal ? `${linha[r].ufsComDado}/${linha[r].ufsTotal} UFs` : "" }));
-    const ufs = REGIOES.flatMap((r) => UFS_POR_REGIAO[r].map((uf) => ({ id: uf, nome: ESTADOS[uf] ?? uf, valor: linha[r].porUf[uf] ?? null, parcial: "" })));
-    return ufs.sort((a, b) => (b.valor ?? -1) - (a.valor ?? -1));
-  }, [linha, p.recorte]);
-  const maximo = useMemo(() => Math.max(1, ...ranking.map((r) => r.valor ?? 0)), [ranking]);
+    if (!linha || !serie || p.ano == null) return [];
+    const ano = p.ano;
+    const itens = p.recorte === "regioes"
+      ? REGIOES.map((r) => { const b = base100(serie, ano, r); return { id: r as string, nome: r as string, valor: linha[r].valor, cres: b ? { pct: variacaoPct(b.indice), base: b.anoBase } : null, parcial: linha[r].ufsComDado < linha[r].ufsTotal ? `${linha[r].ufsComDado}/${linha[r].ufsTotal} UFs` : "" }; })
+      : REGIOES.flatMap((r) => UFS_POR_REGIAO[r].map((uf) => { const b = base100Uf(serie, ano, uf); return { id: uf, nome: ESTADOS[uf] ?? uf, valor: linha[r].porUf[uf] ?? null, cres: b ? { pct: variacaoPct(b.indice), base: b.anoBase } : null, parcial: "" }; }));
+    return p.crescimento
+      ? itens.sort((a, b) => (b.cres?.pct ?? -Infinity) - (a.cres?.pct ?? -Infinity))
+      : p.recorte === "regioes" ? itens : itens.sort((a, b) => (b.valor ?? -1) - (a.valor ?? -1));
+  }, [linha, serie, p.ano, p.recorte, p.crescimento]);
+  const maximo = useMemo(() => Math.max(1, ...ranking.map((r) => (p.crescimento ? Math.max(0, r.cres?.pct ?? 0) : r.valor ?? 0))), [ranking, p.crescimento]);
 
   return (
     <div className="space-y-3">
@@ -121,12 +128,18 @@ export default function Evolucao(p: EvolucaoProps) {
         {p.carregando && <p className="text-xs text-muted-foreground">carregando a série…</p>}
         {serie && linha && p.ano != null && (
           <div>
+            <div className="mb-2 flex rounded-lg border border-border bg-card p-0.5" role="tablist" aria-label="Ver">
+              {([[false, "Valor do ano"], [true, "Quem mais cresceu"]] as [boolean, string][]).map(([v, rotulo]) => (
+                <button key={rotulo} type="button" role="tab" aria-selected={p.crescimento === v} onClick={() => p.onCrescimento(v)}
+                  className={`flex-1 rounded-md px-2 py-1 text-[11px] font-medium ${p.crescimento === v ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/60"}`}>{rotulo}</button>
+              ))}
+            </div>
             <div className="flex items-baseline justify-between">
               <p className="text-2xl font-bold leading-none">{p.ano}</p>
-              <p className="text-[11px] text-muted-foreground">{p.indicador.unidade}</p>
+              <p className="text-[11px] text-muted-foreground">{p.crescimento ? `variação desde ${ranking.find((r) => r.cres)?.cres?.base ?? "o ano-base"}` : p.indicador.unidade}</p>
             </div>
             <ul className="mt-2 space-y-1">
-              {ranking.map((r) => {
+              {ranking.map((r, posicao) => {
                 const ativo = p.recorte === "regioes" ? p.regiaoFoco === r.id : p.ufFoco === r.id;
                 const part = p.recorte === "regioes" ? participacao(serie, p.ano!, r.id as Regiao) : null;
                 const b = p.recorte === "regioes" ? base100(serie, p.ano!, r.id as Regiao) : null;
@@ -136,11 +149,12 @@ export default function Evolucao(p: EvolucaoProps) {
                       onClick={() => (p.recorte === "regioes" ? p.onRegiaoFoco(ativo ? null : (r.id as Regiao)) : p.onUfFoco(ativo ? null : r.id))}
                       className={`w-full rounded-md border px-2 py-1.5 text-left ${ativo ? "border-primary/50 bg-primary/5" : "border-transparent hover:bg-muted"}`}>
                       <div className="flex items-baseline justify-between gap-2 text-xs">
-                        <span className="truncate font-medium">{r.nome}</span>
-                        <span className="font-mono font-semibold">{formatarValorRegional(r.valor)}</span>
+                        <span className={`truncate font-medium ${p.crescimento && posicao < 3 && (r.cres?.pct ?? 0) > 0 ? "text-emerald-400" : ""}`}>{p.crescimento && posicao < 3 && (r.cres?.pct ?? 0) > 0 ? "▲ " : ""}{r.nome}</span>
+                        <span className="font-mono font-semibold">{p.crescimento ? (r.cres ? formatarVariacao(r.cres.pct) : "sem base") : formatarValorRegional(r.valor)}</span>
                       </div>
                       <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
-                        <div className="h-full rounded-full bg-primary" style={{ width: `${r.valor == null ? 0 : (r.valor / maximo) * 100}%` }} />
+                        <div className={`h-full rounded-full transition-[width] duration-300 ${p.crescimento ? ((r.cres?.pct ?? 0) < 0 ? "bg-red-400/70" : "bg-emerald-500") : "bg-primary"}`}
+                          style={{ width: `${p.crescimento ? Math.max(0, Math.min(100, ((r.cres?.pct ?? 0) / maximo) * 100)) : r.valor == null ? 0 : (r.valor / maximo) * 100}%` }} />
                       </div>
                       {(part != null || b || r.parcial) && (
                         <div className="mt-0.5 flex justify-between text-[10px] text-muted-foreground">

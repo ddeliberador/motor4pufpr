@@ -4,7 +4,7 @@ import PbiaEixos, { CATEGORIAS_POR_EIXO } from "@/components/mapa/PbiaEixos";
 // com filtros funcionais e lista exportável dos registros filtrados.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { FeatureCollection, Point } from "geojson";
+import type { FeatureCollection, MultiPolygon, Point, Polygon } from "geojson";
 import { useCatalogo, inativaNoCatalogo } from "@/lib/catalogo";
 import { geocodeLote } from "@/utils/geocodeMunicipio";
 import { useQuery } from "@tanstack/react-query";
@@ -20,7 +20,7 @@ import { useCamadasAtores, camadasDoRegistro } from "@/lib/camadasAtores";
 import { GavetaInferior } from "@/components/GavetaInferior";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ESTADOS } from "@/lib/sistemasEstaduais";
-import { carregarGeojson } from "@/components/mapa/maplibre/geo";
+import { bboxDaFeature, carregarGeojson } from "@/components/mapa/maplibre/geo";
 import MunicipiosDaCamada, { type SelecaoMunicipal } from "@/components/mapa/MunicipiosDaCamada";
 import { CORES_COROPLETICO, CORTES_SINTESE_CORES } from "@/components/mapa/MapaBrasil";
 import {
@@ -49,7 +49,7 @@ import { cruzarLayersComAtores } from "@/utils/cruzarLayers";
 import { canonizar, passaLake, resumoLake, type SelecaoLake } from "@/components/mapa/dataLake";
 import { Button } from "@/components/ui/button";
 import { REGIAO_POR_UF, REGIOES, ROTULO_REGIAO, UFS_POR_REGIAO, type Regiao } from "@/lib/regioes";
-import { INDICADORES_REGIONAIS, corRegiao, formatarValorRegional, useSerieRegional } from "@/lib/seriesRegionais";
+import { INDICADORES_REGIONAIS, base100, base100Uf, corCrescimento, corRegiao, formatarValorRegional, formatarVariacao, useSerieRegional, variacaoPct } from "@/lib/seriesRegionais";
 import Evolucao, { type Recorte } from "@/components/mapa/Evolucao";
 import { useCatalogoSeries, serieDisponivel } from "@/lib/catalogoSeries";
 import BarraTempo, { type SerieTempo } from "@/components/mapa/BarraTempo";
@@ -232,8 +232,12 @@ function escreverLugarNaUrl(lugar: { tipo: "uf"; uf: string } | { tipo: "municip
 
 // Modos do mapa: uma pergunta por vez; cada modo mostra só o que lhe diz respeito.
 type Aba = "camadas" | "evolucao" | "interacao";
+// Atores do SNI: os mesmos pontos lidos por camada de IA, por tipo de instituição ou só a infraestrutura.
+type Agrupamento = "camadas" | "tipo" | "infra";
+const CATS_INFRA = new Set<CategoriaKey>(["energia", "datacenter", "cabo", "backhaul"]);
+const CATS_PONTO_INFRA = new Set<CategoriaKey>(["energia", "datacenter", "cabo", "backhaul", "supercomputacao"]);
 const ABAS: { id: Aba; rotulo: string; icone: string; titulo: string }[] = [
-  { id: "camadas", rotulo: "O que existe", icone: "layers", titulo: "Atores e infraestrutura, todos nas sete camadas de IA" },
+  { id: "camadas", rotulo: "Atores do SNI", icone: "hub", titulo: "Atores e infraestrutura do sistema de inovação, por camada de IA, tipo ou infraestrutura" },
   { id: "evolucao", rotulo: "Evolução", icone: "timeline", titulo: "Séries históricas por região, estado ou município, com a barra de tempo" },
   { id: "interacao", rotulo: "Quem coopera", icone: "share", titulo: "Interações entre ICTs, empresas e governo" },
 ];
@@ -372,6 +376,8 @@ export default function Mapa() {
   // Recorte do modo Evolução: regiões ou estados pintam as UFs; municípios pinta a malha municipal.
   const [recorte, setRecorte] = useState<Recorte>(() => (new URLSearchParams(window.location.search).get("recorte") as Recorte) || "regioes");
   const catalogoSeriesQ = useCatalogoSeries();
+  // Evolução: ver o valor do ano ou o crescimento desde o ano-base (destaca quem mais cresceu).
+  const [verCrescimento, setVerCrescimento] = useState(() => new URLSearchParams(window.location.search).get("ver") === "crescimento");
   const [indicadorRegionalId, setIndicadorRegionalId] = useState(INDICADORES_REGIONAIS[0].id);
   // Só séries com dado: se a escolhida não existe no banco, vai para a primeira que existe.
   useEffect(() => {
@@ -385,7 +391,7 @@ export default function Mapa() {
   const [idxAnoRegional, setIdxAnoRegional] = useState(0);
   const [regiaoFoco, setRegiaoFoco] = useState<Regiao | null>(null);
   // Camada de transporte da visão regional (public/transporte): ligada ao entrar na aba Regional.
-  const [transporte, setTransporte] = useState<TransporteMapa>({ rodovias: false, ferrovias: false, portos: false, aeroportos: false });
+  const [transporte, setTransporte] = useState<TransporteMapa>({ rodovias: true, ferrovias: true, portos: true, aeroportos: true });
   // Camadas de dados exibidas no mapa (todas ligadas por padrão).
   const [camadas, setCamadas] = useState<Set<CategoriaKey>>(
     () => new Set(CATEGORIAS.map((c) => c.key)),
@@ -451,6 +457,10 @@ export default function Mapa() {
   const [layer3Ativa, setLayer3Ativa] = useState(false);
   // Registros fora de qualquer regra de camada: contados e ligáveis, nunca escondidos em silêncio.
   const [semCamadaAtiva, setSemCamadaAtiva] = useState(false);
+  const [agrupamento, setAgrupamento] = useState<Agrupamento>(() => {
+    const v = new URLSearchParams(window.location.search).get("agrupar");
+    return v === "tipo" || v === "infra" ? v : "camadas";
+  });
   const camadasAtoresQ = useCamadasAtores();
   const [layer3Carregando, setLayer3Carregando] = useState(false);
   const [dadosDCs, setDadosDCs] = useState<Datacenter[] | null>(null);
@@ -881,6 +891,16 @@ export default function Mapa() {
     }
     return out;
   }, [comCategoria, painelLocal]);
+  const contagemCategoriaLugar = useMemo(() => {
+    const out: Partial<Record<CategoriaKey, number>> = {};
+    const nomeMun = painelLocal?.tipo === "municipio" ? normalizarNome(painelLocal.nome) : null;
+    for (const l of comCategoria) {
+      if (painelLocal && l.uf !== painelLocal.uf) continue;
+      if (nomeMun && normalizarNome(l.municipio) !== nomeMun) continue;
+      out[l.categoria] = (out[l.categoria] ?? 0) + 1;
+    }
+    return out;
+  }, [comCategoria, painelLocal]);
   const ContagemCamada = ({ c }: { c: CamadaIa }) => (
     <span className="shrink-0 font-mono text-[10px] text-muted-foreground" title={painelLocal ? "registros neste lugar" : "registros no Brasil"}>{contagemCamadaLugar[c].toLocaleString("pt-BR")}</span>
   );
@@ -939,8 +959,10 @@ export default function Mapa() {
   // Um ponto entra quando alguma das suas camadas está ligada; sem camada, só com "Sem camada" ligado.
   const selecionados = useMemo(() => {
     const ativa: Record<CamadaIa, boolean> = { L1: layer1Ativa, L2: layer2Ativa, L3: layer3Ativa, L4: layer4Ativa, L5: layer5Ativa, L6: layer6Ativa, L7: layer7Ativa };
+    if (agrupamento === "tipo") return filtrados.filter((l) => !CATS_INFRA.has(l.categoria) && camadas.has(l.categoria));
+    if (agrupamento === "infra") return filtrados.filter((l) => CATS_PONTO_INFRA.has(l.categoria) && l.camadasIa.some((c) => ativa[c]));
     return filtrados.filter((l) => (l.camadasIa.length ? l.camadasIa.some((c) => ativa[c]) : semCamadaAtiva));
-  }, [filtrados, layer1Ativa, layer2Ativa, layer3Ativa, layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa, semCamadaAtiva]);
+  }, [filtrados, layer1Ativa, layer2Ativa, layer3Ativa, layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa, semCamadaAtiva, agrupamento, camadas]);
 
   // Destaque PBIA: com um eixo ativo, restringe os pontos às categorias de atores
   // associadas àquele eixo (curadoria Motor 4P).
@@ -1166,34 +1188,61 @@ export default function Mapa() {
   }, [anosRegionais]);
   const anoRegional = anosRegionais.length ? anosRegionais[Math.min(idxAnoRegional, anosRegionais.length - 1)] : null;
 
+  // Centro de cada UF (bbox do contorno) para o número de cada estado ficar sobre o estado.
+  const [centroUf, setCentroUf] = useState<Record<string, [number, number]>>({});
+  useEffect(() => {
+    carregarGeojson<FeatureCollection<Polygon | MultiPolygon, { sigla: string }>>("/br-uf.geojson")
+      .then((d) => setCentroUf(Object.fromEntries(d.features.map((f) => { const b = bboxDaFeature(f); return [f.properties.sigla, [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2] as [number, number]]; }))))
+      .catch(() => undefined);
+  }, []);
   const regionalMapa = useMemo<VisaoRegionalMapa | null>(() => {
     if (!visaoRegional) return null;
     const serie = serieRegionalQ.data?.serie;
     const linha = serie && anoRegional != null ? serie.celulas[anoRegional] : null;
     const preenchimento: Record<string, string> = {};
     const dica: Record<string, string> = {};
-    // Recorte Estados: cada UF com a sua cor, na escala do maior estado do ano; sem rótulos de região.
+    const un = indicadorRegional.unidade;
+    const emAno = anoRegional != null ? ` em ${anoRegional}` : "";
+    // Crescimento: variação desde o primeiro ano com valor nos dez anteriores (mesma regra do base 100).
+    // Os três que mais cresceram ganham destaque (▲, verde, rótulo maior) a cada ano da animação.
+    const destaqueCor = "#34d399";
     if (recorte === "estados") {
-      const maxUf = Math.max(0, ...REGIOES.flatMap((r) => Object.values(linha?.[r]?.porUf ?? {})));
-      for (const r of REGIOES) for (const uf of UFS_POR_REGIAO[r]) {
-        const v = linha?.[r]?.porUf[uf];
-        preenchimento[uf] = corRegiao(v ?? null, maxUf);
-        dica[uf] = `${ESTADOS[uf] ?? uf} · ${v == null ? "sem dado" : `${formatarValorRegional(v)} ${indicadorRegional.unidade}`}${anoRegional != null ? ` em ${anoRegional}` : ""}`;
+      const ufs = REGIOES.flatMap((r) => UFS_POR_REGIAO[r].map((uf) => ({ uf, r, v: linha?.[r]?.porUf[uf] ?? null })));
+      const cres = new Map(ufs.map(({ uf }) => { const b = serie && anoRegional != null ? base100Uf(serie, anoRegional, uf) : null; return [uf, b ? { pct: variacaoPct(b.indice), base: b.anoBase } : null]; }));
+      const maxUf = Math.max(0, ...ufs.map((x) => x.v ?? 0));
+      const maxPct = Math.max(0, ...[...cres.values()].map((c) => c?.pct ?? 0));
+      const top = new Set([...cres.entries()].filter(([, c]) => c && c.pct > 0).sort((a, b) => b[1]!.pct - a[1]!.pct).slice(0, 3).map(([uf]) => uf));
+      for (const { uf, v } of ufs) {
+        const c = cres.get(uf);
+        preenchimento[uf] = verCrescimento ? corCrescimento(c?.pct ?? null, maxPct) : corRegiao(v, maxUf);
+        dica[uf] = `${ESTADOS[uf] ?? uf} · ${v == null ? "sem dado" : `${formatarValorRegional(v)} ${un}`}${emAno}` + (c ? `\n${formatarVariacao(c.pct)} desde ${c.base}` : "");
       }
       return {
         preenchimento, dica,
         destaque: new Set(ufFoco ? [ufFoco] : []),
-        rotulos: [],
+        rotulos: ufs.filter(({ uf }) => centroUf[uf]).map(({ uf, v }) => {
+          const c = cres.get(uf);
+          const realce = verCrescimento && top.has(uf);
+          return {
+            lon: centroUf[uf][0], lat: centroUf[uf][1],
+            titulo: `${realce ? "▲ " : ""}${uf}`,
+            valor: verCrescimento ? (c ? formatarVariacao(c.pct) : "") : v == null ? "" : formatarValorRegional(v),
+            ativo: ufFoco === uf, tamanho: realce ? 12 : 10, cor: realce ? destaqueCor : undefined,
+          };
+        }),
         onSelecionarUf: (uf: string) => setUfFoco((atual) => (atual === uf ? null : uf)),
       };
     }
+    const cresR = new Map(REGIOES.map((r) => { const b = serie && anoRegional != null ? base100(serie, anoRegional, r) : null; return [r, b ? { pct: variacaoPct(b.indice), base: b.anoBase } : null]; }));
+    const maxPctR = Math.max(0, ...[...cresR.values()].map((c) => c?.pct ?? 0));
+    const topR = [...cresR.entries()].filter(([, c]) => c && c.pct > 0).sort((a, b) => b[1]!.pct - a[1]!.pct)[0]?.[0];
     for (const r of REGIOES) {
       const c = linha?.[r];
+      const g = cresR.get(r);
       for (const uf of UFS_POR_REGIAO[r]) {
-        preenchimento[uf] = corRegiao(c?.valor ?? null, serie?.maximo ?? 0);
+        preenchimento[uf] = verCrescimento ? corCrescimento(g?.pct ?? null, maxPctR) : corRegiao(c?.valor ?? null, serie?.maximo ?? 0);
         const vUf = c?.porUf[uf];
-        dica[uf] = `${r} · ${formatarValorRegional(c?.valor ?? null)} ${indicadorRegional.unidade}` +
-          (anoRegional != null ? ` em ${anoRegional}` : "") +
+        dica[uf] = `${r} · ${formatarValorRegional(c?.valor ?? null)} ${un}${emAno}` + (g ? ` (${formatarVariacao(g.pct)} desde ${g.base})` : "") +
           `\n${uf}: ${vUf == null ? "sem dado" : formatarValorRegional(vUf)}`;
       }
     }
@@ -1201,19 +1250,24 @@ export default function Mapa() {
       preenchimento,
       dica,
       destaque: new Set(regiaoFoco ? UFS_POR_REGIAO[regiaoFoco] : []),
-      rotulos: REGIOES.map((r) => ({
-        lon: ROTULO_REGIAO[r][0],
-        lat: ROTULO_REGIAO[r][1],
-        titulo: r,
-        valor: linha ? formatarValorRegional(linha[r].valor) : "",
-        ativo: regiaoFoco === r,
-      })),
+      rotulos: REGIOES.map((r) => {
+        const g = cresR.get(r);
+        const realce = verCrescimento && topR === r;
+        return {
+          lon: ROTULO_REGIAO[r][0],
+          lat: ROTULO_REGIAO[r][1],
+          titulo: `${realce ? "▲ " : ""}${r}`,
+          valor: verCrescimento ? (g ? formatarVariacao(g.pct) : "sem base") : linha ? formatarValorRegional(linha[r].valor) : "",
+          ativo: regiaoFoco === r,
+          cor: realce ? destaqueCor : undefined,
+        };
+      }),
       onSelecionarUf: (uf: string) => {
         const r = REGIAO_POR_UF[uf];
         if (r) setRegiaoFoco((atual) => (atual === r ? null : r));
       },
     };
-  }, [visaoRegional, serieRegionalQ.data, anoRegional, regiaoFoco, indicadorRegional.unidade, recorte, ufFoco]);
+  }, [visaoRegional, serieRegionalQ.data, anoRegional, regiaoFoco, indicadorRegional.unidade, recorte, ufFoco, verCrescimento, centroUf]);
 
   // A aba Regional liga a visão regional; sair dela desliga. A aba Interação liga a camada EMBRAPII ao entrar.
   useEffect(() => {
@@ -1250,6 +1304,8 @@ export default function Mapa() {
   const linkDoMapa = () => {
     const q = new URLSearchParams();
     q.set("aba", aba);
+    if (aba === "camadas" && agrupamento !== "camadas") q.set("agrupar", agrupamento);
+    if (aba === "evolucao") { q.set("recorte", recorte); if (verCrescimento) q.set("ver", "crescimento"); }
     if (ufFoco) q.set("uf", ufFoco);
     q.set("cat", [...camadas].join(","));
     const l = [layer1Ativa, layer2Ativa, layer3Ativa, layer4Ativa, layer5Ativa, layer6Ativa, layer7Ativa].map((v, i) => (v ? String(i + 1) : "")).filter(Boolean);
@@ -1745,7 +1801,7 @@ export default function Mapa() {
                   onSelecionarPonto={(id) => setPontoSelecionadoId(id)}
                 />
               ); })()}
-              {!painelLocal && aba === "camadas" && !layersIaAtivas.length && !layer1Ativa && !layer2Ativa && !layer3Ativa && (
+              {!painelLocal && aba === "camadas" && agrupamento === "camadas" && !layersIaAtivas.length && !layer1Ativa && !layer2Ativa && !layer3Ativa && (
                 <p className="rounded-lg border border-dashed border-border px-3 py-2 text-[11px] text-muted-foreground">
                   O mapa abre sem pontos. Ligue uma camada abaixo para ver o que existe, ou clique num estado: ao entrar nele as sete camadas acendem.
                 </p>
@@ -1755,10 +1811,12 @@ export default function Mapa() {
               {aba === "camadas" && (<>
               {/* Camadas de IA */}
               <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Camadas de IA
-                  </p>
+                {/* Agrupamento: como ler os mesmos atores. Cada um mostra os seus filtros. */}
+                <div className="mb-2 flex rounded-lg border border-border bg-card p-0.5" role="tablist" aria-label="Agrupar por">
+                  {([["camadas", "Camadas de IA"], ["tipo", "Tipo de ator"], ["infra", "Infraestrutura"]] as [Agrupamento, string][]).map(([id, rotulo]) => (
+                    <button key={id} type="button" role="tab" aria-selected={agrupamento === id} onClick={() => setAgrupamento(id)}
+                      className={`flex-1 rounded-md px-2 py-1.5 text-[11px] font-medium ${agrupamento === id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>{rotulo}</button>
+                  ))}
                 </div>
                 <div className="space-y-1">
                   {desativadasCatalogo.length > 0 && (
@@ -1766,6 +1824,21 @@ export default function Mapa() {
                       Desativadas no Catálogo de Bases: {desativadasCatalogo.join(", ")}.
                     </p>
                   )}
+                  {agrupamento === "tipo" && (<>
+                    {CATEGORIAS.filter((c) => !CATS_INFRA.has(c.key)).map((c) => {
+                      const n = contagemCategoriaLugar[c.key] ?? 0;
+                      if (!n && !camadas.has(c.key)) return null;
+                      return (
+                        <label key={c.key} className="flex cursor-pointer items-center gap-2.5 rounded-lg bg-card px-2 py-1.5 text-xs hover:bg-muted">
+                          <input type="checkbox" checked={camadas.has(c.key)} onChange={() => alternar(camadas, c.key, setCamadas)} className="h-3.5 w-3.5 shrink-0 accent-primary" />
+                          <span className={`material-symbols-outlined shrink-0 text-base leading-none ${c.cor}`} style={{ fontVariationSettings: '"FILL" 1' }} aria-hidden>{c.icon}</span>
+                          <span className="flex-1 truncate">{c.label}</span>
+                          <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{n.toLocaleString("pt-BR")}</span>
+                        </label>
+                      );
+                    })}
+                  </>)}
+                  {agrupamento !== "tipo" && (<>
                   {/* Layers 1–3 — infraestrutura de IA */}
                   <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
                     <input
@@ -1984,6 +2057,26 @@ export default function Mapa() {
                     <p className="px-2 text-[10px] text-destructive">PeeringDB indisponível: {erroLayer3}</p>
                   )}
                   {layer3Ativa && <MunicipiosDaCamada {...municipiosDaCamada("L3")} />}
+                  </>)}
+                  {agrupamento === "infra" && (
+                    <div className="mt-1 rounded-lg border border-border bg-card/60 p-2">
+                      <p className="px-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transporte</p>
+                          {([
+                            ["rodovias", "Rodovias", "road", "Natural Earth 1:10m (traçado principal)"],
+                            ["ferrovias", "Ferrovias", "train", "Natural Earth 1:10m"],
+                            ["portos", "Portos organizados", "anchor", "ANTAQ · posição aproximada"],
+                            ["aeroportos", "Aeroportos (grandes e médios)", "flight", "OurAirports"],
+                          ] as [keyof TransporteMapa, string, string, string][]).map(([k, rotulo, icone, fonte]) => (
+                            <label key={k} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1 text-xs hover:bg-muted">
+                              <input type="checkbox" checked={transporte[k]} onChange={(e) => setTransporte((t) => ({ ...t, [k]: e.target.checked }))} className="h-3.5 w-3.5 shrink-0" style={{ accentColor: CORES_TRANSPORTE[k] }} />
+                              <span className="material-symbols-outlined shrink-0 text-base leading-none" style={{ color: CORES_TRANSPORTE[k] }} aria-hidden>{icone}</span>
+                              <span className="flex-1">{rotulo}</span>
+                              <span className="text-[10px] text-muted-foreground">{fonte}</span>
+                            </label>
+                          ))}
+                    </div>
+                  )}
+                  {agrupamento === "camadas" && (<>
                   <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent bg-card px-2 py-1.5 text-xs transition-colors hover:bg-muted">
                     <input type="checkbox" checked={layer4Ativa} onChange={() => setLayer4Ativa((v) => !v)}
                       className="h-3.5 w-3.5 shrink-0 accent-green-500" />
@@ -2053,15 +2146,18 @@ export default function Mapa() {
                   {erroLayersEnr && (layer4Ativa || layer5Ativa || layer6Ativa || layer7Ativa) && (
                     <p className="px-2 text-[10px] text-destructive">Cruzamento: {erroLayersEnr}</p>
                   )}
+                  </>)}
                 </div>
                 <p className="mt-1.5 text-[11px] text-muted-foreground">
-                  Todo ponto do mapa pertence a uma camada, pela classificação do banco (Análise → Como classificamos).
+                  {agrupamento === "camadas" ? "Todo ponto do mapa pertence a uma camada, pela classificação do banco (Análise → Como classificamos)."
+                    : agrupamento === "tipo" ? "Os mesmos atores, pelo tipo de instituição. Infraestrutura fica no agrupamento ao lado."
+                    : "Energia, conectividade, datacenters e transporte. A evolução no tempo destes ativos está no modo Evolução."}
                 </p>
               </div>
               </>)}
 
               {/* Sem camada: o que a classificação do banco ainda não alcança; visível, nunca escondido. */}
-              {aba === "camadas" && (
+              {aba === "camadas" && agrupamento === "camadas" && (
                 <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-dashed border-border px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted">
                   <input type="checkbox" checked={semCamadaAtiva} onChange={(e) => setSemCamadaAtiva(e.target.checked)} className="h-3.5 w-3.5 shrink-0 accent-muted-foreground" />
                   <span className="h-2.5 w-2.5 shrink-0 rounded-sm border border-muted-foreground/60" aria-hidden />
@@ -2161,30 +2257,8 @@ export default function Mapa() {
                     munModo={munModo} munSel={munSel} onMunicipios={(modo, sel) => { setMunModo(modo); setMunSel(sel); }}
                     normalizar={normalizarMun} onNormalizar={setNormalizarMun}
                     sinteseCamadas={sintese.camadas.map((c) => c.camada)} sinteseCarregando={sintese.carregando}
+                    crescimento={verCrescimento} onCrescimento={setVerCrescimento}
                   />
-                  {recorte !== "municipios" && (
-                    <details className="rounded-lg border border-border bg-card/60 p-2">
-                      <summary className="cursor-pointer px-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transporte no mapa (portos, aeroportos, ferrovias, rodovias)</summary>
-                      <div className="mt-1">
-                        {([
-                          ["rodovias", "Rodovias", "road", "Natural Earth 1:10m (traçado principal)"],
-                          ["ferrovias", "Ferrovias", "train", "Natural Earth 1:10m"],
-                          ["portos", "Portos organizados", "anchor", "ANTAQ · posição aproximada"],
-                          ["aeroportos", "Aeroportos (grandes e médios)", "flight", "OurAirports"],
-                        ] as [keyof TransporteMapa, string, string, string][]).map(([k, rotulo, icone, fonte]) => (
-                          <label key={k} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1 text-xs hover:bg-muted">
-                            <input type="checkbox" checked={transporte[k]} onChange={(e) => setTransporte((t) => ({ ...t, [k]: e.target.checked }))} className="h-3.5 w-3.5 shrink-0" style={{ accentColor: CORES_TRANSPORTE[k] }} />
-                            <span className="material-symbols-outlined shrink-0 text-base leading-none" style={{ color: CORES_TRANSPORTE[k] }} aria-hidden>{icone}</span>
-                            <span className="flex-1">{rotulo}</span>
-                            <span className="text-[10px] text-muted-foreground">{fonte}</span>
-                          </label>
-                        ))}
-                        <p className="px-1 pt-1 text-[10px] leading-snug text-muted-foreground">
-                          A geometria é a atual; a evolução no tempo vem das séries por UF da camada L2 no painel ao lado (portos ANTAQ, aeroportos ANAC, ferrovias e rodovias concedidas ANTT), somadas por região e percorridas pela barra de tempo.
-                        </p>
-                      </div>
-                    </details>
-                  )}
                 </div>
               )}
 
@@ -2408,7 +2482,7 @@ export default function Mapa() {
                     coropletico={coropletico}
                     pontos={aba === "evolucao" ? [] : pontos}
                     regional={regionalMapa}
-                    transporte={visaoRegional ? transporte : null}
+                    transporte={aba === "camadas" && agrupamento === "infra" ? transporte : null}
                     ufSelecionada={ufFoco}
                     ufsSelecionadas={ufsSel}
                     ufsFiltroAtivas={ufsFiltroAtivas}
@@ -2419,26 +2493,26 @@ export default function Mapa() {
                     pontoSelecionadoId={pontoSelecionadoId}
                     onSelecionarPonto={setPontoSelecionadoId}
                     grupoIds={grupoIds}
-                    layer1Ativa={layer1Ativa}
+                    layer1Ativa={layer1Ativa && agrupamento !== "tipo"}
                     dadosUsinas={dadosUsinas}
                     tiposUsina={tiposUsina}
                     anoMaximoUsinas={anoMaximoUsinas}
                     usinaDestaque={usinaSel}
-                    layer2Ativa={layer2Ativa}
+                    layer2Ativa={layer2Ativa && agrupamento !== "tipo"}
                     dadosCabos={dadosCabos}
                     l2Cabos={l2Cabos}
                     l2Antenas={l2Antenas}
                     dadosAntenas={dadosAntenas}
                     l2Backhaul={l2Backhaul}
                     dadosBackhaul={dadosBackhaul}
-                    layer3Ativa={layer3Ativa}
+                    layer3Ativa={layer3Ativa && agrupamento !== "tipo"}
                     dadosDCs={dadosDCs}
-                    layer7Ativa={layer7Ativa}
-                    layer4Ativa={layer4Ativa}
-                    layer5Ativa={layer5Ativa}
-                    layer6Ativa={layer6Ativa}
+                    layer7Ativa={layer7Ativa && agrupamento === "camadas"}
+                    layer4Ativa={layer4Ativa && agrupamento === "camadas"}
+                    layer5Ativa={layer5Ativa && agrupamento === "camadas"}
+                    layer6Ativa={layer6Ativa && agrupamento === "camadas"}
                     enriquecimentoLayers={enriquecimentoLayers}
-                    ancorasPbia={layer7Ativa ? (pbiaEixo ? (pbiaAncoras ?? []).filter((a) => a.eixo === pbiaEixo) : pbiaAncorasAtivas ? pbiaAncoras : null) : null}
+                    ancorasPbia={layer7Ativa && agrupamento === "camadas" ? (pbiaEixo ? (pbiaAncoras ?? []).filter((a) => a.eixo === pbiaEixo) : pbiaAncorasAtivas ? pbiaAncoras : null) : null}
                     corEixoPbia={layer7Ativa ? pbiaCor : null}
                     onSelecionarAncora={setAncoraSel}
                     interacao={interAtiva && interFluxos ? {

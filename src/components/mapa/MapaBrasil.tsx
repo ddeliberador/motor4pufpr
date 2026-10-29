@@ -71,7 +71,7 @@ export interface VisaoRegionalMapa {
   preenchimento: Record<string, string>;
   dica: Record<string, string>;
   destaque: Set<string>;
-  rotulos: { lon: number; lat: number; titulo: string; valor: string; ativo: boolean }[];
+  rotulos: { lon: number; lat: number; titulo: string; valor: string; ativo: boolean; tamanho?: number; cor?: string }[];
   onSelecionarUf: (uf: string) => void;
 }
 
@@ -520,9 +520,11 @@ const MapaBrasil = forwardRef<MapaBrasilHandle, Props>(function MapaBrasil({
     const data = fc((regional?.rotulos ?? []).map((r) => ({
       type: "Feature" as const,
       geometry: { type: "Point" as const, coordinates: [r.lon, r.lat] },
-      properties: { icone: garantirRotulo(map, [r.titulo, r.valor], cor, halo, 15, true), ativo: r.ativo },
+      properties: { icone: garantirRotulo(map, r.valor ? [r.titulo, r.valor] : [r.titulo], r.cor ?? cor, halo, r.tamanho ?? 15, true), ativo: r.ativo },
     })));
     (map.getSource("rotulos-regiao") as GeoJSONSource | undefined)?.setData(data);
+    // Rótulos por estado (recorte Estados) já trazem a sigla: as siglas normais saem para não duplicar.
+    map.setLayoutProperty("rotulos-uf", "visibility", (regional?.rotulos.length ?? 0) > 5 ? "none" : "visible");
   }, [regional, versaoEstilo, tema]);
 
   // ---------- municípios sob demanda ----------
