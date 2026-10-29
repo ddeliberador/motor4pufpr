@@ -3728,6 +3728,10 @@ export type Database = {
         Args: { p_linhas: Json }
         Returns: number
       }
+      series_catalogo: {
+        Args: Record<PropertyKey, never>
+        Returns: { indicador_id: string; entidade_tipo: string; segmento: string; ano_min: number; ano_max: number; entidades: number; periodos: number }[]
+      }
       cnpj_fila: {
         Args: { p_limite: number }
         Returns: {

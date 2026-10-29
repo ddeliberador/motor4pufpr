@@ -211,6 +211,13 @@
       "when": 1792773259416,
       "tag": "0029_agenda_antt",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793233772699,
+      "tag": "0030_series_catalogo",
+      "breakpoints": true
     }
   ]
 }

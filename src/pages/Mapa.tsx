@@ -50,7 +50,8 @@ import { canonizar, passaLake, resumoLake, type SelecaoLake } from "@/components
 import { Button } from "@/components/ui/button";
 import { REGIAO_POR_UF, REGIOES, ROTULO_REGIAO, UFS_POR_REGIAO, type Regiao } from "@/lib/regioes";
 import { INDICADORES_REGIONAIS, corRegiao, formatarValorRegional, useSerieRegional } from "@/lib/seriesRegionais";
-import { FichaRegional } from "@/components/mapa/VisaoRegional";
+import Evolucao, { type Recorte } from "@/components/mapa/Evolucao";
+import { useCatalogoSeries, serieDisponivel } from "@/lib/catalogoSeries";
 import BarraTempo, { type SerieTempo } from "@/components/mapa/BarraTempo";
 import type { VisaoRegionalMapa } from "@/components/mapa/MapaBrasil";
 import {
@@ -230,12 +231,11 @@ function escreverLugarNaUrl(lugar: { tipo: "uf"; uf: string } | { tipo: "municip
 }
 
 // Modos do mapa: uma pergunta por vez; cada modo mostra só o que lhe diz respeito.
-type Aba = "camadas" | "lugar" | "interacao" | "regional";
+type Aba = "camadas" | "evolucao" | "interacao";
 const ABAS: { id: Aba; rotulo: string; icone: string; titulo: string }[] = [
   { id: "camadas", rotulo: "O que existe", icone: "layers", titulo: "Atores e infraestrutura, todos nas sete camadas de IA" },
-  { id: "lugar", rotulo: "Como está cada lugar", icone: "map", titulo: "Municípios pintados pela síntese das camadas ou por um indicador, com a evolução no tempo" },
+  { id: "evolucao", rotulo: "Evolução", icone: "timeline", titulo: "Séries históricas por região, estado ou município, com a barra de tempo" },
   { id: "interacao", rotulo: "Quem coopera", icone: "share", titulo: "Interações entre ICTs, empresas e governo" },
-  { id: "regional", rotulo: "Comparar regiões", icone: "public", titulo: "As 5 macrorregiões com evolução histórica" },
 ];
 const CHAVE_CONFIG = "mapa-inovacao-config";
 const CAMADA_POR_INFRA: Partial<Record<CategoriaKey, CamadaIa>> = { energia: "L1", cabo: "L2", backhaul: "L2", datacenter: "L3", supercomputacao: "L2" };
@@ -254,6 +254,7 @@ function lerMunSelDaUrl(): SelecaoMunicipal | null {
 }
 function lerAbaDaUrl(): Aba {
   const v = new URLSearchParams(window.location.search).get("aba");
+  if (v === "regional" || v === "lugar") return "evolucao";
   return ABAS.some((a) => a.id === v) ? (v as Aba) : "camadas";
 }
 function lerConfigSalva(): ConfiguracoesMapa {
@@ -368,11 +369,23 @@ export default function Mapa() {
   const [painelPoliticasAberto, setPainelPoliticasAberto] = useState(false);
   // Visão regional: macrorregiões coloridas pela série histórica + régua do tempo.
   const [visaoRegional, setVisaoRegional] = useState(false);
+  // Recorte do modo Evolução: regiões ou estados pintam as UFs; municípios pinta a malha municipal.
+  const [recorte, setRecorte] = useState<Recorte>(() => (new URLSearchParams(window.location.search).get("recorte") as Recorte) || "regioes");
+  const catalogoSeriesQ = useCatalogoSeries();
   const [indicadorRegionalId, setIndicadorRegionalId] = useState(INDICADORES_REGIONAIS[0].id);
+  // Só séries com dado: se a escolhida não existe no banco, vai para a primeira que existe.
+  useEffect(() => {
+    const cat = catalogoSeriesQ.data;
+    if (!cat) return;
+    if (!serieDisponivel(cat, indicadorRegionalId, "uf")) {
+      const primeiro = INDICADORES_REGIONAIS.find((i) => serieDisponivel(cat, i.id, "uf"));
+      if (primeiro) setIndicadorRegionalId(primeiro.id);
+    }
+  }, [catalogoSeriesQ.data, indicadorRegionalId]);
   const [idxAnoRegional, setIdxAnoRegional] = useState(0);
   const [regiaoFoco, setRegiaoFoco] = useState<Regiao | null>(null);
   // Camada de transporte da visão regional (public/transporte): ligada ao entrar na aba Regional.
-  const [transporte, setTransporte] = useState<TransporteMapa>({ rodovias: true, ferrovias: true, portos: true, aeroportos: true });
+  const [transporte, setTransporte] = useState<TransporteMapa>({ rodovias: false, ferrovias: false, portos: false, aeroportos: false });
   // Camadas de dados exibidas no mapa (todas ligadas por padrão).
   const [camadas, setCamadas] = useState<Set<CategoriaKey>>(
     () => new Set(CATEGORIAS.map((c) => c.key)),
@@ -1159,6 +1172,21 @@ export default function Mapa() {
     const linha = serie && anoRegional != null ? serie.celulas[anoRegional] : null;
     const preenchimento: Record<string, string> = {};
     const dica: Record<string, string> = {};
+    // Recorte Estados: cada UF com a sua cor, na escala do maior estado do ano; sem rótulos de região.
+    if (recorte === "estados") {
+      const maxUf = Math.max(0, ...REGIOES.flatMap((r) => Object.values(linha?.[r]?.porUf ?? {})));
+      for (const r of REGIOES) for (const uf of UFS_POR_REGIAO[r]) {
+        const v = linha?.[r]?.porUf[uf];
+        preenchimento[uf] = corRegiao(v ?? null, maxUf);
+        dica[uf] = `${ESTADOS[uf] ?? uf} · ${v == null ? "sem dado" : `${formatarValorRegional(v)} ${indicadorRegional.unidade}`}${anoRegional != null ? ` em ${anoRegional}` : ""}`;
+      }
+      return {
+        preenchimento, dica,
+        destaque: new Set(ufFoco ? [ufFoco] : []),
+        rotulos: [],
+        onSelecionarUf: (uf: string) => setUfFoco((atual) => (atual === uf ? null : uf)),
+      };
+    }
     for (const r of REGIOES) {
       const c = linha?.[r];
       for (const uf of UFS_POR_REGIAO[r]) {
@@ -1185,11 +1213,11 @@ export default function Mapa() {
         if (r) setRegiaoFoco((atual) => (atual === r ? null : r));
       },
     };
-  }, [visaoRegional, serieRegionalQ.data, anoRegional, regiaoFoco, indicadorRegional.unidade]);
+  }, [visaoRegional, serieRegionalQ.data, anoRegional, regiaoFoco, indicadorRegional.unidade, recorte, ufFoco]);
 
   // A aba Regional liga a visão regional; sair dela desliga. A aba Interação liga a camada EMBRAPII ao entrar.
   useEffect(() => {
-    if (aba === "regional") {
+    if (aba === "evolucao" && recorte !== "municipios") {
       setVisaoRegional(true);
       setListaAberta(false);
       setPainelPoliticasAberto(false);
@@ -1198,7 +1226,7 @@ export default function Mapa() {
       setVisaoRegional(false);
     }
     if (aba === "interacao") setInterAtiva(true);
-  }, [aba]);
+  }, [aba, recorte]);
 
   useEffect(() => {
     definirTema(config.tema);
@@ -1255,7 +1283,7 @@ export default function Mapa() {
   };
 
   // ---------------------------------------------------------------- nível municipal
-  const munAtivo = aba === "lugar" && !visaoRegional && munModo !== "nenhum";
+  const munAtivo = aba === "evolucao" && recorte === "municipios" && munModo !== "nenhum";
   const sintese = useSinteseMunicipal(anoFoco, normalizarMun, munAtivo && munModo === "sintese");
   const munDef = munModo === "indicador" && munSel ? INDICADORES_MUNICIPAIS.find((i) => i.id === munSel.indicador) ?? null : null;
   const munPeriodosQ = usePeriodosMunicipais(munAtivo && munDef ? munDef.id : null, munSel?.segmento ?? "");
@@ -1336,7 +1364,7 @@ export default function Mapa() {
     rotulos: anosEixo,
     indice: anoEfetivo != null ? anosEixo.indexOf(anoEfetivo) : anosEixo.length - 1,
     onIndice: (i) => setAnoFoco(anosEixo[i]),
-    titulo: visaoRegional ? `${indicadorRegional.rotulo} por região`
+    titulo: visaoRegional ? `${indicadorRegional.rotulo} · ${indicadorRegional.unidade} · por ${recorte === "estados" ? "estado" : "região"}`
       : [coropletico?.rotulo.split(" · ")[0], aba === "interacao" && anosInteracao.length ? (interTiposSel.length === 1 ? interTiposSel[0].rotulo.toLowerCase() : "interações entre atores") : null, layer1Ativa && anosUsinas.length ? "usinas em operação" : null].filter(Boolean).join(" + "),
     acumulado: aba === "interacao" && anosInteracao.length ? { ativo: interAcumulado, onAlternar: setInterAcumulado } : undefined,
   } : null;
@@ -1484,7 +1512,7 @@ export default function Mapa() {
   const painelFiltros = (
     <div className="space-y-4 p-4">
         {/* Buscar: uma caixa só, para atores e usinas (quando a Layer 1 está ligada). */}
-        {aba !== "regional" && (
+        {!visaoRegional && (
           <div>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -1646,18 +1674,19 @@ export default function Mapa() {
                   {!painelLocal && (<>
                     <p className="text-base font-bold leading-tight">Brasil</p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      <strong className="font-semibold text-foreground">{selecionados.length.toLocaleString("pt-BR")}</strong> de {totalLocais.toLocaleString("pt-BR")} registros no mapa · clique num estado para aproximar
+                      {aba === "evolucao" ? "Escolha o recorte e a série; a barra no rodapé do mapa percorre os anos."
+                        : <><strong className="font-semibold text-foreground">{selecionados.length.toLocaleString("pt-BR")}</strong> de {totalLocais.toLocaleString("pt-BR")} registros no mapa · clique num estado para aproximar</>}
                     </p>
                   </>)}
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                  {aba !== "regional" && (
+                  {aba !== "evolucao" && (
                     <button type="button" onClick={() => { setListaAberta((v) => !v); setPainelPoliticasAberto(false); setConfigAberta(false); }} aria-pressed={listaAberta} title="Listagem do que está no mapa" aria-label="Listagem"
                       className={`toque flex h-8 w-8 items-center justify-center rounded-md border border-border ${listaAberta ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-muted"}`}>
                       <List className="h-3.5 w-3.5" />
                     </button>
                   )}
-                  {layersIaAtivas.length > 0 && aba !== "regional" && (
+                  {layersIaAtivas.length > 0 && aba !== "evolucao" && (
                     <button type="button" onClick={() => { setPainelPoliticasAberto((v) => !v); setListaAberta(false); setConfigAberta(false); }} aria-pressed={painelPoliticasAberto} title="Políticas públicas por camada" aria-label="Políticas"
                       className={`toque flex h-8 w-8 items-center justify-center rounded-md border border-border ${painelPoliticasAberto ? "bg-violet-500/15 text-violet-400" : "text-muted-foreground hover:bg-muted"}`}>
                       <span className="material-symbols-outlined text-base leading-none" style={{ fontVariationSettings: '"FILL" 1' }} aria-hidden>policy</span>
@@ -1722,42 +1751,8 @@ export default function Mapa() {
                 </p>
               )}
 
-              {/* Preenchimento dos municípios: só no modo "Como está cada lugar". */}
-              {aba === "lugar" && (<>
-              {/* Nível municipal: síntese das camadas (padrão), um indicador de uma camada (escolhido sob a camada) ou nada. */}
-              <div className="rounded-lg border border-border bg-card/60 p-2 text-xs">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Preenchimento dos municípios</p>
-                  <label className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <input type="checkbox" checked={normalizarMun} onChange={(e) => setNormalizarMun(e.target.checked)} className="h-3 w-3 accent-primary" />
-                    por habitante
-                  </label>
-                </div>
-                <div className="mt-1.5 flex flex-wrap gap-1">
-                  <button type="button" onClick={() => { setMunModo("sintese"); setMunSel(null); }} aria-pressed={munModo === "sintese"}
-                    className={`rounded-full border px-2 py-0.5 text-[11px] ${munModo === "sintese" ? "border-foreground/40 bg-muted text-foreground" : "border-border text-muted-foreground"}`}>
-                    Síntese das 7 camadas
-                  </button>
-                  {munModo === "indicador" && munDef && (
-                    <span className="rounded-full border border-foreground/40 bg-muted px-2 py-0.5 text-[11px] text-foreground">{munDef.rotulo}</span>
-                  )}
-                  <button type="button" onClick={() => { setMunModo("nenhum"); setMunSel(null); }} aria-pressed={munModo === "nenhum"}
-                    className={`rounded-full border px-2 py-0.5 text-[11px] ${munModo === "nenhum" ? "border-foreground/40 bg-muted text-foreground" : "border-border text-muted-foreground"}`}>
-                    Só marcadores
-                  </button>
-                </div>
-                <p className="mt-1.5 text-[11px] text-muted-foreground">
-                  {munModo === "sintese"
-                    ? sintese.carregando ? "carregando as camadas…"
-                      : sintese.camadas.length
-                        ? `Média dos postos (0–100) de cada município nas ${sintese.camadas.length} camadas com dado: ${sintese.camadas.map((c) => c.camada).join(", ")}. L4 e L7 não têm base municipal.`
-                        : "Nenhuma camada tem série municipal coletada ainda. Dispare as coletas em Gestão da Pesquisa → Coletas."
-                    : munModo === "indicador" ? "Um indicador de uma camada; escolha outro sob a camada correspondente." : "Os municípios ficam sem cor; só os marcadores das camadas aparecem."}
-                </p>
-              </div>
-              </>)}
 
-              {(aba === "camadas" || aba === "lugar") && (<>
+              {aba === "camadas" && (<>
               {/* Camadas de IA */}
               <div>
                 <div className="mb-2 flex items-center justify-between">
@@ -2154,49 +2149,42 @@ export default function Mapa() {
                 </div>
               )}
 
-              {aba === "regional" && (
+              {aba === "evolucao" && (
                 <div className="space-y-3">
-                  {visaoRegional && (
-                    <div className="[&>aside]:max-h-none [&>aside]:w-full [&>aside]:border-0 [&>aside]:bg-transparent [&>aside]:p-0">
-                      <FichaRegional
-                        indicador={indicadorRegional}
-                        onIndicador={(id) => { setIndicadorRegionalId(id); }}
-                        dados={serieRegionalQ.data}
-                        carregando={serieRegionalQ.isLoading}
-                        erro={serieRegionalQ.error}
-                        ano={anoRegional}
-                        regiaoFoco={regiaoFoco}
-                        onRegiaoFoco={setRegiaoFoco}
-                        onFechar={() => setAba("camadas")}
-                      />
-                    </div>
+                  <Evolucao
+                    recorte={recorte} onRecorte={setRecorte}
+                    catalogo={catalogoSeriesQ.data} catalogoCarregando={catalogoSeriesQ.isLoading}
+                    indicador={indicadorRegional} onIndicador={(id) => setIndicadorRegionalId(id)}
+                    dados={serieRegionalQ.data} carregando={serieRegionalQ.isLoading} ano={anoRegional}
+                    regiaoFoco={regiaoFoco} onRegiaoFoco={setRegiaoFoco}
+                    ufFoco={ufFoco} onUfFoco={(uf) => setUfFoco(uf)}
+                    munModo={munModo} munSel={munSel} onMunicipios={(modo, sel) => { setMunModo(modo); setMunSel(sel); }}
+                    normalizar={normalizarMun} onNormalizar={setNormalizarMun}
+                    sinteseCamadas={sintese.camadas.map((c) => c.camada)} sinteseCarregando={sintese.carregando}
+                  />
+                  {recorte !== "municipios" && (
+                    <details className="rounded-lg border border-border bg-card/60 p-2">
+                      <summary className="cursor-pointer px-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transporte no mapa (portos, aeroportos, ferrovias, rodovias)</summary>
+                      <div className="mt-1">
+                        {([
+                          ["rodovias", "Rodovias", "road", "Natural Earth 1:10m (traçado principal)"],
+                          ["ferrovias", "Ferrovias", "train", "Natural Earth 1:10m"],
+                          ["portos", "Portos organizados", "anchor", "ANTAQ · posição aproximada"],
+                          ["aeroportos", "Aeroportos (grandes e médios)", "flight", "OurAirports"],
+                        ] as [keyof TransporteMapa, string, string, string][]).map(([k, rotulo, icone, fonte]) => (
+                          <label key={k} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1 text-xs hover:bg-muted">
+                            <input type="checkbox" checked={transporte[k]} onChange={(e) => setTransporte((t) => ({ ...t, [k]: e.target.checked }))} className="h-3.5 w-3.5 shrink-0" style={{ accentColor: CORES_TRANSPORTE[k] }} />
+                            <span className="material-symbols-outlined shrink-0 text-base leading-none" style={{ color: CORES_TRANSPORTE[k] }} aria-hidden>{icone}</span>
+                            <span className="flex-1">{rotulo}</span>
+                            <span className="text-[10px] text-muted-foreground">{fonte}</span>
+                          </label>
+                        ))}
+                        <p className="px-1 pt-1 text-[10px] leading-snug text-muted-foreground">
+                          A geometria é a atual; a evolução no tempo vem das séries por UF da camada L2 no painel ao lado (portos ANTAQ, aeroportos ANAC, ferrovias e rodovias concedidas ANTT), somadas por região e percorridas pela barra de tempo.
+                        </p>
+                      </div>
+                    </details>
                   )}
-                  <div>
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Visão regional</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      O mapa se preenche com o indicador escolhido no painel ao lado, somado por macrorregião, e a régua de tempo sob o mapa percorre os anos da série.
-                      Clique numa região para destacá-la.
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-border bg-card/60 p-2">
-                    <p className="px-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">L2 · Infraestrutura física: transporte</p>
-                    {([
-                      ["rodovias", "Rodovias", "road", "Natural Earth 1:10m (traçado principal)"],
-                      ["ferrovias", "Ferrovias", "train", "Natural Earth 1:10m"],
-                      ["portos", "Portos organizados", "anchor", "ANTAQ · posição aproximada"],
-                      ["aeroportos", "Aeroportos (grandes e médios)", "flight", "OurAirports"],
-                    ] as [keyof TransporteMapa, string, string, string][]).map(([k, rotulo, icone, fonte]) => (
-                      <label key={k} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1 text-xs hover:bg-muted">
-                        <input type="checkbox" checked={transporte[k]} onChange={(e) => setTransporte((t) => ({ ...t, [k]: e.target.checked }))} className="h-3.5 w-3.5 shrink-0" style={{ accentColor: CORES_TRANSPORTE[k] }} />
-                        <span className="material-symbols-outlined shrink-0 text-base leading-none" style={{ color: CORES_TRANSPORTE[k] }} aria-hidden>{icone}</span>
-                        <span className="flex-1">{rotulo}</span>
-                        <span className="text-[10px] text-muted-foreground">{fonte}</span>
-                      </label>
-                    ))}
-                    <p className="px-1 pt-1 text-[10px] leading-snug text-muted-foreground">
-                      A geometria é a atual; a evolução no tempo vem das séries por UF da camada L2 no painel ao lado (portos ANTAQ, aeroportos ANAC, ferrovias e rodovias concedidas ANTT), somadas por região e percorridas pela barra de tempo.
-                    </p>
-                  </div>
                 </div>
               )}
 
@@ -2357,11 +2345,11 @@ export default function Mapa() {
                 </div>
                 <div className="flex-1" />
                 {/* Filtros (Buscar, Mais filtros, Fonte): popover no desktop, gaveta no celular. */}
-                <button type="button" onClick={() => setFiltrosAbertos((v) => !v)} aria-pressed={filtrosAbertos} aria-label="Filtros"
+                {aba !== "evolucao" && <button type="button" onClick={() => setFiltrosAbertos((v) => !v)} aria-pressed={filtrosAbertos} aria-label="Filtros"
                   className={`hidden h-9 shrink-0 items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-[11px] font-medium lg:flex ${filtrosAtivos.length ? "text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                   <SlidersHorizontal className="h-3.5 w-3.5" /> Filtros{filtrosAtivos.length ? ` (${filtrosAtivos.length})` : ""}
-                </button>
-                <span className="hidden whitespace-nowrap text-xs text-muted-foreground xl:inline" title={`${pontos.length.toLocaleString("pt-BR")} pontos georreferenciados${ultimaColeta ? ` · última coleta em ${ultimaColeta}` : ""} · clique num estado para aproximar, num ícone para ver a ficha · aproxime para ver os municípios`}>
+                </button>}
+                <span className={`${aba === "evolucao" ? "hidden" : "hidden xl:inline"} whitespace-nowrap text-xs text-muted-foreground`} title={`${pontos.length.toLocaleString("pt-BR")} pontos georreferenciados${ultimaColeta ? ` · última coleta em ${ultimaColeta}` : ""} · clique num estado para aproximar, num ícone para ver a ficha · aproxime para ver os municípios`}>
                   <strong className="font-semibold text-foreground">{selecionados.length.toLocaleString("pt-BR")}</strong> de {totalLocais.toLocaleString("pt-BR")}
                 </span>
                 <div className="inline-flex shrink-0 items-center rounded-lg border border-border bg-card p-0.5">
@@ -2418,7 +2406,7 @@ export default function Mapa() {
                     mostrarNomes={config.mostrarNomes}
                     malhaMunicipal={config.malhaMunicipal}
                     coropletico={coropletico}
-                    pontos={visaoRegional || aba === "lugar" ? [] : pontos}
+                    pontos={aba === "evolucao" ? [] : pontos}
                     regional={regionalMapa}
                     transporte={visaoRegional ? transporte : null}
                     ufSelecionada={ufFoco}
